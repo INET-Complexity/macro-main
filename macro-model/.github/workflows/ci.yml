@@ -36,7 +36,4 @@ jobs:
 
       - name: Test with pytest
         run: |
-          pytest --cov=macromodel test_macromodel --cov-report xml
-          pytest --cov=data_processing test_data_processing --cov-report xml
-          pytest --cov=loader test_loader --cov-report xml
-
+          pytest --cov=model test_model --cov-report xml
