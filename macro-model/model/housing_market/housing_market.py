@@ -1,0 +1,221 @@
+import warnings
+import numpy as np
+import pandas as pd
+
+from pathlib import Path
+
+from model.timeseries import TimeSeries
+from model.util.get_histogram import get_histogram
+from model.util.function_mapping import get_functions
+from model.housing_market.housing_market_ts import create_housing_market_timeseries
+
+from typing import Any
+
+
+class HousingMarket:
+    def __init__(
+        self,
+        country_name: str,
+        year: int,
+        t_max: int,
+        n_industries: int,
+        scale: int,
+        functions: dict[str, Any],
+        parameters: dict[str, Any],
+        ts: TimeSeries,
+        states: pd.DataFrame,
+    ):
+        self.country_name = country_name
+        self.year = year
+        self.t_max = t_max
+        self.n_industries = n_industries
+        self.scale = scale
+        self.functions = functions
+        self.parameters = parameters
+        self.ts = ts
+        self.states = states
+        self.current_sales: pd.DataFrame = pd.DataFrame()
+
+    @classmethod
+    def from_data(
+        cls,
+        country_name: str,
+        year: int,
+        t_max: int,
+        n_industries: int,
+        scale: int,
+        data: pd.DataFrame,
+        config: dict[str, Any],
+    ) -> "HousingMarket":
+        # Get corresponding functions and parameters
+        functions = get_functions(
+            config["functions"],
+            loc="model.housing_market",
+            func_dir=Path(__file__).parent / "func",
+        )
+        if "parameters" in config.keys():
+            parameters = config["parameters"].copy()
+        else:
+            parameters = {}
+
+        # Recording the states of all homes
+        states = data.copy()
+        states["Corresponding Inhabitant Household ID"][np.isnan(states["Corresponding Inhabitant Household ID"])] = -1
+        states["House ID"] = states["House ID"].astype(int)
+        states["Is Owner-Occupied"] = states["Is Owner-Occupied"].astype(int)
+        states["Corresponding Owner Household ID"] = states["Corresponding Owner Household ID"].astype(int)
+        states["Corresponding Inhabitant Household ID"] = states["Corresponding Inhabitant Household ID"].astype(int)
+
+        # Create the corresponding time series object
+        ts = create_housing_market_timeseries(
+            data=states,
+            initial_observed_fraction_value_price=cls._perform_linear_regression(
+                states["Value"].values, states["Value"].values
+            ),
+            initial_observed_fraction_rent_value=cls._perform_linear_regression(
+                states["Value"].values, states["Rent"].values
+            ),
+            scale=scale,
+        )
+
+        return cls(
+            country_name,
+            year,
+            t_max,
+            n_industries,
+            scale,
+            functions,
+            parameters,
+            ts,
+            states,
+        )
+
+    def update_property_value(self) -> None:
+        self.states.loc[:, "Value"] = self.functions["value"].compute_value(
+            current_property_values=self.states["Value"].values
+        )
+        self.ts.property_values.append(self.states["Value"].values)
+        self.ts.property_values_histogram.append(get_histogram(self.ts.current("property_values"), self.scale))
+
+    def clear(
+        self,
+        household_main_residence_tenure_status: np.ndarray,
+        max_price_willing_to_pay: np.ndarray,
+        max_rent_willing_to_pay: np.ndarray,
+    ) -> None:
+        self.current_sales = self.functions["clearing"].clear(
+            housing_data=self.states,
+            household_main_residence_tenure_status=household_main_residence_tenure_status,
+            max_price_willing_to_pay=max_price_willing_to_pay,
+            max_rent_willing_to_pay=max_rent_willing_to_pay,
+        )
+
+    @staticmethod
+    def _perform_linear_regression(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return np.array(np.polyfit(x, y, deg=1))
+
+    def compute_observed_fraction_value_price(self) -> np.ndarray:
+        current_sells = self.current_sales.loc[self.current_sales["sales_types"] == "Sell"]
+        self.ts.price_value_histogram.append(
+            get_histogram(current_sells["price_or_rent"].values / current_sells["property_value"].values, None)
+        )
+        if len(current_sells) == 0:
+            return self.ts.current("observed_fraction_value_price")
+        return self._perform_linear_regression(
+            current_sells["property_value"].values,
+            current_sells["price_or_rent"].values,
+        )
+
+    def compute_observed_fraction_rent_value(self) -> np.ndarray:
+        current_rentals = self.current_sales.loc[self.current_sales["sales_types"] == "Rental"]
+        self.ts.rent_value_histogram.append(
+            get_histogram(current_rentals["price_or_rent"].values / current_rentals["property_value"].values, None)
+        )
+        if len(current_rentals) == 0:
+            return self.ts.current("observed_fraction_rent_value")
+        return self._perform_linear_regression(
+            current_rentals["price_or_rent"].values,
+            current_rentals["property_value"].values,
+        )
+
+    def process_housing_market_clearing(
+        self,
+        household_states: dict[str, Any],
+        household_received_mortgages: np.ndarray,
+        household_financial_wealth: np.ndarray,
+    ) -> None:
+        total_number_of_bought_houses = 0
+        total_number_of_newly_rented_houses = 0
+        for index, sale in self.current_sales.iterrows():
+            buyer_id, seller_id, property_id = int(sale["buyer_id"]), int(sale["seller_id"]), int(sale["property_id"])
+            prev_property_id = household_states["Corresponding Inhabited House ID"][buyer_id]
+            if sale["sales_types"] == "Rental":
+                self.states.loc[property_id, "Corresponding Inhabitant Household ID"] = buyer_id
+                self.states.loc[prev_property_id, "Corresponding Inhabitant Household ID"] = -1
+                household_states["Corresponding Inhabited House ID"][buyer_id] = property_id
+                household_states["Tenure Status of the Main Residence"][buyer_id] = 0
+                household_states["corr_renters"][seller_id].append(buyer_id)
+                total_number_of_newly_rented_houses += 1
+            elif sale["sales_types"] == "Sell":
+                if (
+                    household_received_mortgages[buyer_id] > 0
+                    or household_financial_wealth[buyer_id] >= sale["price_or_rent"]
+                ):
+                    self.states.loc[property_id, "Corresponding Owner Household ID"] = buyer_id
+                    household_states["Corresponding Property Owner"][buyer_id] = buyer_id
+                    # household_states["corr_additionally_owned_properties"][buyer_id].append(property_id)
+                    # household_states["corr_additionally_owned_properties"][seller_id].remove(property_id)
+                    if self.states.at[prev_property_id, "Is Owner-Occupied"]:
+                        self.states.loc[property_id, "Corresponding Inhabitant Household ID"] = -1
+                    else:
+                        self.states.loc[property_id, "Corresponding Inhabitant Household ID"] = buyer_id
+                        self.states.loc[prev_property_id, "Corresponding Inhabitant Household ID"] = -1
+                        household_states["Corresponding Inhabited House ID"][buyer_id] = property_id
+                        household_states["Tenure Status of the Main Residence"][buyer_id] = 1
+                        household_states["corr_renters"][seller_id].remove(buyer_id)
+                    self.states.loc[property_id, "Value"] = sale["price_or_rent"]
+                    total_number_of_bought_houses += 1
+            else:
+                raise ValueError("Unknown housing market sales type", sale["sales_types"])
+
+            # General stuff
+            if (
+                self.states.at[property_id, "Corresponding Owner Household ID"]
+                == self.states.at[property_id, "Corresponding Inhabitant Household ID"]
+            ):
+                self.states.at[property_id, "Is Owner-Occupied"] = 1
+            else:
+                self.states.at[property_id, "Is Owner-Occupied"] = 0
+
+            break
+
+        # Update aggregates
+        self.ts.total_number_of_houses_rented.append(
+            [
+                np.sum(
+                    np.logical_and(
+                        self.states["Corresponding Inhabitant Household ID"] != -1,
+                        self.states["Corresponding Inhabitant Household ID"]
+                        != self.states["Corresponding Owner Household ID"],
+                    )
+                )
+            ]
+        )
+        self.ts.total_number_of_houses_owner_occupied.append(
+            [
+                np.sum(
+                    self.states["Corresponding Inhabitant Household ID"]
+                    == self.states["Corresponding Owner Household ID"]
+                )
+            ]
+        )
+        self.ts.total_number_of_houses_unoccupied.append(
+            [np.sum(self.states["Corresponding Inhabitant Household ID"] == -1)]
+        )
+        self.ts.total_number_of_bought_houses.append([total_number_of_bought_houses])
+        self.ts.total_number_of_newly_rented_houses.append([total_number_of_newly_rented_houses])
+
+    def compute_total_property_value(self) -> float:
+        return self.states["Value"].sum()
