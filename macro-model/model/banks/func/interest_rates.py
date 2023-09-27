@@ -85,6 +85,7 @@ class InterestRatesSetter(ABC):
         pass
     """
 
+
 class DefaultInterestRatesSetter(InterestRatesSetter):
     def __init__(self, interest_noise_std: float):
         self.interest_noise_std = interest_noise_std

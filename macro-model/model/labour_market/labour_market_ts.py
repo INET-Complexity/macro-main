@@ -26,8 +26,4 @@ def create_labour_market_timeseries(
         num_individuals_newly_leaving=[np.nan],
         num_employed_individuals_by_sector=num_employed,
         #
-
-
-
-
     )

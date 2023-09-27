@@ -83,7 +83,6 @@ class Agent:
         self.exchange_rate_usd_to_lcu = exchange_rate_usd_to_lcu
 
     def prepare(self) -> None:
-
         # Value type and priority
         self.transactor_buyer_states["Value Type"] = self.transactor_settings["Buyer Value Type"]
         self.transactor_buyer_states["Priority"] = self.transactor_settings["Buyer Priority"]
