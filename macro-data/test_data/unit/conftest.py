@@ -4,8 +4,8 @@ import pathlib
 from data.readers.handle_readers import init_readers
 from data.readers.util.matching_iot_with_sea import compile_industry_data
 
-PARENT = pathlib.Path(__file__).parent.parent.parent.resolve()
-DATA_PATH = PARENT / "data" / "sample_raw_data"
+PARENT = pathlib.Path(__file__).parent.resolve()
+DATA_PATH = PARENT / "sample_raw_data"
 
 
 @pytest.fixture(scope="module", name="data_path")
