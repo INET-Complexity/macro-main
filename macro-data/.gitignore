@@ -142,10 +142,10 @@ dmypy.json
 .idea/
 
 # Don't push data
-/data/drive_data
-/data/drive_data_complete
-/data/raw_data
-/data/processed_data
+/input/drive_data
+/input/drive_data_complete
+/input/raw_data
+/input/processed_data
 
 # Don't push output data
 /output
