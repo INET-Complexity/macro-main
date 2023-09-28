@@ -8,7 +8,7 @@ from pathlib import Path
 
 def download_data(
     raw_data_path: Path,
-    drive_filename: str = "1uRbcOhZ4TGFK41Pq8QwGy6Fh2xa3YCAe",
+    drive_filename: str = "1GWl07o4MRllzF3hoBGF1fKHHlH8OoTt6",
     chunk_size: int = 1024,
 ) -> None:
     # Download the complete dataset
@@ -31,11 +31,7 @@ def download_data(
                 f.write(chunk)
 
     # Unzip it and delete the zip file
-    shutil.unpack_archive(
-        str(raw_data_path / "drive_data.zip"),
-        raw_data_path,
-        format="zip",
-    )
+    shutil.unpack_archive(str(raw_data_path / "drive_data.zip"), raw_data_path, format="zip")
 
     # Delete the zip file
     os.remove(raw_data_path / "drive_data.zip")
