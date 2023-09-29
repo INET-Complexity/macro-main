@@ -68,6 +68,59 @@ class Runner:
         # Random seed
         self.random_seed = None
 
+    def run(self, random_seed: int = 0) -> None:
+        self.set_random_seed(random_seed)
+        self.set_exchange_rates()
+        self.initialise_agents()
+        with tqdm(range(1, self.t_max), desc="Running...") as tqdm_obj:
+            for _ in tqdm_obj:
+                self.iterate()
+        self.save()
+
+    def iterate(self) -> None:
+        # Setting exchange rates
+        self.exchange_rates.set_current_exchange_rates(current_year=self.timestep.year)
+
+        # Before goods market clearing
+        for ind, country in enumerate(self.countries.values()):
+            country.initialisation_phase(exchange_rate_usd_to_lcu=self.exchange_rates.ts.current("exchange_rates")[ind])
+            country.estimation_phase()
+            country.target_setting_phase()
+            country.clear_labour_market()
+            country.update_planning_metrics()
+
+            # Clearing the housing and the credit market
+            country.prepare_housing_market_clearing()
+            country.clear_housing_market()
+            country.prepare_credit_market_clearing()
+            country.clear_credit_market()
+            country.process_housing_market_clearing()
+            country.process_credit_market_clearing()
+
+            # Prepare goods market clearing
+            country.prepare_goods_market_clearing()
+
+        # Prepare goods market clearing
+        self.row.update_planning_metrics(
+            average_country_ppi_inflation=np.mean(
+                [self.countries[c].economy.ts.current("ppi_inflation")[0] for c in self.countries.keys()]
+            ),
+        )
+
+        # Clearing the goods market
+        self.goods_market.prepare()
+        self.goods_market.clear()
+        self.goods_market.record()
+
+        # After goods market clearing
+        self.row.record_bought_goods()
+        for country in self.countries.values():
+            country.update_realised_metrics()
+            country.update_population_structure()
+
+        # Next month
+        self.timestep.step()
+
     @staticmethod
     def process_config(config_path: Path) -> dict[str, Any]:
         config = yaml.safe_load(open(config_path, "r"))
@@ -101,15 +154,6 @@ class Runner:
         with open(file_path, "r") as yaml_file:
             yaml_content = yaml_file.read()
         return yaml_content
-
-    def run(self, random_seed: int = 0) -> None:
-        self.set_random_seed(random_seed)
-        self.set_exchange_rates()
-        self.initialise_agents()
-        with tqdm(range(1, self.t_max), desc="Running...") as tqdm_obj:
-            for _ in tqdm_obj:
-                self.iterate()
-        self.save()
 
     def set_random_seed(self, random_seed: int = 0) -> None:
         self.random_seed = random_seed
@@ -228,50 +272,6 @@ class Runner:
             country_group["exogenous_historic_data"].attrs["columns"] = (
                 self.countries[country_name].exogenous.compiled_historic_data.columns.astype(str).to_list()
             )
-
-    def iterate(self) -> None:
-        # Setting exchange rates
-        self.exchange_rates.set_current_exchange_rates(current_year=self.timestep.year)
-
-        # Before goods market clearing
-        for ind, country in enumerate(self.countries.values()):
-            country.initialisation_phase(exchange_rate_usd_to_lcu=self.exchange_rates.ts.current("exchange_rates")[ind])
-            country.estimation_phase()
-            country.target_setting_phase()
-            country.clear_labour_market()
-            country.update_planning_metrics()
-
-            # Clearing the housing and the credit market
-            country.prepare_housing_market_clearing()
-            country.clear_housing_market()
-            country.prepare_credit_market_clearing()
-            country.clear_credit_market()
-            country.process_housing_market_clearing()
-            country.process_credit_market_clearing()
-
-            # Prepare goods market clearing
-            country.prepare_goods_market_clearing()
-
-        # Prepare goods market clearing
-        self.row.update_planning_metrics(
-            average_country_ppi_inflation=np.mean(
-                [self.countries[c].economy.ts.current("ppi_inflation")[0] for c in self.countries.keys()]
-            ),
-        )
-
-        # Clearing the goods market
-        self.goods_market.prepare()
-        self.goods_market.clear()
-        self.goods_market.record()
-
-        # After goods market clearing
-        self.row.record_bought_goods()
-        for country in self.countries.values():
-            country.update_realised_metrics()
-            country.update_population_structure()
-
-        # Next month
-        self.timestep.step()
 
     def _init_individuals(self, country_name: str) -> Individuals:
         return Individuals.from_data(
