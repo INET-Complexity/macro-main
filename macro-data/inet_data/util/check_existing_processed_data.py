@@ -32,7 +32,9 @@ def check_existing_processed_data(config: dict, data_path: Path) -> Optional[str
             continue
 
         # Check model config
-        config_model = pd.DataFrame(pd.read_hdf(curr_path / str(filename) / "inet_data.h5", "config_model")).values[0][0]
+        config_model = pd.DataFrame(pd.read_hdf(curr_path / str(filename) / "inet_data.h5", "config_model")).values[0][
+            0
+        ]
         config_model = ast.literal_eval(config_model)
         for key in config_model:
             if key in config["model"].keys():
