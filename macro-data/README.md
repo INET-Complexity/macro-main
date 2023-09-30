@@ -11,7 +11,7 @@ git clone git@github.com:INET-Complexity/inet-macro-data.git
 
 
 ## Install the package 
-Create a python environment for the macromodel  with Python 3.11 and run, in the folder where you have cloned the repository and that contains `requirements.txt`,
+Create a python environment for the macromodel  with Python >=3.10 and run, in the folder where you have cloned the repository and that contains `requirements.txt`,
 
 ```
 pip install .
@@ -52,17 +52,17 @@ Note that to have more control over the direct data generation, you can modify t
 from inet_data import Creator, create_code
 
 processed_data_code = create_code()
-        Creator(
-            config_path=config_file_path,
-            raw_data_path=data_dir_path / "raw_data",
-            processed_data_path=data_dir_path
-            / "processed_data"
-            / processed_data_code
-            / "data.h5",
-            force_download=False,
-            create_exogenous_industry_data=True,
-            random_seed=0,
-        ).create(save_output=True)
+Creator(
+    config_path=config_file_path,
+    raw_data_path=data_dir_path / "raw_data",
+    processed_data_path=data_dir_path
+    / "processed_data"
+    / processed_data_code
+    / "data.h5",
+    force_download=False,
+    create_exogenous_industry_data=True,
+    random_seed=0,
+).create(save_output=True)
 ```
 
 
