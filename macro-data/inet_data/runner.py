@@ -8,7 +8,10 @@ from inet_data.util.create_code import create_code
 
 
 def run_data(
-    config_file_path: Path | str, data_dir_path: Path | str, force_redo: bool = False
+    config_file_path: Path | str,
+    data_dir_path: Path | str,
+    force_redo: bool = False,
+    seed: int = 0,
 ) -> None:
     config = yaml.safe_load(open(config_file_path, "r"))
     # if type of data_path is str, convert it to Path
@@ -35,6 +38,6 @@ def run_data(
             / "data.h5",
             force_download=False,
             create_exogenous_industry_data=True,
-            random_seed=0,
+            random_seed=seed,
         ).create(save_output=True)
     logging.info(f"Processed data {processed_data_code}")
