@@ -98,10 +98,7 @@ class SyntheticDefaultFirms(SyntheticFirms):
 
         for industry in range(len(self.industries)):
             # Sanity check
-            if (
-                number_of_employees_by_industry[industry]
-                < self.number_of_firms_by_industry[industry]
-            ):
+            if number_of_employees_by_industry[industry] < self.number_of_firms_by_industry[industry]:
                 logging.warning(
                     f"Fewer Firms than Employees in Sector {industry},\n \
                                  Employees by industry: {number_of_employees_by_industry[industry]},\n \
@@ -123,12 +120,8 @@ class SyntheticDefaultFirms(SyntheticFirms):
             )
 
             # Update the field
-            self.firm_data.loc[
-                self.firm_data["Industry"] == industry, "Number of Employees"
-            ] = sizes
-            self.firm_data["Number of Employees"] = self.firm_data[
-                "Number of Employees"
-            ].astype(int)
+            self.firm_data.loc[self.firm_data["Industry"] == industry, "Number of Employees"] = sizes
+            self.firm_data["Number of Employees"] = self.firm_data["Number of Employees"].astype(int)
 
     def draw_firm_sizes(
         self,
@@ -139,10 +132,7 @@ class SyntheticDefaultFirms(SyntheticFirms):
         employees_by_industry_range = np.arange(1, number_employees + 1)
         if len(employees_by_industry_range) == 0:
             return np.zeros(self.number_of_firms_by_industry[industry])
-        probs = 1 / (
-            employees_by_industry_range**firm_size_zeta_shape
-            * special.zetac(firm_size_zeta_shape)
-        )
+        probs = 1 / (employees_by_industry_range**firm_size_zeta_shape * special.zetac(firm_size_zeta_shape))
         sizes_raw = np.random.choice(
             employees_by_industry_range,
             p=probs / sum(probs),
@@ -175,9 +165,7 @@ class SyntheticDefaultFirms(SyntheticFirms):
     ) -> None:
         remainder = number_employees_by_industry[industry] - sizes.sum()
         abs_rem = np.abs(remainder)
-        f_choices = np.random.choice(
-            self.number_of_firms_by_industry[industry], size=int(abs_rem)
-        )
+        f_choices = np.random.choice(self.number_of_firms_by_industry[industry], size=int(abs_rem))
         for f in f_choices:
             new_size = sizes[f] + np.sign(remainder)
             while new_size <= 1:
@@ -212,9 +200,7 @@ class SyntheticDefaultFirms(SyntheticFirms):
     ) -> None:
         self.firm_data["Production"] = np.nan
         for industry in range(len(self.industries)):
-            self.firm_data.loc[
-                self.firm_data["Industry"] == industry, "Production"
-            ] = np.divide(
+            self.firm_data.loc[self.firm_data["Industry"] == industry, "Production"] = np.divide(
                 self.firm_data.loc[
                     self.firm_data["Industry"] == industry,
                     "Number of Employees",
@@ -231,28 +217,17 @@ class SyntheticDefaultFirms(SyntheticFirms):
             )
 
     def set_firm_prices(self, exchange_rates: WorldBankRatesReader) -> None:
-        self.firm_data["Price in USD"] = np.ones_like(
-            self.firm_data["Production"].values
-        )
-        self.firm_data["Price"] = exchange_rates.from_usd_to_lcu(
-            self.country_name, self.year
-        )
+        self.firm_data["Price in USD"] = np.ones_like(self.firm_data["Production"].values)
+        self.firm_data["Price"] = exchange_rates.from_usd_to_lcu(self.country_name, self.year)
 
     def set_firm_labour_inputs(self) -> None:
         self.firm_data["Labour Inputs"] = self.firm_data["Production"].copy()
 
-    def set_firm_inventory(
-        self, initial_inventory_to_production_fraction: float
-    ) -> None:
-        self.firm_data["Inventory"] = (
-            initial_inventory_to_production_fraction
-            * self.firm_data["Production"].values
-        )
+    def set_firm_inventory(self, initial_inventory_to_production_fraction: float) -> None:
+        self.firm_data["Inventory"] = initial_inventory_to_production_fraction * self.firm_data["Production"].values
 
     def set_firm_demand(self) -> None:
-        self.firm_data["Demand"] = (
-            self.firm_data["Production"].values + self.firm_data["Inventory"].values
-        )
+        self.firm_data["Demand"] = self.firm_data["Production"].values + self.firm_data["Inventory"].values
 
     def set_firm_intermediate_inputs_stock(
         self,
@@ -264,20 +239,14 @@ class SyntheticDefaultFirms(SyntheticFirms):
             / initial_utilisation_rate
             * (
                 self.firm_data["Production"].values
-                / intermediate_inputs_productivity_matrix[
-                    :, self.firm_data["Industry"].values
-                ]
+                / intermediate_inputs_productivity_matrix[:, self.firm_data["Industry"].values]
             ).T
         )
 
-    def set_firm_used_intermediate_inputs(
-        self, intermediate_inputs_productivity_matrix: np.ndarray
-    ) -> None:
+    def set_firm_used_intermediate_inputs(self, intermediate_inputs_productivity_matrix: np.ndarray) -> None:
         self.used_intermediate_inputs = (
             self.firm_data["Production"].values
-            / intermediate_inputs_productivity_matrix[
-                :, self.firm_data["Industry"].values
-            ]
+            / intermediate_inputs_productivity_matrix[:, self.firm_data["Industry"].values]
         ).T.astype(float)
 
     def set_firm_capital_inputs_stock(
@@ -290,42 +259,30 @@ class SyntheticDefaultFirms(SyntheticFirms):
             / initial_utilisation_rate
             * (
                 self.firm_data["Production"].values
-                / capital_inputs_productivity_matrix[
-                    :, self.firm_data["Industry"].values
-                ]
+                / capital_inputs_productivity_matrix[:, self.firm_data["Industry"].values]
             ).T
         )
 
-    def set_firm_used_capital_inputs(
-        self, capital_inputs_depreciation_matrix: np.ndarray
-    ) -> None:
+    def set_firm_used_capital_inputs(self, capital_inputs_depreciation_matrix: np.ndarray) -> None:
         self.used_capital_inputs = (
             self.firm_data["Production"].values
             * capital_inputs_depreciation_matrix[:, self.firm_data["Industry"].values]
         ).T.astype(float)
 
-    def set_firm_deposits(
-        self, total_firm_deposits: float, assume_zero_initial_deposits: bool
-    ) -> None:
+    def set_firm_deposits(self, total_firm_deposits: float, assume_zero_initial_deposits: bool) -> None:
         if assume_zero_initial_deposits:
             self.firm_data["Deposits"] = 0.0
         else:
             self.firm_data["Deposits"] = (
-                self.firm_data["Production"]
-                / self.firm_data["Production"].sum()
-                * total_firm_deposits
+                self.firm_data["Production"] / self.firm_data["Production"].sum() * total_firm_deposits
             )
 
-    def set_firm_debt(
-        self, total_firm_debt: float, assume_zero_initial_debt: bool
-    ) -> None:
+    def set_firm_debt(self, total_firm_debt: float, assume_zero_initial_debt: bool) -> None:
         if assume_zero_initial_debt:
             self.firm_data["Debt"] = 0.0
         else:
             self.firm_data["Debt"] = (
-                self.capital_inputs_stock.sum(axis=1)
-                / self.capital_inputs_stock.sum()
-                * total_firm_debt
+                self.capital_inputs_stock.sum(axis=1) / self.capital_inputs_stock.sum() * total_firm_debt
             )
 
     def set_firm_equity(self) -> None:
@@ -337,9 +294,7 @@ class SyntheticDefaultFirms(SyntheticFirms):
             - self.firm_data["Debt"]
         )
 
-    def set_taxes_paid_on_production(
-        self, taxes_less_subsidies_rates: np.ndarray
-    ) -> None:
+    def set_taxes_paid_on_production(self, taxes_less_subsidies_rates: np.ndarray) -> None:
         self.firm_data["Taxes paid on Production"] = (
             taxes_less_subsidies_rates[self.firm_data["Industry"].values]
             * self.firm_data["Production"].values
@@ -355,34 +310,26 @@ class SyntheticDefaultFirms(SyntheticFirms):
         # Interest on deposits
         self.firm_data["Interest paid on deposits"] = -interest_rate_on_firm_deposits[
             self.firm_data["Corresponding Bank ID"].values
-        ] * np.maximum(
-            0.0, self.firm_data["Deposits"].values
-        ) - overdraft_rate_on_firm_deposits[
+        ] * np.maximum(0.0, self.firm_data["Deposits"].values) - overdraft_rate_on_firm_deposits[
             self.firm_data["Corresponding Bank ID"].values
         ] * np.minimum(
             0.0, self.firm_data["Deposits"].values
         )
 
         # Interest paid on loans
-        credit_market_data_firm_loans = credit_market_data.loc[
-            credit_market_data["loan_type"] == 2
-        ]
+        credit_market_data_firm_loans = credit_market_data.loc[credit_market_data["loan_type"] == 2]
         interest_on_loans = np.zeros(len(self.firm_data))
         for firm_id in range(len(self.firm_data)):
-            curr_loans = credit_market_data_firm_loans[
-                credit_market_data_firm_loans["loan_recipient_id"] == firm_id
-            ]
+            curr_loans = credit_market_data_firm_loans[credit_market_data_firm_loans["loan_recipient_id"] == firm_id]
             for loan_id in range(len(curr_loans)):
                 interest_on_loans[firm_id] += float(
-                    curr_loans.iloc[loan_id]["loan_interest_rate"]
-                    * curr_loans.iloc[loan_id]["loan_value"]
+                    curr_loans.iloc[loan_id]["loan_interest_rate"] * curr_loans.iloc[loan_id]["loan_value"]
                 )
         self.firm_data["Interest paid on loans"] = interest_on_loans
 
         # Total interest paid
         self.firm_data["Interest paid"] = (
-            self.firm_data["Interest paid on deposits"]
-            + self.firm_data["Interest paid on loans"]
+            self.firm_data["Interest paid on deposits"] + self.firm_data["Interest paid on loans"]
         )
 
     def set_firm_profits(
@@ -400,9 +347,7 @@ class SyntheticDefaultFirms(SyntheticFirms):
         # Intermediate inputs
         intermediate_inputs_costs = (
             self.firm_data["Production"].values
-            / intermediate_inputs_productivity_matrix[
-                :, self.firm_data["Industry"].values
-            ]
+            / intermediate_inputs_productivity_matrix[:, self.firm_data["Industry"].values]
         ).T.sum(axis=1) * self.firm_data["Price"].values
 
         # Capital inputs
@@ -434,9 +379,7 @@ class SyntheticDefaultFirms(SyntheticFirms):
         # Intermediate inputs
         intermediate_inputs_costs = (
             self.firm_data["Production"].values[:, None]
-            / intermediate_inputs_productivity_matrix[
-                :, self.firm_data["Industry"].values
-            ].T
+            / intermediate_inputs_productivity_matrix[:, self.firm_data["Industry"].values].T
         ).sum(axis=1) * self.firm_data["Price"].values
 
         # Capital inputs
@@ -454,22 +397,15 @@ class SyntheticDefaultFirms(SyntheticFirms):
         ) / self.firm_data["Production"].values
 
     def set_corporate_taxes_paid(self, tau_firm: float) -> None:
-        self.firm_data["Corporate Taxes Paid"] = tau_firm * np.maximum(
-            0.0, self.firm_data["Profits"]
-        )
+        self.firm_data["Corporate Taxes Paid"] = tau_firm * np.maximum(0.0, self.firm_data["Profits"])
 
     def set_firm_debt_installments(self, credit_market_data: pd.DataFrame) -> None:
-        credit_market_data_firm_loans = credit_market_data.loc[
-            credit_market_data["loan_type"] == 2
-        ]
+        credit_market_data_firm_loans = credit_market_data.loc[credit_market_data["loan_type"] == 2]
         debt_installments = np.zeros(len(self.firm_data))
         for firm_id in range(len(self.firm_data)):
-            curr_loans = credit_market_data_firm_loans[
-                credit_market_data_firm_loans["loan_recipient_id"] == firm_id
-            ]
+            curr_loans = credit_market_data_firm_loans[credit_market_data_firm_loans["loan_recipient_id"] == firm_id]
             for loan_id in range(len(curr_loans)):
                 debt_installments[firm_id] += float(
-                    curr_loans.iloc[loan_id]["loan_value"]
-                    / curr_loans.iloc[loan_id]["loan_maturity"]
+                    curr_loans.iloc[loan_id]["loan_value"] / curr_loans.iloc[loan_id]["loan_maturity"]
                 )
         self.firm_data["Debt Installments"] = debt_installments

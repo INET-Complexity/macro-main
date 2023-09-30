@@ -44,7 +44,7 @@ data_dir_path = "./data"
 run_data(config_file_path, data_dir_path)
 ```
 
-This will then download and process the data into the required directories. 
+This will then download and process the data into the required directories. A default yaml configuration file is available in this repository.
 
 Note that to have more control over the direct data generation, you can modify the call to the creator, as follows
 

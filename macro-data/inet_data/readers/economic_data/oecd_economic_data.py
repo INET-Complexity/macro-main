@@ -24,8 +24,7 @@ class OECDEconData:
         # Load inet_data files
         self.files_with_codes = self.get_files_with_codes()
         self.data = {
-            key: pd.read_csv(path / (self.files_with_codes[key] + ".csv"))
-            for key in self.files_with_codes.keys()
+            key: pd.read_csv(path / (self.files_with_codes[key] + ".csv")) for key in self.files_with_codes.keys()
         }
 
         self.default_industries = [
@@ -84,17 +83,11 @@ class OECDEconData:
     def employees_by_industry(self, year: int, country: str) -> pd.Series:
         # noinspection PyTypeChecker
         df = self.data["employment_by_industry"]
-        df = df.loc[
-            (df["Time"] == year) & (df["SEX"] == "TT") & (df["LOCATION"] == country)
-        ].copy()
+        df = df.loc[(df["Time"] == year) & (df["SEX"] == "TT") & (df["LOCATION"] == country)].copy()
         # this scary looking line is just a regular expression
         # it captures any letter in a parenthesis for the industry names
         # ie if something like Agriculture (A) , it will get A
-        df.loc[:, "industry"] = (
-            df["Subject"]
-            .str.extract(r"\([,]?\s?([\w+]*)\s?\)")[0]
-            .replace(["R", "S"], "R_S")
-        )
+        df.loc[:, "industry"] = df["Subject"].str.extract(r"\([,]?\s?([\w+]*)\s?\)")[0].replace(["R", "S"], "R_S")
         df = df.dropna(subset="industry")
         industry_indices = {s: idx for idx, s in enumerate(self.default_industries)}
         df["industry_indices"] = df["industry"].map(industry_indices)
@@ -153,9 +146,7 @@ class OECDEconData:
             y=isic_table.loc[~missing_data],
             deg=1,
         )
-        isic_table.loc[missing_data] = output.loc[missing_data].apply(
-            lambda x: fit_params[0] * x + fit_params[1]
-        )
+        isic_table.loc[missing_data] = output.loc[missing_data].apply(lambda x: fit_params[0] * x + fit_params[1])
 
         isic_table /= self.scale
 
@@ -194,8 +185,7 @@ class OECDEconData:
                 counts = []
                 for size in sizes:
                     count = df.loc[
-                        (df["ISIC4"] == ind)
-                        & (df["Size Class"].map(lambda x: x[: len(size)]) == size),
+                        (df["ISIC4"] == ind) & (df["Size Class"].map(lambda x: x[: len(size)]) == size),
                         "Value",
                     ].values[0]
                     assert not np.isnan(count)
@@ -215,9 +205,7 @@ class OECDEconData:
                 final_zetas[self.default_industries.index(ind)] = isic_zetas[ind]
             # missing inet_data takes the mean shape parameter
             else:
-                final_zetas[self.default_industries.index(ind)] = np.mean(
-                    list(isic_zetas.values())
-                )
+                final_zetas[self.default_industries.index(ind)] = np.mean(list(isic_zetas.values()))
 
         return final_zetas
 
@@ -317,9 +305,7 @@ class OECDEconData:
 
     def unemployment_benefits_gdp_pct(self, country: str, year: int) -> float:
         df = self.data["total_unemployment_benefits_perc_gdp"]
-        value = df.loc[
-            (df["LOCATION"] == country) & (df["TIME"] == year), "Value"
-        ].iloc[0]
+        value = df.loc[(df["LOCATION"] == country) & (df["TIME"] == year), "Value"].iloc[0]
         return value / 100.0
 
     def all_benefits_gdp_pct(self, country: str, year: int) -> float:
@@ -333,9 +319,7 @@ class OECDEconData:
     # current domestic
     def general_gov_debt(self, country: str, year: int) -> float:
         df = self.data["general_gov_debt"]
-        value = df.loc[
-            (df["LOCATION"] == country) & (df["TIME"] == year), "Value"
-        ].iloc[0]
+        value = df.loc[(df["LOCATION"] == country) & (df["TIME"] == year), "Value"].iloc[0]
         return value * 1e6
 
     def get_unemployment_rate(self, country: str) -> pd.DataFrame:
@@ -349,9 +333,7 @@ class OECDEconData:
             for month in range(1, 13):
                 s_month = str(month) if month > 9 else "0" + str(month)
                 dates.append(str(year) + "-" + str(month))
-                val = data.loc[
-                    data["TIME"] == str(year) + "-" + s_month, "Value"
-                ].values
+                val = data.loc[data["TIME"] == str(year) + "-" + s_month, "Value"].values
                 if len(val) == 0:
                     vals.append(np.nan)
                 else:
@@ -385,9 +367,7 @@ class OECDEconData:
                     prev_year = year
                     prev_quarter = quarter - 1
                 curr_value_real = df.loc[
-                    (df["COU"] == country)
-                    & (df["IND"] == "RHP")
-                    & (df["TIME"] == str(year) + "-Q" + str(quarter)),
+                    (df["COU"] == country) & (df["IND"] == "RHP") & (df["TIME"] == str(year) + "-Q" + str(quarter)),
                     "Value",
                 ].values
                 prev_value_real = df.loc[
@@ -397,9 +377,7 @@ class OECDEconData:
                     "Value",
                 ].values
                 curr_value_nominal = df.loc[
-                    (df["COU"] == country)
-                    & (df["IND"] == "HPI")
-                    & (df["TIME"] == str(year) + "-Q" + str(quarter)),
+                    (df["COU"] == country) & (df["IND"] == "HPI") & (df["TIME"] == str(year) + "-Q" + str(quarter)),
                     "Value",
                 ].values
                 prev_value_nominal = df.loc[
@@ -415,9 +393,7 @@ class OECDEconData:
                     else:
                         val_real.append(np.nan)
                     if len(curr_value_nominal) == 1 and len(prev_value_nominal) == 1:
-                        val_nominal.append(
-                            curr_value_nominal[0] / prev_value_nominal[0] - 1.0
-                        )
+                        val_nominal.append(curr_value_nominal[0] / prev_value_nominal[0] - 1.0)
                     else:
                         val_nominal.append(np.nan)
 
@@ -440,10 +416,7 @@ class OECDEconData:
                     1000
                     * active_population_size.loc[
                         (active_population_size["LOCATION"] == country)
-                        & (
-                            active_population_size["TIME"]
-                            == str(year) + "-Q" + str(quarter)
-                        ),
+                        & (active_population_size["TIME"] == str(year) + "-Q" + str(quarter)),
                         "Value",
                     ].values
                 )
@@ -451,10 +424,7 @@ class OECDEconData:
                     s_month = str(month) if month > 9 else "0" + str(month)
                     total_vacs = total_job_vacancies.loc[
                         (total_job_vacancies["LOCATION"] == country)
-                        & (
-                            total_job_vacancies["TIME"]
-                            == str(year) + "-" + str(s_month)
-                        ),
+                        & (total_job_vacancies["TIME"] == str(year) + "-" + str(s_month)),
                         "Value",
                     ].values
                     dates.append(str(year) + "-" + str(month))
@@ -464,15 +434,11 @@ class OECDEconData:
                         vacancy_rate.append(np.nan)
         return pd.DataFrame(index=dates, data={"Vacancy Rate": vacancy_rate})
 
-    def get_household_consumption_by_income_quantile(
-        self, country: str, year: int
-    ) -> pd.DataFrame:
+    def get_household_consumption_by_income_quantile(self, country: str, year: int) -> pd.DataFrame:
         assert year
         data = self.data["consumption_by_income_quintiles"]
         if country != "FRA":
-            logging.warning(
-                "Overwriting Consumption Weights by Income with French Data"
-            )
+            logging.warning("Overwriting Consumption Weights by Income with French Data")
         country = "FRA"
         data = data.loc[data["country_year"].str.contains(country)]
         data = data.set_index("industry")[["Q1", "Q2", "Q3", "Q4", "Q5"]]
