@@ -47,7 +47,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         total_unemployment_benefits: float,
         rent_as_fraction_of_unemployment_rate: float,
     ) -> None:
-        # Fetch HFCS inet_data
+        # Fetch HFCS data
         hfcs_individuals_data = hfcs_reader.individuals_df
         hfcs_households_data = hfcs_reader.households_df
 
@@ -124,7 +124,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         curr_ind_num = 0
         for i, household_ind in tqdm(
             enumerate(household_inds),
-            desc="Compiling population inet_data frames for " + self.country_name,
+            desc="Compiling population data frames for " + self.country_name,
             total=len(household_inds),
         ):
             household_id = hfcs_households_data.index[household_ind]

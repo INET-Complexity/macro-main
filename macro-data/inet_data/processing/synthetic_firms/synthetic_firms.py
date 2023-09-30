@@ -22,7 +22,7 @@ class SyntheticFirms(ABC):
         self.year = year
         self.industries = industries
 
-        # Firm inet_data
+        # Firm data
         self.number_of_firms = None
         self.number_of_firms_by_industry = None
         self.firm_data = pd.DataFrame()

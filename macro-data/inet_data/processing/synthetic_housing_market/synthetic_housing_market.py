@@ -12,7 +12,7 @@ class SyntheticHousingMarket(ABC):
         self.country_name = country_name
         self.year = year
 
-        # Housing market inet_data
+        # Housing market data
         self.housing_market_data = pd.DataFrame()
 
     @abstractmethod

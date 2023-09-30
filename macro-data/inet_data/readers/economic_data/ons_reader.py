@@ -10,7 +10,7 @@ from scipy.special import zetac
 
 class ONSReader:
     def __init__(self, path: Path | str):
-        # Load inet_data files
+        # Load data files
         self.files_with_codes = self.get_files_with_codes()
         self.data = {
             key: pd.read_csv(

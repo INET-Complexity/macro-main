@@ -13,7 +13,7 @@ class SyntheticCentralBank(ABC):
         self.country_name = country_name
         self.year = year
 
-        # Bank inet_data
+        # Bank data
         self.central_bank_data = pd.DataFrame()
 
     @abstractmethod

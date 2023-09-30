@@ -17,7 +17,7 @@ class SyntheticBanks(ABC):
         self.year = year
         self.number_of_banks = number_of_banks
 
-        # Bank inet_data
+        # Bank data
         self.bank_data = pd.DataFrame()
 
     @abstractmethod

@@ -141,13 +141,13 @@ dmypy.json
 # IDE files
 .idea/
 
-# Don't push inet_data
+# Don't push data
 /input/drive_data
 /input/drive_data_complete
 /input/raw_data
 /input/processed_data
 
-# Don't push output inet_data
+# Don't push output data
 /output
 
 # Ignore snippets

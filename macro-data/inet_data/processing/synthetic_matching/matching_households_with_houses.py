@@ -27,7 +27,7 @@ def match_households_with_houses(
     # Handling owner-occupied property
     housing_market_data = handle_households_owning(synthetic_population)
 
-    # Preprocess the inet_data
+    # Preprocess the data
     preprocess(
         synthetic_population=synthetic_population,
         housing_market_data=housing_market_data,
@@ -65,7 +65,7 @@ def handle_households_owning(synthetic_population: SyntheticPopulation) -> dict:
     )
     housing_market_data["Rent"] = [np.nan] * len(housing_market_data["Value"])
 
-    # Updating corresponding household inet_data
+    # Updating corresponding household data
     synthetic_population.household_data["Corresponding Inhabited House ID"] = np.full(
         len(synthetic_population.household_data), np.nan
     )
@@ -236,14 +236,14 @@ def find_optimal_matching(
         corr_house_by_renter[k] = house_rent_map[k]
     corr_house_by_renter_rel = corr_house_by_renter[renters].astype(int)
 
-    # Update property inet_data
+    # Update property data
     housing_market_data["Corresponding Inhabitant Household ID"] += list(corr_renters_by_house_id_hb[rented_houses])
     housing_market_data["Corresponding Inhabitant Household ID"] = np.array(
         housing_market_data["Corresponding Inhabitant Household ID"]
     )
     housing_market_data["Up for Rent"] = np.isnan(housing_market_data["Corresponding Inhabitant Household ID"])
 
-    # Update household inet_data
+    # Update household data
     property_owner_ids = np.where(synthetic_population.household_data["Rental Income from Real Estate"] != 0.0)[0]
     synthetic_population.household_data["Corresponding Renters"] = [
         [] for _ in range(len(synthetic_population.household_data))

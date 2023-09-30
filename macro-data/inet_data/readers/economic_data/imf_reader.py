@@ -8,7 +8,7 @@ class IMFReader:
         # Parameters
         self.scale = scale
 
-        # Load inet_data files
+        # Load data files
         self.files_with_codes = self.get_files_with_codes()
         self.data = {
             key: pd.read_csv(path / (self.files_with_codes[key] + ".csv")) for key in self.files_with_codes.keys()

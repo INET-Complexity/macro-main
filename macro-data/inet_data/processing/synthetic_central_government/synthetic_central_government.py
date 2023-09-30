@@ -15,7 +15,7 @@ class SyntheticCentralGovernment(ABC):
         self.country_name = country_name
         self.year = year
 
-        # Central government inet_data
+        # Central government data
         self.central_gov_data = pd.DataFrame()
 
         # Parameters

@@ -23,7 +23,7 @@ def download_data(
     with open(raw_data_path / "drive_data.zip", "wb") as f:
         for chunk in tqdm(
             response.iter_content(chunk_size),
-            desc="Downloading raw inet_data...",
+            desc="Downloading raw data...",
             total=int(total / chunk_size),
             unit_divisor=1024,
         ):

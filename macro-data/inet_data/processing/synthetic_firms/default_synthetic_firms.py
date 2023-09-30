@@ -88,7 +88,7 @@ class SyntheticDefaultFirms(SyntheticFirms):
     ) -> None:
         self.firm_data["Number of Employees"] = np.zeros(self.number_of_firms)
 
-        # Try the OECD, otherwise take ONS inet_data
+        # Try the OECD, otherwise take ONS data
         firm_size_zetas = econ_reader.read_firm_size_zetas(
             self.country_name,
             self.year,

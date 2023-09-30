@@ -14,7 +14,7 @@ class SyntheticCreditMarket(ABC):
         self.country_name = country_name
         self.year = year
 
-        # Credit market inet_data
+        # Credit market data
         self.credit_market_data = pd.DataFrame()
 
     @abstractmethod

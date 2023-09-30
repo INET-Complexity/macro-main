@@ -77,7 +77,7 @@ class WorldBankReader:
         return self.get_historic_gdp(country, year) / 12.0
 
     def get_log_inflation(self, country: str) -> pd.DataFrame:
-        # Get CPI and PPI inet_data
+        # Get CPI and PPI data
         data_cpi = self.data["cpi"].loc[self.data["cpi"]["Country Code"] == country]
         data_ppi = self.data["ppi"].loc[self.data["cpi"]["Country Code"] == country]
         dates, vals_cpi, vals_ppi = [], [], []

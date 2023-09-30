@@ -21,7 +21,7 @@ class EuroStatReader:
             "",
         ]
 
-        # Load inet_data files
+        # Load data files
         self.files_with_codes = self.get_files_with_codes()
         self.data = {}
         for key in self.files_with_codes.keys():

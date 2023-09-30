@@ -16,7 +16,7 @@ class SyntheticGovernmentEntities(ABC):
         self.country_name = country_name
         self.year = year
 
-        # Government entity inet_data
+        # Government entity data
         self.number_of_entities = None
         self.gov_entity_data = pd.DataFrame()
 

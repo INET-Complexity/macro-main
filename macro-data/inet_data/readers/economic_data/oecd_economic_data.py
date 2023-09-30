@@ -21,7 +21,7 @@ class OECDEconData:
         self.industry_mapping = json.load(open(industry_mappings_path))
         self.sector_mapping = json.load(open(sector_mapping_path))
 
-        # Load inet_data files
+        # Load data files
         self.files_with_codes = self.get_files_with_codes()
         self.data = {
             key: pd.read_csv(path / (self.files_with_codes[key] + ".csv")) for key in self.files_with_codes.keys()
@@ -103,7 +103,7 @@ class OECDEconData:
         year: int,
     ) -> np.ndarray:
         """
-        Reads business individuals inet_data.
+        Reads business individuals data.
 
         Parameters
         ----------
@@ -120,9 +120,9 @@ class OECDEconData:
             The number of active employer enterprises by country and industry.
         """
 
-        # Load inet_data
+        # Load data
         df = self.data["business_demography"]
-        if country == "DEU" and year < 2012:  # no inet_data before 2012
+        if country == "DEU" and year < 2012:  # no data before 2012
             year = 2012
         df = df.loc[
             (df["IND"] == "ENTR_BD_EMPL")
@@ -203,7 +203,7 @@ class OECDEconData:
         for ind in self.default_industries:
             if ind in isic_zetas.keys():
                 final_zetas[self.default_industries.index(ind)] = isic_zetas[ind]
-            # missing inet_data takes the mean shape parameter
+            # missing data takes the mean shape parameter
             else:
                 final_zetas[self.default_industries.index(ind)] = np.mean(list(isic_zetas.values()))
 

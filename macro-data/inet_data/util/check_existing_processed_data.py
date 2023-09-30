@@ -28,13 +28,11 @@ def check_existing_processed_data(config: dict, data_path: Path) -> Optional[str
         is_matching = True
 
         # Check if the file exists
-        if not os.path.exists(curr_path / str(filename) / "inet_data.h5"):
+        if not os.path.exists(curr_path / str(filename) / "data.h5"):
             continue
 
         # Check model config
-        config_model = pd.DataFrame(pd.read_hdf(curr_path / str(filename) / "inet_data.h5", "config_model")).values[0][
-            0
-        ]
+        config_model = pd.DataFrame(pd.read_hdf(curr_path / str(filename) / "data.h5", "config_model")).values[0][0]
         config_model = ast.literal_eval(config_model)
         for key in config_model:
             if key in config["model"].keys():
@@ -45,7 +43,7 @@ def check_existing_processed_data(config: dict, data_path: Path) -> Optional[str
                 break
 
         # Check model init
-        config_init = pd.DataFrame(pd.read_hdf(curr_path / str(filename) / "inet_data.h5", "config_init")).values[0][0]
+        config_init = pd.DataFrame(pd.read_hdf(curr_path / str(filename) / "data.h5", "config_init")).values[0][0]
         config_init = ast.literal_eval(config_init)
         for country_name in config_init.keys():
             if country_name not in config["init"].keys():

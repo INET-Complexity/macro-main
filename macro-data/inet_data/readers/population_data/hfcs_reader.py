@@ -110,7 +110,7 @@ class HFCSReader:
         households_paths = [hfcs_data_path / str(year) / ("H" + str(i) + ".csv") for i in range(1, num_surveys + 1)]
         derived_paths = [hfcs_data_path / str(year) / ("D" + str(i) + ".csv") for i in range(1, num_surveys + 1)]
 
-        # Read inet_data on individuals
+        # Read data on individuals
         if len(individuals_paths) > 0:
             individuals_df = pd.concat(
                 [
@@ -128,7 +128,7 @@ class HFCSReader:
         else:
             individuals_df = pd.DataFrame()
 
-        # Read inet_data on households
+        # Read data on households
         if len(households_paths) > 0:
             households_df = pd.concat(
                 [
@@ -146,7 +146,7 @@ class HFCSReader:
         else:
             households_df = pd.DataFrame()
 
-        # Read derived inet_data
+        # Read derived data
         if len(derived_paths) > 0:
             derived_df = pd.concat(
                 [
@@ -165,7 +165,7 @@ class HFCSReader:
         else:
             derived_df = pd.DataFrame()
 
-        # Join the derived inet_data with the household inet_data
+        # Join the derived data with the household inet_data
         households_df = households_df.join(derived_df)
 
         return cls(

@@ -26,7 +26,7 @@ class SyntheticPopulation(ABC):
         self.year = year
         self.industries = industries
 
-        # Agents inet_data
+        # Agents data
         self.individual_data = pd.DataFrame()
         self.household_data = pd.DataFrame()
 

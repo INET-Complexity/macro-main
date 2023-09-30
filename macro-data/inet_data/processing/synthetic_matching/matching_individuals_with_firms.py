@@ -26,7 +26,7 @@ def match_individuals_with_firms(
         len(synthetic_firms.industries),
         desc="Matching Firms with Individuals for " + synthetic_population.country_name,
     ):
-        # Preprocess inet_data
+        # Preprocess data
         wages_offered, pos_corr_firm = preprocess(
             synthetic_population=synthetic_population,
             synthetic_firms=synthetic_firms,

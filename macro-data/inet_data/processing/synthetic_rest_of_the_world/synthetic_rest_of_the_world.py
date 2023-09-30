@@ -13,7 +13,7 @@ class SyntheticRestOfTheWorld(ABC):
         self.country_name = "ROW"
         self.year = year
 
-        # Rest of the World inet_data
+        # Rest of the World data
         self.row_data = pd.DataFrame()
 
         # Models
