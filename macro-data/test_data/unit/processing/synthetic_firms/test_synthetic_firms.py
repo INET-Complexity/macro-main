@@ -2,7 +2,7 @@ import pathlib
 import numpy as np
 import pandas as pd
 
-from data.processing.synthetic_firms.default_synthetic_firms import (
+from inet_data.processing.synthetic_firms.default_synthetic_firms import (
     SyntheticDefaultFirms,
 )
 

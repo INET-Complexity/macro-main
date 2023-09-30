@@ -1,8 +1,8 @@
 import pytest
 import pathlib
 
-from data.readers.handle_readers import init_readers
-from data.readers.util.matching_iot_with_sea import compile_industry_data
+from inet_data.readers.handle_readers import init_readers
+from inet_data.readers.util.matching_iot_with_sea import compile_industry_data
 
 PARENT = pathlib.Path(__file__).parent.resolve()
 DATA_PATH = PARENT / "sample_raw_data"

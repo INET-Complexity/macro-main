@@ -3,7 +3,7 @@ import pathlib
 import numpy as np
 import pandas as pd
 
-from data.processing.synthetic_central_bank.default_synthetic_central_bank import (
+from inet_data.processing.synthetic_central_bank.default_synthetic_central_bank import (
     SyntheticDefaultCentralBanks,
 )
 

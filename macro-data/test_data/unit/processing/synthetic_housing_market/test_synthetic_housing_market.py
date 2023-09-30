@@ -1,6 +1,6 @@
 import pathlib
 
-from data.processing.synthetic_housing_market.default_synthetic_housing_market import (
+from inet_data.processing.synthetic_housing_market.default_synthetic_housing_market import (
     DefaultSyntheticHousingMarket,
 )
 

@@ -1,7 +1,7 @@
 import pathlib
 import numpy as np
 
-from data.processing.synthetic_population.hfcs_synthetic_population import (
+from inet_data.processing.synthetic_population.hfcs_synthetic_population import (
     SyntheticHFCSPopulation,
 )
 

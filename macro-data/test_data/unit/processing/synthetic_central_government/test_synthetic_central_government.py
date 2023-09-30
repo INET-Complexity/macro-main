@@ -2,7 +2,7 @@ import pathlib
 import numpy as np
 import pandas as pd
 
-from data.processing.synthetic_central_government.default_synthetic_central_government import (
+from inet_data.processing.synthetic_central_government.default_synthetic_central_government import (
     SyntheticDefaultCentralGovernment,
 )
 

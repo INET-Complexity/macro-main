@@ -2,7 +2,7 @@ import pathlib
 import numpy as np
 import pandas as pd
 
-from data.processing.synthetic_credit_market.default_synthetic_credit_market import (
+from inet_data.processing.synthetic_credit_market.default_synthetic_credit_market import (
     DefaultSyntheticCreditMarket,
 )
 
