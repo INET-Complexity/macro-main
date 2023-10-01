@@ -4,6 +4,7 @@ from inet_macromodel.agents.agent import Agent
 from inet_macromodel.goods_market.value_type import ValueType
 
 from typing import Tuple, Optional
+import logging
 
 
 def get_split_sum(val: np.ndarray, groups: np.ndarray, n_industries) -> np.ndarray:
@@ -20,7 +21,6 @@ def collect_seller_info(
     from_country: Optional[str] = None,
     exclude_row: bool = False,
     field: str = "Remaining Goods",
-    show_log: bool = False,
 ) -> Tuple[dict[str, np.ndarray], np.ndarray, dict[str, np.ndarray], np.ndarray, np.ndarray]:
     if from_country is None:
         country_names = list(goods_market_participants.keys()) if from_country is None else from_country
@@ -45,20 +45,21 @@ def collect_seller_info(
                         transactor.transactor_seller_states["Industries"],
                         n_industries,
                     )
-                    if show_log:
-                        print(
-                            "SELL",
-                            country_name,
-                            type(transactor),
-                            np.sum(
-                                get_split_sum(
-                                    transactor.transactor_seller_states[field]
-                                    * transactor.transactor_seller_states["Prices"],
-                                    transactor.transactor_seller_states["Industries"],
-                                    n_industries,
-                                )
-                            ),
-                        )
+
+                    logging.debug("Seller information for %s \n", country_name)
+                    logging.debug("Transactor type %s \n", type(transactor))
+                    logging.debug(
+                        "Total %s: %s",
+                        field,
+                        np.sum(
+                            get_split_sum(
+                                transactor.transactor_seller_states[field]
+                                * transactor.transactor_seller_states["Prices"],
+                                transactor.transactor_seller_states["Industries"],
+                                n_industries,
+                            )
+                        ),
+                    )
 
     # Calculate the average price
     aggr_real_supply = np.stack(list(total_real_supply.values()), axis=0).sum(axis=0)
@@ -87,7 +88,6 @@ def collect_buyer_info(
     from_country: Optional[str] = None,
     exclude_row: bool = False,
     with_value_type: Optional[ValueType] = None,
-    show_log: bool = False,
 ) -> Tuple[dict[str, np.ndarray], np.ndarray, dict[str, np.ndarray], np.ndarray]:
     if from_country is None:
         country_names = list(goods_market_participants.keys()) if from_country is None else from_country
@@ -122,13 +122,11 @@ def collect_buyer_info(
                         total_nominal_demand[country_name] += transactor.transactor_buyer_states["Remaining Goods"].sum(
                             axis=0
                         )
-                    if show_log:
-                        print(
-                            "BUY",
-                            country_name,
-                            type(transactor),
-                            np.sum(transactor.transactor_buyer_states["Remaining Goods"].sum(axis=0)),
-                        )
+                    logging.debug("Buyer information for %s \n", country_name)
+                    logging.debug("Transactor type %s \n", type(transactor))
+                    logging.debug(
+                        "Total remaining goods: %s", np.sum(transactor.transactor_buyer_states["Remaining Goods"])
+                    )
 
     # Calculate sums
     aggr_real_demand = np.stack(list(total_real_demand.values()), axis=0).sum(axis=0)

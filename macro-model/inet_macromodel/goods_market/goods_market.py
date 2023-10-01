@@ -58,9 +58,9 @@ class GoodsMarket:
             ts,
         )
 
-    def prepare(self, verbose: bool = False) -> None:
+    def prepare(self) -> None:
         self.functions["clearing"].prepare()
-        total_supply, total_demand = self.functions["clearing"].collect_all_supply_and_demand(verbose=verbose)
+        total_supply, total_demand = self.functions["clearing"].collect_all_supply_and_demand()
         self.ts.total_industry_supply.append(total_supply)
         self.ts.total_industry_demand.append(total_demand)
         logging.debug("Total goods market")

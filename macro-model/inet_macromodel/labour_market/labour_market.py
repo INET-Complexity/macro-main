@@ -10,7 +10,6 @@ from inet_macromodel.individuals.individuals import Individuals
 from inet_macromodel.individuals.individual_properties import ActivityStatus
 from inet_macromodel.labour_market.labour_market_ts import create_labour_market_timeseries
 
-
 from typing import Any
 
 

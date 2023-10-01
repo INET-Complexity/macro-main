@@ -1,3 +1,5 @@
+import logging
+
 import yaml
 import h5py
 import numpy as np
@@ -36,8 +38,11 @@ class Loader:
 
         # Create index
         if len(data) != self.config["model"]["t_max"]["value"] and agent_name != "exogenous":
-            print("Warning: Time series length does not match", country_name, agent_name, field)
-            print(data)
+            logging.warning("Time series length does not match")
+            logging.warning("Country %s, agent %s, field %s", country_name, agent_name, field)
+            logging.warning("Time series length: %d", len(data))
+            logging.warning("t_max: %d", self.config["model"]["t_max"]["value"])
+            logging.warning(f"Data: {data}")
         dates = []
         for year in range(
             self.config["model"]["year"]["value"],

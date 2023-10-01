@@ -65,7 +65,7 @@ class GoodsMarketClearer(ABC):
         self.previous_supply_chain = self.current_supply_chain
         self.current_supply_chain = {g: {} for g in range(self.n_industries)}
 
-    def collect_all_supply_and_demand(self, verbose: bool = False) -> tuple[np.ndarray, np.ndarray]:
+    def collect_all_supply_and_demand(self) -> tuple[np.ndarray, np.ndarray]:
         (
             total_real_supply,
             aggr_real_supply,
@@ -75,7 +75,6 @@ class GoodsMarketClearer(ABC):
         ) = collect_seller_info(
             goods_market_participants=self.goods_market_participants,
             n_industries=self.n_industries,
-            show_log=verbose,
         )
         (
             total_real_demand,
@@ -86,7 +85,6 @@ class GoodsMarketClearer(ABC):
             goods_market_participants=self.goods_market_participants,
             average_price=average_goods_price,
             n_industries=self.n_industries,
-            show_log=verbose,
         )
         return aggr_nominal_supply, aggr_nominal_demand
 
