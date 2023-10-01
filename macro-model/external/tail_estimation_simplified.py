@@ -2,6 +2,7 @@ import sys
 import time
 import argparse
 import os
+import logging
 import warnings
 import numpy as np
 from matplotlib import pyplot as plt
@@ -25,12 +26,17 @@ def add_uniform_noise(data_sequence, p=1):
         numpy array with noise-added entries.
     """
     if p < 1:
-        print("Parameter p should be greater or equal to 1.")
+        # print("Parameter p should be greater or equal to 1.")
+        logging.error("Parameter p should be greater or equal to 1.")
         return None
-    noise = np.random.uniform(-5.0 * 10 ** (-p), 5 * 10 ** (-p), size=len(data_sequence))
+    noise = np.random.uniform(
+        -5.0 * 10 ** (-p), 5 * 10 ** (-p), size=len(data_sequence)
+    )
     randomized_data_sequence = data_sequence + noise
     # ensure there are no negative entries after noise is added
-    randomized_data_sequence = randomized_data_sequence[np.where(randomized_data_sequence > 0)]
+    randomized_data_sequence = randomized_data_sequence[
+        np.where(randomized_data_sequence > 0)
+    ]
     return randomized_data_sequence
 
 
@@ -134,7 +140,11 @@ def get_moments_estimates_2(ordered_data):
     logs_2_cumsum = np.cumsum(logs_2[:-1])
     k_vector = np.arange(1, len(ordered_data))
     M1 = (1.0 / k_vector) * logs_1_cumsum - logs_1[1:]
-    M2 = (1.0 / k_vector) * logs_2_cumsum - (2.0 * logs_1[1:] / k_vector) * logs_1_cumsum + logs_2[1:]
+    M2 = (
+        (1.0 / k_vector) * logs_2_cumsum
+        - (2.0 * logs_1[1:] / k_vector) * logs_1_cumsum
+        + logs_2[1:]
+    )
     return M1, M2
 
 
@@ -166,7 +176,11 @@ def get_moments_estimates_3(ordered_data):
     logs_3_cumsum = np.cumsum(logs_3[:-1])
     k_vector = np.arange(1, len(ordered_data))
     M1 = (1.0 / k_vector) * logs_1_cumsum - logs_1[1:]
-    M2 = (1.0 / k_vector) * logs_2_cumsum - (2.0 * logs_1[1:] / k_vector) * logs_1_cumsum + logs_2[1:]
+    M2 = (
+        (1.0 / k_vector) * logs_2_cumsum
+        - (2.0 * logs_1[1:] / k_vector) * logs_1_cumsum
+        + logs_2[1:]
+    )
     M3 = (
         (1.0 / k_vector) * logs_3_cumsum
         - (3.0 * logs_1[1:] / k_vector) * logs_2_cumsum
@@ -175,7 +189,10 @@ def get_moments_estimates_3(ordered_data):
     )
     # cleaning exceptional cases
     clean_indices = np.where(
-        (M2 <= 0) | (M3 == 0) | (np.abs(1.0 - (M1**2) / M2) < 1e-10) | (np.abs(1.0 - (M1 * M2) / M3) < 1e-10)
+        (M2 <= 0)
+        | (M3 == 0)
+        | (np.abs(1.0 - (M1**2) / M2) < 1e-10)
+        | (np.abs(1.0 - (M1 * M2) / M3) < 1e-10)
     )
     M1[clean_indices] = np.nan
     M2[clean_indices] = np.nan
@@ -183,7 +200,14 @@ def get_moments_estimates_3(ordered_data):
     return M1, M2, M3
 
 
-def hill_dbs(ordered_data, t_bootstrap=0.5, r_bootstrap=500, eps_stop=1.0, verbose=False, diagn_plots=False):
+def hill_dbs(
+    ordered_data,
+    t_bootstrap=0.5,
+    r_bootstrap=500,
+    eps_stop=1.0,
+    verbose=False,
+    diagn_plots=False,
+):
     """
     Function to perform double-bootstrap procedure for
     Hill estimator.
@@ -226,7 +250,8 @@ def hill_dbs(ordered_data, t_bootstrap=0.5, r_bootstrap=500, eps_stop=1.0, verbo
 
     """
     if verbose:
-        print("Performing Hill double-bootstrap...")
+        # print("Performing Hill double-bootstrap...")
+        logging.info("Performing Hill double-bootstrap...")
     n = len(ordered_data)
     eps_bootstrap = 0.5 * (1 + np.log(int(t_bootstrap * n)) / np.log(n))
     n1 = int(n**eps_bootstrap)
@@ -248,7 +273,9 @@ def hill_dbs(ordered_data, t_bootstrap=0.5, r_bootstrap=500, eps_stop=1.0, verbo
         averaged_delta = samples_n1 / good_counts1
 
         max_index1 = (np.abs(np.linspace(1.0 / n1, 1.0, n1) - eps_stop)).argmin()
-        k1 = np.nanargmin(averaged_delta[min_index1:max_index1]) + 1 + min_index1  # take care of indexing
+        k1 = (
+            np.nanargmin(averaged_delta[min_index1:max_index1]) + 1 + min_index1
+        )  # take care of indexing
         if diagn_plots:
             n1_amse = averaged_delta
             x1_arr = np.linspace(1.0 / n1, 1.0, n1)
@@ -268,7 +295,9 @@ def hill_dbs(ordered_data, t_bootstrap=0.5, r_bootstrap=500, eps_stop=1.0, verbo
         max_index2 = (np.abs(np.linspace(1.0 / n2, 1.0, n2) - eps_stop)).argmin()
         averaged_delta = samples_n2 / good_counts2
 
-        k2 = np.nanargmin(averaged_delta[min_index2:max_index2]) + 1 + min_index2  # take care of indexing
+        k2 = (
+            np.nanargmin(averaged_delta[min_index2:max_index2]) + 1 + min_index2
+        )  # take care of indexing
         if diagn_plots:
             n2_amse = averaged_delta
             x2_arr = np.linspace(1.0 / n2, 1.0, n2)
@@ -288,7 +317,9 @@ def hill_dbs(ordered_data, t_bootstrap=0.5, r_bootstrap=500, eps_stop=1.0, verbo
     """
 
     # this constant is provided in Qi's paper
-    rho = (1.0 - (2 * (np.log(k1) - np.log(n1)) / (np.log(k1)))) ** (np.log(k1) / np.log(n1) - 1.0)
+    rho = (1.0 - (2 * (np.log(k1) - np.log(n1)) / (np.log(k1)))) ** (
+        np.log(k1) / np.log(n1) - 1.0
+    )
 
     k_star = (k1 * k1 / float(k2)) * rho
     k_star = int(np.round(k_star))
@@ -297,24 +328,42 @@ def hill_dbs(ordered_data, t_bootstrap=0.5, r_bootstrap=500, eps_stop=1.0, verbo
     if k_star == 0:
         k_star = 2
     if int(k_star) >= len(ordered_data):
-        print("WARNING: estimated threshold k is larger than the size of data")
+        logging.warning("Estimated threshold k is larger than the size of data")
+        # print("WARNING: estimated threshold k is larger than the size of data")
         k_star = len(ordered_data) - 1
     if verbose:
-        print("--- Hill double-bootstrap information ---")
-        print("Size of the 1st bootstrap sample n1:", n1)
-        print("Size of the 2nd bootstrap sample n2:", n2)
-        print("Estimated k1:", k1)
-        print("Estimated k2:", k2)
-        print("Estimated constant rho:", rho)
-        print("Estimated optimal k:", k_star)
-        print("-----------------------------------------")
+        logging.info("--- Hill double-bootstrap information ---")
+        logging.info("Size of the 1st bootstrap sample n1: %s", n1)
+        logging.info("Size of the 2nd bootstrap sample n2: %s", n2)
+        logging.info("Estimated k1: %s", k1)
+        logging.info("Estimated k2: %s", k2)
+        logging.info("Estimated constant rho: %s", rho)
+        logging.info("Estimated optimal k: %s", k_star)
+        logging.info("-----------------------------------------")
+
     if not diagn_plots:
         x1_arr, x2_arr, n1_amse, n2_amse = None, None, None, None
-    return k_star, x1_arr, n1_amse, k1 / float(n1), max_index1, x2_arr, n2_amse, k2 / float(n2), max_index2
+    return (
+        k_star,
+        x1_arr,
+        n1_amse,
+        k1 / float(n1),
+        max_index1,
+        x2_arr,
+        n2_amse,
+        k2 / float(n2),
+        max_index2,
+    )
 
 
 def hill_estimator(
-    ordered_data, bootstrap=True, t_bootstrap=0.5, r_bootstrap=500, verbose=False, diagn_plots=False, eps_stop=0.99
+    ordered_data,
+    bootstrap=True,
+    t_bootstrap=0.5,
+    r_bootstrap=500,
+    verbose=False,
+    diagn_plots=False,
+    eps_stop=0.99,
 ):
     """
     Function to calculate Hill estimator for a given dataset.
@@ -362,9 +411,19 @@ def hill_estimator(
             diagn_plots=diagn_plots,
             eps_stop=eps_stop,
         )
-        k_star, x1_arr, n1_amse, k1, max_index1, x2_arr, n2_amse, k2, max_index2 = results
+        (
+            k_star,
+            x1_arr,
+            n1_amse,
+            k1,
+            max_index1,
+            x2_arr,
+            n2_amse,
+            k2,
+            max_index2,
+        ) = results
         while k_star == None:
-            print("Resampling...")
+            logging.info("Resampling...")
             results = hill_dbs(
                 ordered_data,
                 t_bootstrap=t_bootstrap,
@@ -373,7 +432,17 @@ def hill_estimator(
                 diagn_plots=diagn_plots,
                 eps_stop=eps_stop,
             )
-            k_star, x1_arr, n1_amse, k1, max_index1, x2_arr, n2_amse, k2, max_index2 = results
+            (
+                k_star,
+                x1_arr,
+                n1_amse,
+                k1,
+                max_index1,
+                x2_arr,
+                n2_amse,
+                k2,
+                max_index2,
+            ) = results
         xi_star = xi_arr[k_star - 1]
         # print("Adjusted Hill estimated gamma:", 1 + 1.0 / xi_star)
         # print("**********")
@@ -382,7 +451,20 @@ def hill_estimator(
         k_star, xi_star = None, None
         x1_arr, n1_amse, k1, max_index1 = 4 * [None]
         x2_arr, n2_amse, k2, max_index2 = 4 * [None]
-    results = [k_arr, xi_arr, k_star, xi_star, x1_arr, n1_amse, k1, max_index1, x2_arr, n2_amse, k2, max_index2]
+    results = [
+        k_arr,
+        xi_arr,
+        k_star,
+        xi_star,
+        x1_arr,
+        n1_amse,
+        k1,
+        max_index1,
+        x2_arr,
+        n2_amse,
+        k2,
+        max_index2,
+    ]
     return results
 
 
@@ -497,7 +579,15 @@ def moments_dbs_prefactor(xi_n, n1, k1):
     return prefactor
 
 
-def moments_dbs(ordered_data, xi_n, t_bootstrap=0.5, r_bootstrap=500, eps_stop=1.0, verbose=False, diagn_plots=False):
+def moments_dbs(
+    ordered_data,
+    xi_n,
+    t_bootstrap=0.5,
+    r_bootstrap=500,
+    eps_stop=1.0,
+    verbose=False,
+    diagn_plots=False,
+):
     """
     Function to perform double-bootstrap procedure for
     moments estimator.
@@ -542,7 +632,7 @@ def moments_dbs(ordered_data, xi_n, t_bootstrap=0.5, r_bootstrap=500, eps_stop=1
                     by eps_stop parameter.
     """
     if verbose:
-        print("Performing moments double-bootstrap...")
+        logging.info("Performing moments double-bootstrap...")
     n = len(ordered_data)
     eps_bootstrap = 0.5 * (1 + np.log(int(t_bootstrap * n)) / np.log(n))
 
@@ -585,7 +675,7 @@ def moments_dbs(ordered_data, xi_n, t_bootstrap=0.5, r_bootstrap=500, eps_stop=1
         x2_arr = np.linspace(1.0 / n2, 1.0, n2)
 
     if k2 > k1:
-        print("WARNING(moments): estimated k2 is greater than k1! Re-doing bootstrap...")
+        logging.warning("Estimated k2 is greater than k1! Re-doing bootstrap...")
         return 9 * [None]
 
     # calculate estimated optimal stopping k
@@ -593,24 +683,41 @@ def moments_dbs(ordered_data, xi_n, t_bootstrap=0.5, r_bootstrap=500, eps_stop=1
     k_star = int((k1 * k1 / float(k2)) * prefactor)
 
     if int(k_star) >= len(ordered_data):
-        print("WARNING: estimated threshold k is larger than the size of data")
+        logging.warning("Estimated threshold k is larger than the size of data")
         k_star = len(ordered_data) - 1
     if verbose:
-        print("--- Moments double-bootstrap information ---")
-        print("Size of the 1st bootstrap sample n1:", n1)
-        print("Size of the 2nd bootstrap sample n2:", n2)
-        print("Estimated k1:", k1)
-        print("Estimated k2:", k2)
-        print("Estimated constant:", prefactor)
-        print("Estimated optimal k:", k_star)
-        print("--------------------------------------------")
+        logging.info("--- Moments double-bootstrap information ---")
+        logging.info("Size of the 1st bootstrap sample n1: %s", n1)
+        logging.info("Size of the 2nd bootstrap sample n2: %s", n2)
+        logging.info("Estimated k1: %s", k1)
+        logging.info("Estimated k2: %s", k2)
+        logging.info("Estimated constant: %s", prefactor)
+        logging.info("Estimated optimal k: %s", k_star)
+        logging.info("--------------------------------------------")
+
     if not diagn_plots:
         x1_arr, x2_arr, n1_amse, n2_amse = None, None, None, None
-    return k_star, x1_arr, n1_amse, k1 / float(n1), max_index1, x2_arr, n2_amse, k2 / float(n2), max_index2
+    return (
+        k_star,
+        x1_arr,
+        n1_amse,
+        k1 / float(n1),
+        max_index1,
+        x2_arr,
+        n2_amse,
+        k2 / float(n2),
+        max_index2,
+    )
 
 
 def moments_estimator(
-    ordered_data, bootstrap=True, t_bootstrap=0.5, r_bootstrap=500, verbose=False, diagn_plots=False, eps_stop=0.99
+    ordered_data,
+    bootstrap=True,
+    t_bootstrap=0.5,
+    r_bootstrap=500,
+    verbose=False,
+    diagn_plots=False,
+    eps_stop=0.99,
 ):
     """
     Function to calculate moments estimator for a given dataset.
@@ -663,7 +770,7 @@ def moments_estimator(
             eps_stop=eps_stop,
         )
         while results[0] == None:
-            print("Resampling...")
+            logging.info("Resampling...")
             results = moments_dbs(
                 ordered_data,
                 xi_n,
@@ -673,18 +780,41 @@ def moments_estimator(
                 diagn_plots=diagn_plots,
                 eps_stop=eps_stop,
             )
-        k_star, x1_arr, n1_amse, k1, max_index1, x2_arr, n2_amse, k2, max_index2 = results
+        (
+            k_star,
+            x1_arr,
+            n1_amse,
+            k1,
+            max_index1,
+            x2_arr,
+            n2_amse,
+            k2,
+            max_index2,
+        ) = results
         xi_star = xi_arr[k_star - 1]
         if xi_star <= 0:
-            print("Moments estimated gamma: infinity (xi <= 0).")
+            logging.info("Moments estimated gamma: infinity (xi <= 0).")
         else:
-            print("Moments estimated gamma:", 1 + 1.0 / xi_star)
-        print("**********")
+            logging.info("Moments estimated gamma:", 1 + 1.0 / xi_star)
+        logging.info("**********")
     else:
         k_star, xi_star = None, None
         x1_arr, n1_amse, k1, max_index1 = 4 * [None]
         x2_arr, n2_amse, k2, max_index2 = 4 * [None]
-    results = [k_arr, xi_arr, k_star, xi_star, x1_arr, n1_amse, k1, max_index1, x2_arr, n2_amse, k2, max_index2]
+    results = [
+        k_arr,
+        xi_arr,
+        k_star,
+        xi_star,
+        x1_arr,
+        n1_amse,
+        k1,
+        max_index1,
+        x2_arr,
+        n2_amse,
+        k2,
+        max_index2,
+    ]
     return results
 
 
@@ -824,7 +954,14 @@ def get_triweight_kernel_estimates(ordered_data, hsteps, alpha):
 
 
 def kernel_type_dbs(
-    ordered_data, hsteps, t_bootstrap=0.5, r_bootstrap=500, alpha=0.6, eps_stop=1.0, verbose=False, diagn_plots=False
+    ordered_data,
+    hsteps,
+    t_bootstrap=0.5,
+    r_bootstrap=500,
+    alpha=0.6,
+    eps_stop=1.0,
+    verbose=False,
+    diagn_plots=False,
 ):
     """
     Function to perform double-bootstrap procedure for
@@ -873,7 +1010,7 @@ def kernel_type_dbs(
                       by eps_stop parameter.
     """
     if verbose:
-        print("Performing kernel double-bootstrap...")
+        logging.info("Performing kernel double-bootstrap...")
     n = len(ordered_data)
     eps_bootstrap = 0.5 * (1 + np.log(int(t_bootstrap * n)) / np.log(n))
 
@@ -888,7 +1025,9 @@ def kernel_type_dbs(
         _, xi3_arr = get_triweight_kernel_estimates(sample, hsteps, alpha)
         samples_n1 += (xi2_arr - xi3_arr) ** 2
         good_counts1[np.where((xi2_arr - xi3_arr) ** 2 != np.nan)] += 1
-    max_index1 = (np.abs(np.logspace(np.log10(1.0 / n1), np.log10(1.0), hsteps) - eps_stop)).argmin()
+    max_index1 = (
+        np.abs(np.logspace(np.log10(1.0 / n1), np.log10(1.0), hsteps) - eps_stop)
+    ).argmin()
     x1_arr = np.logspace(np.log10(1.0 / n1), np.log10(1.0), hsteps)
     averaged_delta = samples_n1 / good_counts1
     h1 = x1_arr[np.nanargmin(averaged_delta[:max_index1])]
@@ -913,33 +1052,38 @@ def kernel_type_dbs(
         _, xi3_arr = get_triweight_kernel_estimates(sample, hsteps, alpha)
         samples_n2 += (xi2_arr - xi3_arr) ** 2
         good_counts2[np.where((xi2_arr - xi3_arr) ** 2 != np.nan)] += 1
-    max_index2 = (np.abs(np.logspace(np.log10(1.0 / n2), np.log10(1.0), hsteps) - eps_stop)).argmin()
+    max_index2 = (
+        np.abs(np.logspace(np.log10(1.0 / n2), np.log10(1.0), hsteps) - eps_stop)
+    ).argmin()
     x2_arr = np.logspace(np.log10(1.0 / n2), np.log10(1.0), hsteps)
     averaged_delta = samples_n2 / good_counts2
     h2 = x2_arr[np.nanargmin(averaged_delta[:max_index2])]
     if diagn_plots:
         n2_amse = averaged_delta
 
-    A = (143.0 * ((np.log(n1) + np.log(h1)) ** 2) / (3 * (np.log(n1) - 13.0 * np.log(h1)) ** 2)) ** (
-        -np.log(h1) / np.log(n1)
-    )
+    A = (
+        143.0
+        * ((np.log(n1) + np.log(h1)) ** 2)
+        / (3 * (np.log(n1) - 13.0 * np.log(h1)) ** 2)
+    ) ** (-np.log(h1) / np.log(n1))
 
     h_star = (h1 * h1 / float(h2)) * A
 
     if h_star > 1:
-        print("WARNING: estimated threshold is larger than the size of data!")
-        print("WARNING: optimal h is set to 1...")
+        logging.warning("Estimated threshold is larger than the size of data!")
+        logging.info("Optimal h is set to 1...")
         h_star = 1.0
 
     if verbose:
-        print("--- Kernel-type double-bootstrap information ---")
-        print("Size of the 1st bootstrap sample n1:", n1)
-        print("Size of the 2nd bootstrap sample n2:", n2)
-        print("Estimated h1:", h1)
-        print("Estimated h2:", h2)
-        print("Estimated constant A:", A)
-        print("Estimated optimal h:", h_star)
-        print("------------------------------------------------")
+        logging.info("--- Kernel-type double-bootstrap information ---")
+        logging.info("Size of the 1st bootstrap sample n1: %s", n1)
+        logging.info("Size of the 2nd bootstrap sample n2: %s", n2)
+        logging.info("Estimated h1: %s", h1)
+        logging.info("Estimated h2: %s", h2)
+        logging.info("Estimated constant A: %s", A)
+        logging.info("Estimated optimal h: %s", h_star)
+        logging.info("------------------------------------------------")
+
     if not diagn_plots:
         x1_arr, x2_arr, n1_amse, n2_amse = None, None, None, None
     if x1_arr is not None:
@@ -1018,7 +1162,17 @@ def kernel_type_estimator(
             diagn_plots=diagn_plots,
             eps_stop=eps_stop,
         )
-        h_star, x1_arr, n1_amse, h1, max_index1, x2_arr, n2_amse, h2, max_index2 = results
+        (
+            h_star,
+            x1_arr,
+            n1_amse,
+            h1,
+            max_index1,
+            x2_arr,
+            n2_amse,
+            h2,
+            max_index2,
+        ) = results
         while h_star == None:
             print("Resampling...")
             results = kernel_type_dbs(
@@ -1031,7 +1185,17 @@ def kernel_type_estimator(
                 diagn_plots=diagn_plots,
                 eps_stop=eps_stop,
             )
-            h_star, x1_arr, n1_amse, h1, max_index1, x2_arr, n2_amse, h2, max_index2 = results
+            (
+                h_star,
+                x1_arr,
+                n1_amse,
+                h1,
+                max_index1,
+                x2_arr,
+                n2_amse,
+                h2,
+                max_index2,
+            ) = results
 
         # get k index which corresponds to h_star
         k_star = np.argmin(np.abs(h_arr - h_star))
@@ -1040,10 +1204,11 @@ def kernel_type_estimator(
         k_star = int(np.floor(h_arr[k_star] * n)) - 1
         k_arr = np.floor((h_arr * n))
         if xi_star <= 0:
-            print("Kernel-type estimated gamma: infinity (xi <= 0).")
+            logging.info("Kernel-type estimated gamma: infinity (xi <= 0).")
         else:
-            print("Kernel-type estimated gamma:", 1 + 1.0 / xi_star)
-        print("**********")
+            # print("Kernel-type estimated gamma:", 1 + 1.0 / xi_star)
+            logging.info("Kernel-type estimated gamma: %s", 1 + 1.0 / xi_star)
+        # print("**********")
     else:
         k_star, xi_star = None, None
         x1_arr, n1_amse, h1, max_index1 = 4 * [None]
@@ -1189,7 +1354,7 @@ def make_plots(
 
     # perform adjusted Hill estimation
     if verbose:
-        print("Calculating adjusted Hill...")
+        logging.info("Calculating adjusted Hill...")
     t1 = time.time()
     hill_results = hill_estimator(
         ordered_data,
@@ -1204,7 +1369,7 @@ def make_plots(
 
     t2 = time.time()
     if verbose:
-        print("Elapsed time (Hill):", t2 - t1)
+        logging.info("Elapsed time (Hill): %s", t2 - t1)
     k_h_arr = hill_results[0]
     xi_h_arr = hill_results[1]
     k_h_star = hill_results[2]
@@ -1212,15 +1377,19 @@ def make_plots(
     x1_h_arr, n1_h_amse, k1_h, max_h_index1 = hill_results[4:8]
     x2_h_arr, n2_h_amse, k2_h, max_h_index2 = hill_results[8:]
     if savedata == 1:
-        with open(os.path.join(output_dir + "/" + output_name + "_adj_hill_plot.dat"), "w") as f:
+        with open(
+            os.path.join(output_dir + "/" + output_name + "_adj_hill_plot.dat"), "w"
+        ) as f:
             for i in range(len(k_h_arr)):
                 f.write(str(k_h_arr[i]) + " " + str(xi_h_arr[i]) + "\n")
-        with open(os.path.join(output_dir + "/" + output_name + "_adj_hill_estimate.dat"), "w") as f:
+        with open(
+            os.path.join(output_dir + "/" + output_name + "_adj_hill_estimate.dat"), "w"
+        ) as f:
             f.write(str(k_h_star) + " " + str(xi_h_star) + "\n")
 
     # perform moments estimation
     if verbose:
-        print("Calculating moments...")
+        logging.info("Calculating moments...")
     t1 = time.time()
     moments_results = moments_estimator(
         ordered_data,
@@ -1241,10 +1410,14 @@ def make_plots(
     x1_m_arr, n1_m_amse, k1_m, max_m_index1 = moments_results[4:8]
     x2_m_arr, n2_m_amse, k2_m, max_m_index2 = moments_results[8:]
     if savedata == 1:
-        with open(os.path.join(output_dir + "/" + output_name + "_mom_plot.dat"), "w") as f:
+        with open(
+            os.path.join(output_dir + "/" + output_name + "_mom_plot.dat"), "w"
+        ) as f:
             for i in range(len(k_m_arr)):
                 f.write(str(k_m_arr[i]) + " " + str(xi_m_arr[i]) + "\n")
-        with open(os.path.join(output_dir + "/" + output_name + "_mom_estimate.dat"), "w") as f:
+        with open(
+            os.path.join(output_dir + "/" + output_name + "_mom_estimate.dat"), "w"
+        ) as f:
             f.write(str(k_m_star) + " " + str(xi_m_star) + "\n")
     # perform kernel-type estimation
     if verbose:
@@ -1274,10 +1447,14 @@ def make_plots(
     if bootstrap_flag:
         k_k1_star = np.argmin(np.abs(k_k_arr - k_k_star))
     if savedata == 1:
-        with open(os.path.join(output_dir + "/" + output_name + "_kern_plot.dat"), "w") as f:
+        with open(
+            os.path.join(output_dir + "/" + output_name + "_kern_plot.dat"), "w"
+        ) as f:
             for i in range(len(k_k_arr)):
                 f.write(str(k_k_arr[i]) + " " + str(xi_k_arr[i]) + "\n")
-        with open(os.path.join(output_dir + "/" + output_name + "_kern_estimate.dat"), "w") as f:
+        with open(
+            os.path.join(output_dir + "/" + output_name + "_kern_estimate.dat"), "w"
+        ) as f:
             f.write(str(k_k_arr[k_k1_star]) + " " + str(xi_k_arr[k_k1_star]) + "\n")
 
     # plotting part
@@ -1286,14 +1463,18 @@ def make_plots(
 
     fig, axes = plt.subplots(3, 2, figsize=(12, 16))
     for ax in axes.reshape(-1):
-        ax.tick_params(direction="out", length=6, width=1.5, labelsize=12, which="major")
+        ax.tick_params(
+            direction="out", length=6, width=1.5, labelsize=12, which="major"
+        )
         ax.tick_params(direction="out", length=3, width=1, which="minor")
         [i.set_linewidth(1.5) for i in ax.spines.values()]
 
     # plot PDF
     axes[0, 0].set_xlabel(r"Degree $k$", fontsize=20)
     axes[0, 0].set_ylabel(r"$P(k)$", fontsize=20)
-    axes[0, 0].loglog(x_pdf, y_pdf, color="#386cb0", marker="s", lw=1.5, markeredgecolor="black")
+    axes[0, 0].loglog(
+        x_pdf, y_pdf, color="#386cb0", marker="s", lw=1.5, markeredgecolor="black"
+    )
 
     # plot CCDF
     axes[0, 1].set_xlabel(r"Degree $k$", fontsize=20)
@@ -1317,7 +1498,9 @@ def make_plots(
             color="#fb8072",
             ls="--",
             lw=2,
-            label=r"Adj. Hill Scaling $(\alpha=" + str(np.round(1.0 / xi_h_star, decimals=3)) + r")$",
+            label=r"Adj. Hill Scaling $(\alpha="
+            + str(np.round(1.0 / xi_h_star, decimals=3))
+            + r")$",
         )
         axes[0, 1].plot(
             (x[-1]),
@@ -1344,7 +1527,9 @@ def make_plots(
             color="#8dd3c7",
             ls="--",
             lw=2,
-            label=r"Moments Scaling $(\alpha=" + str(np.round(1.0 / xi_m_star, decimals=3)) + r")$",
+            label=r"Moments Scaling $(\alpha="
+            + str(np.round(1.0 / xi_m_star, decimals=3))
+            + r")$",
         )
         axes[0, 1].plot(
             (x[-1]),
@@ -1372,7 +1557,9 @@ def make_plots(
             color="#fdb462",
             ls="--",
             lw=2,
-            label=r"Kernel Scaling $(\alpha=" + str(np.round(1.0 / xi_k_star, decimals=3)) + r")$",
+            label=r"Kernel Scaling $(\alpha="
+            + str(np.round(1.0 / xi_k_star, decimals=3))
+            + r")$",
         )
         axes[0, 1].plot(
             (x[-1]),
@@ -1437,7 +1624,9 @@ def make_plots(
             s=100,
             edgecolor="black",
             zorder=20,
-            label=r"$\widehat{\xi}^{Hill}=" + str(np.round([xi_h_arr[k_h_star - 1]][0], decimals=3)) + r"$",
+            label=r"$\widehat{\xi}^{Hill}="
+            + str(np.round([xi_h_arr[k_h_star - 1]][0], decimals=3))
+            + r"$",
         )
     axes[1, 0].legend(loc="best")
 
@@ -1473,7 +1662,9 @@ def make_plots(
             s=100,
             edgecolor="black",
             zorder=20,
-            label=r"$\widehat{\xi}^{Hill}=" + str(np.round([xi_h_arr[k_h_star - 1]][0], decimals=3)) + r"$",
+            label=r"$\widehat{\xi}^{Hill}="
+            + str(np.round([xi_h_arr[k_h_star - 1]][0], decimals=3))
+            + r"$",
         )
     axes[1, 1].legend(loc="best")
 
@@ -1489,7 +1680,12 @@ def make_plots(
     else:
         indices_to_plot_p = np.where((k_p_arr <= max_k) & (k_p_arr >= min_k))
     axes[2, 0].plot(
-        k_p_arr[indices_to_plot_p], xi_p_arr[indices_to_plot_p], color="#bc80bd", alpha=0.8, label="Pickands", zorder=10
+        k_p_arr[indices_to_plot_p],
+        xi_p_arr[indices_to_plot_p],
+        color="#bc80bd",
+        alpha=0.8,
+        label="Pickands",
+        zorder=10,
     )
     # plot moments
     if xi_m_arr[min_k - 1] <= -3 or xi_m_arr[min_k - 1] >= 3:
@@ -1500,7 +1696,12 @@ def make_plots(
         indices_to_plot_m = np.where((k_m_arr <= max_k) & (k_m_arr >= min_k))
 
     axes[2, 0].plot(
-        k_m_arr[indices_to_plot_m], xi_m_arr[indices_to_plot_m], color="#8dd3c7", alpha=0.8, label="Moments", zorder=10
+        k_m_arr[indices_to_plot_m],
+        xi_m_arr[indices_to_plot_m],
+        color="#8dd3c7",
+        alpha=0.8,
+        label="Moments",
+        zorder=10,
     )
     if bootstrap_flag:
         axes[2, 0].scatter(
@@ -1511,7 +1712,9 @@ def make_plots(
             s=100,
             edgecolor="black",
             zorder=20,
-            label=r"$\widehat{\xi}^{Moments}=" + str(np.round([xi_m_arr[k_m_star - 1]][0], decimals=3)) + r"$",
+            label=r"$\widehat{\xi}^{Moments}="
+            + str(np.round([xi_m_arr[k_m_star - 1]][0], decimals=3))
+            + r"$",
         )
     # plot kernel-type
     min_k_index = (np.abs(k_k_arr - min_k)).argmin()
@@ -1524,7 +1727,12 @@ def make_plots(
         indices_to_plot_k = list(range(min_k_index, max_k_index))
     # indices_to_plot_k = np.where((xi_k_arr <= 3) & (xi_k_arr >= -3))
     axes[2, 0].plot(
-        k_k_arr[indices_to_plot_k], xi_k_arr[indices_to_plot_k], color="#fdb462", alpha=0.8, label="Kernel", zorder=10
+        k_k_arr[indices_to_plot_k],
+        xi_k_arr[indices_to_plot_k],
+        color="#fdb462",
+        alpha=0.8,
+        label="Kernel",
+        zorder=10,
     )
     if bootstrap_flag:
         axes[2, 0].scatter(
@@ -1535,7 +1743,9 @@ def make_plots(
             s=100,
             edgecolor="black",
             zorder=20,
-            label=r"$\widehat{\xi}^{Kernel}=" + str(np.round([xi_k_arr[k_k1_star - 1]][0], decimals=3)) + r"$",
+            label=r"$\widehat{\xi}^{Kernel}="
+            + str(np.round([xi_k_arr[k_k1_star - 1]][0], decimals=3))
+            + r"$",
         )
     axes[2, 0].legend(loc="best")
     # for clarity purposes, display only xi region between -1 and 1
@@ -1547,11 +1757,21 @@ def make_plots(
 
     # plot Pickands
     axes[2, 1].plot(
-        k_p_arr[indices_to_plot_p], xi_p_arr[indices_to_plot_p], color="#bc80bd", alpha=0.8, label="Pickands", zorder=10
+        k_p_arr[indices_to_plot_p],
+        xi_p_arr[indices_to_plot_p],
+        color="#bc80bd",
+        alpha=0.8,
+        label="Pickands",
+        zorder=10,
     )
     # plot moments
     axes[2, 1].plot(
-        k_m_arr[indices_to_plot_m], xi_m_arr[indices_to_plot_m], color="#8dd3c7", alpha=0.8, label="Moments", zorder=10
+        k_m_arr[indices_to_plot_m],
+        xi_m_arr[indices_to_plot_m],
+        color="#8dd3c7",
+        alpha=0.8,
+        label="Moments",
+        zorder=10,
     )
     if bootstrap_flag:
         axes[2, 1].scatter(
@@ -1562,11 +1782,18 @@ def make_plots(
             s=100,
             edgecolor="black",
             zorder=20,
-            label=r"$\widehat{\xi}^{Moments}=" + str(np.round([xi_m_arr[k_m_star - 1]][0], decimals=3)) + r"$",
+            label=r"$\widehat{\xi}^{Moments}="
+            + str(np.round([xi_m_arr[k_m_star - 1]][0], decimals=3))
+            + r"$",
         )
     # plot kernel-type
     axes[2, 1].plot(
-        k_k_arr[indices_to_plot_k], xi_k_arr[indices_to_plot_k], color="#fdb462", alpha=0.8, label="Kernel", zorder=10
+        k_k_arr[indices_to_plot_k],
+        xi_k_arr[indices_to_plot_k],
+        color="#fdb462",
+        alpha=0.8,
+        label="Kernel",
+        zorder=10,
     )
     if bootstrap_flag:
         axes[2, 1].scatter(
@@ -1577,7 +1804,9 @@ def make_plots(
             s=100,
             edgecolor="black",
             zorder=20,
-            label=r"$\widehat{\xi}^{Kernel}=" + str(np.round([xi_k_arr[k_k1_star - 1]][0], decimals=3)) + r"$",
+            label=r"$\widehat{\xi}^{Kernel}="
+            + str(np.round([xi_k_arr[k_k1_star - 1]][0], decimals=3))
+            + r"$",
         )
     # for clarity purposes, display only xi region between -1 and 1
     axes[2, 1].set_ylim((-0.5, 1.5))
@@ -1652,17 +1881,58 @@ def make_plots(
 
         axes_d[0].legend(loc="best")
         if savedata == 1:
-            with open(os.path.join(output_dir + "/" + output_name + "_adjhill_diagn1.dat"), "w") as f:
+            with open(
+                os.path.join(output_dir + "/" + output_name + "_adjhill_diagn1.dat"),
+                "w",
+            ) as f:
                 for i in range(len(x1_h_arr[min_k1:max_k1])):
-                    f.write(str(x1_h_arr[min_k1:max_k1][i]) + " " + str(n1_h_amse[min_k1:max_k1][i]) + "\n")
-            with open(os.path.join(output_dir + "/" + output_name + "_adjhill_diagn2.dat"), "w") as f:
+                    f.write(
+                        str(x1_h_arr[min_k1:max_k1][i])
+                        + " "
+                        + str(n1_h_amse[min_k1:max_k1][i])
+                        + "\n"
+                    )
+            with open(
+                os.path.join(output_dir + "/" + output_name + "_adjhill_diagn2.dat"),
+                "w",
+            ) as f:
                 for i in range(len(x2_h_arr[min_k2:max_k2])):
-                    f.write(str(x2_h_arr[min_k2:max_k2][i]) + " " + str(n2_h_amse[min_k2:max_k2][i]) + "\n")
-            with open(os.path.join(output_dir + "/" + output_name + "_adjhill_diagn_points.dat"), "w") as f:
-                f.write("Min for n1 sample: " + str(k1_h) + " " + str(n1_h_amse[int(len(x1_h_arr) * k1_h) - 1]) + "\n")
-                f.write("Min for n2 sample: " + str(k2_h) + " " + str(n2_h_amse[int(len(x2_h_arr) * k2_h) - 1]) + "\n")
-                f.write("Minimization boundary for n1 sample: " + str(max_h_index1 / float(len(x1_h_arr))) + "\n")
-                f.write("Minimization boundary for n2 sample: " + str(max_h_index2 / float(len(x2_h_arr))) + "\n")
+                    f.write(
+                        str(x2_h_arr[min_k2:max_k2][i])
+                        + " "
+                        + str(n2_h_amse[min_k2:max_k2][i])
+                        + "\n"
+                    )
+            with open(
+                os.path.join(
+                    output_dir + "/" + output_name + "_adjhill_diagn_points.dat"
+                ),
+                "w",
+            ) as f:
+                f.write(
+                    "Min for n1 sample: "
+                    + str(k1_h)
+                    + " "
+                    + str(n1_h_amse[int(len(x1_h_arr) * k1_h) - 1])
+                    + "\n"
+                )
+                f.write(
+                    "Min for n2 sample: "
+                    + str(k2_h)
+                    + " "
+                    + str(n2_h_amse[int(len(x2_h_arr) * k2_h) - 1])
+                    + "\n"
+                )
+                f.write(
+                    "Minimization boundary for n1 sample: "
+                    + str(max_h_index1 / float(len(x1_h_arr)))
+                    + "\n"
+                )
+                f.write(
+                    "Minimization boundary for n2 sample: "
+                    + str(max_h_index2 / float(len(x2_h_arr)))
+                    + "\n"
+                )
 
         # filter out boundary values using theta parameters for moments
         min_k1 = 2
@@ -1726,17 +1996,54 @@ def make_plots(
         )
         axes_d[1].legend(loc="best")
         if savedata == 1:
-            with open(os.path.join(output_dir + "/" + output_name + "_mom_diagn1.dat"), "w") as f:
+            with open(
+                os.path.join(output_dir + "/" + output_name + "_mom_diagn1.dat"), "w"
+            ) as f:
                 for i in range(len(x1_m_arr[min_k1:max_k1])):
-                    f.write(str(x1_m_arr[min_k1:max_k1][i]) + " " + str(n1_m_amse[min_k1:max_k1][i]) + "\n")
-            with open(os.path.join(output_dir + "/" + output_name + "_mom_diagn2.dat"), "w") as f:
+                    f.write(
+                        str(x1_m_arr[min_k1:max_k1][i])
+                        + " "
+                        + str(n1_m_amse[min_k1:max_k1][i])
+                        + "\n"
+                    )
+            with open(
+                os.path.join(output_dir + "/" + output_name + "_mom_diagn2.dat"), "w"
+            ) as f:
                 for i in range(len(x2_m_arr[min_k2:max_k2])):
-                    f.write(str(x2_m_arr[min_k2:max_k2][i]) + " " + str(n2_m_amse[min_k2:max_k2][i]) + "\n")
-            with open(os.path.join(output_dir + "/" + output_name + "_mom_diagn_points.dat"), "w") as f:
-                f.write("Min for n1 sample: " + str(k1_m) + " " + str(n1_m_amse[int(len(x1_m_arr) * k1_m) - 1]) + "\n")
-                f.write("Min for n2 sample: " + str(k2_m) + " " + str(n2_m_amse[int(len(x2_m_arr) * k2_m) - 1]) + "\n")
-                f.write("Minimization boundary for n1 sample: " + str(max_m_index1 / float(len(x1_m_arr))) + "\n")
-                f.write("Minimization boundary for n2 sample: " + str(max_m_index2 / float(len(x2_m_arr))) + "\n")
+                    f.write(
+                        str(x2_m_arr[min_k2:max_k2][i])
+                        + " "
+                        + str(n2_m_amse[min_k2:max_k2][i])
+                        + "\n"
+                    )
+            with open(
+                os.path.join(output_dir + "/" + output_name + "_mom_diagn_points.dat"),
+                "w",
+            ) as f:
+                f.write(
+                    "Min for n1 sample: "
+                    + str(k1_m)
+                    + " "
+                    + str(n1_m_amse[int(len(x1_m_arr) * k1_m) - 1])
+                    + "\n"
+                )
+                f.write(
+                    "Min for n2 sample: "
+                    + str(k2_m)
+                    + " "
+                    + str(n2_m_amse[int(len(x2_m_arr) * k2_m) - 1])
+                    + "\n"
+                )
+                f.write(
+                    "Minimization boundary for n1 sample: "
+                    + str(max_m_index1 / float(len(x1_m_arr)))
+                    + "\n"
+                )
+                f.write(
+                    "Minimization boundary for n2 sample: "
+                    + str(max_m_index2 / float(len(x2_m_arr)))
+                    + "\n"
+                )
 
         min_k1 = 2
         max_k1 = len(x1_k_arr)
@@ -1768,7 +2075,11 @@ def make_plots(
         )
         # plot boundary of minimization
         axes_d[2].axvline(
-            max_k_index1, color="#d55e00", ls="--", alpha=0.5, label=r"Minimization boundary for $n_2$ sample"
+            max_k_index1,
+            color="#d55e00",
+            ls="--",
+            alpha=0.5,
+            label=r"Minimization boundary for $n_2$ sample",
         )
         axes_d[2].plot(
             x2_k_arr[min_k2:max_k2],
@@ -1788,21 +2099,62 @@ def make_plots(
             label=r"Min for $n_2$ sample",
         )
         axes_d[2].axvline(
-            max_k_index2, color="#0072b2", ls="--", alpha=0.5, label=r"Minimization boundary for $n_2$ sample"
+            max_k_index2,
+            color="#0072b2",
+            ls="--",
+            alpha=0.5,
+            label=r"Minimization boundary for $n_2$ sample",
         )
         axes_d[2].legend(loc="best")
         if savedata == 1:
-            with open(os.path.join(output_dir + "/" + output_name + "_kern_diagn1.dat"), "w") as f:
+            with open(
+                os.path.join(output_dir + "/" + output_name + "_kern_diagn1.dat"), "w"
+            ) as f:
                 for i in range(len(x1_k_arr[min_k1:max_k1])):
-                    f.write(str(x1_k_arr[min_k1:max_k1][i]) + " " + str(n1_k_amse[min_k1:max_k1][i]) + "\n")
-            with open(os.path.join(output_dir + "/" + output_name + "_kern_diagn2.dat"), "w") as f:
+                    f.write(
+                        str(x1_k_arr[min_k1:max_k1][i])
+                        + " "
+                        + str(n1_k_amse[min_k1:max_k1][i])
+                        + "\n"
+                    )
+            with open(
+                os.path.join(output_dir + "/" + output_name + "_kern_diagn2.dat"), "w"
+            ) as f:
                 for i in range(len(x2_m_arr[min_k2:max_k2])):
-                    f.write(str(x2_k_arr[min_k2:max_k2][i]) + " " + str(n2_k_amse[min_k2:max_k2][i]) + "\n")
-            with open(os.path.join(output_dir + "/" + output_name + "_kern_diagn_points.dat"), "w") as f:
-                f.write("Min for n1 sample: " + str(h1) + " " + str(n1_k_amse[np.where(x1_k_arr == h1)][0]) + "\n")
-                f.write("Min for n2 sample: " + str(h2) + " " + str(n2_k_amse[np.where(x2_k_arr == h2)][0]) + "\n")
-                f.write("Minimization boundary for n1 sample: " + str(n1_k_amse[int(max_k_index1 * hsteps) - 1]) + "\n")
-                f.write("Minimization boundary for n2 sample: " + str(n2_k_amse[int(max_k_index2 * hsteps) - 1]) + "\n")
+                    f.write(
+                        str(x2_k_arr[min_k2:max_k2][i])
+                        + " "
+                        + str(n2_k_amse[min_k2:max_k2][i])
+                        + "\n"
+                    )
+            with open(
+                os.path.join(output_dir + "/" + output_name + "_kern_diagn_points.dat"),
+                "w",
+            ) as f:
+                f.write(
+                    "Min for n1 sample: "
+                    + str(h1)
+                    + " "
+                    + str(n1_k_amse[np.where(x1_k_arr == h1)][0])
+                    + "\n"
+                )
+                f.write(
+                    "Min for n2 sample: "
+                    + str(h2)
+                    + " "
+                    + str(n2_k_amse[np.where(x2_k_arr == h2)][0])
+                    + "\n"
+                )
+                f.write(
+                    "Minimization boundary for n1 sample: "
+                    + str(n1_k_amse[int(max_k_index1 * hsteps) - 1])
+                    + "\n"
+                )
+                f.write(
+                    "Minimization boundary for n2 sample: "
+                    + str(n2_k_amse[int(max_k_index2 * hsteps) - 1])
+                    + "\n"
+                )
 
         fig_d.tight_layout()
         diag_plots_path = output_dir + "/" + output_name + "_diag.pdf"
