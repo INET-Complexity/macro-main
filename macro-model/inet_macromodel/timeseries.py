@@ -42,18 +42,14 @@ class TimeSeries:
                 for i in range(len(self.historic(field))):
                     logging.error(self.historic(field)[i].shape)
 
-    def write_field_to_h5(
-        self, ts_data: np.ndarray, field: str, agent_group: h5py.Group
-    ) -> None:
+    def write_field_to_h5(self, ts_data: np.ndarray, field: str, agent_group: h5py.Group) -> None:
         if len(ts_data.shape) == 1 or len(ts_data.shape) == 2:
             self.write_2d_field_to_h5(ts_data, field, agent_group)
         elif len(ts_data.shape) == 3:
             self.write_3d_field_to_h5(ts_data, field, agent_group)
 
     @staticmethod
-    def write_2d_field_to_h5(
-        ts_data: np.ndarray, field: str, agent_group: h5py.Group
-    ) -> None:
+    def write_2d_field_to_h5(ts_data: np.ndarray, field: str, agent_group: h5py.Group) -> None:
         if len(ts_data.shape) == 1:
             ts_data = ts_data.reshape((1, ts_data.shape[0]))
         agent_group.create_dataset(
@@ -62,9 +58,7 @@ class TimeSeries:
             dtype=float,
         )
 
-    def write_3d_field_to_h5(
-        self, ts_data: np.ndarray, field: str, agent_group: h5py.Group
-    ) -> None:
+    def write_3d_field_to_h5(self, ts_data: np.ndarray, field: str, agent_group: h5py.Group) -> None:
         multiindex_df = self.create_multiindex_dataframe(ts_data)
         multiindex_array = multiindex_df.to_numpy()
         agent_group.create_dataset(
