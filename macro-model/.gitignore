@@ -160,7 +160,7 @@ dmypy.json
 /credentials
 /interface
 run_interface.py
-/model/runner_server.py
+/inet_macromodel/runner_server.py
 
 # Don't push run stuff
 run_data_processing.py
