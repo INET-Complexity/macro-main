@@ -67,6 +67,9 @@ class Agent:
                     (self.n_transactors_buy, self.n_industries), np.nan
                 )
 
+    def __str__(self):
+        return f"{self.__class__.__name__}({self.country_name})"
+
     def set_goods_to_buy(self, buy_init: np.ndarray) -> None:
         self.transactor_buyer_states["Initial Goods"] = buy_init
 

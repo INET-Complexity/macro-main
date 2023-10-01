@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 
 from inet_macromodel.banks.banks import Banks
@@ -104,6 +106,7 @@ class Country:
         )
 
     def clear_labour_market(self) -> None:
+        logging.info("Clearing labour market for %s", self.country_name)
         labour_costs = self.labour_market.clear(
             firms=self.firms,
             households=self.households,

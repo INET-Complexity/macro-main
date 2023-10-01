@@ -1,6 +1,8 @@
 from pathlib import Path
 import logging
 
+import numpy as np
+
 from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.util.function_mapping import get_functions
 from inet_macromodel.goods_market.goods_market_ts import create_goods_market_timeseries
@@ -64,12 +66,16 @@ class GoodsMarket:
         self.ts.total_industry_supply.append(total_supply)
         self.ts.total_industry_demand.append(total_demand)
         logging.debug("Total goods market")
-        logging.debug(f"Total supply: {total_supply}")
-        logging.debug(f"Total demand: {total_demand}")
-        logging.debug("---------------------------------")
+        logging.debug(f"Total supply: {format_array(total_supply)}")
+        logging.debug(f"Total demand: {format_array(total_demand)}")
+        logging.debug("\n")
 
     def clear(self) -> None:
         self.functions["clearing"].clear()
 
     def record(self) -> None:
         self.functions["clearing"].record()
+
+
+def format_array(arr):
+    return np.array2string(arr, formatter={"float_kind": lambda x: "{:.2e}".format(x)})

@@ -31,6 +31,7 @@ from .housing_market.housing_market import HousingMarket
 from .timestep import Timestep
 
 from typing import Optional, Any
+import logging
 
 
 class Runner:
@@ -72,17 +73,27 @@ class Runner:
         self.set_random_seed(random_seed)
         self.set_exchange_rates()
         self.initialise_agents()
+        logging.info("Starting simulation")
+        logging.info("Countries: %s", self.config["model"]["country_names"]["value"])
+        logging.info("Timesteps: %d", self.t_max)
+        logging.info("Scale: %d", self.scale)
+        logging.info("Random seed: %d", self.random_seed)
         with tqdm(range(1, self.t_max), desc="Running...") as tqdm_obj:
             for _ in tqdm_obj:
                 self.iterate()
+        logging.info("Simulation finished")
+        logging.info("Saving data")
         self.save()
+        logging.info("Data saved")
 
     def iterate(self) -> None:
+        logging.info("Date: %d/%d", self.timestep.month, self.timestep.year)
         # Setting exchange rates
         self.exchange_rates.set_current_exchange_rates(current_year=self.timestep.year)
 
         # Before goods market clearing
         for ind, country in enumerate(self.countries.values()):
+            logging.info("Country: %s", country.country_name)
             country.initialisation_phase(exchange_rate_usd_to_lcu=self.exchange_rates.ts.current("exchange_rates")[ind])
             country.estimation_phase()
             country.target_setting_phase()
@@ -90,6 +101,7 @@ class Runner:
             country.update_planning_metrics()
 
             # Clearing the housing and the credit market
+            logging.info("Clearing the housing and the credit market")
             country.prepare_housing_market_clearing()
             country.clear_housing_market()
             country.prepare_credit_market_clearing()
@@ -98,20 +110,24 @@ class Runner:
             country.process_credit_market_clearing()
 
             # Prepare goods market clearing
+            logging.info("Prepare goods market clearing")
             country.prepare_goods_market_clearing()
 
         # Prepare goods market clearing
+        logging.info("Prepare goods market clearing (ROW)")
         self.row.update_planning_metrics(
             average_country_ppi_inflation=np.mean(
                 [self.countries[c].economy.ts.current("ppi_inflation")[0] for c in self.countries.keys()]
             ),
         )
 
+        logging.info("Clearing the goods market")
         # Clearing the goods market
         self.goods_market.prepare()
         self.goods_market.clear()
         self.goods_market.record()
 
+        logging.info("Updating metrics")
         # After goods market clearing
         self.row.record_bought_goods()
         for country in self.countries.values():

@@ -45,11 +45,11 @@ def collect_seller_info(
                         transactor.transactor_seller_states["Industries"],
                         n_industries,
                     )
-
-                    logging.debug("Seller information for %s \n", country_name)
-                    logging.debug("Transactor type %s \n", type(transactor))
+                    logging.debug("\n")
+                    logging.debug("Seller information for %s", country_name)
+                    logging.debug("Transactor %s", transactor)
                     logging.debug(
-                        "Total %s: %s",
+                        "Total %s: %.2e",
                         field,
                         np.sum(
                             get_split_sum(
@@ -122,10 +122,11 @@ def collect_buyer_info(
                         total_nominal_demand[country_name] += transactor.transactor_buyer_states["Remaining Goods"].sum(
                             axis=0
                         )
-                    logging.debug("Buyer information for %s \n", country_name)
-                    logging.debug("Transactor type %s \n", type(transactor))
+                    logging.debug("\n")
+                    logging.debug("Buyer information for %s", country_name)
+                    logging.debug("Transactor %s", transactor)
                     logging.debug(
-                        "Total remaining goods: %s", np.sum(transactor.transactor_buyer_states["Remaining Goods"])
+                        "Total remaining goods: %.2e", np.sum(transactor.transactor_buyer_states["Remaining Goods"])
                     )
 
     # Calculate sums
