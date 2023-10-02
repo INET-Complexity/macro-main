@@ -560,7 +560,7 @@ class Creator:
                 .values
             )
             iot_hh_consumption = self.industry_data[country_name]["industry_vectors"]["Household Consumption in LCU"]
-            iot_hh_consumption_norm = iot_hh_consumption / iot_hh_consumption.sum()
+            iot_hh_consumption_norm = (iot_hh_consumption / iot_hh_consumption.sum()).values
             quintiles = partition_into_quintiles(data=self.synthetic_population[country_name].household_data["Income"])
             vat = self.data_readers["world_bank"].get_tau_vat(country_name, self.year)
             income = self.synthetic_population[country_name].household_data["Income"].values
