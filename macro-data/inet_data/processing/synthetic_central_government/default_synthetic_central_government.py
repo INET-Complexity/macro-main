@@ -60,11 +60,11 @@ class SyntheticDefaultCentralGovernment(SyntheticCentralGovernment):
         x = np.stack([curr_inflation, curr_unemployment_rate], axis=1)
         nan_ind = np.isnan(x).any(axis=1)
         self.unemployment_benefits_model = LinearRegression().fit(x[~nan_ind], curr_benefits[~nan_ind])
-        pred = self.unemployment_benefits_model.predict(np.array([[log_inflation[-1], unemployment_rate[-1]]]))[  # noqa
-            0
-        ]
+        pred = self.unemployment_benefits_model.predict(  # noqa
+            np.array([[log_inflation.iloc[-1], unemployment_rate.iloc[-1]]])
+        )[0]
 
-        self.central_gov_data["Total Unemployment Benefits"] = [pred * benefits_data[-1]]
+        self.central_gov_data["Total Unemployment Benefits"] = [pred * benefits_data.iloc[-1]]
 
     def set_other_social_benefits(
         self,
@@ -102,9 +102,11 @@ class SyntheticDefaultCentralGovernment(SyntheticCentralGovernment):
         x = np.stack([curr_inflation, curr_unemployment_rate], axis=1)
         nan_ind = np.isnan(x).any(axis=1)
         self.other_benefits_model = LinearRegression().fit(x[~nan_ind], curr_benefits[~nan_ind])
-        pred = self.other_benefits_model.predict(np.array([[log_inflation[-1], unemployment_rate[-1]]]))[0]  # noqa
+        pred = self.other_benefits_model.predict(  # noqa
+            np.array([[log_inflation.iloc[-1], unemployment_rate.iloc[-1]]])
+        )[0]
 
-        self.central_gov_data["Other Social Benefits"] = [pred * benefits_data[-1]]
+        self.central_gov_data["Other Social Benefits"] = [pred * benefits_data.iloc[-1]]
 
     def set_initial_bank_equity_injection(self) -> None:
         self.central_gov_data["Bank Equity Injection"] = [0.0]
