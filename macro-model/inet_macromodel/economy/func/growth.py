@@ -22,8 +22,7 @@ class GrowthForecastingConstant(GrowthForecasting):
         # if args and kwargs not empty, log warning
         if args or kwargs:
             logging.warning(
-                "GrowthForecastingConstant: args and kwargs are not used. "
-                "Please check the documentation."
+                "GrowthForecastingConstant: args and kwargs are not used. " "Please check the documentation."
             )
 
     def forecast_growth(self, historic_growth: np.ndarray) -> float:
@@ -31,17 +30,14 @@ class GrowthForecastingConstant(GrowthForecasting):
 
 
 class GrowthForecastingAutoReg(GrowthForecasting):
-    def __init__(
-        self, lags: int, window: int, use_log_output: bool = True, *args, **kwargs
-    ):
+    def __init__(self, lags: int, window: int, use_log_output: bool = True, *args, **kwargs):
         self.forecaster = AutoregForecaster(lags)
         self.window = window
         self.use_log_output = use_log_output
         # if args and kwargs not empty, log warning
         if args or kwargs:
             logging.warning(
-                "GrowthForecastingAutoReg: args and kwargs are not used. "
-                "Please check the documentation."
+                "GrowthForecastingAutoReg: args and kwargs are not used. " "Please check the documentation."
             )
 
     def forecast_growth(self, historic_growth: np.ndarray) -> float:
@@ -60,10 +56,7 @@ class GrowthForecastingOLS(GrowthForecasting):
         self.window = window
         # if args and kwargs not empty, log warning
         if args or kwargs:
-            logging.warning(
-                "GrowthForecastingOLS: args and kwargs are not used. "
-                "Please check the documentation."
-            )
+            logging.warning("GrowthForecastingOLS: args and kwargs are not used. " "Please check the documentation.")
 
     def forecast_growth(self, historic_growth: np.ndarray) -> float:
         return self.forecaster.forecast(historic_growth[-self.window :])

@@ -21,8 +21,7 @@ class InflationForecastingConstant(InflationForecasting):
         self.forecaster = ConstantForecaster(value=value)
         if args or kwargs:
             logging.warning(
-                "InflationForecastingConstant: args and kwargs are not used. "
-                "Please check the documentation."
+                "InflationForecastingConstant: args and kwargs are not used. " "Please check the documentation."
             )
 
     def forecast_inflation(self, historic_inflation: np.ndarray) -> float:
@@ -35,8 +34,7 @@ class InflationForecastingAutoReg(InflationForecasting):
         self.window = window
         if args or kwargs:
             logging.warning(
-                "InflationForecastingAutoReg: args and kwargs are not used. "
-                "Please check the documentation."
+                "InflationForecastingAutoReg: args and kwargs are not used. " "Please check the documentation."
             )
 
     def forecast_inflation(self, historic_inflation: np.ndarray) -> float:
@@ -48,10 +46,7 @@ class InflationForecastingOLS(InflationForecasting):
         self.forecaster = OLSForecaster()
         self.window = window
         if args or kwargs:
-            logging.warning(
-                "InflationForecastingOLS: args and kwargs are not used. "
-                "Please check the documentation."
-            )
+            logging.warning("InflationForecastingOLS: args and kwargs are not used. " "Please check the documentation.")
 
     def forecast_inflation(self, historic_inflation: np.ndarray) -> float:
         return self.forecaster.forecast(historic_inflation[-self.window :])
