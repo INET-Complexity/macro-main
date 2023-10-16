@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 
 from abc import abstractmethod, ABC
 
@@ -16,18 +17,28 @@ class GrowthForecasting(ABC):
 
 
 class GrowthForecastingConstant(GrowthForecasting):
-    def __init__(self, value: float):
+    def __init__(self, value: float, *args, **kwargs):
         self.forecaster = ConstantForecaster(value=value)
+        # if args and kwargs not empty, log warning
+        if args or kwargs:
+            logging.warning(
+                "GrowthForecastingConstant: args and kwargs are not used. " "Please check the documentation."
+            )
 
     def forecast_growth(self, historic_growth: np.ndarray) -> float:
         return self.forecaster.forecast(historic_growth)
 
 
 class GrowthForecastingAutoReg(GrowthForecasting):
-    def __init__(self, lags: int, window: int, use_log_output: bool = True):
+    def __init__(self, lags: int, window: int, use_log_output: bool = True, *args, **kwargs):
         self.forecaster = AutoregForecaster(lags)
         self.window = window
         self.use_log_output = use_log_output
+        # if args and kwargs not empty, log warning
+        if args or kwargs:
+            logging.warning(
+                "GrowthForecastingAutoReg: args and kwargs are not used. " "Please check the documentation."
+            )
 
     def forecast_growth(self, historic_growth: np.ndarray) -> float:
         historic_growth = historic_growth[-self.window :]
@@ -40,9 +51,12 @@ class GrowthForecastingAutoReg(GrowthForecasting):
 
 
 class GrowthForecastingOLS(GrowthForecasting):
-    def __init__(self, window: int):
+    def __init__(self, window: int, *args, **kwargs):
         self.forecaster = OLSForecaster()
         self.window = window
+        # if args and kwargs not empty, log warning
+        if args or kwargs:
+            logging.warning("GrowthForecastingOLS: args and kwargs are not used. " "Please check the documentation.")
 
     def forecast_growth(self, historic_growth: np.ndarray) -> float:
         return self.forecaster.forecast(historic_growth[-self.window :])
