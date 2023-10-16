@@ -28,6 +28,7 @@ class TestSyntheticBanks:
             household_mortgage_debt=np.array([0.0, 1000.0, 700.0]),
             household_other_debt=np.array([10.0, 50.0, 100.0]),
             cb_policy_rate=0.01,
+            tau_bank=0.1,
             bank_markup_interest_rate_short_term_firm_loans=0.01,
             bank_markup_interest_rate_long_term_firm_loans=0.01,
             bank_markup_interest_rate_household_payday_loans=0.01,
