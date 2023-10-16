@@ -151,7 +151,7 @@ class SyntheticPopulation(ABC):
         pass
 
     @abstractmethod
-    def set_household_saving_rates(self, independents: list[str]) -> None:
+    def set_household_saving_rates(self, function_name: str, independents: list[str]) -> None:
         pass
 
     @abstractmethod

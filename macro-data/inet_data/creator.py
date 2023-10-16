@@ -482,6 +482,9 @@ class Creator:
     def set_household_saving_rates(self) -> None:
         for country_name in self.country_names:
             self.synthetic_population[country_name].set_household_saving_rates(
+                function_name=self.config["init"][country_name]["households"]["functions"]["saving_rates"]["name"][
+                    "value"
+                ],
                 independents=self.config["init"][country_name]["households"]["functions"]["saving_rates"]["parameters"][
                     "independents"
                 ]["value"],
@@ -716,6 +719,7 @@ class Creator:
                     country=country_name,
                     year=self.year,
                 ),
+                tau_bank=self.data_readers["oecd_econ"].read_tau_firm(country_name, self.year),
                 bank_markup_interest_rate_short_term_firm_loans=self.data_readers["eurostat"].firm_risk_premium(
                     country_name, self.year
                 ),
@@ -805,6 +809,9 @@ class Creator:
                 firm_corporate_taxes=float(
                     np.sum(self.synthetic_firms[country_name].firm_data["Corporate Taxes Paid"])
                 ),
+                bank_corporate_taxes=float(
+                    np.sum(self.synthetic_banks[country_name].bank_data["Corporate Taxes Paid"])
+                ),
                 firm_employer_si_tax=self.data_readers["oecd_econ"].read_tau_sif(country_name, self.year)
                 * np.sum(self.synthetic_population[country_name].individual_data["Employee Income"]),
                 household_vat=self.data_readers["world_bank"].get_tau_vat(country_name, self.year)
@@ -825,11 +832,7 @@ class Creator:
                 cf_tax=self.data_readers["eurostat"].taxrate_on_capital_formation(country_name, self.year),
             )
 
-    def insert_industry_parameters(
-        self,
-        parameters: dict[str, dict[str, pd.DataFrame]],
-        country_name: str,
-    ) -> None:
+    def insert_industry_parameters(self, parameters: dict[str, dict[str, pd.DataFrame]], country_name: str) -> None:
         for key in self.industry_data[country_name].keys():
             parameters[country_name][key] = self.industry_data[country_name][key]
         parameters[country_name]["industry_vectors"]["Number of Firms"] = self.synthetic_firms[
@@ -1095,6 +1098,9 @@ class Creator:
 
         # Save the goods criticality matrix
         store["goods_criticality_matrix"] = self.data_readers["goods_criticality"].criticality_matrix
+
+        # Save the trade proportions
+        store["trade_proportions"] = self.data_readers["icio"][self.year].get_trade_proportions()
 
         # Get parameters
         parameters = self.get_parameters()
