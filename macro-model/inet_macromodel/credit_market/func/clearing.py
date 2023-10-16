@@ -35,7 +35,7 @@ class NoCreditMarketClearer(CreditMarketClearer):
         households: Households,
     ) -> pd.DataFrame:
         return pd.DataFrame(
-            index=[
+            columns=[
                 "loan_type",
                 "loan_value_initial",
                 "loan_value",

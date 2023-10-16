@@ -17,6 +17,7 @@ class GoodsMarketClearer(ABC):
         prio_domestic_sellers: bool,
         probability_keeping_previous_seller: float,
         price_temperature: float,
+        trade_temperature: float,
         remedy_rounding_errors: bool = True,
     ):
         # Parameters
@@ -26,6 +27,7 @@ class GoodsMarketClearer(ABC):
         self.prio_domestic_sellers = prio_domestic_sellers
         self.probability_keeping_previous_seller = probability_keeping_previous_seller
         self.price_temperature = price_temperature
+        self.trade_temperature = trade_temperature
         self.remedy_rounding_errors = remedy_rounding_errors
 
         # Agents
@@ -89,7 +91,7 @@ class GoodsMarketClearer(ABC):
         return aggr_nominal_supply, aggr_nominal_demand
 
     @abstractmethod
-    def clear(self) -> None:
+    def clear(self, default_trade_proportions: pd.DataFrame) -> None:
         pass
 
     def record(self) -> None:
@@ -99,12 +101,12 @@ class GoodsMarketClearer(ABC):
 
 
 class NoGoodsMarketClearer(GoodsMarketClearer):
-    def clear(self) -> None:
+    def clear(self, default_trade_proportions: pd.DataFrame) -> None:
         pass
 
 
 class DefaultGoodsMarketClearer(GoodsMarketClearer):
-    def clear(self) -> None:
+    def clear(self, default_trade_proportions: pd.DataFrame) -> None:
         for g in trange(self.n_industries, desc="Clearing the goods market"):
             # Buy and sell
             while True:
@@ -218,13 +220,25 @@ class DefaultGoodsMarketClearer(GoodsMarketClearer):
 
 
 class ProRataGoodsMarketClearer(GoodsMarketClearer):
-    def clear(self) -> None:
-        # Clear countries at a time
-        if self.prio_domestic_sellers:
+    def clear(self, default_trade_proportions: pd.DataFrame) -> None:
+        # Account for trade proportions
+        if len(default_trade_proportions) > 0:
+            average_prices = {}
             for country_name in self.goods_market_participants.keys():
-                if country_name == "ROW":
-                    continue
-                self.perform_clearing_in_prio_order(country_name)
+                for gmp in self.goods_market_participants[country_name]:
+                    if gmp.transactor_settings["Seller Value Type"] != ValueType.NONE:
+                        average_prices[country_name] = gmp.ts.current("price_offered")
+                        break
+            trade_proportions = get_trade_proportions(
+                country_names=self.goods_market_participants.keys(),
+                default_trade_proportions=default_trade_proportions,
+                average_prices=average_prices,
+                temperature=self.trade_temperature,
+                n_industries=self.n_industries,
+            ).fillna(0.0)
+            self.perform_clearing_in_prio_order(self.goods_market_participants.keys(), trade_proportions)
+
+        # Clear
         self.perform_clearing_in_prio_order()
 
         # Handle excess demand
@@ -233,56 +247,88 @@ class ProRataGoodsMarketClearer(GoodsMarketClearer):
             n_industries=self.n_industries,
         )
 
-    def perform_clearing_in_prio_order(self, country_name: Optional[str] = None) -> None:
-        if self.prio_real_countries and country_name is None:
-            exclude_row_ls = [True, False]
-        else:
-            exclude_row_ls = [False]
+    def perform_clearing_in_prio_order(
+        self,
+        country_names: Optional[list[str]] = None,
+        trade_proportions: Optional[pd.DataFrame] = None,
+    ) -> None:
         for prio_pair in [[True, True], [False, True], [True, False], [False, False]]:
             seller_high_prio_only, buyer_high_prio_only = prio_pair[0], prio_pair[1]
             if (not buyer_high_prio_only or self.prio_high_prio_buyers) and (
                 not seller_high_prio_only or self.prio_high_prio_sellers
             ):
-                for exclude_row in exclude_row_ls:
-                    for buyer_value_type in [ValueType.REAL, ValueType.NOMINAL]:
-                        (
-                            total_real_supply,
-                            aggr_real_supply,
-                            _,
-                            _,
-                            average_goods_price,
-                        ) = collect_seller_info(
-                            goods_market_participants=self.goods_market_participants,
-                            n_industries=self.n_industries,
-                            high_prio_only=seller_high_prio_only,
-                            from_country=country_name,
-                            exclude_row=exclude_row,
-                        )
-                        (
-                            total_real_demand,
-                            aggr_real_demand,
-                            _,
-                            _,
-                        ) = collect_buyer_info(
-                            goods_market_participants=self.goods_market_participants,
-                            average_price=average_goods_price,
-                            n_industries=self.n_industries,
-                            high_prio_only=buyer_high_prio_only,
-                            from_country=country_name,
-                            exclude_row=exclude_row,
-                            with_value_type=buyer_value_type,
-                        )
-                        clear(
-                            goods_market_participants=self.goods_market_participants,
-                            n_industries=self.n_industries,
-                            total_real_supply=total_real_supply,
-                            aggr_real_supply=aggr_real_supply,
-                            average_goods_price=average_goods_price,
-                            total_real_demand=total_real_demand,
-                            aggr_real_demand=aggr_real_demand,
-                            sell_high_prio_only=seller_high_prio_only,
-                            buy_high_prio_only=buyer_high_prio_only,
-                            from_country=country_name,
-                            exclude_row=exclude_row,
-                            with_buyer_value_type=buyer_value_type,
-                        )
+                if country_names is not None and trade_proportions is not None:
+                    for start_country in country_names:
+                        if self.prio_real_countries and start_country == "ROW":
+                            continue
+                        for end_country in country_names:
+                            if self.prio_real_countries and end_country == "ROW":
+                                continue
+                            if start_country == end_country == "ROW":
+                                continue
+                            current_trade_proportions = (
+                                trade_proportions.xs(start_country).xs(end_country).values.flatten()
+                            )
+                            self.perform_clearing(
+                                start_country=start_country,
+                                end_country=end_country,
+                                seller_high_prio_only=seller_high_prio_only,
+                                buyer_high_prio_only=buyer_high_prio_only,
+                                current_trade_proportions=current_trade_proportions,
+                            )
+                else:
+                    self.perform_clearing(
+                        start_country=None,
+                        end_country=None,
+                        seller_high_prio_only=seller_high_prio_only,
+                        buyer_high_prio_only=buyer_high_prio_only,
+                        current_trade_proportions=None,
+                    )
+
+    def perform_clearing(
+        self,
+        start_country: Optional[str],
+        end_country: Optional[str],
+        seller_high_prio_only: bool,
+        buyer_high_prio_only: bool,
+        current_trade_proportions: Optional[np.ndarray],
+    ) -> None:
+        (
+            total_real_supply,
+            aggr_real_supply,
+            _,
+            _,
+            average_goods_price,
+        ) = collect_seller_info(
+            goods_market_participants=self.goods_market_participants,
+            n_industries=self.n_industries,
+            high_prio_only=seller_high_prio_only,
+            from_country=start_country,
+        )
+        (
+            total_real_demand,
+            aggr_real_demand,
+            _,
+            _,
+        ) = collect_buyer_info(
+            goods_market_participants=self.goods_market_participants,
+            average_price=average_goods_price,
+            n_industries=self.n_industries,
+            high_prio_only=buyer_high_prio_only,
+            to_country=end_country,
+            trade_proportions=current_trade_proportions,
+        )
+        clear(
+            goods_market_participants=self.goods_market_participants,
+            n_industries=self.n_industries,
+            total_real_supply=total_real_supply,
+            aggr_real_supply=aggr_real_supply,
+            average_goods_price=average_goods_price,
+            total_real_demand=total_real_demand,
+            aggr_real_demand=aggr_real_demand,
+            sell_high_prio_only=seller_high_prio_only,
+            buy_high_prio_only=buyer_high_prio_only,
+            from_country=start_country,
+            to_country=end_country,
+            trade_proportions=current_trade_proportions,
+        )

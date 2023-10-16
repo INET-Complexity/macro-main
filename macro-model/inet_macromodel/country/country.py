@@ -676,6 +676,17 @@ class Country:
                 )
             ]
         )
+        self.central_government.ts.deficit.append(
+            self.central_government.compute_deficit(
+                current_ind_activity=self.individuals.states["Activity Status"],
+                current_household_social_transfers=self.households.ts.current("income_social_transfers"),
+                current_government_nominal_amount_spent=self.government_entities.ts.current(
+                    "nominal_amount_spent_in_lcu"
+                ),
+                government_interest_rates=self.banks.ts.current("interest_rate_on_government_debt")[0],
+            )
+        )
+        self.central_government.ts.debt.append(self.central_government.compute_debt())
 
     def update_population_structure(self) -> None:
         self.individuals.update_demography()

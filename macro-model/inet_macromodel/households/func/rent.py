@@ -31,11 +31,21 @@ class RentSetter(ABC):
         pass
 
     @abstractmethod
-    def compute_offered_rent_for_existing_properties(
-        self,
-        current_offered_rent: np.ndarray,
-    ) -> np.ndarray:
+    def compute_offered_rent_for_existing_properties(self, current_offered_rent: np.ndarray) -> np.ndarray:
         pass
+
+
+class ConstantRentSetter(RentSetter):
+    def compute_rent(self, current_rent: np.ndarray, historic_inflation: np.ndarray) -> np.ndarray:
+        return current_rent
+
+    def compute_offered_rent_for_new_properties(
+        self, property_value: np.ndarray, observed_fraction_rent_value: np.ndarray
+    ) -> np.ndarray:
+        return property_value
+
+    def compute_offered_rent_for_existing_properties(self, current_offered_rent: np.ndarray) -> np.ndarray:
+        return current_offered_rent
 
 
 class DefaultRentSetter(RentSetter):

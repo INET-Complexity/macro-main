@@ -40,8 +40,8 @@ class RestOfTheWorld(Agent):
             transactor_settings={
                 "Buyer Value Type": ValueType.NOMINAL,
                 "Seller Value Type": ValueType.REAL,
-                "Buyer Priority": 0,
-                "Seller Priority": 0,
+                "Buyer Priority": 1,
+                "Seller Priority": 1,
             },
         )
 
@@ -76,12 +76,14 @@ class RestOfTheWorld(Agent):
             initial_inflation=functions["inflation"].compute_inflation(
                 average_country_ppi_inflation=average_country_ppi_inflation
             ),
+            n_industries=n_industries,
         )
 
         # Additional states
         states = {
             "row_exports_model": row_exports_model,
             "row_imports_model": row_imports_model,
+            "Industry": list(range(n_industries)),
         }
 
         return cls(
@@ -130,7 +132,9 @@ class RestOfTheWorld(Agent):
                 previous_row_inflation=self.ts.current("inflation")[0],
             )
         )
+
         self.ts.price_in_usd.append(1.0 / self.exchange_rate_usd_to_lcu * self.ts.current("price_in_lcu"))
+        self.ts.price_offered.append(self.ts.current("price_in_usd"))
         self.set_prices(self.ts.current("price_in_usd"))
 
         # Seller industries

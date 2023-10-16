@@ -2,7 +2,7 @@ import numpy as np
 
 from inet_macromodel.rest_of_the_world.func.prices import (
     ConstantRoWPriceSetter,
-    RoWPriceSetterInflation,
+    InflationRoWPriceSetter,
 )
 
 
@@ -13,6 +13,6 @@ class TestRoWPriceSetter:
             np.array([1.0, 2.0]),
         )
         assert np.allclose(
-            RoWPriceSetterInflation().compute_price(previous_price=np.array([1.0, 2.0]), previous_row_inflation=0.01),
+            InflationRoWPriceSetter().compute_price(previous_price=np.array([1.0, 2.0]), previous_row_inflation=0.01),
             np.array([1.01, 2.02]),
         )

@@ -391,6 +391,12 @@ class Firms(Agent):
     def compute_interest_paid(self) -> np.ndarray:
         return self.ts.current("interest_paid_on_loans") + self.ts.current("interest_paid_on_deposits")
 
+    def compute_offered_price(self) -> np.ndarray:
+        return np.bincount(
+            self.states["Industry"],
+            weights=self.ts.current("price_in_usd") * (self.ts.current("production") + self.ts.current("inventory")),
+        ) / np.bincount(self.states["Industry"], weights=self.ts.current("production") + self.ts.current("inventory"))
+
     def prepare_buying_goods(self) -> None:
         # Target intermediate inputs
         self.ts.target_intermediate_inputs.append(
@@ -416,6 +422,7 @@ class Firms(Agent):
     def prepare_selling_goods(self) -> None:
         self.set_goods_to_sell(self.ts.current("production") + self.ts.current("inventory"))
         self.ts.price_in_usd.append(1.0 / self.exchange_rate_usd_to_lcu * self.ts.current("price"))
+        self.ts.price_offered.append(self.compute_offered_price())
         self.set_prices(self.ts.current("price_in_usd"))
         self.set_seller_industries(self.states["Industry"])
 
@@ -471,7 +478,10 @@ class Firms(Agent):
         new_inventories = (
             self.ts.current("inventory") + self.ts.current("production") - self.ts.current("real_amount_sold")
         )
-        return (1 - np.array(self.parameters["depreciation_rates"]["value"])[self.states["Industry"]]) * new_inventories
+        return np.maximum(
+            0.0,
+            (1 - np.array(self.parameters["depreciation_rates"]["value"])[self.states["Industry"]]) * new_inventories,
+        )
 
     def compute_nominal_inventory(self, current_good_prices: np.ndarray) -> np.ndarray:
         return current_good_prices[self.states["Industry"]] * self.ts.current("inventory")

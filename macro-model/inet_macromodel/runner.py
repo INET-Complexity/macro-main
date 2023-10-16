@@ -212,6 +212,7 @@ class Runner:
             self.row.ts.write_to_h5("rest_of_the_world", h5_file.create_group("ROW"))
             self.goods_market.ts.write_to_h5("GM", h5_file.create_group("GM"))
             self.exchange_rates.ts.write_to_h5("EXCH_RATES", h5_file.create_group("EXCH_RATES"))
+            h5_file.close()
 
     def save_random_seed(self, h5_file: h5py.File) -> None:
         h5_file.attrs["random_seed"] = self.random_seed
@@ -742,6 +743,7 @@ class Runner:
             year=self.config["model"]["year"]["value"],
             t_max=self.t_max,
             n_industries=self.n_industries,
+            trade_proportions=pd.DataFrame(pd.read_hdf(self.processed_data_path, "trade_proportions")),
             config=self.config["goods_market"]["goods_market"],
         )
         goods_market.functions["clearing"].initiate_agents(

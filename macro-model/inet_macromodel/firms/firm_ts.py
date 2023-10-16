@@ -42,6 +42,7 @@ def create_firms_timeseries(
         target_production=np.full(len(data), np.nan),
         #
         price=data["Price"].values,
+        price_offered=np.full(n_industries, 1.0),
         price_in_usd=data["Price in USD"].values,
         profits=data["Profits"].values,
         total_wage=data["Total Wages Paid"].values,
@@ -57,8 +58,8 @@ def create_firms_timeseries(
         unconstrained_target_intermediate_inputs_costs=np.full(len(data), np.nan),
         unconstrained_target_capital_inputs=np.full((len(data), n_industries), np.nan),
         unconstrained_target_capital_inputs_costs=np.full(len(data), np.nan),
-        target_intermediate_inputs=np.full((len(data), n_industries), np.nan),
-        target_capital_inputs=np.full((len(data), n_industries), np.nan),
+        target_intermediate_inputs=used_intermediate_inputs,
+        target_capital_inputs=used_capital_inputs,
         #
         inventory=data["Inventory"].values,
         inventory_nominal=data["Price"].values * data["Inventory"].values,

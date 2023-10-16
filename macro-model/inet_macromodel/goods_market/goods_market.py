@@ -2,6 +2,7 @@ from pathlib import Path
 import logging
 
 import numpy as np
+import pandas as pd
 
 from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.util.function_mapping import get_functions
@@ -18,6 +19,7 @@ class GoodsMarket:
         n_industries: int,
         functions: dict[str, Any],
         parameters: dict[str, Any],
+        trade_proportions: pd.DataFrame,
         ts: TimeSeries,
     ):
         self.year = year
@@ -25,6 +27,7 @@ class GoodsMarket:
         self.n_industries = n_industries
         self.functions = functions
         self.parameters = parameters
+        self.trade_proportions = trade_proportions.fillna(0.0)
         self.ts = ts
 
     @classmethod
@@ -33,6 +36,7 @@ class GoodsMarket:
         year: int,
         t_max: int,
         n_industries: int,
+        trade_proportions: pd.DataFrame,
         config: dict[str, Any],
     ) -> "GoodsMarket":
         # Get corresponding functions
@@ -57,6 +61,7 @@ class GoodsMarket:
             n_industries,
             functions,
             parameters,
+            trade_proportions,
             ts,
         )
 
@@ -71,7 +76,7 @@ class GoodsMarket:
         logging.debug("\n")
 
     def clear(self) -> None:
-        self.functions["clearing"].clear()
+        self.functions["clearing"].clear(default_trade_proportions=self.trade_proportions)
 
     def record(self) -> None:
         self.functions["clearing"].record()

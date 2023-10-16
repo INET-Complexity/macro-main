@@ -26,7 +26,16 @@ class NoHousingMarketClearer(HousingMarketClearer):
         max_price_willing_to_pay: np.ndarray,
         max_rent_willing_to_pay: np.ndarray,
     ) -> pd.DataFrame:
-        return pd.DataFrame()
+        return pd.DataFrame(
+            {
+                "sales_types": [],
+                "property_id": [],
+                "seller_id": [],
+                "buyer_id": [],
+                "property_value": [],
+                "price_or_rent": [],
+            }
+        )
 
 
 class DefaultHousingMarketClearer(HousingMarketClearer):

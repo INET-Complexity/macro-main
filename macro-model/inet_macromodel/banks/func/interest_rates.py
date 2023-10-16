@@ -78,12 +78,10 @@ class InterestRatesSetter(ABC):
     ) -> np.ndarray:
         pass
 
-    """
     @staticmethod
     @abstractmethod
     def compute_interest_rate_on_government_debt(central_bank_policy_rate: float) -> float:
         pass
-    """
 
 
 class DefaultInterestRatesSetter(InterestRatesSetter):
@@ -192,8 +190,6 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
         )
         return (1 + noise) * (central_bank_policy_rate + bank_markup_interest_rate_overdraft_household)
 
-    """
     @staticmethod
     def compute_interest_rate_on_government_debt(central_bank_policy_rate: float) -> float:
         return central_bank_policy_rate
-    """

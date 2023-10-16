@@ -27,6 +27,26 @@ class SocialBenefitsSetter(ABC):
         pass
 
 
+class ConstantSocialBenefitsSetter(SocialBenefitsSetter):
+    def compute_unemployment_benefits(
+        self,
+        prev_unemployment_benefits: float,
+        historic_cpi_inflation: np.ndarray,
+        current_unemployment_rate: float,
+        model: Optional[Any],
+    ) -> float:
+        return prev_unemployment_benefits
+
+    def compute_regular_transfer_to_households(
+        self,
+        prev_regular_transfer_to_households: float,
+        historic_cpi_inflation: np.ndarray,
+        current_unemployment_rate: float,
+        model: Optional[Any],
+    ) -> float:
+        return prev_regular_transfer_to_households
+
+
 class DefaultSocialBenefitsSetter(SocialBenefitsSetter):
     def compute_unemployment_benefits(
         self,

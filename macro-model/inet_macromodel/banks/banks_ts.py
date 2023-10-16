@@ -6,7 +6,6 @@ from inet_macromodel.util.get_histogram import get_histogram
 
 
 def create_banks_timeseries(bank_data: pd.DataFrame, long_term_ir: float, scale: int) -> TimeSeries:
-    assert long_term_ir
     return TimeSeries(
         n_banks=len(bank_data),
         #
@@ -73,5 +72,5 @@ def create_banks_timeseries(bank_data: pd.DataFrame, long_term_ir: float, scale:
         overdraft_rate_on_household_deposits=bank_data["Overdraft Rate on Household Deposits"].values,
         average_overdraft_rate_on_household_deposits=[bank_data["Overdraft Rate on Household Deposits"].values.mean()],
         #
-        # interest_rate_on_government_debt=np.array([long_term_ir]),
+        interest_rate_on_government_debt=np.array([long_term_ir]),
     )
