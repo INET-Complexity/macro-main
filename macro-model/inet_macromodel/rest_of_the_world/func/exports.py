@@ -15,6 +15,15 @@ class RoWExportsSetter(ABC):
         pass
 
 
+class ConstantRoWExportsSetter(RoWExportsSetter):
+    def compute_exports(
+        self,
+        previous_desired_exports: np.ndarray,
+        model: Optional[Any],
+    ) -> np.ndarray:
+        return previous_desired_exports
+
+
 class DefaultRoWExportsSetter(RoWExportsSetter):
     def compute_exports(
         self,

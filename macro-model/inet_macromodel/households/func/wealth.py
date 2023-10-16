@@ -8,7 +8,8 @@ from typing import Tuple, Optional, Any
 
 
 class WealthSetter(ABC):
-    def __init__(self, other_real_assets_depreciation_rate: float):
+    def __init__(self, independents: list[str], other_real_assets_depreciation_rate: float):
+        self.independents = independents
         self.other_real_assets_depreciation_rate = other_real_assets_depreciation_rate
 
     @abstractmethod
@@ -16,7 +17,6 @@ class WealthSetter(ABC):
         self,
         new_wealth: np.ndarray,
         model: Optional[Any],
-        independents: list[str],
         ts: TimeSeries,
     ) -> Tuple[np.ndarray, np.ndarray]:
         pass
@@ -68,11 +68,10 @@ class DefaultWealthSetter(WealthSetter):
         self,
         new_wealth: np.ndarray,
         model: Optional[Any],
-        independents: list[str],
         ts: TimeSeries,
     ) -> Tuple[np.ndarray, np.ndarray]:
         x = np.stack(
-            [ts.current(ind.lower()) for ind in independents],
+            [ts.current(ind.lower()) for ind in self.independents],
             axis=1,
         )
         # x = (x - x.min()) / (x.max() - x.min())  # noqa

@@ -15,6 +15,15 @@ class GovernmentConsumptionSetter(ABC):
         pass
 
 
+class ConstantGovernmentConsumptionSetter(GovernmentConsumptionSetter):
+    def compute_target_consumption(
+        self,
+        previous_desired_government_consumption: np.ndarray,
+        model: Optional[Any],
+    ) -> np.ndarray:
+        return previous_desired_government_consumption
+
+
 class DefaultGovernmentConsumptionSetter(GovernmentConsumptionSetter):
     def compute_target_consumption(
         self,

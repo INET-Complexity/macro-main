@@ -439,10 +439,7 @@ def update_supply_chain(
         current_supply_chain[industry][buyer][buyer_ind] = [(seller, seller_ind)]
 
 
-def clean_rounding_errors(
-    goods_market_participants: dict[str, list[Agent]],
-    decimals: int = 6,
-) -> None:
+def clean_rounding_errors(goods_market_participants: dict[str, list[Agent]], decimals: int = 6) -> None:
     for country_name in goods_market_participants.keys():
         for transactor in goods_market_participants[country_name]:
             transactor.transactor_seller_states["Remaining Goods"] = np.round(

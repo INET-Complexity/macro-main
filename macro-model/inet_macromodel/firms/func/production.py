@@ -79,6 +79,7 @@ class PureLeontief(ProductionSetter):
             out=np.full(capital_inputs_productivity_matrix.shape, np.inf),
             where=capital_inputs_productivity_matrix != np.inf,
         )
+
         return np.amin(
             [
                 rescaled_intermediate_inputs.min(axis=1),

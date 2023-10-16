@@ -25,7 +25,7 @@ class ConstantRoWPriceSetter(RoWPriceSetter):
         return previous_price
 
 
-class RoWPriceSetterInflation(RoWPriceSetter):
+class InflationRoWPriceSetter(RoWPriceSetter):
     def compute_price(
         self,
         previous_price: np.ndarray,

@@ -4,7 +4,7 @@ from typing import Any
 
 
 def get_functions(
-    functions_desc: dict[str, Any],
+    functions_desc: Any,
     loc: str,
     func_dir: Path,
 ) -> dict[str, Any]:

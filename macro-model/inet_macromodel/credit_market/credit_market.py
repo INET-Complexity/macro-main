@@ -95,7 +95,8 @@ class CreditMarket:
         )
 
         # Record the new loans
-        self.loan_data = pd.concat((self.loan_data, new_loans), axis=0).reset_index(drop=True)
+        if len(new_loans) > 0:
+            self.loan_data = pd.concat((self.loan_data, new_loans), axis=0).reset_index(drop=True)
 
         # Calculate new short-term loans granted by firm
         new_firm_short_term_loans = new_loans.loc[new_loans["loan_type"] == LoanTypes.FIRM_SHORT_TERM_LOAN]

@@ -1,9 +1,14 @@
+import numpy as np
 import pandas as pd
 
 from inet_macromodel.timeseries import TimeSeries
 
 
-def create_rest_of_the_world_timeseries(data: pd.DataFrame, initial_inflation: float) -> TimeSeries:
+def create_rest_of_the_world_timeseries(
+    data: pd.DataFrame,
+    initial_inflation: float,
+    n_industries: int,
+) -> TimeSeries:
     return TimeSeries(
         #
         inflation=[initial_inflation],
@@ -18,4 +23,5 @@ def create_rest_of_the_world_timeseries(data: pd.DataFrame, initial_inflation: f
         #
         price_in_usd=data["Price in USD"].values,
         price_in_lcu=data["Price in LCU"].values,
+        price_offered=np.full(n_industries, 1.0),
     )

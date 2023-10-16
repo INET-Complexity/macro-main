@@ -57,9 +57,9 @@ class Loader:
             industries = np.array(self.file[country_name]["industry_firms"]).flatten()
             data.columns = pd.Index(industries, name="Industry")
             if aggregate_by_industry == "sum":
-                return data.groupby(axis=1, level=0).sum()
+                return data.T.groupby(level=0).sum().T
             elif aggregate_by_industry == "mean":
-                return data.groupby(axis=1, level=0).mean()
+                return data.T.groupby(level=0).mean().T
             else:
                 raise ValueError("Unknown function for industry aggregation.", aggregate_by_industry)
 

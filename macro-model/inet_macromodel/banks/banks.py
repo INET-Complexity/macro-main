@@ -175,6 +175,15 @@ class Banks(Agent):
             [self.ts.current("overdraft_rate_on_household_deposits").mean()]
         )
 
+        # On government debt
+        self.ts.interest_rate_on_government_debt.append(
+            [
+                self.functions["interest_rates"].compute_interest_rate_on_government_debt(
+                    central_bank_policy_rate=central_bank_policy_rate,
+                )
+            ]
+        )
+
     def compute_interest_received_on_deposits(self, central_bank_policy_rate: float) -> np.ndarray:
         return (
             central_bank_policy_rate * np.maximum(0, self.ts.current("deposits"))

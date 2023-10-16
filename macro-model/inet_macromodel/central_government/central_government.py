@@ -233,3 +233,29 @@ class CentralGovernment(Agent):
             + self.ts.current("taxes_employer_si")[0]
             + household_rent_paid_to_government
         )
+
+    def compute_deficit(
+        self,
+        current_ind_activity: np.ndarray,
+        current_household_social_transfers: np.ndarray,
+        current_government_nominal_amount_spent: np.ndarray,
+        government_interest_rates: float,
+    ) -> np.ndarray:
+        total_unemployment_benefits = (
+            np.sum(current_ind_activity == ActivityStatus.UNEMPLOYED)
+            * self.ts.current("unemployment_benefits_by_individual")[0]
+        )
+        total_household_social_transfers = np.sum(current_household_social_transfers)
+        all_benefits = total_unemployment_benefits + total_household_social_transfers
+        interest_payments = government_interest_rates * self.ts.current("debt")[0]
+        return np.array(
+            [
+                all_benefits
+                + np.sum(current_government_nominal_amount_spent)
+                + interest_payments
+                - self.ts.current("revenue")[0]
+            ]
+        )
+
+    def compute_debt(self) -> np.ndarray:
+        return np.array([self.ts.current("debt")[0] + self.ts.current("deficit")[0]])

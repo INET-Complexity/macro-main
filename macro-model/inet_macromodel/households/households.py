@@ -82,13 +82,15 @@ class Households(Agent):
         config: dict[str, Any],
         init_config: dict[str, Any],
     ) -> "Households":
+        assert corr_additionally_owned_properties is not None
+
         # Parameters
         parameters = {}
         merge(parameters, config, init_config)
 
         # Get corresponding functions and parameters
         functions = get_functions(
-            config["functions"],
+            parameters["functions"],
             loc="inet_macromodel.households",
             func_dir=Path(__file__).parent / "func",
         )
@@ -180,27 +182,24 @@ class Households(Agent):
         total_other_social_transfers: float,
         central_government_init: dict[str, Any],
     ) -> np.ndarray:
-        if self.states["social_transfers_model"] is None:
-            return np.full(
-                self.ts.current("n_households"),
-                total_other_social_transfers / self.ts.current("n_households"),
-            )
-        x = np.stack(
-            [
-                self.ts.current(ind.lower())
-                for ind in central_government_init["functions"]["household_social_transfers"]["parameters"][
-                    "independents"
-                ]["value"]
-            ],
-            axis=1,
+        inds = central_government_init["functions"]["household_social_transfers"]["parameters"]["independents"]["value"]
+        return self.functions["social_transfers"].get_social_transfers(
+            n_households=self.ts.current("n_households"),
+            total_other_social_transfers=total_other_social_transfers,
+            current_independents=np.array([])
+            if len(inds) == 0
+            else np.stack(
+                [self.ts.current(ind.lower()) for ind in inds],
+                axis=1,
+            ),
+            initial_independents=np.array([])
+            if len(inds) == 0
+            else np.stack(
+                [self.ts.initial(ind.lower()) for ind in inds],
+                axis=1,
+            ),
+            model=self.states["social_transfers_model"],
         )
-        # x = (x - x.min()) / (x.max() - x.min())  # noqa
-        x /= x.sum(axis=0)
-        pred_transfers = self.states["social_transfers_model"].predict(x)
-        pred_transfers[pred_transfers < 0] = 0.0
-        pred_transfers /= np.sum(pred_transfers)
-
-        return total_other_social_transfers * pred_transfers
 
     def compute_rental_income(
         self,
@@ -220,7 +219,11 @@ class Households(Agent):
         return rental_income
 
     def compute_income_from_financial_assets(self) -> np.ndarray:
-        return self.states["coefficient_fa_income"] * self.ts.current("wealth_other_financial_assets")
+        return self.functions["financial_assets"].compute_income(
+            income_coefficient=self.states["coefficient_fa_income"],
+            initial_other_financial_assets=self.ts.initial("wealth_other_financial_assets"),
+            current_other_financial_assets=self.ts.current("wealth_other_financial_assets"),
+        )
 
     def compute_income(self) -> np.ndarray:
         return (
@@ -231,21 +234,20 @@ class Households(Agent):
         )
 
     def get_saving_rates_by_household(self) -> np.ndarray:
-        if self.states["saving_rates_model"] is None:
-            return np.full(self.ts.current("n_households"), self.states["average_saving_rate"])
-        x = np.stack(
-            [
-                self.ts.current(ind.lower())
-                for ind in self.parameters["functions"]["saving_rates"]["parameters"]["independents"]["value"]
-            ],
-            axis=1,
+        inds = self.parameters["functions"]["saving_rates"]["parameters"]["independents"]["value"]
+        return self.functions["saving_rates"].get_saving_rates(
+            n_households=self.ts.current("n_households"),
+            average_saving_rate=self.states["average_saving_rate"],
+            current_independents=np.stack(
+                [self.ts.current(ind.lower()) for ind in inds],
+                axis=1,
+            ),
+            initial_independents=np.stack(
+                [self.ts.initial(ind.lower()) for ind in inds],
+                axis=1,
+            ),
+            model=self.states["saving_rates_model"],
         )
-        # x = (x - x.min()) / (x.max() - x.min())  # noqa
-        x /= x.sum(axis=0)
-        pred_sr = self.states["saving_rates_model"].predict(x)
-        pred_sr[pred_sr > 1.0] = 1.0
-        pred_sr[pred_sr < 0.0] = 0.0
-        return pred_sr
 
     def compute_target_consumption_before_ce(
         self,
@@ -358,7 +360,8 @@ class Households(Agent):
 
         # Calculate the price paid for property
         price_paid_for_property = np.zeros(self.ts.current("n_households"))
-        price_paid_for_property[current_sales["buyer_id"].values] = current_sales["price_or_rent"].values
+        if len(current_sales) > 0:
+            price_paid_for_property[current_sales["buyer_id"].values] = current_sales["price_or_rent"].values
         self.ts.price_paid_for_property.append(price_paid_for_property)
 
     def compute_rent(
@@ -545,7 +548,6 @@ class Households(Agent):
         (new_wealth_in_deposits, new_wealth_in_other_financial_assets) = self.functions["wealth"].distribute_new_wealth(
             new_wealth=new_wealth,
             model=self.states["wealth_distribution_model"],
-            independents=self.parameters["functions"]["wealth"]["parameters"]["independents"]["value"],
             ts=self.ts,
         )
 

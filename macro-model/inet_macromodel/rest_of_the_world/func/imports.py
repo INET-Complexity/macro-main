@@ -15,6 +15,15 @@ class RoWImportsSetter(ABC):
         pass
 
 
+class ConstantRoWImportsSetter(RoWImportsSetter):
+    def compute_imports(
+        self,
+        previous_desired_imports: np.ndarray,
+        model: Optional[Any],
+    ) -> np.ndarray:
+        return previous_desired_imports
+
+
 class DefaultRoWImportsSetter(RoWImportsSetter):
     def compute_imports(
         self,

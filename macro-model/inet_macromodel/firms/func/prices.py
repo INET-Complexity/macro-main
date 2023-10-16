@@ -4,9 +4,10 @@ from abc import abstractmethod, ABC
 
 
 class PriceSetter(ABC):
-    def __init__(self, price_setting_noise_std: float, price_setting_speed: float):
+    def __init__(self, price_setting_noise_std: float, price_setting_speed: float, enforce_minimum: float = 1e-9):
         self.price_setting_noise_std = price_setting_noise_std
         self.price_setting_speed = price_setting_speed
+        self.enforce_minimum = enforce_minimum
 
     @abstractmethod
     def compute_price(
@@ -88,7 +89,8 @@ class SupplyDemandPriceSetter(PriceSetter):
                     )
             else:
                 new_prices[firm_id] = prev_prices[firm_id] * (1 + np.random.normal(0.0, self.price_setting_noise_std))
-        return (1 + current_estimated_ppi_inflation) * new_prices
+
+        return np.maximum(self.enforce_minimum, (1 + current_estimated_ppi_inflation) * new_prices)
 
 
 class CANVASPriceSetter(PriceSetter):
@@ -130,9 +132,10 @@ class CANVASPriceSetter(PriceSetter):
         # Cost-push inflation
         cost_push_inflation = curr_unit_costs / prev_unit_costs - 1.0
 
-        return (
+        return np.maximum(
+            self.enforce_minimum,
             prev_prices
             * (1 + self.price_setting_speed * current_estimated_ppi_inflation)
             * (1 + self.price_setting_speed * demand_pull_inflation)
-            * (1 + self.price_setting_speed * cost_push_inflation)
+            * (1 + self.price_setting_speed * cost_push_inflation),
         )

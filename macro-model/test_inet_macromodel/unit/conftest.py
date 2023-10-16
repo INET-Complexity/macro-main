@@ -647,6 +647,7 @@ def test_goods_market(
         t_max=test_config["model"]["t_max"]["value"],
         n_industries=len(test_config["model"]["industries"]["value"]),
         config=test_config["goods_market"]["goods_market"],
+        trade_proportions=pd.DataFrame(),
     )
     goods_market.functions["clearing"].initiate_agents(
         n_industries=len(test_config["model"]["industries"]["value"]),
