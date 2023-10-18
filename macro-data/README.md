@@ -8,7 +8,16 @@ In a python environment with Python >=3.10, run
 ```
 pip install https://github.com/INET-Complexity/inet-macro-data.git
 ```
+If this doesn't work, it may be because git is not set up properly locally.
 
+Try instead cloning the repository,
+```
+git clone https://github.com/INET-Complexity/inet-macro-data.git
+```
+and then installing the package from the local repository,
+```
+pip install ./inet-macro-data
+```
 
 ## Run data 
 
