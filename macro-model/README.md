@@ -9,6 +9,17 @@ In a python environment with Python >=3.10, run
 pip install https://github.com/INET-Complexity/inet-macro-model.git
 ```
 
+If this doesn't work, it may be because git is not set up properly locally.
+
+Try instead cloning the repository,
+```
+git clone https://github.com/INET-Complexity/inet-macro-model.git
+```
+and then installing the package from the local repository,
+```
+pip install ./inet-macro-model
+```
+
 ## Run model 
 
 Before running the model, make sure to create the data using the [inet-macro-data](https://github.com/INET-Complexity/inet-macro-data) package. __You should not run the model in a folder where you have cloned this repository. The goal of this is to work as a package.__
