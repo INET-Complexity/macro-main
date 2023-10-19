@@ -688,5 +688,26 @@ class Country:
         )
         self.central_government.ts.debt.append(self.central_government.compute_debt())
 
+        # Compute GDP
+        self.economy.compute_gdp(
+            sales_minus_ii=self.firms.ts.current("total_sales").sum()
+            - self.firms.ts.current("used_intermediate_inputs_costs").sum(),
+            taxes_on_products=self.central_government.ts.current("taxes_on_products")[0],
+            rent_paid=self.economy.ts.current("total_real_rent_paid")[0],
+            rent_imputed=self.economy.ts.current("total_imp_rent_paid")[0],
+            hh_consumption=self.households.ts.current("total_consumption")[0],
+            gov_consumption=self.government_entities.ts.current("total_consumption")[0],
+            change_in_firm_stock_inventories=self.firms.ts.current("total_inventory_change").sum()
+            + self.firms.ts.current("total_intermediate_inputs_bought_costs").sum()
+            - self.firms.ts.current("used_intermediate_inputs_costs").sum()
+            + self.firms.ts.current("total_capital_inputs_bought_costs").sum(),
+            exports_minus_imports=self.economy.ts.current("exports").sum() - self.economy.ts.current("imports").sum(),
+            operating_surplus_plus_wages=self.firms.ts.current("gross_operating_surplus_mixed_income").sum()
+            + self.firms.ts.current("total_wage").sum(),
+            rent_received=self.economy.ts.current("total_real_rent_rec")[0]
+            + self.central_government.ts.current("total_rent_received")[0]
+            + self.central_government.ts.current("taxes_rental_income")[0],
+        )
+
     def update_population_structure(self) -> None:
         self.individuals.update_demography()
