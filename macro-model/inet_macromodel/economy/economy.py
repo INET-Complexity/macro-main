@@ -46,13 +46,22 @@ class Economy:
         t_max: int,
         n_industries: int,
         initial_firm_prices: np.ndarray,
+        initial_firm_total_sales: float,
+        initial_firm_total_used_ii: float,
+        initial_total_taxes_on_products: float,
+        initial_change_in_firm_stock_inventories: float,
+        initial_total_operating_surplus_plus_wages: float,
         initial_individual_activity: np.ndarray,
         initial_cpi_inflation: float,
         initial_ppi_inflation: float,
         initial_nominal_house_price_index_growth: float,
         initial_real_rent_paid: np.ndarray,
         initial_imp_rent_paid: np.ndarray,
-        initial_rental_income: np.ndarray,
+        initial_hh_rental_income: np.ndarray,
+        initial_hh_consumption: float,
+        initial_gov_consumption: float,
+        initial_cg_rent_received: float,
+        initial_cg_taxes_rental_income: float,
         initial_sectoral_growth: np.ndarray,
         initial_imports: np.ndarray,
         initial_imports_by_country: dict[str, np.ndarray],
@@ -86,13 +95,22 @@ class Economy:
             all_country_names=all_country_names,
             n_industries=n_industries,
             initial_firm_prices=initial_firm_prices[0],
+            initial_firm_total_sales=initial_firm_total_sales,
+            initial_firm_total_used_ii=initial_firm_total_used_ii,
+            initial_total_taxes_on_products=initial_total_taxes_on_products,
+            initial_change_in_firm_stock_inventories=initial_change_in_firm_stock_inventories,
+            initial_total_operating_surplus_plus_wages=initial_total_operating_surplus_plus_wages,
             initial_individual_activity=initial_individual_activity,
             initial_cpi_inflation=initial_cpi_inflation,
             initial_ppi_inflation=initial_ppi_inflation,
             initial_nominal_house_price_index_growth=initial_nominal_house_price_index_growth,
             initial_real_rent_paid=initial_real_rent_paid,
             initial_imp_rent_paid=initial_imp_rent_paid,
-            initial_rental_income=initial_rental_income,
+            initial_hh_rental_income=initial_hh_rental_income,
+            initial_hh_consumption=initial_hh_consumption,
+            initial_gov_consumption=initial_gov_consumption,
+            initial_cg_rent_received=initial_cg_rent_received,
+            initial_cg_taxes_rental_income=initial_cg_taxes_rental_income,
             initial_sectoral_growth=initial_sectoral_growth,
             initial_sentiment=config["functions"]["sentiment"]["parameters"]["value"]["value"],
             initial_imports=initial_imports,
@@ -101,7 +119,6 @@ class Economy:
             initial_exports_by_country=initial_exports_by_country,
             export_taxes=export_taxes,
         )
-
         return cls(
             country_name,
             all_country_names,
@@ -420,3 +437,29 @@ class Economy:
         self.ts.total_real_rent_paid.append([real_rent_paid.sum()])
         self.ts.total_imp_rent_paid.append([imp_rent_paid.sum()])
         self.ts.total_real_rent_rec.append([rental_income.sum()])
+
+    def compute_gdp(
+        self,
+        sales_minus_ii: float,
+        taxes_on_products: float,
+        rent_paid: float,
+        rent_imputed: float,
+        hh_consumption: float,
+        gov_consumption: float,
+        change_in_firm_stock_inventories: float,
+        exports_minus_imports: float,
+        operating_surplus_plus_wages: float,
+        rent_received: float,
+    ) -> None:
+        self.ts.gdp_output.append([sales_minus_ii + taxes_on_products + rent_paid + rent_imputed])
+        self.ts.gdp_expenditure.append(
+            [
+                change_in_firm_stock_inventories
+                + hh_consumption
+                + gov_consumption
+                + exports_minus_imports
+                + rent_paid
+                + rent_imputed
+            ]
+        )
+        self.ts.gdp_income.append([operating_surplus_plus_wages + taxes_on_products + rent_received + rent_imputed])

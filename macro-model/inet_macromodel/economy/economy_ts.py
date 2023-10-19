@@ -9,13 +9,22 @@ def create_economy_timeseries(
     all_country_names: list[str],
     n_industries: int,
     initial_firm_prices: float,
+    initial_firm_total_sales: float,
+    initial_firm_total_used_ii: float,
+    initial_total_taxes_on_products: float,
+    initial_change_in_firm_stock_inventories: float,
+    initial_total_operating_surplus_plus_wages: float,
     initial_individual_activity: np.ndarray,
     initial_cpi_inflation: float,
     initial_ppi_inflation: float,
     initial_nominal_house_price_index_growth: float,
     initial_real_rent_paid: np.ndarray,
     initial_imp_rent_paid: np.ndarray,
-    initial_rental_income: np.ndarray,
+    initial_hh_rental_income: np.ndarray,
+    initial_hh_consumption: float,
+    initial_gov_consumption: float,
+    initial_cg_rent_received: float,
+    initial_cg_taxes_rental_income: float,
     initial_sectoral_growth: np.ndarray,
     initial_sentiment: float,
     initial_imports: np.ndarray,
@@ -71,7 +80,7 @@ def create_economy_timeseries(
         #
         total_real_rent_paid=[initial_real_rent_paid.sum()],
         total_imp_rent_paid=[initial_imp_rent_paid.sum()],
-        total_real_rent_rec=[initial_rental_income.sum()],
+        total_real_rent_rec=[initial_hh_rental_income.sum()],
         #
         sectoral_sentiment=np.full(n_industries, initial_sentiment),
         #
@@ -80,6 +89,31 @@ def create_economy_timeseries(
         exports_before_taxes=initial_exports,
         exports=(1 + export_taxes) * initial_exports,
         imports=initial_imports,
+        #
+        gdp_output=[
+            initial_firm_total_sales
+            - initial_firm_total_used_ii
+            + initial_total_taxes_on_products
+            + initial_real_rent_paid.sum()
+            + initial_imp_rent_paid.sum()
+        ],
+        gdp_expenditure=[
+            initial_change_in_firm_stock_inventories
+            + initial_hh_consumption
+            + initial_gov_consumption
+            + (1 + export_taxes) * initial_exports.sum()
+            - initial_imports.sum()
+            + initial_real_rent_paid.sum()
+            + initial_imp_rent_paid.sum()
+        ],
+        gdp_income=[
+            initial_total_operating_surplus_plus_wages
+            + initial_total_taxes_on_products
+            + initial_hh_rental_income.sum()
+            + initial_cg_rent_received
+            + initial_cg_taxes_rental_income
+            + initial_imp_rent_paid.sum()
+        ],
     )
     for c in all_country_names:
         if c == country_name:
