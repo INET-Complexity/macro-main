@@ -37,7 +37,7 @@ import logging
 class Runner:
     def __init__(
         self,
-        config_path: Path,
+        config_path: Path | dict,
         processed_data_path: Path,
         output_path: Path,
     ):
@@ -138,8 +138,11 @@ class Runner:
         self.timestep.step()
 
     @staticmethod
-    def process_config(config_path: Path) -> dict[str, Any]:
-        config = yaml.safe_load(open(config_path, "r"))
+    def process_config(config_path: Path | dict) -> dict[str, Any]:
+        if isinstance(config_path, Path):
+            config = yaml.safe_load(open(config_path, "r"))
+        else:
+            config = config_path
 
         # Handle init countries
         keys = list(config["init"].keys())
@@ -166,7 +169,9 @@ class Runner:
         return config
 
     @staticmethod
-    def yaml_to_string(file_path: str | Path) -> str:
+    def yaml_to_string(file_path: str | Path | dict) -> str:
+        if isinstance(file_path, dict):
+            return str(file_path)
         with open(file_path, "r") as yaml_file:
             yaml_content = yaml_file.read()
         return yaml_content
