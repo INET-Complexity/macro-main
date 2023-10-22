@@ -94,7 +94,7 @@ from typing import Any
 class Creator:
     def __init__(
         self,
-        config_path: Path,
+        config_path: Path | dict,
         raw_data_path: Path,
         processed_data_path: Path,
         force_download: bool = False,
@@ -200,8 +200,11 @@ class Creator:
         self.synthetic_rest_of_the_world = None
 
     @staticmethod
-    def process_config(config_path: Path) -> dict[str, Any]:
-        config = yaml.safe_load(open(config_path, "r"))
+    def process_config(config_path: Path | dict) -> dict[str, Any]:
+        if isinstance(config_path, Path):
+            config = yaml.safe_load(open(config_path, "r"))
+        else:
+            config = config_path
         config = {
             "model": config["model"].copy(),
             "init": config["init"].copy(),
