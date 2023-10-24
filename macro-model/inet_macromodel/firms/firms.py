@@ -392,10 +392,14 @@ class Firms(Agent):
         return self.ts.current("interest_paid_on_loans") + self.ts.current("interest_paid_on_deposits")
 
     def compute_offered_price(self) -> np.ndarray:
-        return np.bincount(
+        nom = np.bincount(
             self.states["Industry"],
             weights=self.ts.current("price_in_usd") * (self.ts.current("production") + self.ts.current("inventory")),
-        ) / np.bincount(self.states["Industry"], weights=self.ts.current("production") + self.ts.current("inventory"))
+        )
+        real = np.bincount(
+            self.states["Industry"], weights=self.ts.current("production") + self.ts.current("inventory")
+        )
+        return np.divide(nom, real, out=np.zeros_like(nom), where=real != 0.0)
 
     def prepare_buying_goods(self) -> None:
         # Target intermediate inputs
@@ -561,12 +565,15 @@ class Firms(Agent):
         )
 
     def compute_unit_costs(self) -> np.ndarray:
-        return (
+        return np.divide(
             self.ts.current("total_wage")
             + self.ts.current("used_intermediate_inputs_costs")
             + self.ts.current("used_capital_inputs_costs")
-            + self.ts.current("taxes_paid_on_production")
-        ) / self.ts.current("production")
+            + self.ts.current("taxes_paid_on_production"),
+            self.ts.current("production"),
+            out=np.zeros_like(self.ts.current("production")),
+            where=self.ts.current("production") != 0.0,
+        )
 
     def compute_corporate_taxes_paid(self, tau_firm: float) -> np.ndarray:
         return tau_firm * np.maximum(0.0, self.ts.current("profits"))
