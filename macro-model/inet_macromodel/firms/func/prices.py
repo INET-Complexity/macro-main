@@ -130,7 +130,10 @@ class CANVASPriceSetter(PriceSetter):
         )
 
         # Cost-push inflation
-        cost_push_inflation = curr_unit_costs / prev_unit_costs - 1.0
+        cost_push_inflation = (
+            np.divide(curr_unit_costs, prev_unit_costs, out=np.ones_like(curr_unit_costs), where=prev_unit_costs != 0.0)
+            - 1.0
+        )
 
         return np.maximum(
             self.enforce_minimum,
