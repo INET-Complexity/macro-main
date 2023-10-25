@@ -2,22 +2,26 @@
 
 # INET's MacroModel - Data
 
-## Clone the github repository 
-
-Clone the github repository using
-```
-git clone git@github.com:INET-Complexity/inet-macro-data.git
-```
-
-
 ## Install the package 
-Create a python environment for the macromodel  with Python >=3.10 and run, in the folder where you have cloned the repository and that contains `requirements.txt`,
+In a python environment with Python >=3.10, run
 
 ```
-pip install .
+pip install https://github.com/INET-Complexity/inet-macro-data.git
+```
+If this doesn't work, it may be because git is not set up properly locally.
+
+Try instead cloning the repository,
+```
+git clone https://github.com/INET-Complexity/inet-macro-data.git
+```
+and then installing the package from the local repository,
+```
+pip install ./inet-macro-data
 ```
 
 ## Run data 
+
+__You should not run the model in a folder where you have cloned this repository. The goal of this is to work as a package. Run this in a folder created elsewhere in your computer specifically for a project.__
 
 Assuming your working directory is structured as follows
 

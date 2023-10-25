@@ -46,6 +46,7 @@ class SyntheticCentralGovernment(ABC):
         total_social_housing_rent: float,
         firm_taxes_and_subsidies: float,
         firm_corporate_taxes: float,
+        bank_corporate_taxes: float,
         firm_employer_si_tax: float,
         household_vat: float,
         export_tax: float,
@@ -58,6 +59,7 @@ class SyntheticCentralGovernment(ABC):
             total_social_housing_rent=total_social_housing_rent,
             firm_taxes_and_subsidies=firm_taxes_and_subsidies,
             firm_corporate_taxes=firm_corporate_taxes,
+            bank_corporate_taxes=bank_corporate_taxes,
             firm_employer_si_tax=firm_employer_si_tax,
             household_vat=household_vat,
             export_tax=export_tax,
@@ -98,6 +100,7 @@ class SyntheticCentralGovernment(ABC):
         total_social_housing_rent: float,
         firm_taxes_and_subsidies: float,
         firm_corporate_taxes: float,
+        bank_corporate_taxes: float,
         firm_employer_si_tax: float,
         household_vat: float,
         export_tax: float,
@@ -111,7 +114,7 @@ class SyntheticCentralGovernment(ABC):
         self.central_gov_data["VAT"] = [household_vat]
         self.central_gov_data["Capital Formation Taxes"] = [cf_tax * 0.0]
         self.central_gov_data["Export Taxes"] = [export_tax]
-        self.central_gov_data["Corporate Taxes"] = [firm_corporate_taxes]
+        self.central_gov_data["Corporate Taxes"] = [firm_corporate_taxes + bank_corporate_taxes]
         self.central_gov_data["Employer SI Tax"] = [firm_employer_si_tax]
         self.central_gov_data["Employee SI Tax"] = [employee_si_tax]
         self.central_gov_data["Income Taxes"] = [income_tax]
@@ -123,6 +126,7 @@ class SyntheticCentralGovernment(ABC):
             + cf_tax * 0.0
             + export_tax
             + firm_corporate_taxes
+            + bank_corporate_taxes
             + firm_employer_si_tax
             + employee_si_tax
             + income_tax

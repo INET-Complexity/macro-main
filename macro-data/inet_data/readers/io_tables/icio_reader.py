@@ -297,6 +297,22 @@ class ICIOReader:
     def get_trade(self, start_country: str, end_country: str) -> pd.Series:
         return self.iot.loc[start_country, end_country].sum(axis=1).loc[self.industries] / 12.0
 
+    def get_trade_proportions(self) -> pd.DataFrame:
+        trade_proportions = {"start_country": [], "end_country": [], "industry": [], "value": []}
+        for end_country in self.considered_countries + ["ROW"]:
+            if end_country == "ROW":
+                imports_total = self.get_imports(end_country)
+            else:
+                imports_total = self.get_imports(end_country) + self.get_trade(end_country, end_country)
+            for start_country in self.considered_countries + ["ROW"]:
+                if start_country == end_country == "ROW":
+                    continue
+                trade_proportions["start_country"] += [start_country] * len(self.industries)
+                trade_proportions["end_country"] += [end_country] * len(self.industries)
+                trade_proportions["industry"] += list(range(len(self.industries)))
+                trade_proportions["value"] += list((self.get_trade(start_country, end_country) / imports_total).values)
+        return pd.DataFrame(trade_proportions).set_index(["start_country", "end_country", "industry"])
+
     def get_intermediate_inputs_matrix(self, country_name: str) -> pd.DataFrame:
         total_output = self.get_monthly_total_output(country_name)
         total_monthly_intermediate_inputs = self.get_monthly_intermediate_inputs_use(country_name)

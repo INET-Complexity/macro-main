@@ -36,6 +36,7 @@ class SyntheticBanks(ABC):
         household_mortgage_debt: np.ndarray,
         household_other_debt: np.ndarray,
         cb_policy_rate: float,
+        tau_bank: float,
         bank_markup_interest_rate_short_term_firm_loans: float,
         bank_markup_interest_rate_long_term_firm_loans: float,
         bank_markup_interest_rate_household_payday_loans: float,
@@ -83,6 +84,7 @@ class SyntheticBanks(ABC):
         self.set_interest_received_from_loans()
         self.set_interest_received_from_deposits(central_bank_policy_rate=cb_policy_rate)
         self.set_profits()
+        self.set_corporate_taxes_paid(tau_bank=tau_bank)
 
         # Set initial bank liabilities
         self.set_liability()
@@ -182,10 +184,7 @@ class SyntheticBanks(ABC):
             + self.bank_data["Interest Rates on Mortgages"] * self.bank_data["Mortgages to Households"]
         )
 
-    def set_interest_received_from_deposits(
-        self,
-        central_bank_policy_rate: float,
-    ) -> None:
+    def set_interest_received_from_deposits(self, central_bank_policy_rate: float) -> None:
         self.bank_data["Interest received from Deposits"] = (
             central_bank_policy_rate * self.bank_data["Deposits"]
             + self.bank_data["Overdraft Rate on Firm Deposits"] * np.maximum(0, -self.bank_data["Deposits from Firms"])
@@ -201,6 +200,9 @@ class SyntheticBanks(ABC):
         self.bank_data["Profits"] = (
             self.bank_data["Interest received from Loans"] + self.bank_data["Interest received from Deposits"]
         )
+
+    def set_corporate_taxes_paid(self, tau_bank: float) -> None:
+        self.bank_data["Corporate Taxes Paid"] = tau_bank * np.maximum(0.0, self.bank_data["Profits"])
 
     def set_market_share(self) -> None:
         total_amount_of_loans_and_deposits = (

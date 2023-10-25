@@ -948,7 +948,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             + self.household_data["Income from Financial Assets"]
         )
 
-    def set_household_saving_rates(self, independents: list[str]) -> None:
+    def set_household_saving_rates(self, function_name: str, independents: list[str]) -> None:
         # Some obvious cleaning
         self.household_data.loc[
             self.household_data["Consumption of Consumer Goods/Services as a Share of Income"].isin(["A"]),
@@ -976,10 +976,15 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         )
         self.household_data.loc[:, "Saving Rate"] = 1.0 - temp_imp[:, 4]
 
-        # Saving rates by household characteristics
+        # Fit a model
         saving_rates, self.saving_rates_model = fit_linear(
             household_data=self.household_data,
             independents=independents,
             dependent="Saving Rate",
         )
-        self.household_data["Saving Rate"] = saving_rates
+
+        # Saving rates by household characteristics
+        if function_name == "AverageSavingRatesSetter":
+            self.household_data["Saving Rate"] = saving_rates.mean()
+        else:
+            self.household_data["Saving Rate"] = saving_rates
