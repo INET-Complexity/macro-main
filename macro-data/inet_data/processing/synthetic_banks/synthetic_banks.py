@@ -1,7 +1,7 @@
+from abc import ABC, abstractmethod
+
 import numpy as np
 import pandas as pd
-
-from abc import abstractmethod, ABC
 
 
 class SyntheticBanks(ABC):

@@ -1,11 +1,11 @@
 import json
+import logging
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-import logging
-
-from pathlib import Path
-from scipy.special import zetac
 from scipy.optimize import curve_fit
+from scipy.special import zetac
 
 
 class OECDEconData:

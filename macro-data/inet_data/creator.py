@@ -1,82 +1,52 @@
 import os
-import yaml
 import warnings
+from copy import deepcopy
+from pathlib import Path
+from typing import Any
+
 import numpy as np
 import pandas as pd
 import skops.io as sio
-
-from pathlib import Path
-from copy import deepcopy
+import yaml
 from scipy.optimize import fsolve
 
-from inet_data.util.download import download_data
-from inet_data.readers.handle_readers import get_reader_names, init_readers
-from inet_data.util.country_code_map import get_map_long_to_short
-from inet_data.readers.util.matching_iot_with_sea import (
-    compile_industry_data,
-    compile_exogenous_industry_data,
+from inet_data.processing.synthetic_banks.default_synthetic_banks import (
+    SyntheticDefaultBanks,
 )
-from inet_data.util.regressions import fit_linear
-from inet_data.util.partition import partition_into_quintiles
-
-from inet_data.processing.synthetic_population.hfcs_synthetic_population import (
-    SyntheticHFCSPopulation,
+from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
+from inet_data.processing.synthetic_central_bank.default_synthetic_central_bank import (
+    SyntheticDefaultCentralBanks,
 )
-from inet_data.processing.synthetic_population.synthetic_population import (
-    SyntheticPopulation,
-)
-
-from inet_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
-from inet_data.processing.synthetic_firms.default_synthetic_firms import (
-    SyntheticDefaultFirms,
-)
-
-from inet_data.processing.synthetic_government_entities.synthetic_government_entities import (
-    SyntheticGovernmentEntities,
-)
-from inet_data.processing.synthetic_government_entities.default_synthetic_government_entities import (
-    SyntheticDefaultGovernmentEntities,
-)
-
-from inet_data.processing.synthetic_central_government.synthetic_central_government import (
-    SyntheticCentralGovernment,
+from inet_data.processing.synthetic_central_bank.synthetic_central_bank import (
+    SyntheticCentralBank,
 )
 from inet_data.processing.synthetic_central_government.default_synthetic_central_government import (
     SyntheticDefaultCentralGovernment,
 )
-
-from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
-from inet_data.processing.synthetic_banks.default_synthetic_banks import (
-    SyntheticDefaultBanks,
-)
-
-from inet_data.processing.synthetic_central_bank.synthetic_central_bank import (
-    SyntheticCentralBank,
-)
-from inet_data.processing.synthetic_central_bank.default_synthetic_central_bank import (
-    SyntheticDefaultCentralBanks,
-)
-
-from inet_data.processing.synthetic_credit_market.synthetic_credit_market import (
-    SyntheticCreditMarket,
+from inet_data.processing.synthetic_central_government.synthetic_central_government import (
+    SyntheticCentralGovernment,
 )
 from inet_data.processing.synthetic_credit_market.default_synthetic_credit_market import (
     DefaultSyntheticCreditMarket,
 )
-
-from inet_data.processing.synthetic_housing_market.synthetic_housing_market import (
-    SyntheticHousingMarket,
+from inet_data.processing.synthetic_credit_market.synthetic_credit_market import (
+    SyntheticCreditMarket,
+)
+from inet_data.processing.synthetic_firms.default_synthetic_firms import (
+    SyntheticDefaultFirms,
+)
+from inet_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
+from inet_data.processing.synthetic_government_entities.default_synthetic_government_entities import (
+    SyntheticDefaultGovernmentEntities,
+)
+from inet_data.processing.synthetic_government_entities.synthetic_government_entities import (
+    SyntheticGovernmentEntities,
 )
 from inet_data.processing.synthetic_housing_market.default_synthetic_housing_market import (
     DefaultSyntheticHousingMarket,
 )
-
-from inet_data.processing.synthetic_rest_of_the_world.default_synthetic_rest_of_the_world import (
-    DefaultSyntheticRestOfTheWorld,
-)
-
-from inet_data.processing.synthetic_matching.matching_individuals_with_firms import (
-    match_individuals_with_firms,
+from inet_data.processing.synthetic_housing_market.synthetic_housing_market import (
+    SyntheticHousingMarket,
 )
 from inet_data.processing.synthetic_matching.matching_firms_with_banks import (
     match_firms_with_banks,
@@ -87,8 +57,27 @@ from inet_data.processing.synthetic_matching.matching_households_with_banks impo
 from inet_data.processing.synthetic_matching.matching_households_with_houses import (
     match_households_with_houses,
 )
-
-from typing import Any
+from inet_data.processing.synthetic_matching.matching_individuals_with_firms import (
+    match_individuals_with_firms,
+)
+from inet_data.processing.synthetic_population.hfcs_synthetic_population import (
+    SyntheticHFCSPopulation,
+)
+from inet_data.processing.synthetic_population.synthetic_population import (
+    SyntheticPopulation,
+)
+from inet_data.processing.synthetic_rest_of_the_world.default_synthetic_rest_of_the_world import (
+    DefaultSyntheticRestOfTheWorld,
+)
+from inet_data.readers.handle_readers import get_reader_names, init_readers
+from inet_data.readers.util.matching_iot_with_sea import (
+    compile_exogenous_industry_data,
+    compile_industry_data,
+)
+from inet_data.util.country_code_map import get_map_long_to_short
+from inet_data.util.download import download_data
+from inet_data.util.partition import partition_into_quintiles
+from inet_data.util.regressions import fit_linear
 
 
 class Creator:
@@ -110,6 +99,7 @@ class Creator:
         # Basic model settings
         self.country_names = self.config["model"]["country_names"]["value"]
         self.year = self.config["model"]["year"]["value"]
+        self.start_date = self.config["model"]["start_date"]["value"]
         self.scale = self.config["model"]["scale"]["value"]
         self.industries = self.config["model"]["industries"]["value"]
 
@@ -143,6 +133,7 @@ class Creator:
             year=self.year,
             scale=self.scale,
             industries=self.industries,
+            start_date=self.start_date,
             create_exogenous_industry_data=create_exogenous_industry_data,
             testing=testing,
         )
@@ -282,6 +273,9 @@ class Creator:
             )
 
     def create_synthetic_central_gov(self, year_range: int = 10) -> None:
+        if self.start_date is not None:
+            # If start date is not None, we need to make sure that we don't go back too far
+            year_range = min(year_range, self.year - self.start_date)
         for country_name in self.country_names:
             # Initiate the agent
             self.synthetic_central_gov[country_name] = SyntheticDefaultCentralGovernment(

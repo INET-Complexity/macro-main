@@ -1,12 +1,11 @@
-import numpy as np
+from typing import Optional
 
+import numpy as np
 from sklearn.linear_model import LinearRegression
 
 from inet_data.processing.synthetic_government_entities.synthetic_government_entities import (
     SyntheticGovernmentEntities,
 )
-
-from typing import Optional
 
 
 class SyntheticDefaultGovernmentEntities(SyntheticGovernmentEntities):

@@ -1,13 +1,12 @@
+from abc import ABC, abstractmethod
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
-from abc import abstractmethod, ABC
-
-from inet_data.readers.population_data.hfcs_reader import HFCSReader
 from inet_data.readers.economic_data.oecd_economic_data import OECDEconData
 from inet_data.readers.economic_data.world_bank_reader import WorldBankReader
-
-from typing import Any
+from inet_data.readers.population_data.hfcs_reader import HFCSReader
 
 
 class SyntheticPopulation(ABC):

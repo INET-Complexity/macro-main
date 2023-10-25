@@ -1,6 +1,6 @@
-import pandas as pd
+from abc import ABC, abstractmethod
 
-from abc import abstractmethod, ABC
+import pandas as pd
 
 
 class SyntheticCentralBank(ABC):

@@ -1,23 +1,20 @@
+from collections import defaultdict
+from typing import Any
+
 import numpy as np
 import pandas as pd
-
+from sklearn.experimental import enable_iterative_imputer  # noqa
+from sklearn.impute import IterativeImputer  # noqa
 from tqdm import tqdm
-from collections import defaultdict
 
-from inet_data.readers.population_data.hfcs_reader import HFCSReader
-from inet_data.readers.economic_data.oecd_economic_data import OECDEconData
-from inet_data.readers.economic_data.world_bank_reader import WorldBankReader
 from inet_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
 )
-
-from inet_data.util.regressions import fit_linear
+from inet_data.readers.economic_data.oecd_economic_data import OECDEconData
+from inet_data.readers.economic_data.world_bank_reader import WorldBankReader
+from inet_data.readers.population_data.hfcs_reader import HFCSReader
 from inet_data.util.clean_data import remove_outliers
-
-from sklearn.experimental import enable_iterative_imputer  # noqa
-from sklearn.impute import IterativeImputer  # noqa
-
-from typing import Any
+from inet_data.util.regressions import fit_linear
 
 
 class SyntheticHFCSPopulation(SyntheticPopulation):

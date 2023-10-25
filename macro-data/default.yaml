@@ -78,6 +78,11 @@ model:
     desc: The number of time steps (=months) the model is run for.
     type: int
 
+  start_date:
+    value: 2010
+    desc: Only use data from this year onwards.
+    type: int
+
   year:
     value: 2014
     desc: The time of initiation will be January of that year.

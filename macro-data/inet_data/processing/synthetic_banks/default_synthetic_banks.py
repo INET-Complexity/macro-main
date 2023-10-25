@@ -1,8 +1,6 @@
 import numpy as np
 
-from inet_data.processing.synthetic_banks.synthetic_banks import (
-    SyntheticBanks,
-)
+from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 
 
 class SyntheticDefaultBanks(SyntheticBanks):

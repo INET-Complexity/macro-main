@@ -1,8 +1,8 @@
 import json
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-
-from pathlib import Path
 
 from inet_data.readers.economic_data.exchange_rates import WorldBankRatesReader
 

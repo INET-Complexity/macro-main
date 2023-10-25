@@ -1,11 +1,7 @@
 import numpy as np
 
-from inet_data.processing.synthetic_banks.synthetic_banks import (
-    SyntheticBanks,
-)
-from inet_data.processing.synthetic_firms.synthetic_firms import (
-    SyntheticFirms,
-)
+from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
+from inet_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
 
 
 def match_firms_with_banks(

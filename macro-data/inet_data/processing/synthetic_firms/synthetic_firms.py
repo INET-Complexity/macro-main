@@ -1,11 +1,11 @@
+from abc import ABC, abstractmethod
+
 import numpy as np
 import pandas as pd
 
-from abc import abstractmethod, ABC
-
-from inet_data.readers.economic_data.ons_reader import ONSReader
-from inet_data.readers.economic_data.oecd_economic_data import OECDEconData
 from inet_data.readers.economic_data.exchange_rates import WorldBankRatesReader
+from inet_data.readers.economic_data.oecd_economic_data import OECDEconData
+from inet_data.readers.economic_data.ons_reader import ONSReader
 
 
 class SyntheticFirms(ABC):

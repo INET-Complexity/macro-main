@@ -1,4 +1,5 @@
 import pathlib
+
 import numpy as np
 
 from inet_data.processing.synthetic_population.hfcs_synthetic_population import (

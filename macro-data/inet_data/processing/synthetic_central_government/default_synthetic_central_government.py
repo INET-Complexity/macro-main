@@ -1,13 +1,12 @@
+from typing import Any
+
 import numpy as np
 import pandas as pd
-
 from sklearn.linear_model import LinearRegression
 
 from inet_data.processing.synthetic_central_government.synthetic_central_government import (
     SyntheticCentralGovernment,
 )
-
-from typing import Any
 
 
 class SyntheticDefaultCentralGovernment(SyntheticCentralGovernment):
@@ -39,6 +38,8 @@ class SyntheticDefaultCentralGovernment(SyntheticCentralGovernment):
         benefits_data.index = pd.DatetimeIndex([pd.Timestamp(d.year, d.month, 1) for d in benefits_data.index])
         benefits_data_log = benefits_data / benefits_data.shift(1)
         curr_benefits = benefits_data_log.iloc[-regression_window:].values
+        if len(curr_benefits) < regression_window:
+            regression_window = len(curr_benefits)
 
         # Inflation
         log_inflation = exogenous_data["log_inflation"]["Real CPI Inflation"].copy()
@@ -58,7 +59,7 @@ class SyntheticDefaultCentralGovernment(SyntheticCentralGovernment):
 
         # Fit
         x = np.stack([curr_inflation, curr_unemployment_rate], axis=1)
-        nan_ind = np.isnan(x).any(axis=1)
+        nan_ind = np.isnan(x).any(axis=1) | np.isnan(curr_benefits)
         self.unemployment_benefits_model = LinearRegression().fit(x[~nan_ind], curr_benefits[~nan_ind])
         pred = self.unemployment_benefits_model.predict(  # noqa
             np.array([[log_inflation.iloc[-1], unemployment_rate.iloc[-1]]])
@@ -81,6 +82,8 @@ class SyntheticDefaultCentralGovernment(SyntheticCentralGovernment):
         benefits_data.index = pd.DatetimeIndex([pd.Timestamp(d.year, d.month, 1) for d in benefits_data.index])
         benefits_data_log = benefits_data / benefits_data.shift(1)
         curr_benefits = benefits_data_log.iloc[-regression_window:].values
+        if len(curr_benefits) < regression_window:
+            regression_window = len(curr_benefits)
 
         # Inflation
         log_inflation = exogenous_data["log_inflation"]["Real CPI Inflation"].copy()
@@ -100,7 +103,7 @@ class SyntheticDefaultCentralGovernment(SyntheticCentralGovernment):
 
         # Fit
         x = np.stack([curr_inflation, curr_unemployment_rate], axis=1)
-        nan_ind = np.isnan(x).any(axis=1)
+        nan_ind = np.isnan(x).any(axis=1) | np.isnan(curr_benefits)
         self.other_benefits_model = LinearRegression().fit(x[~nan_ind], curr_benefits[~nan_ind])
         pred = self.other_benefits_model.predict(  # noqa
             np.array([[log_inflation.iloc[-1], unemployment_rate.iloc[-1]]])
