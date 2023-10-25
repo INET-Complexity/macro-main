@@ -159,7 +159,6 @@ def prune_icio(icio, start_date):
     for key in keys_to_remove:
         _ = icio.pop(key, None)
 
-
     if not icio:
         warnings.warn(
             f"No ICIO data was kept for date {start_date}.",
