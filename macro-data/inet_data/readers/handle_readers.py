@@ -151,9 +151,15 @@ def prune_oecd(oecd_econ, start_date):
 
 def prune_icio(icio, start_date):
     # ICIO
+    keys_to_remove = []
     for key, value in icio.items():
         if f"{key}".isnumeric() and f"{key}" < f"{start_date}":
-            _ = icio.pop(key, None)
+            keys_to_remove.append(key)
+
+    for key in keys_to_remove:
+        _ = icio.pop(key, None)
+
+
     if not icio:
         warnings.warn(
             f"No ICIO data was kept for date {start_date}.",
