@@ -1,8 +1,8 @@
+from pathlib import Path
+
 import pandas as pd
 
-from pathlib import Path
 from inet_data.readers.economic_data.exchange_rates import WorldBankRatesReader
-
 
 var_mapping = {
     "ID": "ID",

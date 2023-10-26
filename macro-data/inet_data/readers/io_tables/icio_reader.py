@@ -1,13 +1,13 @@
-import os
 import json
+import os
+from functools import reduce
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
-from pathlib import Path
-from functools import reduce
-
-from inet_data.readers.io_tables.util import aggregate_df
 from inet_data.readers.economic_data.exchange_rates import WorldBankRatesReader
+from inet_data.readers.io_tables.util import aggregate_df
 
 
 class ICIOReader:

@@ -1,12 +1,11 @@
-import numpy as np
+from typing import Optional
 
+import numpy as np
 from sklearn.linear_model import LinearRegression
 
 from inet_data.processing.synthetic_rest_of_the_world.synthetic_rest_of_the_world import (
     SyntheticRestOfTheWorld,
 )
-
-from typing import Optional
 
 
 class DefaultSyntheticRestOfTheWorld(SyntheticRestOfTheWorld):

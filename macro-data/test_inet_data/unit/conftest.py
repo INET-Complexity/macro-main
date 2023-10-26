@@ -1,5 +1,6 @@
-import pytest
 import pathlib
+
+import pytest
 
 from inet_data.readers.handle_readers import init_readers
 from inet_data.readers.util.matching_iot_with_sea import compile_industry_data

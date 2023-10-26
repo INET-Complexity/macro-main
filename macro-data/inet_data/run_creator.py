@@ -1,6 +1,7 @@
-import yaml
 import logging
 from pathlib import Path
+
+import yaml
 
 from inet_data.creator import Creator
 from inet_data.util.check_existing_processed_data import check_existing_processed_data

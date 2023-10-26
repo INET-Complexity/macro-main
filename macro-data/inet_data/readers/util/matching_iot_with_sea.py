@@ -1,12 +1,12 @@
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
-from inet_data.readers.io_tables.icio_reader import ICIOReader
-from inet_data.readers.economic_data.oecd_economic_data import OECDEconData
-from inet_data.readers.socioeconomic_data.wiod_sea_data import WIODSEAReader
 from inet_data.readers.economic_data.exchange_rates import WorldBankRatesReader
-
-from typing import Any
+from inet_data.readers.economic_data.oecd_economic_data import OECDEconData
+from inet_data.readers.io_tables.icio_reader import ICIOReader
+from inet_data.readers.socioeconomic_data.wiod_sea_data import WIODSEAReader
 
 
 def get_sea(

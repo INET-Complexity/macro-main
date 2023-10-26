@@ -1,7 +1,7 @@
 import os
-import pandas as pd
-
 from pathlib import Path
+
+import pandas as pd
 
 
 def get_map_long_to_short(data_path: Path) -> dict[str, str]:

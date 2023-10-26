@@ -1,8 +1,8 @@
-import pytest
-import numpy as np
-
 from functools import reduce
 from itertools import product
+
+import numpy as np
+import pytest
 
 
 class TestICIOReader:

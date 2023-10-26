@@ -1,8 +1,15 @@
 import os
-
-from tqdm import tqdm
+import warnings
 from pathlib import Path
+from typing import Any, Optional
 
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+
+from inet_data.readers.criticality_data.goods_criticality_reader import (
+    GoodsCriticalityReader,
+)
 from inet_data.readers.economic_data.eurostat_reader import EuroStatReader
 from inet_data.readers.economic_data.exchange_rates import WorldBankRatesReader
 from inet_data.readers.economic_data.imf_reader import IMFReader
@@ -10,9 +17,6 @@ from inet_data.readers.economic_data.oecd_economic_data import OECDEconData
 from inet_data.readers.economic_data.ons_reader import ONSReader
 from inet_data.readers.economic_data.policy_rates import PolicyRatesReader
 from inet_data.readers.economic_data.world_bank_reader import WorldBankReader
-from inet_data.readers.criticality_data.goods_criticality_reader import (
-    GoodsCriticalityReader,
-)
 from inet_data.readers.io_tables.icio_reader import ICIOReader
 from inet_data.readers.population_data.hfcs_reader import HFCSReader
 from inet_data.readers.socioeconomic_data.wiod_sea_data import WIODSEAReader
@@ -21,7 +25,9 @@ from inet_data.readers.util.matching_iot_with_sea import (
     matching_iot_with_sea,
 )
 
-from typing import Any
+
+class DataFilterWarning(Warning):
+    pass
 
 
 def get_reader_names() -> list[str]:
@@ -43,6 +49,174 @@ def get_reader_names() -> list[str]:
     ]
 
 
+def filter_columns_by_date(columns: list[str], date: str, dataset_name: Optional[str] = None) -> list[str]:
+    """
+    Returns
+     1. All the columns that cannot be parsed as a date,
+     2. The columns that can be parsed as a date and are greater than or equal to the date provided
+    """
+    # Identify non-date columns
+    non_date_cols = [col for col in columns if pd.to_datetime(col, errors="coerce") is pd.NaT]
+    # Identify date columns that are greater than or equal to x
+    date_cols_to_keep = [
+        col for col in columns if pd.to_datetime(col, errors="coerce") is not pd.NaT and col >= f"{date}"
+    ]
+    if not date_cols_to_keep:
+        warnings.warn(
+            f"{dataset_name}: No columns were kept for date {date}.",
+            DataFilterWarning,
+        )
+    return non_date_cols + date_cols_to_keep
+
+
+def prune_world_bank(world_bank, start_date):
+    # World Bank
+    for key, value in world_bank.data.items():
+        years_as_columns = True
+        for col in value.columns:
+            if col.lower() in ["year", "time"]:
+                years_as_columns = False
+                # Check if column can be transformed in a date
+                dates = (
+                    value[col]
+                    .astype(str)
+                    .apply(lambda x: x.replace("Q1", "01").replace("Q2", "04").replace("Q3", "07").replace("Q4", "10"))
+                )
+                dates = pd.to_datetime(dates, errors="coerce")
+                if dates.isnull().sum() == 0:
+                    mask = dates >= pd.to_datetime(f"{start_date}-01-01")
+                    if mask.sum() == 0:
+                        warnings.warn(
+                            f"No rows were kept for date {start_date} in World Bank dataset {key}.",
+                            DataFilterWarning,
+                        )
+                    world_bank.data[key] = value.loc[mask, :]
+                    break
+
+        if years_as_columns is True:
+            mask = filter_columns_by_date(value.columns, start_date, "World Bank")
+            world_bank.data[key] = value.loc[:, mask]
+    return world_bank
+
+
+def prune_wiod_sea(wiod_sea, start_date):
+    # WIOD_SEA
+    mask = filter_columns_by_date(wiod_sea.exchange_rates.df.columns, start_date, "WIOD_SEA")
+    wiod_sea.exchange_rates.df = wiod_sea.exchange_rates.df.loc[:, mask]
+    return wiod_sea
+
+
+def prune_imf(imf_reader, start_date):
+    # IMF
+    mask = filter_columns_by_date(imf_reader.data["bank_demography"].columns, start_date, "IMF")
+    imf_reader.data["bank_demography"] = imf_reader.data["bank_demography"].loc[:, mask]
+    return imf_reader
+
+
+def prune_policy_rates(policy_rates, start_date):
+    # Policy rates
+    mask = filter_columns_by_date(policy_rates.df.columns, start_date, "Policy rates")
+    policy_rates.df = policy_rates.df.loc[:, mask]
+    return policy_rates
+
+
+def prune_oecd(oecd_econ, start_date):
+    # OECD
+    for key, value in oecd_econ.data.items():
+        for col in value.columns:
+            if col.lower() in ["year", "time"]:
+                # Check if column can be transformed in a date
+                dates = pd.to_datetime(value[col].astype(str), errors="coerce")
+                if dates.isnull().sum() == 0:
+                    mask = dates >= pd.to_datetime(f"{start_date}-01-01")
+                    if mask.sum() == 0:
+                        warnings.warn(
+                            f"No rows after {start_date} in OECD dataset {key}; No filter applied.",
+                            DataFilterWarning,
+                        )
+                        mask = np.ones(len(value), dtype=bool)
+                    oecd_econ.data[key] = value.loc[mask, :]
+                    break
+            if col == "country_year":
+                mask = value[col].apply(lambda x: x.split("_")[1]) >= f"{start_date}"
+                if mask.sum() == 0:
+                    warnings.warn(
+                        f"No rows were kept for date {start_date} in OECD dataset {key}.",
+                        DataFilterWarning,
+                    )
+                oecd_econ.data[key] = value.loc[mask, :]
+                break
+    return oecd_econ
+
+
+def prune_icio(icio, start_date):
+    # ICIO
+    keys_to_remove = []
+    for key, value in icio.items():
+        if f"{key}".isnumeric() and f"{key}" < f"{start_date}":
+            keys_to_remove.append(key)
+
+    for key in keys_to_remove:
+        _ = icio.pop(key, None)
+
+    if not icio:
+        warnings.warn(
+            f"No ICIO data was kept for date {start_date}.",
+            DataFilterWarning,
+        )
+    return icio
+
+
+def prune_eurostat(eurostat, start_date):
+    # Eurostat
+    for key, value in eurostat.data.items():
+        if "TIME_PERIOD" in value.columns:
+            mask = value["TIME_PERIOD"].astype(str) >= str(start_date)
+            if mask.sum() == 0:
+                warnings.warn(
+                    f"No rows were kept for date {start_date} in Eurostat dataset {key}.",
+                    DataFilterWarning,
+                )
+            eurostat.data[key] = value.loc[mask, :]
+        else:
+            mask = filter_columns_by_date(value.columns, start_date, f"Eurostat {key}")
+            eurostat.data[key] = value.loc[:, mask]
+    return eurostat
+
+
+def prune_wb_exchange_rates(exchange_rates, start_date):
+    # WB exchange rates
+    mask = filter_columns_by_date(exchange_rates.df.columns, start_date, "WB exchange rates")
+    exchange_rates.df = exchange_rates.df.loc[:, mask]
+    return exchange_rates
+
+
+def prune_data(
+    start_date: str,
+    exchange_rates: WorldBankRatesReader,
+    eurostat: EuroStatReader,
+    icio: dict[str, Any],
+    oecd_econ: OECDEconData,
+    policy_rates: PolicyRatesReader,
+    imf_reader: IMFReader,
+    wiod_sea: WIODSEAReader,
+    world_bank: WorldBankReader,
+):
+    """
+    Removes data before start_date
+    """
+    exchange_rates = prune_wb_exchange_rates(exchange_rates, start_date)
+    eurostat = prune_eurostat(eurostat, start_date)
+    icio = prune_icio(icio, start_date)
+    oecd_econ = prune_oecd(oecd_econ, start_date)
+    policy_rates = prune_policy_rates(policy_rates, start_date)
+    imf_reader = prune_imf(imf_reader, start_date)
+    wiod_sea = prune_wiod_sea(wiod_sea, start_date)
+    world_bank = prune_world_bank(world_bank, start_date)
+
+    return exchange_rates, eurostat, icio, oecd_econ, policy_rates, imf_reader, wiod_sea, world_bank
+
+
 def init_readers(
     raw_data_path: Path,
     country_names: list[str],
@@ -50,6 +224,7 @@ def init_readers(
     year: int,
     scale: int,
     industries: list[str],
+    start_date: Optional[str] = None,
     create_exogenous_industry_data: bool = False,
     testing: bool = False,
 ) -> dict[str, Any]:
@@ -145,6 +320,19 @@ def init_readers(
 
     # ONS Firm Data
     ons_reader = ONSReader(path=raw_data_path / "ons")
+
+    if start_date is not None:
+        exchange_rates, eurostat, icio, oecd_econ, policy_rates, imf_reader, wiod_sea, world_bank = prune_data(
+            exchange_rates=exchange_rates,
+            eurostat=eurostat,
+            icio=icio,
+            oecd_econ=oecd_econ,
+            policy_rates=policy_rates,
+            imf_reader=imf_reader,
+            wiod_sea=wiod_sea,
+            world_bank=world_bank,
+            start_date=start_date,
+        )
 
     return {
         "goods_criticality": goods_criticality,
