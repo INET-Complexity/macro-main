@@ -1,10 +1,12 @@
 import json
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from inet_data.readers.economic_data.exchange_rates import WorldBankRatesReader
+from inet_data.readers.util.prune_util import prune_index
 
 
 class WIODSEAReader:
@@ -87,3 +89,8 @@ class WIODSEAReader:
 
     def get_values_in_lcu(self, country: str, field: str) -> np.ndarray:
         return self.get_values_in_usd(country, field) * self.exchange_rates.from_usd_to_lcu(country, self.year)
+
+    def prune(self, prune_date: int | datetime | str):
+        # WIOD_SEA
+        mask = prune_index(self.exchange_rates.df.columns, prune_date, "WIOD_SEA")
+        self.exchange_rates.df = self.exchange_rates.df.loc[:, mask]
