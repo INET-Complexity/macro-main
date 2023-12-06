@@ -20,7 +20,7 @@ def get_sea(
     ].values
 
 
-def create_investment_matrix(
+def add_investment_matrix_to_icio(
     icio_reader: ICIOReader,
     sea_reader: WIODSEAReader,
     country_names: list[str],
@@ -49,7 +49,7 @@ def create_investment_matrix(
         icio_reader.investment_matrices[country_name] = investment_matrix
 
 
-def matching_iot_with_sea(
+def match_iot_with_sea(
     icio_reader: ICIOReader,
     sea_reader: WIODSEAReader,
     country_names: list[str],
