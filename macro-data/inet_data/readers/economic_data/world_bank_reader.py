@@ -1,10 +1,33 @@
+import warnings
 from pathlib import Path
+import logging
 
 import numpy as np
 import pandas as pd
 
+from inet_data.readers.util.prune_util import DataFilterWarning, prune_index
+
 
 class WorldBankReader:
+    """
+    A class for reading and retrieving economic data from the World Bank dataset.
+
+    Attributes:
+        path (Path): The path to the directory containing the World Bank dataset.
+
+    Methods:
+        __init__(self, path: Path): Initializes a WorldBankReader instance.
+        get_unemployment_rate(self, country: str, year: int) -> float: Retrieves the unemployment rate for a specific country and year.
+        get_participation_rate(self, country: str, year: int) -> float: Retrieves the participation rate for a specific country and year.
+        get_tau_vat(self, country: str, year: int) -> float: Retrieves the VAT tax rate for a specific country and year.
+        get_tau_exp(self, country: str, year: int) -> float: Retrieves the export tax rate for a specific country and year.
+        get_gini_coef(self, country: str, year: int) -> float: Retrieves the Gini coefficient for a specific country and year.
+        get_historic_gdp(self, country: str, year: int) -> float: Retrieves the historic GDP for a specific country and year.
+        get_current_monthly_gdp(self, country: str, year: int) -> float: Retrieves the current monthly GDP for a specific country and year.
+        get_log_inflation(self, country: str, start_year: int = 1970, end_year: int = 2024) -> pd.DataFrame: Retrieves the log inflation data for a specific country within a given time range.
+        prune(self, prune_date: int | str | pd.Timestamp, date_format: str = "%Y-%m-%d") -> None: Prunes the data based on a given prune date.
+    """
+
     def __init__(self, path: Path):
         self.files_with_codes = self.get_files_with_codes()
 
@@ -43,45 +66,124 @@ class WorldBankReader:
         }
 
     def get_unemployment_rate(self, country: str, year: int) -> float:
+        """
+        Retrieves the unemployment rate for a specific country and year.
+
+        Parameters:
+            country (str): The country code for the desired country.
+            year (int): The year for the data.
+
+        Returns:
+            float: The unemployment rate for the specified country and year.
+        """
         df = self.data["unemployment"]
         df = df.loc[df["Country Code"] == country, str(year)]
         return df.values[0] / 100.0
 
     def get_participation_rate(self, country: str, year: int) -> float:
+        """
+        Retrieves the participation rate for a specific country and year.
+
+        Parameters:
+            country (str): The country code for the desired country.
+            year (int): The year for the data.
+
+        Returns:
+            float: The participation rate for the specified country and year.
+        """
         df = self.data["participation"]
         df = df.loc[df["Country Code"] == country, str(year)]
         return df.values[0] / 100.0
 
     def get_tau_vat(self, country: str, year: int) -> float:
+        """
+        Retrieves the VAT tax rate for a specific country and year.
+
+        Parameters:
+            country (str): The country code for the desired country.
+            year (int): The year for the data.
+
+        Returns:
+            float: The VAT tax rate for the specified country and year.
+        """
         df = self.data["tau_vat"]
         df = df.loc[df["Country Code"] == country][str(year)]
         return df.values[0] / 100.0
 
     def get_tau_exp(self, country: str, year: int) -> float:
+        """
+        Retrieves the export tax rate for a specific country and year.
+
+        Parameters:
+            country (str): The country code for the desired country.
+            year (int): The year for the data.
+
+        Returns:
+            float: The export tax rate for the specified country and year.
+        """
         df = self.data["tau_exp"]
         df = df.loc[df["Country Code"] == country][str(year)]
         return df.values[0] / 100.0
 
     def get_gini_coef(self, country: str, year: int) -> float:
+        """
+        Retrieves the Gini coefficient for a specific country and year.
+
+        Parameters:
+            country (str): The country code for the desired country.
+            year (int): The year for the data.
+
+        Returns:
+            float: The Gini coefficient for the specified country and year.
+        """
         df = self.data["gini_coefs"]
         return df.loc[df["Country Code"] == country][str(year)].values[0] / 100
 
-    # current domestic
     def get_historic_gdp(self, country: str, year: int) -> float:
+        """
+        Retrieves the historic GDP for a specific country and year.
+
+        Parameters:
+            country (str): The country code for the desired country.
+            year (int): The year for the data.
+
+        Returns:
+            float: The historic GDP for the specified country and year.
+        """
         df = self.data["historic_gdp"]
         df = df.loc[df["Country Code"] == country].iloc[:, 4:]
         return df.loc[:, str(year)].values[0]
 
-    # current domestic
     def get_current_monthly_gdp(self, country: str, year: int) -> float:
+        """
+        Retrieves the current monthly GDP for a specific country and year.
+
+        Parameters:
+            country (str): The country code for the desired country.
+            year (int): The year for the data.
+
+        Returns:
+            float: The current monthly GDP for the specified country and year.
+        """
         return self.get_historic_gdp(country, year) / 12.0
 
-    def get_log_inflation(self, country: str) -> pd.DataFrame:
+    def get_log_inflation(self, country: str, start_year: int = 1970, end_year: int = 2024) -> pd.DataFrame:
+        """
+        Retrieves the log inflation data for a specific country within a given time range.
+
+        Parameters:
+            country (str): The country code for the desired country.
+            start_year (int): The starting year for the data (default: 1970).
+            end_year (int): The ending year for the data (default: 2024).
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the log inflation data for the specified country and time range.
+        """
         # Get CPI and PPI data
         data_cpi = self.data["cpi"].loc[self.data["cpi"]["Country Code"] == country]
         data_ppi = self.data["ppi"].loc[self.data["cpi"]["Country Code"] == country]
         dates, vals_cpi, vals_ppi = [], [], []
-        for year in range(1970, 2024):
+        for year in range(start_year, end_year):
             for month in range(1, 13):
                 s_month = str(month) if month > 9 else "0" + str(month)
                 dates.append(str(year) + "-" + str(month))
@@ -118,3 +220,45 @@ class WorldBankReader:
         data_df["Real PPI Inflation"] = np.log(data_df["Real PPI Inflation"] / data_df["Real PPI Inflation"].shift(1))
 
         return data_df
+
+    def prune(self, prune_date: int | str | pd.Timestamp, date_format: str = "%Y-%m-%d") -> None:
+        """
+        Prunes the data based on a given prune date.
+
+        Parameters:
+            prune_date (int | str | pd.Timestamp): The date to prune the data. Can be an integer, string, or pandas Timestamp.
+            date_format (str): The format of the prune_date if it is a string. Default is "%Y-%m-%d".
+
+        Returns:
+            None
+        """
+
+        if isinstance(prune_date, str):
+            prune_date = pd.to_datetime(prune_date, format=date_format)
+        elif isinstance(prune_date, int):
+            prune_date = pd.to_datetime(str(prune_date), format="%Y")
+
+        for key, value in self.data.items():
+            years_as_columns = True
+            for col in value.columns:
+                if col.lower() in ["year", "time"]:
+                    years_as_columns = False
+                    # Check if column can be transformed in a date
+                    dates = pd.to_datetime(value[col], errors="coerce", format="mixed")
+                    if dates.isnull().sum() == 0:
+                        logging.log(level=logging.DEBUG, msg=f"WBank: NAT dates {dates.isna().sum()}.")
+                        mask = dates >= prune_date
+                        if mask.sum() == 0:
+                            warnings.warn(
+                                f"No rows were kept for date {prune_date} in World Bank dataset {key}.",
+                                DataFilterWarning,
+                            )
+                        logging.log(
+                            level=logging.DEBUG, msg=f"WBank: Keeping {mask.sum()} rows for prune date {prune_date}."
+                        )
+                        self.data[key] = value.loc[mask, :]
+                        break
+
+            if years_as_columns is True:
+                mask = prune_index(value.columns, prune_date, "World Bank")
+                self.data[key] = value.loc[:, mask]
