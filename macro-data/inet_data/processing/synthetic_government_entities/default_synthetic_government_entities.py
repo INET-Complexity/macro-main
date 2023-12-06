@@ -27,7 +27,7 @@ class SyntheticDefaultGovernmentEntities(SyntheticGovernmentEntities):
     ) -> None:
         self.gov_entity_data["Consumption in LCU"] = monthly_govt_consumption_in_lcu
         self.gov_entity_data["Consumption in USD"] = monthly_govt_consumption_in_usd
-        if total_gov_consumption_growth is None:
+        if total_gov_consumption_growth is None or len(total_gov_consumption_growth) == 0:
             self.government_consumption_model = None
         else:
             self.government_consumption_model = LinearRegression().fit(

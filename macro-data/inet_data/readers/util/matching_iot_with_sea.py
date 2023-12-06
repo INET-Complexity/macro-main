@@ -318,9 +318,11 @@ def compile_exogenous_industry_data(
             curr_data.index = [year]
             country_data_ls.append(curr_data)
         country_data = pd.concat(country_data_ls, axis=0)
-        country_data.index = pd.DatetimeIndex(pd.date_range(start="2010-01-01", end="2019-01-01", freq="Y"))
+        # country_data.index = pd.DatetimeIndex(pd.date_range(start="2010-01-01", end="2019-01-01", freq="Y"))
+        country_data.index = pd.to_datetime(country_data.index, format="%Y")
         # country_data = country_data.reindex(pd.date_range(start="2010-01-01", end="2019-01-01", freq="M"))
-        country_data = country_data.astype(float).resample("M").interpolate("linear").copy()
+        if country_data.shape[0] > 1:
+            country_data = country_data.astype(float).resample("M").interpolate("linear").copy()
         country_data.index = pd.DatetimeIndex([pd.Timestamp(d.year, d.month, 1) for d in country_data.index])
         exogenous_data_by_country[country_name] = country_data
 
