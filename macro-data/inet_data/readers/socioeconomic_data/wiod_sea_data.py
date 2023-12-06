@@ -10,6 +10,22 @@ from inet_data.readers.util.prune_util import prune_index
 
 
 class WIODSEAReader:
+    """
+    A class for reading and manipulating socioeconomic data from the WIOD-SEA dataset.
+
+    Args:
+        df (pd.DataFrame): The DataFrame containing the socioeconomic data.
+        year (int): The year of the data.
+        industries (list[str]): The list of industries to include in the analysis.
+        exchange_rates (WorldBankRatesReader): An instance of the WorldBankRatesReader class for exchange rate data.
+
+    Attributes:
+        df (pd.DataFrame): The DataFrame containing the socioeconomic data.
+        year (int): The year of the data.
+        industries (list[str]): The list of industries to include in the analysis.
+        exchange_rates (WorldBankRatesReader): An instance of the WorldBankRatesReader class for exchange rate data.
+    """
+
     def __init__(
         self,
         df: pd.DataFrame,
@@ -34,6 +50,20 @@ class WIODSEAReader:
         industries: list,
         exchange_rates: WorldBankRatesReader,
     ):
+        """
+        Aggregate socioeconomic data from a CSV file. Aggregation is done using a JSON file that maps sectors to aggregated sectors.
+
+        Args:
+            path (Path | str): The path to the CSV file.
+            aggregation_path (Path): The path to the aggregation JSON file.
+            year (int): The year of the data.
+            country_names (list[str]): The list of country names to include in the aggregation.
+            industries (list): The list of industries to include in the aggregation.
+            exchange_rates (WorldBankRatesReader): The exchange rates reader.
+
+        Returns:
+            WIOD_SEA_Data: An instance of the WIOD_SEA_Data class containing the aggregated data.
+        """
         # Aggregate industries
         raw_df = pd.read_csv(path, thousands=",", index_col=[0, 1, 2, 3])
         aggregation = json.load(open(aggregation_path))
@@ -81,16 +111,45 @@ class WIODSEAReader:
         )
 
     def clean_sea(self) -> None:
-        # Overwrite negative capital compensation
+        """
+        Clean the socioeconomic data by overwriting negative capital compensation with zero.
+        """
         self.df.loc[:, "Capital Compensation"] = np.maximum(0.0, self.df.loc[:, "Capital Compensation"])
 
     def get_values_in_usd(self, country: str, field: str) -> np.ndarray:
+        """
+        Get the values of a specific field in USD for a given country and industry.
+
+        Args:
+            country (str): The name of the country.
+            field (str): The name of the field.
+
+        Returns:
+            np.ndarray: An array of values in USD.
+        """
         return self.df.loc[country].loc[self.industries, field].values
 
     def get_values_in_lcu(self, country: str, field: str) -> np.ndarray:
+        """
+        Get the values of a specific field in local currency units (LCU) for a given country and industry.
+
+        Args:
+            country (str): The name of the country.
+            field (str): The name of the field.
+
+        Returns:
+            np.ndarray: An array of values in LCU.
+        """
         return self.get_values_in_usd(country, field) * self.exchange_rates.from_usd_to_lcu(country, self.year)
 
-    def prune(self, prune_date: int | datetime | str):
+    def prune(self, prune_date: int | datetime | str, date_format: str = "%Y-%m-%d"):
+        """
+        Prune the exchange rate data based on a given date.
+
+        Args:
+            prune_date (int | datetime | str): The date to prune the exchange rate data.
+            date_format (str, optional): The format of the prune_date if it is a string. Defaults to "%Y-%m-%d".
+        """
         # WIOD_SEA
-        mask = prune_index(self.exchange_rates.df.columns, prune_date, "WIOD_SEA")
+        mask = prune_index(self.exchange_rates.df.columns, prune_date, "WIOD_SEA", date_format=date_format)
         self.exchange_rates.df = self.exchange_rates.df.loc[:, mask]
