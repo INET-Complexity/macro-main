@@ -1,11 +1,15 @@
 import json
 import logging
+import warnings
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
 from scipy.special import zetac
+
+from inet_data.readers.util.prune_util import DataFilterWarning
 
 
 class OECDEconData:
@@ -445,3 +449,69 @@ class OECDEconData:
         data /= data.sum(axis=0)
         data.index = pd.Index(range(len(data)), name="Industry")
         return data
+
+    def prune(self, prune_date: str | int | pd.Timestamp):
+        # make sure the date is in datetime format
+        if isinstance(prune_date, str):
+            prune_date = datetime.strptime(prune_date, "%Y-%m-%d")
+        elif isinstance(prune_date, int):
+            prune_date = datetime.strptime(str(prune_date), "%Y")
+        elif isinstance(prune_date, datetime):
+            pass
+        else:
+            raise ValueError(f"prune_date must be a str, int, or datetime, not {type(prune_date)}.")
+
+        for key, value in self.data.items():
+            for col in value.columns:
+                if col.lower() in ["year", "time"]:
+                    dates = pd.to_datetime(value[col].astype(str), errors="coerce", format="mixed")
+                    if dates.isnull().sum() == 0:
+                        mask = dates >= prune_date
+                        if mask.sum() == 0:
+                            warnings.warn(
+                                f"No rows after {prune_date} in OECD dataset {key}; No filter applied.",
+                                DataFilterWarning,
+                            )
+                            mask = np.ones(len(value), dtype=bool)
+                        self.data[key] = value.loc[mask, :]
+                        break
+                if col == "country_year":
+                    years = value[col].apply(lambda x: x.split("_")[1])
+                    years = pd.to_datetime(years, errors="coerce", format="%Y")
+                    mask = years >= prune_date
+                    if mask.sum() == 0:
+                        warnings.warn(
+                            f"No rows were kept for date {prune_date} in OECD dataset {key}.",
+                            DataFilterWarning,
+                        )
+                    self.data[key] = value.loc[mask, :]
+                    break
+
+
+def prune_oecd(oecd_econ, start_date):
+    # OECD
+    for key, value in oecd_econ.data.items():
+        for col in value.columns:
+            if col.lower() in ["year", "time"]:
+                # Check if column can be transformed in a date
+                dates = pd.to_datetime(value[col].astype(str), errors="coerce")
+                if dates.isnull().sum() == 0:
+                    mask = dates >= pd.to_datetime(f"{start_date}-01-01")
+                    if mask.sum() == 0:
+                        warnings.warn(
+                            f"No rows after {start_date} in OECD dataset {key}; No filter applied.",
+                            DataFilterWarning,
+                        )
+                        mask = np.ones(len(value), dtype=bool)
+                    oecd_econ.data[key] = value.loc[mask, :]
+                    break
+            if col == "country_year":
+                mask = value[col].apply(lambda x: x.split("_")[1]) >= f"{start_date}"
+                if mask.sum() == 0:
+                    warnings.warn(
+                        f"No rows were kept for date {start_date} in OECD dataset {key}.",
+                        DataFilterWarning,
+                    )
+                oecd_econ.data[key] = value.loc[mask, :]
+                break
+    return oecd_econ
