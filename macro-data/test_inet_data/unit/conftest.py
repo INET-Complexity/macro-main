@@ -2,6 +2,7 @@ import pathlib
 
 import pytest
 
+from inet_data.readers.default_readers import DataReaders
 from inet_data.readers.handle_readers import init_readers
 from inet_data.readers.util.matching_iot_with_sea import compile_industry_data
 
@@ -16,11 +17,11 @@ def data_path():
 
 @pytest.fixture(scope="module", name="readers")
 def readers(data_path):
-    return init_readers(
+    readers = DataReaders.init_default_raw_data_path(
         raw_data_path=data_path,
         country_names=["FRA"],
         country_names_short=["FR"],
-        year=2014,
+        simulation_year=2014,
         scale=100000,
         industries=[
             "A",
@@ -42,17 +43,50 @@ def readers(data_path):
             "Q",
             "R_S",
         ],
-        testing=True,
+        force_single_hfcs_survey=True,
     )
+    return readers
+
+
+# @pytest.fixture(scope="module", name="readers")
+# def readers(data_path):
+#     return init_readers(
+#         raw_data_path=data_path,
+#         country_names=["FRA"],
+#         country_names_short=["FR"],
+#         year=2014,
+#         scale=100000,
+#         industries=[
+#             "A",
+#             "B",
+#             "C",
+#             "D",
+#             "E",
+#             "F",
+#             "G",
+#             "H",
+#             "I",
+#             "J",
+#             "K",
+#             "L",
+#             "M",
+#             "N",
+#             "O",
+#             "P",
+#             "Q",
+#             "R_S",
+#         ],
+#         testing=True,
+#     )
 
 
 @pytest.fixture(scope="module", name="industry_data")
 def industry_data(data_path, readers):
     return compile_industry_data(
-        current_icio_reader=readers["icio"][2014],
-        sea_reader=readers["wiod_sea"],
-        econ_reader=readers["oecd_econ"],
-        exchange_rates=readers["exchange_rates"],
+        current_icio_reader=readers.icio[2014],
+        sea_reader=readers.wiod_sea,
+        econ_reader=readers.oecd_econ,
+        exchange_rates=readers.exchange_rates,
         country_names=["FRA"],
         config={"model": {"single_firm_per_industry": {"value": True}}},
     )

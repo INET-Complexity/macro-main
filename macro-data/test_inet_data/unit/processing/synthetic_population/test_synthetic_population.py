@@ -38,9 +38,9 @@ class TestSyntheticPopulation:
             ],
         )
         population.create(
-            hfcs_reader=readers["hfcs"]["FRA"],
-            econ_reader=readers["oecd_econ"],
-            wb_reader=readers["world_bank"],
+            hfcs_reader=readers.hfcs["FRA"],
+            econ_reader=readers.oecd_econ,
+            wb_reader=readers.world_bank,
             n_households=1000,
             number_of_firms_by_industry=np.ones(18).astype(int),
             total_unemployment_benefits=10000.0,

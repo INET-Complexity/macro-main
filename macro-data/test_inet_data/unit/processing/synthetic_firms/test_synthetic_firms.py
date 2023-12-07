@@ -39,9 +39,9 @@ class TestSyntheticFirms:
         )
         firms.set_industries(number_of_firms_by_industry=np.ones(18).astype(int))
         firms.create(
-            econ_reader=readers["oecd_econ"],
-            ons_reader=readers["ons"],
-            exchange_rates=readers["exchange_rates"],
+            econ_reader=readers.oecd_econ,
+            ons_reader=readers.ons,
+            exchange_rates=readers.exchange_rates,
             total_firm_deposits=10000,
             total_firm_debt=0,
             industry_data=industry_data["FRA"],
@@ -54,7 +54,7 @@ class TestSyntheticFirms:
         )
         firms.firm_data["Corresponding Bank ID"] = 0
         firms.set_additional_initial_conditions(
-            econ_reader=readers["oecd_econ"],
+            econ_reader=readers.oecd_econ,
             industry_data=industry_data["FRA"],
             interest_rate_on_firm_deposits=np.full(18, 0.02),
             overdraft_rate_on_firm_deposits=np.full(18, 0.03),

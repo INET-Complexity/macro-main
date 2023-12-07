@@ -17,7 +17,7 @@ class TestSyntheticCentralGovernment:
             year=2014,
         )
         central_gov.create(
-            central_gov_debt=readers["oecd_econ"].general_gov_debt("FRA", 2014),
+            central_gov_debt=readers.oecd_econ.general_gov_debt("FRA", 2014),
             benefits_data=pd.DataFrame(
                 data={"Unemployment Benefits": [100.0, 100.0], "Other Total Benefits": [200.0, 200.0]},
                 index=pd.DatetimeIndex(pd.date_range(start="2010-01-01", end="2012-01-01", freq="Y")),
