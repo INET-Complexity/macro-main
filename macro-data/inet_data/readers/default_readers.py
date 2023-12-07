@@ -1,5 +1,9 @@
+import warnings
+from datetime import datetime
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable, Tuple, Any
+
+import pandas as pd
 
 from inet_data.readers.criticality_data.goods_criticality_reader import (
     GoodsCriticalityReader,
@@ -19,6 +23,8 @@ from inet_data.readers.util.matching_iot_with_sea import (
     match_iot_with_sea,
 )
 from dataclasses import dataclass
+
+from inet_data.readers.util.prune_util import DataFilterWarning
 
 
 @dataclass
@@ -77,7 +83,7 @@ class DataReaders:
     eurostat: EuroStatReader
     ons: ONSReader
     policy_rates: PolicyRatesReader
-    imf: IMFReader
+    imf_reader: IMFReader
     exchange_rates: WorldBankRatesReader
     goods_criticality: GoodsCriticalityReader
 
@@ -90,18 +96,21 @@ class DataReaders:
         simulation_year: int,
         scale: int,
         industries: list[str],
-        start_date: str,
-        create_exogenous_industry_data: bool,
-        testing: bool,
+        create_exogenous_industry_data: bool = False,
         imputed_rent_year: int = 2014,
-        all_years: Optional[Iterable[int]] = None,
+        exog_data_range: Tuple[int, int] = (2010, 2018),
+        prune_date: str | int | datetime = None,
+        force_single_hfcs_survey: bool = False,
+        prune_date_format: str = "%Y-%m-%d",
     ):
         short_names = {
             country_name: country_name_short
             for country_name, country_name_short in zip(country_names, country_names_short)
         }
-        if all_years is None:
+        if not create_exogenous_industry_data:
             all_years = [simulation_year]
+        else:
+            all_years = range(exog_data_range[0], exog_data_range[1] + 1)
         datapaths = DataPaths.default_paths(raw_data_path, all_years)
 
         goods_criticality = GoodsCriticalityReader.from_csv(path=datapaths.goods_criticality_path)
@@ -114,7 +123,7 @@ class DataReaders:
                 hfcs_data_path=datapaths.hfcs_path,
                 year=simulation_year,
                 exchange_rates=exchange_rates,
-                num_surveys=1 if testing else 5,
+                num_surveys=1 if force_single_hfcs_survey else 5,
             )
             for country_name in country_names
         }
@@ -163,16 +172,46 @@ class DataReaders:
 
         ons_reader = ONSReader(path=datapaths.ons_path)
 
+        world_bank = WorldBankReader(path=datapaths.world_bank_path)
+
+        if prune_date:
+            exchange_rates.prune(prune_date, prune_date_format=prune_date_format)
+            eurostat.prune(prune_date, prune_date_format=prune_date_format)
+            icio = prune_icio_dict(icio, prune_date)
+            wiod_sea.prune(prune_date, prune_date_format=prune_date_format)
+            oecd_econ.prune(prune_date, prune_date_format=prune_date_format)
+            policy_rates.prune(prune_date, prune_date_format=prune_date_format)
+            imf_reader.prune(prune_date, prune_date_format=prune_date_format)
+            world_bank.prune(prune_date, prune_date_format=prune_date_format)
+
         return cls(
             icio=icio,
             wiod_sea=wiod_sea,
             oecd_econ=oecd_econ,
-            world_bank=WorldBankReader(path=datapaths.world_bank_path),
+            world_bank=world_bank,
             hfcs=hfcs,
             eurostat=eurostat,
             ons=ons_reader,
             policy_rates=policy_rates,
-            imf=imf_reader,
+            imf_reader=imf_reader,
             exchange_rates=exchange_rates,
             goods_criticality=goods_criticality,
         )
+
+
+def prune_icio_dict(icio_dict: dict[int, Any], prune_date: str | int | datetime):
+    # make sure prune date is the year in int format
+    if isinstance(prune_date, str):
+        prune_date = pd.to_datetime(prune_date, format="%Y-%m-%d").year
+        prune_date = int(prune_date)
+    elif isinstance(prune_date, datetime):
+        prune_date = prune_date.year
+
+    icio_dict = {year: icio for year, icio in icio_dict.items() if year >= prune_date}
+
+    if not icio_dict:
+        warnings.warn(
+            f"No ICIO data was kept for date {prune_date}.",
+            DataFilterWarning,
+        )
+    return icio_dict
