@@ -450,10 +450,10 @@ class OECDEconData:
         data.index = pd.Index(range(len(data)), name="Industry")
         return data
 
-    def prune(self, prune_date: str | int | pd.Timestamp):
+    def prune(self, prune_date: str | int | pd.Timestamp, prune_date_format: str = "%Y-%m-%d"):
         # make sure the date is in datetime format
         if isinstance(prune_date, str):
-            prune_date = datetime.strptime(prune_date, "%Y-%m-%d")
+            prune_date = datetime.strptime(prune_date, prune_date_format)
         elif isinstance(prune_date, int):
             prune_date = datetime.strptime(str(prune_date), "%Y")
         elif isinstance(prune_date, datetime):

@@ -221,20 +221,20 @@ class WorldBankReader:
 
         return data_df
 
-    def prune(self, prune_date: int | str | pd.Timestamp, date_format: str = "%Y-%m-%d") -> None:
+    def prune(self, prune_date: int | str | pd.Timestamp, prune_date_format: str = "%Y-%m-%d") -> None:
         """
         Prunes the data based on a given prune date.
 
         Parameters:
             prune_date (int | str | pd.Timestamp): The date to prune the data. Can be an integer, string, or pandas Timestamp.
-            date_format (str): The format of the prune_date if it is a string. Default is "%Y-%m-%d".
+            prune_date_format (str): The format of the prune_date if it is a string. Default is "%Y-%m-%d".
 
         Returns:
             None
         """
 
         if isinstance(prune_date, str):
-            prune_date = pd.to_datetime(prune_date, format=date_format)
+            prune_date = pd.to_datetime(prune_date, format=prune_date_format)
         elif isinstance(prune_date, int):
             prune_date = pd.to_datetime(str(prune_date), format="%Y")
 

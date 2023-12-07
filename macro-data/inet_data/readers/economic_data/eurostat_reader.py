@@ -478,10 +478,10 @@ class EuroStatReader:
         fractions["ROW"] = np.mean(list(fractions.values()))  # c'est la vie
         return fractions
 
-    def prune(self, prune_date: str | int | datetime):
+    def prune(self, prune_date: str | int | datetime, prune_date_format: str = "%Y-%m-%d"):
         # Convert prune_date to datetime
         if isinstance(prune_date, str):
-            prune_date = datetime.strptime(prune_date, "%Y-%m-%d")
+            prune_date = datetime.strptime(prune_date, prune_date_format)
         elif isinstance(prune_date, int):
             prune_date = datetime.strptime(str(prune_date), "%Y")
         elif isinstance(prune_date, datetime):
