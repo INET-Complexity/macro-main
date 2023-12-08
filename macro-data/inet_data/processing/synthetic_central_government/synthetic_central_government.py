@@ -25,26 +25,6 @@ class SyntheticCentralGovernment(ABC):
         self.unemployment_benefits_model = unemployment_benefits_model
         self.other_benefits_model = other_benefits_model
 
-    # def create(
-    #     self,
-    #     central_gov_debt: float,
-    #     benefits_data: pd.DataFrame,
-    #     exogenous_data: dict[str, Any],
-    #     regression_window: int = 48,
-    # ) -> None:
-    #     self.set_central_government_debt(central_gov_debt)
-    #     self.set_total_unemployment_benefits(
-    #         benefits_data=benefits_data,
-    #         exogenous_data=exogenous_data,
-    #         regression_window=regression_window,
-    #     )
-    #     self.set_other_social_benefits(
-    #         benefits_data=benefits_data,
-    #         exogenous_data=exogenous_data,
-    #         regression_window=regression_window,
-    #     )
-    #     self.set_initial_bank_equity_injection()
-
     def update_fields(
         self,
         total_social_housing_rent: float,

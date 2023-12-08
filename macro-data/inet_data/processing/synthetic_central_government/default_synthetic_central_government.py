@@ -36,14 +36,6 @@ class SyntheticDefaultCentralGovernment(SyntheticCentralGovernment):
         regression_window: int = 48,
         equity_injection: float = 0.0,
     ) -> SyntheticCentralGovernment:
-        central_gov_data = pd.DataFrame(
-            columns=[
-                "Total Unemployment Benefits",
-                "Other Social Benefits",
-                "Bank Equity Injection",
-                "Debt",
-            ]
-        )
         country_exogenous_data = readers.get_exogenous_data(country_name)
         if country_exogenous_data is not None:
             # if exogenous data is available, use it to fit the benefits models
