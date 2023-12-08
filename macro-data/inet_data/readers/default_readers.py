@@ -90,7 +90,7 @@ class DataReaders:
     @classmethod
     def init_default_raw_data_path(
         cls,
-        raw_data_path: Path,
+        raw_data_path: Path | str,
         country_names: list[str],
         country_names_short: list[str],
         simulation_year: int,
@@ -103,6 +103,7 @@ class DataReaders:
         force_single_hfcs_survey: bool = False,
         prune_date_format: str = "%Y-%m-%d",
     ):
+        raw_data_path = Path(raw_data_path)
         short_names = {
             country_name: country_name_short
             for country_name, country_name_short in zip(country_names, country_names_short)
@@ -197,6 +198,54 @@ class DataReaders:
             exchange_rates=exchange_rates,
             goods_criticality=goods_criticality,
         )
+
+    def get_exogenous_data(self, country_name: str) -> dict[str, Any]:
+        return {
+            "log_inflation": self.world_bank.get_log_inflation(country_name),
+            "sectoral_growth": self.eurostat.get_perc_sectoral_growth(country_name),
+            "unemployment_rate": self.oecd_econ.get_unemployment_rate(country_name),
+            "house_price_index": self.oecd_econ.get_house_price_index(country_name),
+            "vacancy_rate": self.oecd_econ.get_vacancy_rate(country_name),
+            "total_firm_deposits_and_debt": self.eurostat.get_total_industry_debt_and_deposits(country_name),
+        }
+
+    def get_benefits_inflation_data(
+        self, country_name: str, year_min: int, year_max: int, exogenous_data: dict[str, Any]
+    ) -> pd.DataFrame:
+        years = range(year_min, year_max)
+        unemp = [self.get_total_unemployment_benefits(country_name, year) for year in years]
+        other = [
+            self.get_total_benefits(country_name, year) - self.get_total_unemployment_benefits(country_name, year)
+            for year in years
+        ]
+
+        benefits_data = pd.DataFrame(
+            data={"Unemployment Benefits": unemp, "Other Total Benefits": other},
+            index=pd.DatetimeIndex(
+                pd.date_range(
+                    start=f"{years[0]}-01-01",
+                    end=f"{years[-1] + 1}-01-01",
+                    freq="Y",
+                )
+            ),
+        )
+
+        benefits_data = benefits_data.resample("M").interpolate("linear")
+        benefits_data.index = pd.DatetimeIndex([pd.Timestamp(d.year, d.month, 1) for d in benefits_data.index])
+        log_inflation = exogenous_data["log_inflation"]["Real CPI Inflation"].copy()
+        log_inflation.index = pd.to_datetime(log_inflation.index, format="%Y-%m")
+        data = pd.merge_asof(benefits_data, log_inflation, left_index=True, right_index=True)
+        return data
+
+    def get_total_benefits(self, country_name, year):
+        return self.oecd_econ.all_benefits_gdp_pct(country_name, year) * self.world_bank.get_current_monthly_gdp(
+            country_name, year
+        )
+
+    def get_total_unemployment_benefits(self, country_name, year):
+        return self.oecd_econ.unemployment_benefits_gdp_pct(
+            country_name, year
+        ) * self.world_bank.get_current_monthly_gdp(country_name, year)
 
 
 def prune_icio_dict(icio_dict: dict[int, Any], prune_date: str | int | datetime):
