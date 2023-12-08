@@ -1,12 +1,12 @@
-from typing import Any
+from typing import Optional
 
-import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
 from inet_data.processing.synthetic_central_government.synthetic_central_government import (
     SyntheticCentralGovernment,
 )
+from inet_data.readers.default_readers import DataReaders
 
 
 class SyntheticDefaultCentralGovernment(SyntheticCentralGovernment):
@@ -14,102 +14,110 @@ class SyntheticDefaultCentralGovernment(SyntheticCentralGovernment):
         self,
         country_name: str,
         year: int,
+        central_gov_data: pd.DataFrame,
+        other_benefits_model: Optional[LinearRegression],
+        unemployment_benefits_model: Optional[LinearRegression],
     ):
         super().__init__(
             country_name,
             year,
+            central_gov_data,
+            other_benefits_model,
+            unemployment_benefits_model,
         )
 
-    def set_central_government_debt(self, central_gov_debt: float) -> None:
-        self.central_gov_data["Debt"] = [central_gov_debt]
-
-    def set_total_unemployment_benefits(
-        self,
-        benefits_data: pd.DataFrame,
-        exogenous_data: dict[str, Any],
+    @classmethod
+    def create_from_readers(
+        cls,
+        readers: DataReaders,
+        country_name: str,
+        year: int,
+        year_range: int = 10,
         regression_window: int = 48,
-    ) -> None:
-        if exogenous_data is None:
-            self.central_gov_data["Total Unemployment Benefits"] = [benefits_data["Unemployment Benefits"].values[-1]]
-            return
-
-        # Benefits
-        benefits_data = benefits_data["Unemployment Benefits"].astype(float).resample("M").interpolate("linear").copy()
-        benefits_data.index = pd.DatetimeIndex([pd.Timestamp(d.year, d.month, 1) for d in benefits_data.index])
-        benefits_data_log = benefits_data / benefits_data.shift(1)
-        curr_benefits = benefits_data_log.iloc[-regression_window:].values
-        if len(curr_benefits) < regression_window:
-            regression_window = len(curr_benefits)
-
-        # Inflation
-        log_inflation = exogenous_data["log_inflation"]["Real CPI Inflation"].copy()
-        log_inflation.index = pd.DatetimeIndex(
-            [pd.Timestamp(year=int(ind[0:4]), month=int(ind[5:]), day=1) for ind in log_inflation.index.values]
+        equity_injection: float = 0.0,
+    ) -> SyntheticCentralGovernment:
+        central_gov_data = pd.DataFrame(
+            columns=[
+                "Total Unemployment Benefits",
+                "Other Social Benefits",
+                "Bank Equity Injection",
+                "Debt",
+            ]
         )
-        log_inflation = log_inflation.loc[log_inflation.index <= max(benefits_data.index)]
-        curr_inflation = log_inflation.iloc[-regression_window:].values
+        country_exogenous_data = readers.get_exogenous_data(country_name)
+        if country_exogenous_data is not None:
+            # if exogenous data is available, use it to fit the benefits models
+            benefits_inflation_data = readers.get_benefits_inflation_data(
+                country_name, year_min=year - year_range, year_max=year, exogenous_data=country_exogenous_data
+            )
+            unemployment_benefits_model = build_unemployment_model(
+                benefits_inflation_data, regression_window=regression_window
+            )
+            other_benefits_model = build_other_benefits_model(
+                benefits_inflation_data, regression_window=regression_window
+            )
+            last_observation = (
+                benefits_inflation_data[["Real CPI Inflation", "Unemployment Rate"]].iloc[-1].values.reshape(1, -1)
+            )
+            current_unemployment_benefits = (
+                unemployment_benefits_model.predict(last_observation)[0]
+                * benefits_inflation_data["Unemployment Benefits"].iloc[-1]
+            )
+            current_other_benefits = (
+                other_benefits_model.predict(last_observation)[0]
+                * benefits_inflation_data["Other Total Benefits"].iloc[-1]
+            )
+        else:
+            # if exogenous data is not available, set the benefits models to None
+            unemployment_benefits_model = None
+            other_benefits_model = None
+            current_unemployment_benefits = readers.get_total_unemployment_benefits(country_name, year)
+            current_other_benefits = readers.get_total_benefits(country_name, year) - current_unemployment_benefits
 
-        # Unemployment
-        unemployment_rate = exogenous_data["unemployment_rate"]["Unemployment Rate"].copy()
-        unemployment_rate.index = pd.DatetimeIndex(
-            [pd.Timestamp(year=int(ind[0:4]), month=int(ind[5:]), day=1) for ind in unemployment_rate.index.values]
+        debt = readers.oecd_econ.general_gov_debt(country_name, year)
+
+        central_gov_data = pd.DataFrame(
+            data={
+                "Total Unemployment Benefits": [current_unemployment_benefits],
+                "Other Social Benefits": [current_other_benefits],
+                "Debt": [debt],
+                "Bank Equity Injection": [equity_injection],
+            }
         )
-        unemployment_rate = unemployment_rate.loc[unemployment_rate.index <= max(benefits_data.index)]
-        curr_unemployment_rate = unemployment_rate.iloc[-regression_window:].values
 
-        # Fit
-        x = np.stack([curr_inflation, curr_unemployment_rate], axis=1)
-        nan_ind = np.isnan(x).any(axis=1) | np.isnan(curr_benefits)
-        self.unemployment_benefits_model = LinearRegression().fit(x[~nan_ind], curr_benefits[~nan_ind])
-        pred = self.unemployment_benefits_model.predict(  # noqa
-            np.array([[log_inflation.iloc[-1], unemployment_rate.iloc[-1]]])
-        )[0]
-
-        self.central_gov_data["Total Unemployment Benefits"] = [pred * benefits_data.iloc[-1]]
-
-    def set_other_social_benefits(
-        self,
-        benefits_data: pd.DataFrame,
-        exogenous_data: dict[str, Any],
-        regression_window: int = 48,
-    ) -> None:
-        if exogenous_data is None:
-            self.central_gov_data["Other Social Benefits"] = [benefits_data["Other Total Benefits"].values[-1]]
-            return
-
-        # Benefits
-        benefits_data = benefits_data["Other Total Benefits"].astype(float).resample("M").interpolate("linear").copy()
-        benefits_data.index = pd.DatetimeIndex([pd.Timestamp(d.year, d.month, 1) for d in benefits_data.index])
-        benefits_data_log = benefits_data / benefits_data.shift(1)
-        curr_benefits = benefits_data_log.iloc[-regression_window:].values
-        if len(curr_benefits) < regression_window:
-            regression_window = len(curr_benefits)
-
-        # Inflation
-        log_inflation = exogenous_data["log_inflation"]["Real CPI Inflation"].copy()
-        log_inflation.index = pd.DatetimeIndex(
-            [pd.Timestamp(year=int(ind[0:4]), month=int(ind[5:]), day=1) for ind in log_inflation.index.values]
+        central_gov = SyntheticDefaultCentralGovernment(
+            country_name=country_name,
+            year=year,
+            central_gov_data=central_gov_data,
+            other_benefits_model=other_benefits_model,
+            unemployment_benefits_model=unemployment_benefits_model,
         )
-        log_inflation = log_inflation.loc[log_inflation.index <= max(benefits_data.index)]
-        curr_inflation = log_inflation.iloc[-regression_window:].values
+        return central_gov
 
-        # Unemployment
-        unemployment_rate = exogenous_data["unemployment_rate"]["Unemployment Rate"].copy()
-        unemployment_rate.index = pd.DatetimeIndex(
-            [pd.Timestamp(year=int(ind[0:4]), month=int(ind[5:]), day=1) for ind in unemployment_rate.index.values]
-        )
-        unemployment_rate = unemployment_rate.loc[unemployment_rate.index <= max(benefits_data.index)]
-        curr_unemployment_rate = unemployment_rate.iloc[-regression_window:].values
 
-        # Fit
-        x = np.stack([curr_inflation, curr_unemployment_rate], axis=1)
-        nan_ind = np.isnan(x).any(axis=1) | np.isnan(curr_benefits)
-        self.other_benefits_model = LinearRegression().fit(x[~nan_ind], curr_benefits[~nan_ind])
-        pred = self.other_benefits_model.predict(  # noqa
-            np.array([[log_inflation.iloc[-1], unemployment_rate.iloc[-1]]])
-        )[0]
+def build_unemployment_model(benefits_inflation_data: pd.DataFrame, regression_window: int = 48):
+    # select a regression window with a span of a given amount of months
+    benefits_inflation_data["Unemployment benefits growth ratio"] = (
+        1 + benefits_inflation_data["Unemployment Benefits"].pct_change()
+    )
+    selection = benefits_inflation_data.last(f"{regression_window}M").dropna()
+    model = LinearRegression()
+    model.fit(
+        selection[["Real CPI Inflation", "Unemployment Rate"]],
+        selection["Unemployment benefits growth ratio"],
+    )
+    return model
 
-        self.central_gov_data["Other Social Benefits"] = [pred * benefits_data.iloc[-1]]
 
-    def set_initial_bank_equity_injection(self) -> None:
-        self.central_gov_data["Bank Equity Injection"] = [0.0]
+def build_other_benefits_model(benefits_inflation_data: pd.DataFrame, regression_window: int = 48):
+    # select a regression window with a span of a given amount of months
+    benefits_inflation_data["Other benefits growth ratio"] = (
+        1 + benefits_inflation_data["Other Total Benefits"].pct_change()
+    )
+    selection = benefits_inflation_data.last(f"{regression_window}M").dropna()
+    model = LinearRegression()
+    model.fit(
+        selection[["Real CPI Inflation", "Unemployment Rate"]],
+        selection["Other benefits growth ratio"],
+    )
+    return model

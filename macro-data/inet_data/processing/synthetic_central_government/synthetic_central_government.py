@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Optional
 
 import pandas as pd
+from sklearn.linear_model import LinearRegression
 
 
 class SyntheticCentralGovernment(ABC):
@@ -10,36 +11,39 @@ class SyntheticCentralGovernment(ABC):
         self,
         country_name: str,
         year: int,
+        central_gov_data: pd.DataFrame,
+        other_benefits_model: Optional[LinearRegression],
+        unemployment_benefits_model: Optional[LinearRegression],
     ):
         self.country_name = country_name
         self.year = year
 
         # Central government data
-        self.central_gov_data = pd.DataFrame()
+        self.central_gov_data = central_gov_data
 
-        # Parameters
-        self.unemployment_benefits_model = None
-        self.other_benefits_model = None
+        # regressive models
+        self.unemployment_benefits_model = unemployment_benefits_model
+        self.other_benefits_model = other_benefits_model
 
-    def create(
-        self,
-        central_gov_debt: float,
-        benefits_data: pd.DataFrame,
-        exogenous_data: dict[str, Any],
-        regression_window: int = 48,
-    ) -> None:
-        self.set_central_government_debt(central_gov_debt)
-        self.set_total_unemployment_benefits(
-            benefits_data=benefits_data,
-            exogenous_data=exogenous_data,
-            regression_window=regression_window,
-        )
-        self.set_other_social_benefits(
-            benefits_data=benefits_data,
-            exogenous_data=exogenous_data,
-            regression_window=regression_window,
-        )
-        self.set_initial_bank_equity_injection()
+    # def create(
+    #     self,
+    #     central_gov_debt: float,
+    #     benefits_data: pd.DataFrame,
+    #     exogenous_data: dict[str, Any],
+    #     regression_window: int = 48,
+    # ) -> None:
+    #     self.set_central_government_debt(central_gov_debt)
+    #     self.set_total_unemployment_benefits(
+    #         benefits_data=benefits_data,
+    #         exogenous_data=exogenous_data,
+    #         regression_window=regression_window,
+    #     )
+    #     self.set_other_social_benefits(
+    #         benefits_data=benefits_data,
+    #         exogenous_data=exogenous_data,
+    #         regression_window=regression_window,
+    #     )
+    #     self.set_initial_bank_equity_injection()
 
     def update_fields(
         self,
@@ -68,32 +72,6 @@ class SyntheticCentralGovernment(ABC):
             rental_income_tax=rental_income_tax,
             cf_tax=cf_tax,
         )
-
-    @abstractmethod
-    def set_central_government_debt(self, central_gov_debt: float) -> None:
-        pass
-
-    @abstractmethod
-    def set_total_unemployment_benefits(
-        self,
-        benefits_data: pd.DataFrame,
-        exogenous_data: dict[str, Any],
-        regression_window: int = 48,
-    ) -> None:
-        pass
-
-    @abstractmethod
-    def set_other_social_benefits(
-        self,
-        benefits_data: pd.DataFrame,
-        exogenous_data: dict[str, Any],
-        regression_window: int = 48,
-    ) -> None:
-        pass
-
-    @abstractmethod
-    def set_initial_bank_equity_injection(self) -> None:
-        pass
 
     def set_revenue(
         self,
