@@ -12,9 +12,6 @@ class WorldBankReader:
     """
     A class for reading and retrieving economic data from the World Bank dataset.
 
-    Attributes:
-        path (Path): The path to the directory containing the World Bank dataset.
-
     Methods:
         __init__(self, path: Path): Initializes a WorldBankReader instance.
         get_unemployment_rate(self, country: str, year: int) -> float: Retrieves the unemployment rate for a specific country and year.
@@ -177,7 +174,7 @@ class WorldBankReader:
             end_year (int): The ending year for the data (default: 2024).
 
         Returns:
-            pd.DataFrame: A DataFrame containing the log inflation data for the specified country and time range.
+            pd.DataFrame: A DataFrame containing the log growth of inflation for the specified country and time range.
         """
         # Get CPI and PPI data
         data_cpi = self.data["cpi"].loc[self.data["cpi"]["Country Code"] == country]
