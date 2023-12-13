@@ -178,45 +178,32 @@ class WorldBankReader:
         """
         # Get CPI and PPI data
         data_cpi = self.data["cpi"].loc[self.data["cpi"]["Country Code"] == country]
-        data_ppi = self.data["ppi"].loc[self.data["cpi"]["Country Code"] == country]
-        dates, vals_cpi, vals_ppi = [], [], []
-        for year in range(start_year, end_year):
-            for month in range(1, 13):
-                s_month = str(month) if month > 9 else "0" + str(month)
-                dates.append(str(year) + "-" + str(month))
+        data_ppi = self.data["ppi"].loc[self.data["ppi"]["Country Code"] == country]
 
-                # CPI
-                if str(year) + s_month in data_cpi.columns:
-                    val_cpi = data_cpi.loc[:, str(year) + s_month].values
-                    if len(val_cpi) == 0:
-                        vals_cpi.append(np.nan)
-                    else:
-                        vals_cpi.append(val_cpi[0])
-                else:
-                    vals_cpi.append(np.nan)
+        # Get the columns that are dates and convert them to datetime objects
+        # then create series with the datetime objects as the index
+        cpi_cols = data_cpi.columns
+        cpi_datetime = pd.to_datetime(cpi_cols, errors="coerce", format="%Y%m")
+        data_cpi = data_cpi[cpi_cols[cpi_datetime.notnull()]]
+        data_cpi.columns = cpi_datetime[cpi_datetime.notnull()]
+        data_cpi.index = ["CPI"]
+        data_cpi = data_cpi.T
 
-                # PPI
-                if str(year) + s_month in data_ppi.columns:
-                    val_ppi = data_ppi.loc[:, str(year) + s_month].values
-                    if len(val_ppi) == 0:
-                        vals_ppi.append(np.nan)
-                    else:
-                        vals_ppi.append(val_ppi[0])
-                else:
-                    vals_ppi.append(np.nan)
+        ppi_cols = data_ppi.columns
+        ppi_datetime = pd.to_datetime(ppi_cols, errors="coerce", format="%Y%m")
+        data_ppi = data_ppi[ppi_cols[ppi_datetime.notnull()]]
+        data_ppi.columns = ppi_datetime[ppi_datetime.notnull()]
+        data_ppi.index = ["PPI"]
+        data_ppi = data_ppi.T
 
-        # Compute inflation
-        data_df = pd.DataFrame(
-            index=dates,
-            data={
-                "Real CPI Inflation": vals_cpi,
-                "Real PPI Inflation": vals_ppi,
-            },
-        )
-        data_df["Real CPI Inflation"] = np.log(data_df["Real CPI Inflation"] / data_df["Real CPI Inflation"].shift(1))
-        data_df["Real PPI Inflation"] = np.log(data_df["Real PPI Inflation"] / data_df["Real PPI Inflation"].shift(1))
+        inflation_data = pd.merge_asof(data_cpi, data_ppi, left_index=True, right_index=True)
 
-        return data_df
+        # Calculate log inflation
+        inflation_data = np.log(inflation_data).diff()
+
+        # rename
+        inflation_data.columns = ["Real CPI Inflation", "Real PPI Inflation"]
+        return inflation_data
 
     def prune(self, prune_date: int | str | pd.Timestamp, prune_date_format: str = "%Y-%m-%d") -> None:
         """
