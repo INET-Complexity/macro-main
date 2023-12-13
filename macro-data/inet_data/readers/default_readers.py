@@ -1,8 +1,9 @@
 import warnings
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable, Tuple, Any
+from typing import Iterable, Tuple, Any, Optional
 
+import numpy as np
 import pandas as pd
 
 from inet_data.readers.criticality_data.goods_criticality_reader import (
@@ -18,12 +19,9 @@ from inet_data.readers.economic_data.world_bank_reader import WorldBankReader
 from inet_data.readers.io_tables.icio_reader import ICIOReader
 from inet_data.readers.population_data.hfcs_reader import HFCSReader
 from inet_data.readers.socioeconomic_data.wiod_sea_data import WIODSEAReader
-from inet_data.readers.util.matching_iot_with_sea import (
-    add_investment_matrix_to_icio,
-    match_iot_with_sea,
-)
 from dataclasses import dataclass
 
+from inet_data.readers.util.industry_extraction import compile_exogenous_industry_data
 from inet_data.readers.util.prune_util import DataFilterWarning
 
 
@@ -199,15 +197,18 @@ class DataReaders:
             goods_criticality=goods_criticality,
         )
 
-    def get_exogenous_data(self, country_name: str) -> dict[str, Any]:
-        return {
-            "log_inflation": self.world_bank.get_log_inflation(country_name),
-            "sectoral_growth": self.eurostat.get_perc_sectoral_growth(country_name),
-            "unemployment_rate": self.oecd_econ.get_unemployment_rate(country_name),
-            "house_price_index": self.oecd_econ.get_house_price_index(country_name),
-            "vacancy_rate": self.oecd_econ.get_vacancy_rate(country_name),
-            "total_firm_deposits_and_debt": self.eurostat.get_total_industry_debt_and_deposits(country_name),
-        }
+    def get_exogenous_data(self, country_name: str) -> Optional[dict[str, Any]]:
+        try:
+            return {
+                "log_inflation": self.world_bank.get_log_inflation(country_name),
+                "sectoral_growth": self.eurostat.get_perc_sectoral_growth(country_name),
+                "unemployment_rate": self.oecd_econ.get_unemployment_rate(country_name),
+                "house_price_index": self.oecd_econ.get_house_price_index(country_name),
+                "vacancy_rate": self.oecd_econ.get_vacancy_rate(country_name),
+                "total_firm_deposits_and_debt": self.eurostat.get_total_industry_debt_and_deposits(country_name),
+            }
+        except KeyError:
+            return None
 
     def get_benefits_inflation_data(
         self, country_name: str, year_min: int, year_max: int, exogenous_data: dict[str, Any]
@@ -235,6 +236,9 @@ class DataReaders:
         log_inflation = exogenous_data["log_inflation"]["Real CPI Inflation"].copy()
         log_inflation.index = pd.to_datetime(log_inflation.index, format="%Y-%m")
         data = pd.merge_asof(benefits_data, log_inflation, left_index=True, right_index=True)
+        unemployment_rate = exogenous_data["unemployment_rate"]["Unemployment Rate"].copy()
+        unemployment_rate.index = pd.to_datetime(unemployment_rate.index, format="%Y-%m")
+        data = pd.merge_asof(data, unemployment_rate, left_index=True, right_index=True)
         return data
 
     def get_total_benefits(self, country_name, year):
@@ -264,3 +268,97 @@ def prune_icio_dict(icio_dict: dict[int, Any], prune_date: str | int | datetime)
             DataFilterWarning,
         )
     return icio_dict
+
+
+def add_investment_matrix_to_icio(
+    icio_reader: ICIOReader,
+    sea_reader: WIODSEAReader,
+    country_names: list[str],
+) -> None:
+    for country_name in country_names:
+        gfcf = icio_reader.get_monthly_capital_inputs(country_name)
+        cap = sea_reader.get_values_in_usd(country_name, "Capital Compensation") / 12.0
+        investment_matrix = np.array([gfcf for _ in range(len(cap))]).T
+        investment_matrix = investment_matrix * cap[None, :]  # proportionally fitting CAP
+        investment_matrix *= gfcf.sum() / investment_matrix.sum()  # match GFCF exactly
+        investment_matrix = (
+            pd.DataFrame(
+                data=investment_matrix,
+                index=pd.MultiIndex.from_product(
+                    [[country_name], icio_reader.industries],
+                    names=["Country", "Industry"],
+                ),
+                columns=pd.MultiIndex.from_product(
+                    [[country_name], icio_reader.industries],
+                    names=["Country", "Industry"],
+                ),
+            )
+            .sort_index(axis=0)
+            .sort_index(axis=1)
+        )
+        icio_reader.investment_matrices[country_name] = investment_matrix
+
+
+def get_sea(
+    country_name: str,
+    field: str,
+    sea_reader: WIODSEAReader,
+) -> np.ndarray:
+    return sea_reader.df.loc[
+        sea_reader.df.index.get_level_values(0) == country_name,
+        field,
+    ].values
+
+
+def match_iot_with_sea(
+    icio_reader: ICIOReader,
+    sea_reader: WIODSEAReader,
+    country_names: list[str],
+) -> None:
+    for country_name in country_names:
+        sea_reader.df.loc[
+            sea_reader.df.index.get_level_values(0) == country_name,
+            "Capital Compensation",
+        ] = 12 * icio_reader.investment_matrices[country_name].values.sum(axis=0)
+        new_va = 12 * icio_reader.get_monthly_value_added(country_name)
+        va_factor = new_va / get_sea(country_name, "Value Added", sea_reader)
+        sea_reader.df.loc[
+            sea_reader.df.index.get_level_values(0) == country_name,
+            "Value Added",
+        ] = new_va
+        sea_reader.df.loc[
+            sea_reader.df.index.get_level_values(0) == country_name,
+            "Labour Compensation",
+        ] = get_sea(
+            country_name, "Value Added", sea_reader
+        ) - get_sea(country_name, "Capital Compensation", sea_reader)
+        sea_reader.df.loc[
+            sea_reader.df.index.get_level_values(0) == country_name,
+            "Capital Stock",
+        ] *= va_factor
+
+
+def create_all_exogenous_data(
+    readers: DataReaders,
+    country_names: list[str],
+    year_min: int = 2010,
+    year_max: int = 2019,
+) -> dict[str, dict[str, pd.DataFrame]]:
+    exogenous_industry_data = compile_exogenous_industry_data(readers, country_names, year_min, year_max)
+
+    # get the set intersection of country_names and the keys of exogenous_industry_data
+    exog_countries = list(set(country_names).intersection(exogenous_industry_data.keys()))
+    exogenous_data = {
+        country_name: {
+            "log_inflation": readers.world_bank.get_log_inflation(country_name),
+            "sectoral_growth": readers.eurostat.get_perc_sectoral_growth(country_name),
+            "unemployment_rate": readers.oecd_econ.get_unemployment_rate(country_name),
+            "house_price_index": readers.oecd_econ.get_house_price_index(country_name),
+            "vacancy_rate": readers.oecd_econ.get_vacancy_rate(country_name),
+            "total_firm_deposits_and_debt": readers.eurostat.get_total_industry_debt_and_deposits(country_name),
+            "iot_industry_data": exogenous_industry_data[country_name],
+        }
+        for country_name in exog_countries
+    }
+
+    return exogenous_data
