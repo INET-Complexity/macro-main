@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
+from sklearn.linear_model import LinearRegression
+
 import numpy as np
 import pandas as pd
 
@@ -11,60 +13,16 @@ class SyntheticGovernmentEntities(ABC):
         self,
         country_name: str,
         year: int,
+        number_of_entities: int,
+        gov_entity_data: pd.DataFrame,
+        government_consumption_model: Optional[LinearRegression],
     ):
         self.country_name = country_name
         self.year = year
 
         # Government entity data
-        self.number_of_entities = None
-        self.gov_entity_data = pd.DataFrame()
+        self.number_of_entities = number_of_entities
+        self.gov_entity_data = gov_entity_data
 
-        # Consumption
-        self.government_consumption_model = None
-
-    def create(
-        self,
-        single_government_entity: bool,
-        monthly_govt_consumption_in_usd: np.ndarray,
-        monthly_govt_consumption_in_lcu: np.ndarray,
-        total_monthly_value_added_in_lcu: float,
-        total_number_of_firms: int,
-        total_gov_consumption_growth: Optional[np.ndarray],
-    ) -> None:
-        self.set_number_of_entities(
-            single_government_entity=single_government_entity,
-            monthly_govt_consumption_in_lcu=monthly_govt_consumption_in_lcu,
-            total_monthly_value_added_in_lcu=total_monthly_value_added_in_lcu,
-            total_number_of_firms=total_number_of_firms,
-        )
-        self.set_gov_entity_total_consumption(
-            monthly_govt_consumption_in_lcu=monthly_govt_consumption_in_lcu,
-            monthly_govt_consumption_in_usd=monthly_govt_consumption_in_usd,
-            total_gov_consumption_growth=total_gov_consumption_growth,
-        )
-
-    def set_number_of_entities(
-        self,
-        single_government_entity: bool,
-        monthly_govt_consumption_in_lcu: np.ndarray,
-        total_monthly_value_added_in_lcu: float,
-        total_number_of_firms: int,
-    ) -> None:
-        if single_government_entity:
-            self.number_of_entities = 1.0
-        else:
-            self.number_of_entities = int(
-                max(
-                    1,
-                    total_number_of_firms * monthly_govt_consumption_in_lcu.sum() / total_monthly_value_added_in_lcu,
-                )
-            )
-
-    @abstractmethod
-    def set_gov_entity_total_consumption(
-        self,
-        monthly_govt_consumption_in_usd: np.ndarray,
-        monthly_govt_consumption_in_lcu: np.ndarray,
-        total_gov_consumption_growth: Optional[np.ndarray],
-    ) -> None:
-        pass
+        # Consumption model
+        self.government_consumption_model = government_consumption_model

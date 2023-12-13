@@ -1,7 +1,7 @@
-from inet_data.readers.util.industry_extraction import compile_exogenous_industry_data
+def test__compile_exogenous_industry_data(exogenous_industry_data):
+    assert exogenous_industry_data["FRA"].shape[0] > 0
 
 
-def test__compile_exogenous_industry_data(readers):
-    country_names = ["FRA"]
-    industry_data = compile_exogenous_industry_data(readers, country_names)
-    assert industry_data["FRA"].shape[0] > 0
+def test__industry_data(industry_data):
+    row_exports = industry_data["ROW"]["industry_vectors"]["Exports in USD to FRA"]
+    assert row_exports.sum() > 0
