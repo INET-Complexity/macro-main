@@ -1,11 +1,24 @@
 import warnings
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
 
 from inet_data.readers.util.prune_util import DataFilterWarning, prune_index
+
+
+def get_perc_growth_series(country: str, growth_df: pd.DataFrame, series_name: Optional[str] = None):
+    df = growth_df.copy()
+    df.rename(columns={"TIME": "Country"}, inplace=True)
+    df.set_index("Country", inplace=True)
+    df = df.T
+    df.index = pd.to_datetime(df.index, format="%Y-%m")
+    series = df.loc[:, country]
+    if series_name is not None:
+        series.name = series_name
+    return series
 
 
 class EuroStatReader:
@@ -350,76 +363,17 @@ class EuroStatReader:
             pd.DataFrame: A DataFrame containing the percentage sectoral growth data.
         """
         # Get growth rates
-        data_b = self.data["perc_growth_sector_B"].loc[self.data["perc_growth_sector_B"]["TIME"] == country]
-        data_c = self.data["perc_growth_sector_C"].loc[self.data["perc_growth_sector_C"]["TIME"] == country]
-        data_d = self.data["perc_growth_sector_D"].loc[self.data["perc_growth_sector_D"]["TIME"] == country]
-        data_f = self.data["perc_growth_sector_F"].loc[self.data["perc_growth_sector_F"]["TIME"] == country]
-        data_serv = self.data["perc_growth_services"].loc[self.data["perc_growth_services"]["TIME"] == country]
-        dates, vals_b, vals_c, vals_d, vals_f, vals_serv = [], [], [], [], [], []
-        for year in range(1970, 2024):
-            for month in range(1, 13):
-                s_month = str(month) if month > 9 else "0" + str(month)
-                dates.append(str(year) + "-" + str(month))
+        data_b = get_perc_growth_series(country=country, growth_df=self.data["perc_growth_sector_B"], series_name="B")
+        data_c = get_perc_growth_series(country=country, growth_df=self.data["perc_growth_sector_C"], series_name="C")
+        data_d = get_perc_growth_series(country=country, growth_df=self.data["perc_growth_sector_D"], series_name="D")
+        data_f = get_perc_growth_series(country=country, growth_df=self.data["perc_growth_sector_F"], series_name="F")
 
-                # Sector B
-                if str(year) + "-" + s_month in data_b.columns:
-                    val_b = data_b.loc[:, str(year) + "-" + s_month].values
-                    if len(val_b) == 0:
-                        vals_b.append(np.nan)
-                    else:
-                        vals_b.append(val_b[0])
-                else:
-                    vals_b.append(np.nan)
-
-                # Sector C
-                if str(year) + "-" + s_month in data_c.columns:
-                    val_c = data_c.loc[:, str(year) + "-" + s_month].values
-                    if len(val_c) == 0:
-                        vals_c.append(np.nan)
-                    else:
-                        vals_c.append(val_c[0])
-                else:
-                    vals_c.append(np.nan)
-
-                # Sector D
-                if str(year) + "-" + s_month in data_d.columns:
-                    val_d = data_d.loc[:, str(year) + "-" + s_month].values
-                    if len(val_d) == 0:
-                        vals_d.append(np.nan)
-                    else:
-                        vals_d.append(val_d[0])
-                else:
-                    vals_d.append(np.nan)
-
-                # Sector F
-                if str(year) + "-" + s_month in data_f.columns:
-                    val_f = data_f.loc[:, str(year) + "-" + s_month].values
-                    if len(val_f) == 0:
-                        vals_f.append(np.nan)
-                    else:
-                        vals_f.append(val_f[0])
-                else:
-                    vals_f.append(np.nan)
-
-                # Services
-                if str(year) + "-" + s_month in data_serv.columns:
-                    val_serv = data_serv.loc[:, str(year) + "-" + s_month].values
-                    if len(val_serv) == 0:
-                        vals_serv.append(np.nan)
-                    else:
-                        vals_serv.append(val_serv[0])
-                else:
-                    vals_serv.append(np.nan)
-
-        # Create a dataframe
-        growth_df = pd.DataFrame(
-            {
-                "B": np.array(vals_b).astype(float) / 100.0,
-                "C": np.array(vals_c).astype(float) / 100.0,
-                "D": np.array(vals_d).astype(float) / 100.0,
-                "F": np.array(vals_f).astype(float) / 100.0,
-            }
+        services = get_perc_growth_series(
+            country=country, growth_df=self.data["perc_growth_services"], series_name="Services"
         )
+
+        growth_df = pd.concat([data_b, data_c, data_d, data_f], axis=1)
+
         for serv_ind in [
             "A",
             "E",
@@ -436,8 +390,11 @@ class EuroStatReader:
             "Q",
             "R_S",
         ]:
-            growth_df[serv_ind] = np.array(vals_serv).astype(float) / 100.0
-        growth_df.index = dates
+            growth_df[serv_ind] = services
+
+        growth_df = growth_df.astype(float)
+        growth_df /= 100.0
+
         growth_df.columns.name = "Industry"
         growth_df.index.name = "Time"
         growth_df.sort_index(axis=1, inplace=True)
