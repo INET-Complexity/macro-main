@@ -10,57 +10,19 @@ PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 
 
 class TestSyntheticPopulation:
-    def test__create(self, readers):
-        population = SyntheticHFCSPopulation(
+    def test__init(self, readers, configuration, industry_data):
+        industries = configuration["model"]["industries"]["value"]
+
+        population = SyntheticHFCSPopulation.create_from_readers(
+            readers=readers,
             country_name="FRA",
-            country_name_short="FR",
-            scale=10000,
             year=2014,
-            industries=[
-                "A",
-                "B",
-                "C",
-                "D",
-                "E",
-                "F",
-                "G",
-                "H",
-                "I",
-                "J",
-                "K",
-                "L",
-                "M",
-                "N",
-                "O",
-                "P",
-                "Q",
-                "R_S",
-            ],
-        )
-        population.create(
-            hfcs_reader=readers.hfcs["FRA"],
-            econ_reader=readers.oecd_econ,
-            wb_reader=readers.world_bank,
-            n_households=1000,
-            number_of_firms_by_industry=np.ones(18).astype(int),
-            total_unemployment_benefits=10000.0,
-            rent_as_fraction_of_unemployment_rate=0.3,
-        )
-        population.set_consumption_weights(
-            consumption_weights=np.full(18, 1.0 / 18),
-        )
-        population.compute_household_wealth(wealth_distribution_independents=["Income"])
-        population.compute_household_income(
-            central_gov_config={
-                "functions": {
-                    "household_social_transfers": {
-                        "parameters": {
-                            "independents": {"value": ["Wealth"]},
-                        }
-                    }
-                }
-            },
-            total_social_transfers=1000.0,
+            scale=10000,
+            country_name_short="FR",
+            industries=industries,
+            industry_data=industry_data,
+            rent_as_fraction_of_unemployment_rate=0.5,
+            total_unemployment_benefits=1000.0,
         )
 
         # Check if we have all the necessary fields

@@ -947,7 +947,7 @@ model:
     options: ''
     type: int
     value: 2014
-  start_date:
+  prune_date:
     desc: The year of start of the pruned data. Must be smaller than the year of
       initiation.
     options: ''
