@@ -6,23 +6,14 @@ import pandas as pd
 
 class SyntheticBanks(ABC):
     @abstractmethod
-    def __init__(
-        self,
-        country_name: str,
-        year: int,
-        number_of_banks: int,
-    ):
+    def __init__(self, country_name: str, year: int, number_of_banks: int, bank_data: pd.DataFrame):
         # Parameters
         self.country_name = country_name
         self.year = year
         self.number_of_banks = number_of_banks
 
         # Bank data
-        self.bank_data = pd.DataFrame()
-
-    @abstractmethod
-    def create(self, bank_equity: float) -> None:
-        pass
+        self.bank_data = bank_data
 
     def create_agents(self, bank_equity: float) -> None:
         # Set initial bank equity

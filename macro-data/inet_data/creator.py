@@ -112,6 +112,7 @@ class Creator:
             ]
             for country_name in country_names
         }
+        single_bank = configuration["model"]["single_bank"]["value"]
         # FUNCTIONS: this is a paramter of the central gov functions
         rent_as_fraction_of_unemployment_rate = 0.25
 
@@ -185,6 +186,17 @@ class Creator:
                 assume_zero_initial_debt=assume_zero_initial_debt[country],
                 industries=industries,
                 n_employees_per_industry=synthetic_population[country].n_employees_per_industry,
+                scale=scale,
+            )
+            for country in country_names
+        }
+
+        synthetic_banks = {
+            country: SyntheticDefaultBanks.init_from_readers(
+                single_bank=single_bank,
+                country_name=country,
+                year=year,
+                readers=readers,
                 scale=scale,
             )
             for country in country_names
