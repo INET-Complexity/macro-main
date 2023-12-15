@@ -100,6 +100,18 @@ class Creator:
         year = configuration["model"]["year"]["value"]
         single_firm_per_industry = configuration["model"]["single_firm_per_industry"]["value"]
         single_government_entity = configuration["model"]["single_government_entity"]["value"]
+        assume_zero_initial_deposits = {
+            country_name: configuration["init"][country_name]["firms"]["parameters"]["assume_zero_initial_deposits"][
+                "value"
+            ]
+            for country_name in country_names
+        }
+        assume_zero_initial_debt = {
+            country_name: configuration["init"][country_name]["firms"]["parameters"]["assume_zero_initial_debt"][
+                "value"
+            ]
+            for country_name in country_names
+        }
         # FUNCTIONS: this is a paramter of the central gov functions
         rent_as_fraction_of_unemployment_rate = 0.25
 
@@ -161,4 +173,19 @@ class Creator:
                 total_unemployment_benefits=total_unemployment_benefits[country],
             )
             for (country, country_short) in zip(country_names, country_names_short)
+        }
+
+        synthetic_firms = {
+            country: SyntheticDefaultFirms.init_from_readers(
+                readers=readers,
+                country_name=country,
+                year=year,
+                industry_data=industry_data[country],
+                assume_zero_initial_deposits=assume_zero_initial_deposits[country],
+                assume_zero_initial_debt=assume_zero_initial_debt[country],
+                industries=industries,
+                n_employees_per_industry=synthetic_population[country].n_employees_per_industry,
+                scale=scale,
+            )
+            for country in country_names
         }
