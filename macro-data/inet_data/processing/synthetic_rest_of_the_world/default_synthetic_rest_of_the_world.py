@@ -1,74 +1,69 @@
 from typing import Optional
 
 import numpy as np
+import pandas as pd
 from sklearn.linear_model import LinearRegression
 
 from inet_data.processing.synthetic_rest_of_the_world.synthetic_rest_of_the_world import (
     SyntheticRestOfTheWorld,
 )
+from inet_data.readers.default_readers import DataReaders
 
 
 class DefaultSyntheticRestOfTheWorld(SyntheticRestOfTheWorld):
     def __init__(
         self,
         year: int,
+        row_data: pd.DataFrame,
+        exports_model: Optional[LinearRegression],
+        imports_model: Optional[LinearRegression],
     ):
-        super().__init__(year=year)
+        super().__init__(year, row_data, exports_model, imports_model)
 
-    def create(
-        self,
-        row_imports: np.ndarray,
-        row_exports: np.ndarray,
-        exchange_rate_usd_to_lcu: float,
-        row_exports_data_growth: Optional[np.ndarray],
-        row_imports_data_growth: Optional[np.ndarray],
-    ) -> None:
-        self.set_imports(
-            row_imports=row_imports,
-            exchange_rate_usd_to_lcu=exchange_rate_usd_to_lcu,
-            row_imports_data_growth=row_imports_data_growth,
-        )
-        self.set_exports(
-            row_exports=row_exports,
-            row_exports_data_growth=row_exports_data_growth,
-        )
-        self.set_prices(
-            n_industries=len(row_imports),
-            exchange_rate_usd_to_lcu=exchange_rate_usd_to_lcu,
-        )
-
-    def set_imports(
-        self,
-        row_imports: np.ndarray,
-        exchange_rate_usd_to_lcu: float,
-        row_imports_data_growth: Optional[np.ndarray],
-    ) -> None:
-        self.row_data["Imports in USD"] = row_imports
-        self.row_data["Imports in LCU"] = exchange_rate_usd_to_lcu * row_imports
-        if row_imports_data_growth is None:
-            self.imports_model = None
+    @classmethod
+    def init_from_readers(
+        cls,
+        year: int,
+        readers: DataReaders,
+        exogenous_row_data: Optional[dict[str, pd.DataFrame]],
+        industry_data: dict[str, pd.DataFrame],
+    ):
+        if exogenous_row_data:
+            row_exports_data = exogenous_row_data["iot_industry_data"].xs("Exports in USD", axis=1, level=0).sum(axis=1)
+            row_exports_data = row_exports_data.loc[row_exports_data.index < pd.Timestamp(year, 1, 1)]
+            row_exports_data_growth = (row_exports_data / row_exports_data.shift(1)).values
+            if row_exports_data.isna().sum() >= 1:
+                exports_model = LinearRegression().fit(
+                    [[0], [1]], [np.nanmean(row_exports_data_growth), np.nanmean(row_exports_data_growth)]
+                )
+            else:
+                exports_model = None
+            row_imports_data = exogenous_row_data["iot_industry_data"].xs("Imports in USD", axis=1, level=0).sum(axis=1)
+            row_imports_data = row_imports_data.loc[row_imports_data.index < pd.Timestamp(year, 1, 1)]
+            row_imports_data_growth = (row_imports_data / row_imports_data.shift(1)).values
+            if row_imports_data.isna().sum() >= 1:
+                imports_model = LinearRegression().fit(
+                    [[0], [1]], [np.nanmean(row_imports_data_growth), np.nanmean(row_imports_data_growth)]
+                )
+            else:
+                imports_model = None
         else:
-            self.imports_model = LinearRegression().fit(
-                [[0], [1]], [np.nanmean(row_imports_data_growth), np.nanmean(row_imports_data_growth)]
-            )
+            exports_model = None
+            imports_model = None
 
-    def set_exports(
-        self,
-        row_exports: np.ndarray,
-        row_exports_data_growth: Optional[np.ndarray],
-    ) -> None:
-        self.row_data["Exports"] = row_exports
-        if row_exports_data_growth is None:
-            self.exports_model = None
-        else:
-            self.exports_model = LinearRegression().fit(
-                [[0], [1]], [np.nanmean(row_exports_data_growth), np.nanmean(row_exports_data_growth)]
-            )
+        row_exports = industry_data["ROW"]["industry_vectors"]["Exports in USD"]
+        row_imports = industry_data["ROW"]["industry_vectors"]["Imports in USD"]
+        exchange_rate = readers.exchange_rates.from_usd_to_lcu("ROW", year)
 
-    def set_prices(
-        self,
-        n_industries: int,
-        exchange_rate_usd_to_lcu: float,
-    ) -> None:
-        self.row_data["Price in USD"] = np.ones(n_industries)
-        self.row_data["Price in LCU"] = exchange_rate_usd_to_lcu * np.ones(n_industries)
+        row_data = pd.DataFrame(
+            {
+                "Exports": row_exports,
+                "Imports in USD": row_imports,
+                "Imports in LCU": exchange_rate * row_imports,
+            }
+        )
+
+        row_data["Price in USD"] = 1
+        row_data["Price in LCU"] = exchange_rate * row_data["Price in USD"]
+
+        return cls(year, row_data, exports_model, imports_model)

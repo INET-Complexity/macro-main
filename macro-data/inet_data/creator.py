@@ -150,7 +150,7 @@ class Creator:
                 readers=readers,
                 country_name=country,
                 year=year,
-                exogenous_data=exogenous_data,
+                exogenous_country_data=exogenous_data.get(country, None),
                 industry_data=industry_data,
                 single_government_entity=single_government_entity,
             )

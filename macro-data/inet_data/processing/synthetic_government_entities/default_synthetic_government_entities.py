@@ -33,14 +33,14 @@ class SyntheticDefaultGovernmentEntities(SyntheticGovernmentEntities):
         readers: DataReaders,
         country_name: str,
         year: int,
-        exogenous_data: Optional[dict[str, pd.DataFrame]],
+        exogenous_country_data: Optional[dict[str, pd.DataFrame]],
         industry_data: dict[str, dict[str, pd.DataFrame]],
         single_government_entity: bool,
     ):
         create_model = False
-        if exogenous_data:
+        if exogenous_country_data:
             total_gov_consumption = (
-                exogenous_data[country_name]["iot_industry_data"]
+                exogenous_country_data["iot_industry_data"]
                 .xs("Government Consumption in USD", axis=1, level=0)
                 .sum(axis=1)
             )

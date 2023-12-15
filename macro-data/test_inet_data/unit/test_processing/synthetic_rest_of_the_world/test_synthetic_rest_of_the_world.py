@@ -11,16 +11,13 @@ PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 
 
 class TestSyntheticRestOfTheWorld:
-    def test__create(self, industry_data):
-        rest_of_the_world = DefaultSyntheticRestOfTheWorld(year=2014)
-        rest_of_the_world.create(
-            row_exports=industry_data["ROW"]["industry_vectors"]["Exports in USD"],
-            row_imports=industry_data["ROW"]["industry_vectors"]["Imports in USD"],
-            exchange_rate_usd_to_lcu=1.0,
-            row_exports_data_growth=np.array([0.03, 0.04]),
-            row_imports_data_growth=np.array([0.02, 0.03]),
+    def test__create(self, readers, all_exogenous_data, industry_data):
+        rest_of_the_world = DefaultSyntheticRestOfTheWorld.init_from_readers(
+            year=2014,
+            readers=readers,
+            exogenous_row_data=all_exogenous_data.get("ROW", None),
+            industry_data=industry_data,
         )
-
         # Check if we have all the necessary fields
         for row_field in [
             "Imports in USD",

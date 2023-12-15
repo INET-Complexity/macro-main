@@ -1,13 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Any
-from sklearn.linear_model import LinearRegression
 
 import numpy as np
 import pandas as pd
-
-from inet_data.readers.economic_data.oecd_economic_data import OECDEconData
-from inet_data.readers.economic_data.world_bank_reader import WorldBankReader
-from inet_data.readers.population_data.hfcs_reader import HFCSReader
+from sklearn.linear_model import LinearRegression
 
 
 class SyntheticPopulation(ABC):
