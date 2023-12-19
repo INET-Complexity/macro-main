@@ -51,14 +51,22 @@ class SyntheticDefaultCentralGovernment(SyntheticCentralGovernment):
             last_observation = (
                 benefits_inflation_data[["Real CPI Inflation", "Unemployment Rate"]].iloc[-1].values.reshape(1, -1)
             )
-            current_unemployment_benefits = (
-                unemployment_benefits_model.predict(last_observation)[0]
-                * benefits_inflation_data["Unemployment Benefits"].iloc[-1]
-            )
-            current_other_benefits = (
-                other_benefits_model.predict(last_observation)[0]
-                * benefits_inflation_data["Other Total Benefits"].iloc[-1]
-            )
+
+            if unemployment_benefits_model:
+                current_unemployment_benefits = (
+                    unemployment_benefits_model.predict(last_observation)[0]
+                    * benefits_inflation_data["Unemployment Benefits"].iloc[-1]
+                )
+            else:
+                current_unemployment_benefits = None
+
+            if other_benefits_model:
+                current_other_benefits = (
+                    other_benefits_model.predict(last_observation)[0]
+                    * benefits_inflation_data["Other Total Benefits"].iloc[-1]
+                )
+            else:
+                current_other_benefits = None
         else:
             # if exogenous data is not available, set the benefits models to None
             unemployment_benefits_model = None
@@ -93,12 +101,15 @@ def build_unemployment_model(benefits_inflation_data: pd.DataFrame, regression_w
         1 + benefits_inflation_data["Unemployment Benefits"].pct_change()
     )
     selection = benefits_inflation_data.last(f"{regression_window}M").dropna()
-    model = LinearRegression()
-    model.fit(
-        selection[["Real CPI Inflation", "Unemployment Rate"]],
-        selection["Unemployment benefits growth ratio"],
-    )
-    return model
+    if selection.shape[0] > 0:
+        model = LinearRegression()
+        model.fit(
+            selection[["Real CPI Inflation", "Unemployment Rate"]],
+            selection["Unemployment benefits growth ratio"],
+        )
+        return model
+    else:
+        return None
 
 
 def build_other_benefits_model(benefits_inflation_data: pd.DataFrame, regression_window: int = 48):
@@ -107,9 +118,12 @@ def build_other_benefits_model(benefits_inflation_data: pd.DataFrame, regression
         1 + benefits_inflation_data["Other Total Benefits"].pct_change()
     )
     selection = benefits_inflation_data.last(f"{regression_window}M").dropna()
-    model = LinearRegression()
-    model.fit(
-        selection[["Real CPI Inflation", "Unemployment Rate"]],
-        selection["Other benefits growth ratio"],
-    )
-    return model
+    if selection.shape[0] > 0:
+        model = LinearRegression()
+        model.fit(
+            selection[["Real CPI Inflation", "Unemployment Rate"]],
+            selection["Other benefits growth ratio"],
+        )
+        return model
+    else:
+        return None

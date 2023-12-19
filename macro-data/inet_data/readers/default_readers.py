@@ -176,7 +176,7 @@ class DataReaders:
             exchange_rates.prune(prune_date, prune_date_format=prune_date_format)
             eurostat.prune(prune_date, prune_date_format=prune_date_format)
             icio = prune_icio_dict(icio, prune_date)
-            wiod_sea.prune(prune_date, prune_date_format=prune_date_format)
+            wiod_sea.prune(prune_date, date_format=prune_date_format)
             oecd_econ.prune(prune_date, prune_date_format=prune_date_format)
             policy_rates.prune(prune_date, prune_date_format=prune_date_format)
             imf_reader.prune(prune_date, prune_date_format=prune_date_format)

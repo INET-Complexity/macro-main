@@ -195,6 +195,8 @@ class WorldBankReader:
         data_ppi.columns = ppi_datetime[ppi_datetime.notnull()]
         data_ppi.index = ["PPI"]
         data_ppi = data_ppi.T
+        data_cpi.sort_index(inplace=True)
+        data_ppi.sort_index(inplace=True)
 
         inflation_data = pd.merge_asof(data_cpi, data_ppi, left_index=True, right_index=True)
 

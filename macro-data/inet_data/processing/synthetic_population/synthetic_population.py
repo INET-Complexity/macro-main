@@ -119,3 +119,9 @@ class SyntheticPopulation(ABC):
     @abstractmethod
     def set_household_saving_rates(self, function_name: str, independents: list[str]) -> None:
         pass
+
+    def set_income(self) -> None:
+        self.individual_data["Income"] = (
+            self.individual_data["Employee Income"].fillna(0.0).values
+            + self.individual_data["Income from Unemployment Benefits"].fillna(0.0).values
+        )

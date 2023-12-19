@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import pandas as pd
 
@@ -36,6 +38,13 @@ def process_individual_data(
     )
     individual_data = fill_individual_nace(individual_data, industries)
     n_unemployed = np.sum(individual_data["Activity Status"] == 2)
+
+    # DANGER: if we don't have total unemployment benefits
+    # we set them to 0; must be checked or filled in another way
+    if total_unemployment_benefits is None:
+        total_unemployment_benefits = 0.0
+        logging.warning("Total unemployment benefits not found, setting to 0.0")
+
     individual_data = fill_individual_employee_income(
         individual_data, unemployment_benefits_by_individual=total_unemployment_benefits / n_unemployed, scale=scale
     )

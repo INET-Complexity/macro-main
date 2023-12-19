@@ -19,9 +19,6 @@ from inet_data.processing.synthetic_central_government.default_synthetic_central
 from inet_data.processing.synthetic_central_government.synthetic_central_government import (
     SyntheticCentralGovernment,
 )
-from inet_data.processing.synthetic_credit_market.default_synthetic_credit_market import (
-    DefaultSyntheticCreditMarket,
-)
 from inet_data.processing.synthetic_credit_market.synthetic_credit_market import (
     SyntheticCreditMarket,
 )
@@ -40,6 +37,14 @@ from inet_data.processing.synthetic_housing_market.default_synthetic_housing_mar
 )
 from inet_data.processing.synthetic_housing_market.synthetic_housing_market import (
     SyntheticHousingMarket,
+)
+from inet_data.processing.synthetic_matching.matching_households_with_banks import match_households_with_banks
+from inet_data.processing.synthetic_matching.matching_households_with_houses import match_households_with_houses
+from inet_data.processing.synthetic_matching.matching_individuals_with_firms import (
+    match_individuals_with_firms_country,
+)
+from inet_data.processing.synthetic_matching.matching_firms_with_banks import (
+    match_firms_with_banks,
 )
 
 from inet_data.processing.synthetic_population.hfcs_synthetic_population import (
@@ -127,6 +132,7 @@ class Creator:
             scale=scale,
             prune_date=prune_date,
             create_exogenous_industry_data=create_exogenous_industry_data,
+            force_single_hfcs_survey=testing,
         )
 
         industry_data = compile_industry_data(
@@ -135,8 +141,12 @@ class Creator:
 
         exogenous_data = create_all_exogenous_data(readers, country_names) if create_exogenous_industry_data else None
 
+        year_range = 1 if testing else 10
+
         synthetic_central_governments = {
-            country: SyntheticDefaultCentralGovernment.create_from_readers(readers, country, year)
+            country: SyntheticDefaultCentralGovernment.create_from_readers(
+                readers, country, year, year_range=year_range
+            )
             for country in country_names
         }
 
@@ -150,7 +160,7 @@ class Creator:
                 readers=readers,
                 country_name=country,
                 year=year,
-                exogenous_country_data=exogenous_data.get(country, None),
+                exogenous_country_data=exogenous_data.get(country, None) if exogenous_data else None,
                 industry_data=industry_data,
                 single_government_entity=single_government_entity,
             )
@@ -185,7 +195,7 @@ class Creator:
                 assume_zero_initial_deposits=assume_zero_initial_deposits[country],
                 assume_zero_initial_debt=assume_zero_initial_debt[country],
                 industries=industries,
-                n_employees_per_industry=synthetic_population[country].n_employees_per_industry,
+                n_employees_per_industry=synthetic_population[country].number_employees_by_industry,
                 scale=scale,
             )
             for country in country_names
@@ -201,3 +211,39 @@ class Creator:
             )
             for country in country_names
         }
+
+        synthetic_row = DefaultSyntheticRestOfTheWorld.init_from_readers(
+            readers=readers,
+            year=year,
+            exogenous_row_data=exogenous_data.get("ROW", None) if exogenous_data else None,
+            row_industry_data=industry_data["ROW"],
+        )
+
+        synthetic_housing_market = {c: DefaultSyntheticHousingMarket(country_name=c, year=year) for c in country_names}
+
+        for country_name in country_names:
+            match_individuals_with_firms_country(
+                country_name,
+                industries,
+                readers,
+                synthetic_firms[country_name],
+                synthetic_population[country_name],
+                year,
+            )
+
+            match_firms_with_banks(
+                synthetic_firms=synthetic_firms[country_name],
+                synthetic_banks=synthetic_banks[country_name],
+            )
+            match_households_with_banks(
+                synthetic_population=synthetic_population[country_name],
+                synthetic_banks=synthetic_banks[country_name],
+            )
+
+            match_households_with_houses(
+                synthetic_population[country_name],
+                synthetic_housing_market[country_name],
+                rental_income_taxes=readers.oecd_econ.read_tau_income(country_name, year),
+                social_housing_rent=synthetic_population[country_name].social_housing_rent,
+                total_imputed_rent=readers.icio[year].imputed_rents[country_name],
+            )

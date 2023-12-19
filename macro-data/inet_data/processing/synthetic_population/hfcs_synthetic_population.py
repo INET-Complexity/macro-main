@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 import numpy as np
@@ -91,6 +92,12 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
         household_data = set_household_types(household_data, individual_data)
 
+        # DANGER if we don't have total unemployment benefits
+        # we set them to 0, must be checked!!!
+        if total_unemployment_benefits is None:
+            total_unemployment_benefits = 0.0
+            logging.warning("Total unemployment benefits not provided, setting them to 0.0")
+
         household_data = set_household_housing_data(
             household_data,
             scale,
@@ -117,6 +124,8 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         consumption_weights_by_income = np.zeros((n_quantiles, len(consumption_weights)))
         for i in range(n_quantiles):
             consumption_weights_by_income[i] = consumption_weights
+
+        individual_data["Corresponding Firm ID"] = np.nan
 
         return cls(
             country_name=country_name,

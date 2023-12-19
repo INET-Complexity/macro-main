@@ -92,7 +92,7 @@ def add_number_employees(
         # Update the field
         firm_data.loc[firm_data["Industry"] == industry, "Number of Employees"] = sizes
         firm_data["Number of Employees"] = firm_data["Number of Employees"].astype(int)
-        return firm_data
+    return firm_data
 
 
 def add_wages(

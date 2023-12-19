@@ -49,7 +49,7 @@ class WIODSEAReader:
         country_names: list[str],
         industries: list,
         exchange_rates: WorldBankRatesReader,
-    ):
+    ) -> "WIODSEAReader":
         """
         Aggregate socioeconomic data from a CSV file. Aggregation is done using a JSON file that maps sectors to aggregated sectors.
 

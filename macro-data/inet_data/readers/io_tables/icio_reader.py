@@ -40,7 +40,7 @@ class ICIOReader:
         year: int,
         exchange_rates: WorldBankRatesReader,
         imputed_rent_fraction: dict[str, float],
-    ):
+    ) -> "ICIOReader":
         # This is quite slow, so adding the option of loading it
         if os.path.isfile(pivot_path):
             df = pd.read_csv(pivot_path, index_col=[0, 1], header=[0, 1])

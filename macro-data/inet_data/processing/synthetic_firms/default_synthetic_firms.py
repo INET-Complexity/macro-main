@@ -112,6 +112,8 @@ class SyntheticDefaultFirms(SyntheticFirms):
             intermediate_inputs_utilisation_rate,
         )
 
+        firm_data["Employees ID"] = [[] for _ in range(n_firms)]
+
         return cls(
             country_name=country_name,
             scale=scale,

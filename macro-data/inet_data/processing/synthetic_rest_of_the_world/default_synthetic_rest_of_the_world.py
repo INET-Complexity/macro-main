@@ -26,7 +26,7 @@ class DefaultSyntheticRestOfTheWorld(SyntheticRestOfTheWorld):
         year: int,
         readers: DataReaders,
         exogenous_row_data: Optional[dict[str, pd.DataFrame]],
-        industry_data: dict[str, pd.DataFrame],
+        row_industry_data: dict[str, pd.DataFrame],
     ):
         if exogenous_row_data:
             row_exports_data = exogenous_row_data["iot_industry_data"].xs("Exports in USD", axis=1, level=0).sum(axis=1)
@@ -51,8 +51,8 @@ class DefaultSyntheticRestOfTheWorld(SyntheticRestOfTheWorld):
             exports_model = None
             imports_model = None
 
-        row_exports = industry_data["ROW"]["industry_vectors"]["Exports in USD"]
-        row_imports = industry_data["ROW"]["industry_vectors"]["Imports in USD"]
+        row_exports = row_industry_data["industry_vectors"]["Exports in USD"]
+        row_imports = row_industry_data["industry_vectors"]["Imports in USD"]
         exchange_rate = readers.exchange_rates.from_usd_to_lcu("ROW", year)
 
         row_data = pd.DataFrame(
