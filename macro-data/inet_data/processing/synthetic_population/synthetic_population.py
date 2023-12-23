@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -7,6 +7,26 @@ from sklearn.linear_model import LinearRegression
 
 
 class SyntheticPopulation(ABC):
+    """
+    Represents a synthetic population for a specific country and year.
+
+    Attributes:
+        country_name (str): The name of the country.
+        country_name_short (str): The short name or code of the country.
+        scale (int): The scale of the synthetic population.
+        year (int): The year of the synthetic population.
+        industries (list[str]): The list of industries in the country.
+        individual_data (pd.DataFrame): The data frame containing individual-level data.
+        household_data (pd.DataFrame): The data frame containing household-level data.
+        social_housing_rent (float): The rent for social housing.
+        coefficient_fa_income (float): The coefficient for family allowance income.
+        consumption_weights (np.ndarray): The weights for household consumption.
+        consumption_weights_by_income (np.ndarray): The weights for household consumption based on income.
+        saving_rates_model (LinearRegression): The model for household saving rates.
+        social_transfers_model (LinearRegression): The model for social transfers.
+        wealth_distribution_model (LinearRegression): The model for wealth distribution.
+    """
+
     @abstractmethod
     def __init__(
         self,
@@ -90,7 +110,6 @@ class SyntheticPopulation(ABC):
     @abstractmethod
     def compute_household_income(
         self,
-        central_gov_config: dict[str, Any],
         total_social_transfers: float,
     ) -> None:
         pass
@@ -117,8 +136,14 @@ class SyntheticPopulation(ABC):
         pass
 
     @abstractmethod
-    def set_household_saving_rates(self, function_name: str, independents: list[str]) -> None:
+    def set_household_saving_rates(
+        self, function_name: str = "AverageSavingRatesSetter", independents: Optional[list[str]] = None
+    ) -> None:
         pass
+
+    @abstractmethod
+    def compute_household_wealth(self) -> None:
+        ...
 
     def set_income(self) -> None:
         self.individual_data["Income"] = (
