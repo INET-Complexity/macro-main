@@ -627,8 +627,12 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             "Consumption of Consumer Goods/Services as a Share of Income",
         ] = np.nan
 
+        self.household_data["Consumption of Consumer Goods/Services as a Share of Income"] = self.household_data[
+            "Consumption of Consumer Goods/Services as a Share of Income"
+        ].astype(float)
+
         # Impute missing values
-        temp_imp = IterativeImputer(min_value=0, max_value=1).fit_transform(
+        imputed_consumption_share = IterativeImputer(min_value=0, max_value=1).fit_transform(
             self.household_data[
                 [
                     "Type",
@@ -638,8 +642,8 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
                     "Consumption of Consumer Goods/Services as a Share of Income",
                 ]
             ].values
-        )
-        self.household_data.loc[:, "Saving Rate"] = 1.0 - temp_imp[:, 4]
+        )[:, 4]
+        self.household_data["Saving Rate"] = 1.0 - imputed_consumption_share
 
         # Fit a model
         saving_rates = fit_linear(

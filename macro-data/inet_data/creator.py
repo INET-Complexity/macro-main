@@ -39,7 +39,7 @@ from inet_data.processing.synthetic_housing_market.synthetic_housing_market impo
     SyntheticHousingMarket,
 )
 from inet_data.processing.synthetic_matching.matching_households_with_banks import match_households_with_banks
-from inet_data.processing.synthetic_matching.matching_households_with_houses import match_households_with_houses
+from inet_data.processing.synthetic_matching.matching_households_with_houses import set_housing_df
 from inet_data.processing.synthetic_matching.matching_individuals_with_firms import (
     match_individuals_with_firms_country,
 )
@@ -122,7 +122,7 @@ class Creator:
         rent_as_fraction_of_unemployment_rate = 0.25
 
         prune_date = configuration["model"]["prune_date"]["value"]
-
+        prune_date_format = configuration["model"]["prune_date"]["format"]
         readers = DataReaders.init_default_raw_data_path(
             raw_data_path=raw_data_path,
             country_names=country_names,
@@ -133,6 +133,7 @@ class Creator:
             prune_date=prune_date,
             create_exogenous_industry_data=create_exogenous_industry_data,
             force_single_hfcs_survey=testing,
+            prune_date_format=prune_date_format,
         )
 
         industry_data = compile_industry_data(
@@ -171,7 +172,7 @@ class Creator:
             country: SyntheticDefaultCentralBanks.init_from_readers(country, year, readers) for country in country_names
         }
 
-        synthetic_population = {
+        synthetic_population: dict[str, SyntheticHFCSPopulation] = {
             country: SyntheticHFCSPopulation.create_from_readers(
                 readers=readers,
                 country_name=country,
@@ -219,7 +220,9 @@ class Creator:
             row_industry_data=industry_data["ROW"],
         )
 
-        synthetic_housing_market = {c: DefaultSyntheticHousingMarket(country_name=c, year=year) for c in country_names}
+        # housing market data is initialised through the matching
+        # where a dictionary is created with country names as keys and housing market data as values
+        synthetic_housing_market = {}
 
         for country_name in country_names:
             match_individuals_with_firms_country(
@@ -240,10 +243,41 @@ class Creator:
                 synthetic_banks=synthetic_banks[country_name],
             )
 
-            match_households_with_houses(
+            country_housing_data = set_housing_df(
                 synthetic_population[country_name],
-                synthetic_housing_market[country_name],
                 rental_income_taxes=readers.oecd_econ.read_tau_income(country_name, year),
                 social_housing_rent=synthetic_population[country_name].social_housing_rent,
                 total_imputed_rent=readers.icio[year].imputed_rents[country_name],
+            )
+
+            synthetic_housing_market[country_name] = DefaultSyntheticHousingMarket(
+                year=year,
+                country_name=country_name,
+                housing_market_data=country_housing_data,
+            )
+
+            # TODO : these functions do things that depend on the function parameters
+            # they need to be moved to the model package
+            synthetic_population[country_name].compute_household_wealth()
+            synthetic_population[country_name].compute_household_income(
+                total_social_transfers=synthetic_central_governments[country_name]
+                .central_gov_data["Other Social Benefits"]
+                .values[0],
+            )
+
+            # TODO: same for set household savings rates
+            synthetic_population[country_name].set_household_saving_rates()
+
+            iot_hh_consumption = industry_data[country_name]["industry_vectors"]["Household Consumption in LCU"]
+            vat = readers.world_bank.get_tau_vat(country_name, year)
+            synthetic_population[country_name].normalise_household_consumption(
+                iot_hh_consumption=iot_hh_consumption, vat=vat
+            )
+
+            weights_by_income = readers.oecd_econ.get_household_consumption_by_income_quantile(
+                country=country_name, year=year
+            )
+
+            synthetic_population[country_name].match_consumption_weights_by_income(
+                weights_by_income=weights_by_income, iot_hh_consumption=iot_hh_consumption, vat=vat
             )
