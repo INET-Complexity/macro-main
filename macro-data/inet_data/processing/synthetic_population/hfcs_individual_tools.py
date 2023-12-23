@@ -17,6 +17,21 @@ def process_individual_data(
     total_unemployment_benefits: float,
     year: int,
 ) -> pd.DataFrame:
+    """
+    Process individual data by performing various data cleaning and transformation steps.
+
+    Args:
+        country_name (str): The name of the country.
+        individual_data (pd.DataFrame): The individual data to be processed.
+        industries (list[str]): The list of industries.
+        readers (DataReaders): The data readers object.
+        scale (int): The scale factor.
+        total_unemployment_benefits (float): The total unemployment benefits.
+        year (int): The year.
+
+    Returns:
+        pd.DataFrame: The processed individual data.
+    """
     individual_data = remove_outliers(
         data=individual_data,
         cols=["Employee Income", "Gender", "Age", "Education", "Labour Status"],
@@ -73,6 +88,16 @@ def process_individual_data(
 
 
 def fill_missing_gender(individual_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Fill missing gender values in the individual_data DataFrame using a probabilistic approach.
+
+    Parameters:
+        individual_data (pd.DataFrame): DataFrame containing individual data.
+
+    Returns:
+        pd.DataFrame: DataFrame with missing gender values filled.
+
+    """
     missing_genders = individual_data["Gender"].isna()
     p_male = (individual_data["Gender"] == 1).mean()
     p_female = (individual_data["Gender"] == 2).mean()
@@ -92,6 +117,18 @@ def fill_missing_gender(individual_data: pd.DataFrame) -> pd.DataFrame:
 
 
 def fill_individual_age(individual_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Fills missing values in the 'Age' column of the individual_data DataFrame.
+
+    If the individual is a student, the missing values are filled within the range of 6 to 18.
+    If the individual is not a student, the missing values are filled with a minimum value of 0.
+
+    Parameters:
+        individual_data (pd.DataFrame): The DataFrame containing individual data.
+
+    Returns:
+        pd.DataFrame: The DataFrame with missing values in the 'Age' column filled.
+    """
     is_student = individual_data["Labour Status"] == 4
     individual_data = apply_iterative_imputer(
         individual_data, columns=["Gender", "Age"], selection=is_student, min_value=6, max_value=18
@@ -101,7 +138,15 @@ def fill_individual_age(individual_data: pd.DataFrame) -> pd.DataFrame:
 
 
 def fill_individual_education(individual_data: pd.DataFrame) -> pd.DataFrame:
-    # Impute education
+    """
+    Fill missing values in the 'Education' column of the individual_data DataFrame using iterative imputation.
+
+    Parameters:
+        individual_data (pd.DataFrame): The DataFrame containing individual data.
+
+    Returns:
+        pd.DataFrame: The DataFrame with missing values in the 'Education' column imputed.
+    """
     individual_data = apply_iterative_imputer(individual_data, columns=["Gender", "Age", "Education"])
     individual_data["Education"] = individual_data["Education"].astype(int)
     return individual_data
@@ -133,6 +178,18 @@ def set_individual_activity_status(
     unemployment_rate: float,
     participation_rate: float,
 ) -> pd.DataFrame:
+    """
+    Sets the activity status of individuals in the given DataFrame based on the provided unemployment rate
+    and participation rate.
+
+    Parameters:
+        individual_data (pd.DataFrame): The DataFrame containing individual data.
+        unemployment_rate (float): The desired unemployment rate.
+        participation_rate (float): The desired participation rate.
+
+    Returns:
+        pd.DataFrame: The updated DataFrame with activity status set for each individual.
+    """
     # Turn the labour status into an activity status
     individual_data["Activity Status"] = individual_data["Labour Status"].map(
         convert_labour_status_to_activity_status,
@@ -164,7 +221,21 @@ def set_individual_activity_status(
     return individual_data
 
 
-def decrease_unemployment_rate(individual_data, n_employed, n_unemployed, unemployment_rate):
+def decrease_unemployment_rate(
+    individual_data: pd.DataFrame, n_employed: int, n_unemployed: int, unemployment_rate: float
+) -> None:
+    """
+    Decreases the unemployment rate by transitioning individuals from unemployed to employed.
+
+    Args:
+        individual_data (pd.DataFrame): DataFrame containing individual data.
+        n_employed (int): Number of currently employed individuals.
+        n_unemployed (int): Number of currently unemployed individuals.
+        unemployment_rate (float): Current unemployment rate.
+
+    Returns:
+        None
+    """
     n_additional_employed = int(n_unemployed - unemployment_rate * (n_employed + n_unemployed))
     rnd_ind = np.random.choice(
         np.flatnonzero(
@@ -185,7 +256,21 @@ def decrease_unemployment_rate(individual_data, n_employed, n_unemployed, unempl
     ] = np.nan
 
 
-def increase_unemployment_rate(individual_data, n_employed, n_unemployed, unemployment_rate):
+def increase_unemployment_rate(
+    individual_data: pd.DataFrame, n_employed: int, n_unemployed: int, unemployment_rate: float
+) -> None:
+    """
+    Increase the unemployment rate in the individual data by updating the activity status and income information.
+
+    Parameters:
+        individual_data (pd.DataFrame): The DataFrame containing individual data.
+        n_employed (int): The number of individuals currently employed.
+        n_unemployed (int): The number of individuals currently unemployed.
+        unemployment_rate (float): The desired unemployment rate.
+
+    Returns:
+        None
+    """
     n_additional_unemployed = int(unemployment_rate * (n_employed + n_unemployed) - n_unemployed)
     rnd_ind = np.random.choice(
         np.flatnonzero(individual_data["Activity Status"] == 1),
@@ -204,7 +289,17 @@ def increase_unemployment_rate(individual_data, n_employed, n_unemployed, unempl
     ] = np.nan
 
 
-def decrease_participation_rate(individual_data: pd.DataFrame, participation_rate: float):
+def decrease_participation_rate(individual_data: pd.DataFrame, participation_rate: float) -> None:
+    """
+    Decreases the participation rate of economically active individuals in the given DataFrame.
+
+    Args:
+        individual_data (pd.DataFrame): The DataFrame containing individual data.
+        participation_rate (float): The desired participation rate.
+
+    Returns:
+        None
+    """
     economically_active = np.logical_and(
         individual_data["Activity Status"] != 3,
         individual_data["Age"] >= 16,
@@ -233,7 +328,17 @@ def decrease_participation_rate(individual_data: pd.DataFrame, participation_rat
     ] = np.nan
 
 
-def increase_participation_rate(individual_data: pd.DataFrame, participation_rate: float):
+def increase_participation_rate(individual_data: pd.DataFrame, participation_rate: float) -> None:
+    """
+    Increase the participation rate in the individual data by modifying the activity status of individuals.
+
+    Args:
+        individual_data (pd.DataFrame): The DataFrame containing individual data.
+        participation_rate (float): The desired participation rate.
+
+    Returns:
+        None
+    """
     economically_active = np.logical_and(
         individual_data["Activity Status"] != 3,
         individual_data["Age"] >= 16,
@@ -261,6 +366,18 @@ def increase_participation_rate(individual_data: pd.DataFrame, participation_rat
 
 
 def fill_individual_nace(individual_data: pd.DataFrame, industries: list[str]) -> pd.DataFrame:
+    """
+    Fill in missing values in the 'Employment Industry' column of the individual_data DataFrame
+    based on the provided industries list.
+
+    Args:
+        individual_data (pd.DataFrame): DataFrame containing individual data.
+        industries (list[str]): List of industries.
+
+    Returns:
+        pd.DataFrame: DataFrame with missing values in the 'Employment Industry' column filled.
+
+    """
     individual_data.loc[
         individual_data["Employment Industry"].isin(["R", "S"]),
         "Employment Industry",
@@ -321,6 +438,19 @@ def fill_individual_nace(individual_data: pd.DataFrame, industries: list[str]) -
 def fill_individual_employee_income(
     individual_data: pd.DataFrame, unemployment_benefits_by_individual: float, scale: int
 ) -> pd.DataFrame:
+    """
+    Fills the 'Employee Income' column in the individual_data DataFrame for employed individuals.
+    The function applies iterative imputation to estimate missing values based on 'Age' and 'Education'.
+    It also performs several adjustments and rescaling of the 'Employee Income' values.
+
+    Parameters:
+        individual_data (pd.DataFrame): DataFrame containing individual data.
+        unemployment_benefits_by_individual (float): Unemployment benefits received by each individual.
+        scale (int): Scaling factor for the 'Employee Income' values.
+
+    Returns:
+        pd.DataFrame: DataFrame with the 'Employee Income' column filled and adjusted.
+    """
     is_employed = individual_data["Activity Status"] == 1
 
     # We're not explicitly modelling this
@@ -360,6 +490,16 @@ def set_individual_unemployed_income(
     individual_data: pd.DataFrame,
     unemployment_benefits_by_individual: float,
 ) -> pd.DataFrame:
+    """
+    Sets the income from unemployment benefits for each individual in the given DataFrame.
+
+    Parameters:
+        individual_data (pd.DataFrame): The DataFrame containing individual data.
+        unemployment_benefits_by_individual (float): The amount of unemployment benefits received by each individual.
+
+    Returns:
+        pd.DataFrame: The updated DataFrame with the income from unemployment benefits added.
+    """
     is_unemployed = individual_data["Activity Status"] == 2
     not_unemployed = individual_data["Activity Status"] != 2
 

@@ -5,7 +5,30 @@ from inet_data.util.imputation import apply_iterative_imputer
 
 
 def get_household_type(ages: np.ndarray) -> int:
-    # Naive determination of the household type based on the set of ages in the household
+    """
+    Determines the household type based on the set of ages in the household.
+    Age types are defined in the HFCS documentation as follows:
+    - 51 for one adult younger than 65
+    - 52 for one adult older than 65
+    - 6 for two adults younger than 65
+    - 7 for two adults, one at least 65
+    - 8 for three or more adults
+    - 9 for single parent with children
+    - 10 for two adults with one child
+    - 11 for two adults with two children
+    - 12 for two adults with at least three children
+    - 13 for three or more adults with children
+
+    Args:
+        ages (np.ndarray): An array of ages representing the individuals in the household.
+
+    Returns:
+        int: The household type code.
+
+    Raises:
+        ValueError: If there are children living together.
+
+    """
     ages = np.sort(ages)
     match len(ages):
         case 1:
@@ -41,6 +64,17 @@ def get_household_type(ages: np.ndarray) -> int:
 
 
 def set_household_types(household_data: pd.DataFrame, individual_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Sets the household types for the missing values in the 'Type' column of the household_data DataFrame.
+
+    Parameters:
+    - household_data (pd.DataFrame): DataFrame containing household data.
+    - individual_data (pd.DataFrame): DataFrame containing individual data.
+
+    Returns:
+    - pd.DataFrame: DataFrame with updated 'Type' column.
+
+    """
     i_natypes = np.flatnonzero(household_data["Type"].isna())
     for idx in i_natypes:
         corr_inds = np.array(household_data["Corresponding Individuals ID"][idx])
@@ -55,6 +89,25 @@ def set_household_housing_data(
     rent_as_fraction_of_unemployment_rate: float,
     unemployment_benefits_by_capita: float,
 ) -> pd.DataFrame:
+    """
+    Sets the housing data for each household in the given DataFrame.
+    It maps the 'Tenure Status of the Main Residence' column to a binary column indicating whether the household owns or
+    rents the main residence.
+    It also maps the 'Number of Properties other than Household Main Residence' column to a binary column indicating
+    whether the household owns additional properties.
+    The value of the main residence is scaled by the given scale factor.
+    The value of other properties is scaled by the given scale factor.
+    Rent and property values are set used the given functions.
+
+    Args:
+        household_data (pd.DataFrame): The DataFrame containing the household data.
+        scale (int): The scaling factor for the value of other properties.
+        rent_as_fraction_of_unemployment_rate (float): The fraction of unemployment benefits used as rent for social housing.
+        unemployment_benefits_by_capita (float): The unemployment benefits per capita.
+
+    Returns:
+        pd.DataFrame: The updated DataFrame with the housing data set for each household.
+    """
     # Whether the household owns or rents
     household_data["Tenure Status of the Main Residence"].replace({2: 1, 4: 1, 3: 0}, inplace=True)
     households_renting = household_data["Tenure Status of the Main Residence"] == 0
@@ -87,6 +140,18 @@ def fix_rent(
     scale: int,
     social_housing_rent: float,
 ) -> pd.DataFrame:
+    """
+    Adjusts the rental income of households based on specified parameters.
+
+    Args:
+        household_data (pd.DataFrame): The dataframe containing household data.
+        household_without_additional_properties (pd.Series): A series indicating whether a household has additional properties.
+        scale (int): The scaling factor for rental income.
+        social_housing_rent (float): The minimum rental income for social housing.
+
+    Returns:
+        pd.DataFrame: The updated dataframe with adjusted rental income.
+    """
     household_data.loc[:, "Rental Income from Real Estate"] *= scale
     household_data.loc[:, "Rental Income from Real Estate"] /= 12.0
     household_data.loc[
@@ -105,6 +170,16 @@ def fix_rent(
 def fix_property_values(
     household_data: pd.DataFrame, household_without_additional_properties: pd.Series
 ) -> pd.DataFrame:
+    """
+    Fixes the property values in the household_data DataFrame based on the household_without_additional_properties Series.
+
+    Parameters:
+        household_data (pd.DataFrame): The DataFrame containing household data.
+        household_without_additional_properties (pd.Series): The Series indicating whether a household has additional properties.
+
+    Returns:
+        pd.DataFrame: The updated household_data DataFrame with fixed property values.
+    """
     household_data.loc[household_without_additional_properties, "Value of other Properties"] = 0.0
     mask = ~household_without_additional_properties & (household_data["Value of other Properties"] == 0.0)
     household_data.loc[mask, "Value of other Properties"] = np.nan
@@ -127,6 +202,20 @@ def fill_rent(
     scale: int,
     social_housing_rent: float,
 ) -> pd.DataFrame:
+    """
+    Fill in missing values for rent paid and value of the main residence in the household data.
+    Missing data is filled in using an iterative imputer.
+
+    Parameters:
+        household_data (pd.DataFrame): DataFrame containing household data.
+        households_owning (pd.Series): Series indicating households that own their main residence.
+        households_renting (pd.Series): Series indicating households that rent their main residence.
+        scale (int): Scaling factor for rent paid and value of the main residence.
+        social_housing_rent (float): Minimum rent for households in social housing.
+
+    Returns:
+        pd.DataFrame: Updated household data with filled-in values for rent paid and value of the main residence.
+    """
     household_data.loc[:, "Rent Paid"] *= scale
     household_data.loc[:, "Value of the Main Residence"] *= scale
     household_data.loc[households_renting & (household_data["Rent Paid"] == 0.0), "Rent Paid"] = np.nan
