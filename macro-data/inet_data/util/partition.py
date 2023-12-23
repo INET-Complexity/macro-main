@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 
 def get_quantiles(n: int, data: np.ndarray) -> np.ndarray:
@@ -9,13 +10,6 @@ def get_quantiles(n: int, data: np.ndarray) -> np.ndarray:
 
 
 def partition_into_quintiles(data: np.ndarray) -> np.ndarray:
-    data_ind = np.argsort(data)
-    step_size = int(np.floor(len(data_ind) / 5))
-    quintiles = np.zeros_like(data, dtype=int)
-    quintiles[data_ind[0:step_size]] = 0
-    quintiles[data_ind[step_size : 2 * step_size]] = 1
-    quintiles[data_ind[2 * step_size : 3 * step_size]] = 2
-    quintiles[data_ind[3 * step_size : 4 * step_size]] = 3
-    quintiles[data_ind[4 * step_size :]] = 4
-
-    return quintiles
+    d = pd.Series(data)
+    quintiles = pd.qcut(d, 5, labels=False)
+    return quintiles.values
