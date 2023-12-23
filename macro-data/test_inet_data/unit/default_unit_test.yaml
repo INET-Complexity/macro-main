@@ -953,6 +953,7 @@ model:
     options: ''
     type: int
     value: 2010
+    format: "%Y"
 purpose:
   desc: The purpose of doing this simulation.
   options: ''
