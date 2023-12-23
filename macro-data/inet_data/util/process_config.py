@@ -4,7 +4,7 @@ import yaml
 from copy import deepcopy
 
 
-def process_config(config_path: Path | dict) -> dict[str, Any]:
+def process_config(config_path: str | Path | dict) -> dict[str, Any]:
     """
     Process the configuration file (yaml) or dictionary.
     Read and separate country pairs as "FRA&DEU" into "FRA" and "DEU" in the init section of the config file.
@@ -15,6 +15,10 @@ def process_config(config_path: Path | dict) -> dict[str, Any]:
     Returns:
         dict[str, Any]: The processed configuration dictionary.
     """
+    # if path is str make it a Path
+    if isinstance(config_path, str):
+        config_path = Path(config_path)
+
     if isinstance(config_path, Path):
         config = yaml.safe_load(open(config_path, "r"))
     else:
