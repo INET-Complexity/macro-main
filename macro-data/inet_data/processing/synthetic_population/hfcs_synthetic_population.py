@@ -1,10 +1,9 @@
 import logging
-import warnings
 from typing import Optional
 
 import numpy as np
 import pandas as pd
-from scipy.optimize import fsolve
+from scipy.optimize import minimize
 from sklearn.experimental import enable_iterative_imputer  # noqa
 from sklearn.impute import IterativeImputer  # noqa
 from sklearn.linear_model import LinearRegression
@@ -20,7 +19,6 @@ from inet_data.processing.synthetic_population.synthetic_population import (
 from inet_data.readers.default_readers import DataReaders
 from inet_data.util.clean_data import remove_outliers
 from inet_data.util.imputation import apply_iterative_imputer
-from inet_data.util.partition import partition_into_quintiles
 from inet_data.util.regressions import fit_linear
 
 
@@ -612,6 +610,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
     def set_household_saving_rates(
         self, function_name: str = "AverageSavingRatesSetter", independents: Optional[list[str]] = None
     ) -> None:
+        # TODO: does this make sense? average consumption of goods/services is 36% (median similar too)
         if independents is None:
             independents = ["Income", "Debt"]
         # Some obvious cleaning
@@ -653,11 +652,12 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             model=self.saving_rates_model,
         )
 
-        # Saving rates by household characteristics
-        if function_name == "AverageSavingRatesSetter":
-            self.household_data["Saving Rate"] = saving_rates.mean()
-        else:
-            self.household_data["Saving Rate"] = saving_rates
+        self.household_data["Saving Rate"] = saving_rates
+        # # Saving rates by household characteristics
+        # if function_name == "AverageSavingRatesSetter":
+        #     self.household_data["Saving Rate"] = saving_rates.mean()
+        # else:
+        #     self.household_data["Saving Rate"] = saving_rates
 
     def normalise_household_consumption(
         self,
@@ -702,89 +702,62 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             dependent="Saving Rate",
             model=self.saving_rates_model,
         )
-        self.household_data["Saving Rate"] = saving_rates
+        # self.household_data["Saving Rate"] = saving_rates
 
     def match_consumption_weights_by_income(
         self,
-        weights_by_income: np.ndarray,
+        weights_by_income: np.ndarray | pd.DataFrame,
         iot_hh_consumption: pd.Series,
         vat: float,
         consumption_variance: float = 0.1,
     ) -> None:
-        # weights_by_income = (
-        #     self.data_readers["oecd_econ"]
-        #     .get_household_consumption_by_income_quantile(
-        #         country=country_name,
-        #         year=self.year,
-        #     )
-        #     .values
-        # )
-        # iot_hh_consumption = self.industry_data[country_name]["industry_vectors"]["Household Consumption in LCU"]
-        iot_hh_consumption_norm = (iot_hh_consumption / iot_hh_consumption.sum()).values
-        quintiles = partition_into_quintiles(data=self.household_data["Income"])
-        # vat = self.data_readers["world_bank"].get_tau_vat(country_name, self.year)
+        n_quantiles = weights_by_income.shape[1]
+        if isinstance(iot_hh_consumption, pd.Series):
+            iot_hh_consumption_norm = (iot_hh_consumption / iot_hh_consumption.sum()).values
+            iot_hh_consumption = iot_hh_consumption.values
+        else:
+            iot_hh_consumption_norm = iot_hh_consumption / iot_hh_consumption.sum(axis=0)
+        if isinstance(weights_by_income, pd.DataFrame):
+            weights_by_income = weights_by_income.values
+        quintiles = pd.qcut(self.household_data["Income"], n_quantiles, labels=False)
         income = self.household_data["Income"].values
         sr = self.household_data["Saving Rate"].values
+        disposable_income_by_quantile = (
+            self.household_data.groupby(quintiles).apply(lambda x: ((1 - x["Saving Rate"]) * x["Income"]).sum()).values
+        )
 
-        # Set up new consumption weights
-        def func(consumption_scalars):
-            i_cons_weights = np.zeros((5, 18))
-            for industry in range(18):
-                for quantile in range(5):
-                    i_cons_weights[quantile][industry] = iot_hh_consumption_norm[industry] + consumption_scalars[
-                        industry
-                    ] * (weights_by_income[industry, quantile] - consumption_scalars[industry + 18])
+        disposable_income_norm = disposable_income_by_quantile / disposable_income_by_quantile.sum()
 
-            # Resulting total consumption
-            total_consumption = np.zeros(18, dtype=float)
-            for q in range(5):
-                ind = np.where(quintiles == q)[0]
-                total_consumption += (
-                    default_desired_consumption(
-                        income_=income[ind],
-                        consumption_weights_=i_cons_weights[q],
-                        saving_rates_=sr[ind],
-                        tau_vat_=vat,
-                    )
-                    .astype(float)
-                    .sum(axis=0)
-                )
+        # set up optimisation
 
-            # Compile equations
-            eqs = []
-            for industry in range(18):
-                eqs.append(total_consumption[industry] - iot_hh_consumption[industry])
-            eqs.append(np.sum(np.absolute(consumption_scalars[0:18])) - consumption_variance)
-            eqs.append(np.sum(i_cons_weights[0]) - 1.0)
-            eqs.append(np.sum(i_cons_weights[1]) - 1.0)
-            eqs.append(np.sum(i_cons_weights[2]) - 1.0)
-            eqs.append(np.sum(i_cons_weights[3]) - 1.0)
-            eqs.append(np.sum(i_cons_weights[4]) - 1.0)
-
-            for _ in range(12):
-                eqs.append(1 - 1)
-
-            return eqs
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            res = fsolve(func, np.ones(36))[0:36]
-        for g_ in range(18):
-            self.consumption_weights_by_income[0][g_] = iot_hh_consumption_norm[g_] + res[g_] * (
-                weights_by_income[g_, 0] - res[g_ + 18]
+        homogeneous_weights = np.outer(iot_hh_consumption_norm, np.ones(n_quantiles))
+        consumption_difference = (
+            lambda alpha: np.dot(
+                homogeneous_weights * alpha + weights_by_income * (1 - alpha), disposable_income_by_quantile
             )
-            self.consumption_weights_by_income[1][g_] = iot_hh_consumption_norm[g_] + res[g_] * (
-                weights_by_income[g_, 1] - res[g_ + 18]
-            )
-            self.consumption_weights_by_income[2][g_] = iot_hh_consumption_norm[g_] + res[g_] * (
-                weights_by_income[g_, 2] - res[g_ + 18]
-            )
-            self.consumption_weights_by_income[3][g_] = iot_hh_consumption_norm[g_] + res[g_] * (
-                weights_by_income[g_, 3] - res[g_ + 18]
-            )
-            self.consumption_weights_by_income[4][g_] = iot_hh_consumption_norm[g_] + res[g_] * (
-                weights_by_income[g_, 4] - res[g_ + 18]
-            )
+            - iot_hh_consumption
+        )
+
+        cost_fct = lambda alpha: np.sum((consumption_difference(alpha) / iot_hh_consumption.sum()) ** 2)
+
+        initial_guess = np.zeros(n_quantiles)  # Initial guess for alphas
+        bounds = [(0, 1 - consumption_variance)] * n_quantiles  # Each alpha[q] is between 0 and 1-consumption_variance
+
+        result = minimize(
+            cost_fct,
+            initial_guess,
+            bounds=bounds,
+            method="SLSQP",
+        )
+
+        # Apply the correction factors
+        alphas_solution = result.x
+        corrected_weights = homogeneous_weights * alphas_solution + weights_by_income * (1 - alphas_solution)
+        # Set the consumption weights
+        # note that the weights are transposed, [quantile, industry]
+
+        # TODO in practifce this doesn't change much; weights seem to always saturate close to 1, except for poor qs
+        self.consumption_weights_by_income = corrected_weights.T
 
 
 def split_array(array_to_split: np.ndarray) -> list[list[int]]:
