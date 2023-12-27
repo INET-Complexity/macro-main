@@ -112,7 +112,7 @@ class SyntheticPopulation(ABC):
         self,
         total_social_transfers: float,
     ) -> None:
-        pass
+        ...
 
     @property
     def number_employees_by_industry(self) -> np.ndarray:
@@ -133,13 +133,13 @@ class SyntheticPopulation(ABC):
 
     @abstractmethod
     def set_debt_installments(self, credit_market_data: pd.DataFrame) -> None:
-        pass
+        ...
 
     @abstractmethod
     def set_household_saving_rates(
         self, function_name: str = "AverageSavingRatesSetter", independents: Optional[list[str]] = None
     ) -> None:
-        pass
+        ...
 
     @abstractmethod
     def compute_household_wealth(self) -> None:
@@ -150,3 +150,6 @@ class SyntheticPopulation(ABC):
             self.individual_data["Employee Income"].fillna(0.0).values
             + self.individual_data["Income from Unemployment Benefits"].fillna(0.0).values
         )
+
+    def restrict(self):
+        ...

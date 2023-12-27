@@ -3,10 +3,32 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
 
+from inet_data.readers.default_readers import DataReaders
 from inet_data.readers.economic_data.oecd_economic_data import OECDEconData
 
 
 class SyntheticFirms(ABC):
+    """
+    Represents a synthetic firms object.
+
+    Args:
+        country_name (str): The name of the country.
+        scale (int): The scale of the synthetic firms.
+        year (int): The year of the synthetic firms.
+        industries (list[str]): The list of industries.
+        number_of_firms_by_industry (np.ndarray): The number of firms by industry.
+        firm_data (pd.DataFrame): The firm data.
+        intermediate_inputs_stock (np.ndarray): The intermediate inputs stock.
+        used_intermediate_inputs (np.ndarray): The used intermediate inputs.
+        capital_inputs_stock (np.ndarray): The capital inputs stock.
+        used_capital_inputs (np.ndarray): The used capital inputs.
+        total_firm_deposits (float): The total firm deposits.
+        total_firm_debt (float): The total firm debt.
+        capital_inputs_productivity_matrix (np.ndarray): The capital inputs productivity matrix.
+        intermediate_inputs_productivity_matrix (np.ndarray): The intermediate inputs productivity matrix.
+        capital_inputs_depreciation_matrix (np.ndarray): The capital inputs depreciation matrix.
+    """
+
     @abstractmethod
     def __init__(
         self,
@@ -50,36 +72,10 @@ class SyntheticFirms(ABC):
 
     @property
     def number_of_firms(self) -> int:
-        return self.number_of_firms_by_industry.sum()
+        """
+        Returns the total number of firms.
 
-    def set_additional_initial_conditions(
-        self,
-        econ_reader: OECDEconData,
-        industry_data: dict[str, pd.DataFrame],
-        interest_rate_on_firm_deposits: np.ndarray,
-        overdraft_rate_on_firm_deposits: np.ndarray,
-        credit_market_data: pd.DataFrame,
-    ) -> None:
-        ...
-        # self.set_taxes_paid_on_production(
-        #     taxes_less_subsidies_rates=industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values,
-        # )
-        # self.set_interest_paid(
-        #     interest_rate_on_firm_deposits=interest_rate_on_firm_deposits,
-        #     overdraft_rate_on_firm_deposits=overdraft_rate_on_firm_deposits,
-        #     credit_market_data=credit_market_data,
-        # )
-        # self.set_firm_profits(
-        #     intermediate_inputs_productivity_matrix=industry_data["intermediate_inputs_productivity_matrix"].values,
-        #     capital_inputs_depreciation_matrix=industry_data["capital_inputs_depreciation_matrix"].values,
-        #     tau_sif=econ_reader.read_tau_sif(self.country_name, self.year),
-        # )
-        # self.set_unit_costs(
-        #     intermediate_inputs_productivity_matrix=industry_data["intermediate_inputs_productivity_matrix"].values,
-        #     capital_inputs_depreciation_matrix=industry_data["capital_inputs_depreciation_matrix"].values,
-        #     tau_sif=econ_reader.read_tau_sif(self.country_name, self.year),
-        # )
-        # self.set_corporate_taxes_paid(
-        #     tau_firm=econ_reader.read_tau_firm(self.country_name, self.year),
-        # )
-        # self.set_firm_debt_installments(credit_market_data=credit_market_data)
+        Returns:
+            int: The total number of firms.
+        """
+        return self.number_of_firms_by_industry.sum()

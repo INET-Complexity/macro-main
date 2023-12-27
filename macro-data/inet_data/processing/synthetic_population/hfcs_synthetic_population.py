@@ -8,6 +8,7 @@ from sklearn.experimental import enable_iterative_imputer  # noqa
 from sklearn.impute import IterativeImputer  # noqa
 from sklearn.linear_model import LinearRegression
 
+from inet_data.processing.synthetic_credit_market.synthetic_credit_market import SyntheticCreditMarket
 from inet_data.processing.synthetic_population.hfcs_household_tools import (
     set_household_types,
     set_household_housing_data,
@@ -20,6 +21,40 @@ from inet_data.readers.default_readers import DataReaders
 from inet_data.util.clean_data import remove_outliers
 from inet_data.util.imputation import apply_iterative_imputer
 from inet_data.util.regressions import fit_linear
+
+RESTRICT_COLS = [
+    "Type",
+    "Corresponding Individuals ID",
+    "Corresponding Bank ID",
+    "Corresponding Inhabited House ID",
+    "Corresponding Renters",
+    "Corresponding Property Owner",
+    "Corresponding Additionally Owned Houses ID",
+    "Income",
+    "Employee Income",
+    "Regular Social Transfers",
+    "Rental Income from Real Estate",
+    "Income from Financial Assets",
+    "Saving Rate",
+    "Rent Paid",
+    "Rent Imputed",
+    "Wealth",
+    "Net Wealth",
+    "Wealth in Real Assets",
+    "Value of the Main Residence",
+    "Value of other Properties",
+    "Wealth Other Real Assets",
+    "Wealth in Deposits",
+    "Wealth in Other Financial Assets",
+    "Wealth in Financial Assets",
+    "Outstanding Balance of HMR Mortgages",
+    "Outstanding Balance of Mortgages on other Properties",
+    "Outstanding Balance of other Non-Mortgage Loans",
+    "Debt",
+    "Debt Installments",
+    "Tenure Status of the Main Residence",
+    "Number of Properties other than Household Main Residence",
+]
 
 
 class SyntheticHFCSPopulation(SyntheticPopulation):
@@ -197,47 +232,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         )
 
     def restrict(self) -> None:
-        self.household_data = self.household_data[
-            [
-                "Type",
-                "Corresponding Individuals ID",
-                "Corresponding Bank ID",
-                "Corresponding Inhabited House ID",
-                "Corresponding Renters",
-                "Corresponding Property Owner",
-                "Corresponding Additionally Owned Houses ID",
-                #
-                "Income",
-                "Employee Income",
-                "Regular Social Transfers",
-                "Rental Income from Real Estate",
-                "Income from Financial Assets",
-                #
-                "Saving Rate",
-                #
-                "Rent Paid",
-                "Rent Imputed",
-                #
-                "Wealth",
-                "Net Wealth",
-                "Wealth in Real Assets",
-                "Value of the Main Residence",
-                "Value of other Properties",
-                "Wealth Other Real Assets",
-                "Wealth in Deposits",
-                "Wealth in Other Financial Assets",
-                "Wealth in Financial Assets",
-                #
-                "Outstanding Balance of HMR Mortgages",
-                "Outstanding Balance of Mortgages on other Properties",
-                "Outstanding Balance of other Non-Mortgage Loans",
-                "Debt",
-                "Debt Installments",
-                #
-                "Tenure Status of the Main Residence",
-                "Number of Properties other than Household Main Residence",
-            ]
-        ]
+        self.household_data = self.household_data[RESTRICT_COLS]
 
     def compute_household_wealth(self) -> None:
         self.set_household_other_real_assets_wealth()
@@ -505,7 +500,8 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             + self.household_data["Outstanding Balance of other Non-Mortgage Loans"]
         )
 
-    def set_debt_installments(self, credit_market_data: pd.DataFrame) -> None:
+    def set_debt_installments(self, credit_market: SyntheticCreditMarket) -> None:
+        credit_market_data = credit_market.credit_market_data
         credit_market_data_household_loans = credit_market_data.loc[credit_market_data["loan_type"].isin([4, 5])]
         debt_installments = np.zeros(len(self.household_data))
         for household_id in range(len(self.household_data)):
@@ -720,13 +716,9 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         if isinstance(weights_by_income, pd.DataFrame):
             weights_by_income = weights_by_income.values
         quintiles = pd.qcut(self.household_data["Income"], n_quantiles, labels=False)
-        income = self.household_data["Income"].values
-        sr = self.household_data["Saving Rate"].values
         disposable_income_by_quantile = (
             self.household_data.groupby(quintiles).apply(lambda x: ((1 - x["Saving Rate"]) * x["Income"]).sum()).values
         )
-
-        disposable_income_norm = disposable_income_by_quantile / disposable_income_by_quantile.sum()
 
         # set up optimisation
 
@@ -735,6 +727,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             lambda alpha: np.dot(
                 homogeneous_weights * alpha + weights_by_income * (1 - alpha), disposable_income_by_quantile
             )
+            / (1 + vat)
             - iot_hh_consumption
         )
 
@@ -756,7 +749,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         # Set the consumption weights
         # note that the weights are transposed, [quantile, industry]
 
-        # TODO in practifce this doesn't change much; weights seem to always saturate close to 1, except for poor qs
+        # TODO in practice this doesn't change much; weights seem to always saturate close to 1, except for poor qs
         self.consumption_weights_by_income = corrected_weights.T
 
 

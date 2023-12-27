@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
+import pickle as pkl
 
 from inet_data.processing.synthetic_banks.default_synthetic_banks import (
     SyntheticDefaultBanks,
@@ -18,6 +20,11 @@ from inet_data.processing.synthetic_central_government.default_synthetic_central
 )
 from inet_data.processing.synthetic_central_government.synthetic_central_government import (
     SyntheticCentralGovernment,
+)
+from inet_data.processing.synthetic_credit_market.default_synthetic_credit_market import (
+    create_firm_loan_df,
+    create_household_loan_df,
+    create_mortgage_loan_df,
 )
 from inet_data.processing.synthetic_credit_market.synthetic_credit_market import (
     SyntheticCreditMarket,
@@ -60,7 +67,7 @@ from inet_data.readers.default_readers import DataReaders
 from inet_data.readers.util.exogenous_data import create_all_exogenous_data
 from inet_data.readers.util.industry_extraction import compile_industry_data
 from inet_data.util.country_code_map import get_map_long_to_short
-from inet_data.util.process_config import process_config
+from inet_data.util.process_config import process_config, initial_interest_rates
 
 
 @dataclass
@@ -80,11 +87,11 @@ class Creator:
     synthetic_housing_market: dict[str, SyntheticHousingMarket]
     synthetic_rest_of_the_world: DefaultSyntheticRestOfTheWorld
 
-    @staticmethod
+    @classmethod
     def default_init(
+        cls,
         configuration: str | Path | dict,
         raw_data_path: Path | str,
-        processed_data_path: Path | str,
         random_seed: int = 0,
         create_exogenous_industry_data: bool = True,
         testing: bool = True,
@@ -92,8 +99,6 @@ class Creator:
         # ensure that string paths are paths
         if isinstance(raw_data_path, str):
             raw_data_path = Path(raw_data_path)
-        if isinstance(processed_data_path, str):
-            processed_data_path = Path(processed_data_path)
 
         configuration = process_config(configuration)
         np.random.seed(random_seed)
@@ -118,6 +123,31 @@ class Creator:
             for country_name in country_names
         }
         single_bank = configuration["model"]["single_bank"]["value"]
+
+        firm_loan_maturity = {
+            country: configuration["init"][country]["banks"]["parameters"]["long_term_firm_loan_maturity"]["value"]
+            for country in country_names
+        }
+
+        hh_consumption_maturity = {
+            country: configuration["init"][country]["banks"]["parameters"][
+                "household_consumption_expansion_loan_maturity"
+            ]["value"]
+            for country in country_names
+        }
+
+        mortgage_maturity = {
+            country: configuration["init"][country]["banks"]["parameters"]["mortgage_maturity"]["value"]
+            for country in country_names
+        }
+
+        interest_rate_data = {country: initial_interest_rates(configuration, country) for country in country_names}
+
+        assume_zero_firm_debt = {
+            country: configuration["init"][country]["firms"]["parameters"]["assume_zero_initial_debt"]["value"]
+            for country in country_names
+        }
+
         # FUNCTIONS: this is a paramter of the central gov functions
         rent_as_fraction_of_unemployment_rate = 0.25
 
@@ -224,6 +254,10 @@ class Creator:
         # where a dictionary is created with country names as keys and housing market data as values
         synthetic_housing_market = {}
 
+        # credit market data is initialised through the matching
+        # where a dictionary is created with country names as keys and credit market data as values
+        synthetic_credit_market = {}
+
         for country_name in country_names:
             match_individuals_with_firms_country(
                 country_name,
@@ -281,3 +315,89 @@ class Creator:
             synthetic_population[country_name].match_consumption_weights_by_income(
                 weights_by_income=weights_by_income, iot_hh_consumption=iot_hh_consumption, vat=vat
             )
+
+            synthetic_banks[country_name].initialise_deposits_and_loans(
+                synthetic_population=synthetic_population[country_name],
+                synthetic_firms=synthetic_firms[country_name],
+            )
+
+            synthetic_banks[country_name].initialise_rates_profits_liabilities(
+                readers, **interest_rate_data[country_name]
+            )
+
+            if assume_zero_firm_debt[country_name]:
+                firm_loan_df = create_firm_loan_df(
+                    synthetic_firms[country_name],
+                    synthetic_banks[country_name],
+                    firm_loan_maturity=firm_loan_maturity[country_name],
+                )
+            else:
+                firm_loan_df = None
+
+            household_loan_df = create_household_loan_df(
+                synthetic_population[country_name],
+                synthetic_banks[country_name],
+                hh_consumption_maturity[country_name],
+            )
+
+            mortgage_loan_df = create_mortgage_loan_df(
+                synthetic_population[country_name],
+                synthetic_banks[country_name],
+                mortgage_maturity[country_name],
+            )
+
+            valid_firm_df = (firm_loan_df is not None) and (firm_loan_df.shape[0] > 0)
+
+            if valid_firm_df:
+                credit_list = [firm_loan_df, household_loan_df, mortgage_loan_df]
+            else:
+                credit_list = [household_loan_df, mortgage_loan_df]
+
+            credit_market_data = pd.concat(credit_list, ignore_index=True)
+
+            credit_market_data.index.name = "Loans"
+            credit_market_data.columns.name = "Loan Properties"
+
+            synthetic_credit_market[country_name] = SyntheticCreditMarket(
+                year=year,
+                country_name=country_name,
+                credit_market_data=credit_market_data,
+            )
+
+            synthetic_population[country_name].set_debt_installments(synthetic_credit_market[country_name])
+
+            synthetic_firms[country_name].set_additional_initial_conditions(
+                readers=readers,
+                industry_data=industry_data[country_name],
+                synthetic_banks=synthetic_banks[country_name],
+                synthetic_credit_market=synthetic_credit_market[country_name],
+            )
+
+            synthetic_central_governments[country_name].update_fields(
+                readers,
+                synthetic_population[country_name],
+                synthetic_firms[country_name],
+                synthetic_banks[country_name],
+                industry_data[country_name],
+            )
+
+            # don't save all columns for temporary population
+            synthetic_population[country_name].restrict()
+
+        return cls(
+            synthetic_population=synthetic_population,
+            synthetic_firms=synthetic_firms,
+            synthetic_banks=synthetic_banks,
+            synthetic_credit_market=synthetic_credit_market,
+            synthetic_central_bank=synthetic_central_banks,
+            synthetic_central_government=synthetic_central_governments,
+            synthetic_government_entities=synthetic_gov_entities,
+            synthetic_housing_market=synthetic_housing_market,
+            synthetic_rest_of_the_world=synthetic_row,
+        )
+
+    def save(self, path: str | Path) -> None:
+        for name, attribute in self.__dict__.items():
+            name = ".".join((name, "pkl"))
+            with open("/".join((path, name)), "wb") as f:
+                pkl.dump(attribute, f)
