@@ -1,9 +1,11 @@
 import pathlib
 
 import numpy as np
+import pandas as pd
 
 from inet_data.processing.synthetic_population.hfcs_synthetic_population import (
     SyntheticHFCSPopulation,
+    sample_households,
 )
 
 PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
@@ -84,3 +86,33 @@ class TestSyntheticPopulation:
 
         # Check individual age
         assert np.all(population.individual_data["Age"] >= 0)
+
+
+def test__household_sampling(readers):
+    country_name = "FRA"
+    year = 2014
+    scale = 10_000
+    n_households = int(readers.eurostat.number_of_households(country_name, year) / scale)
+    hfcs_individuals_data = readers.hfcs[country_name].individuals_df
+    hfcs_households_data = readers.hfcs[country_name].households_df
+
+    household_selection, individual_selection = sample_households(
+        hfcs_households_data, hfcs_individuals_data, n_households
+    )
+
+    assert household_selection.shape[0] == n_households
+    assert individual_selection["New Household ID"].nunique() == n_households
+    assert np.all(
+        individual_selection.groupby(["New Household ID"])["Gender"].count()
+        == household_selection["Corresponding Individuals ID"].apply(len)
+    )
+
+    large_households = household_selection["Corresponding Individuals ID"].apply(len) > 2
+
+    sample = np.random.choice(household_selection.index[large_households], size=10)
+
+    for i in sample:
+        individuals = household_selection.loc[i, "Corresponding Individuals ID"]
+        assert individual_selection.loc[individuals, "Corresponding Household ID"].nunique() == 1
+        assert np.all(individual_selection.loc[individuals, "Corresponding Household ID"] == i)
+    assert True
