@@ -14,4 +14,13 @@ class TestCreator:
             create_exogenous_industry_data=False,
             testing=True,
         )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            tmp_file = tmp / "creator.pkl"
+            creator.save(tmp_file)
+            new_creator = Creator.init_from_pickle(tmp_file)
+
         assert creator.synthetic_firms.keys() == {"FRA"}
+
+        assert new_creator.synthetic_firms.keys() == {"FRA"}
