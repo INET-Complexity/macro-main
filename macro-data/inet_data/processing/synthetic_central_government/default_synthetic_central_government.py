@@ -58,7 +58,7 @@ class SyntheticDefaultCentralGovernment(SyntheticCentralGovernment):
                     * benefits_inflation_data["Unemployment Benefits"].iloc[-1]
                 )
             else:
-                current_unemployment_benefits = None
+                current_unemployment_benefits = readers.get_total_unemployment_benefits(country_name, year)
 
             if other_benefits_model:
                 current_other_benefits = (
@@ -66,7 +66,7 @@ class SyntheticDefaultCentralGovernment(SyntheticCentralGovernment):
                     * benefits_inflation_data["Other Total Benefits"].iloc[-1]
                 )
             else:
-                current_other_benefits = None
+                current_other_benefits = readers.get_total_benefits(country_name, year) - current_unemployment_benefits
         else:
             # if exogenous data is not available, set the benefits models to None
             unemployment_benefits_model = None
