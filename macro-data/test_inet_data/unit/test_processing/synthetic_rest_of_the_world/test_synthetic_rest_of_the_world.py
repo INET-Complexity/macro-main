@@ -16,7 +16,7 @@ class TestSyntheticRestOfTheWorld:
             year=2014,
             readers=readers,
             exogenous_row_data=all_exogenous_data.get("ROW", None),
-            row_industry_data=industry_data,
+            row_industry_data=industry_data["ROW"],
         )
         # Check if we have all the necessary fields
         for row_field in [
