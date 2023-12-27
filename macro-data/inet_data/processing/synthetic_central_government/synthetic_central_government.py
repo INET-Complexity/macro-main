@@ -11,6 +11,17 @@ from inet_data.readers.default_readers import DataReaders
 
 
 class SyntheticCentralGovernment(ABC):
+    """
+    Represents a synthetic central government.
+
+    Attributes:
+        country_name (str): The name of the country.
+        year (int): The year.
+        central_gov_data (pd.DataFrame): The central government data.
+        other_benefits_model (Optional[LinearRegression]): The model for other benefits (optional).
+        unemployment_benefits_model (Optional[LinearRegression]): A linear regression model to determine unemployment benefits (optional).
+    """
+
     @abstractmethod
     def __init__(
         self,

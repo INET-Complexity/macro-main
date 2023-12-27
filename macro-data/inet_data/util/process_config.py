@@ -43,6 +43,17 @@ def process_config(config_path: str | Path | dict) -> dict[str, Any]:
 
 
 def initial_interest_rates(config: dict[str, Any], country: str) -> dict[str, float]:
+    """
+    Calculate the initial interest rates for different types of loans based on the given configuration and country. (This is just a
+    wrapper for configuration data).
+
+    Args:
+        config (dict[str, Any]): The configuration dictionary.
+        country (str): The country for which the interest rates are calculated.
+
+    Returns:
+        dict[str, float]: A dictionary containing the initial interest rates for different types of loans.
+    """
     banks_dict = config["init"][country]["banks"]["parameters"]
     bank_markup_interest_rate_household_consumption_loans = banks_dict[
         "initial_markup_interest_rate_household_consumption_loans"

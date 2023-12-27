@@ -1,7 +1,23 @@
 import pandas as pd
 
 
-def aggregate_df(aggregation: dict, country_agg_dict: dict, df: pd.DataFrame):
+def aggregate_df(aggregation: dict, country_agg_dict: dict, df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Aggregate a DataFrame based on given aggregation and country aggregation dictionaries.
+
+    Countries can be aggregated together (i.e. mapping multiple countries to the ROW, or mapping regions to a country).
+
+    Sectors are also aggregated together (i.e. mapping multiple sectors to a single sector).
+
+    Args:
+        aggregation (dict): A dictionary mapping aggregated values to their corresponding keys.
+        country_agg_dict (dict): A dictionary mapping country indices to their corresponding keys.
+        df (pd.DataFrame): The DataFrame to be aggregated.
+
+    Returns:
+        pd.DataFrame: The aggregated DataFrame.
+
+    """
     agg_dict_full = {}
     for key, values in aggregation.items():
         for value in values:

@@ -22,7 +22,19 @@ def set_housing_df(
     total_imputed_rent: float,
 ) -> pd.DataFrame:
     """
-    Set the housing market data.
+    Set the housing market data. This is done by first handling owner-occupied property, where owners are identified through
+    the synthetic population data. The corresponding household data is then updated, to indicate owner-occupied property.
+
+    Next, the rental market data is created. This is done by first identifying the number of additional (avaiable for rent) properties and
+    the ids of the landlords (households with additional properties).
+    Rental income and property values are also computed, and are returned.
+
+    These two datasets (owner-occupied and rental) are then combined into a single DataFrame, which is processed to remove outliers and to
+    fill missing values. Rent below the social housing rent is set to the social housing rent.
+
+    Imputed rent for household owners is set to the corresponding rental value of their home.
+
+    Finally, renters are matched to properties, and the results are recorded.
 
     Args:
         synthetic_population (SyntheticPopulation): An instance of the SyntheticPopulation class.
@@ -97,96 +109,25 @@ def set_housing_df(
     return housing_df
 
 
-def housing_data_dict(
-    synthetic_population: SyntheticPopulation,
-    rental_income_taxes: float,
-    social_housing_rent: float,
-    total_imputed_rent: float,
-) -> dict:
-    # Handling owner-occupied property
-    housing_market_data_dict = handle_households_owning(synthetic_population)
-
-    owners_df = create_owners_df(synthetic_population)
-
-    # Updating corresponding household data
-    synthetic_population.household_data.loc[
-        owners_df["Corresponding Owner Household ID"], "Corresponding Inhabited House ID"
-    ] = owners_df["House ID"].values
-
-    synthetic_population.household_data.loc[
-        owners_df["Corresponding Owner Household ID"], "Corresponding Property Owner"
-    ] = owners_df["Corresponding Owner Household ID"].values
-
-    landlord_ids, num_additional_properties = housing_info_from_population(rental_income_taxes, synthetic_population)
-
-    rental_income = synthetic_population.household_data["Rental Income from Real Estate"].values
-    property_values = synthetic_population.household_data["Value of other Properties"].values
-
-    rental_df = create_rental_df(
-        num_additional_properties=num_additional_properties,
-        landlord_ids=landlord_ids,
-        property_values=property_values,
-        id_start=int(owners_df["House ID"].max()) + 1,
-        rental_income=rental_income,
-        rental_income_taxes=rental_income_taxes,
-    )
-    additionnally_owned_house_ids = np.array_split(rental_df.index, np.cumsum(num_additional_properties))[:-1]
-
-    synthetic_population.household_data["Corresponding Additionally Owned Houses ID"] = additionnally_owned_house_ids
-
-    housing_df = pd.concat([owners_df, rental_df], ignore_index=True)
-
-    invalid_values = housing_df["Value"] < 60 * housing_df["Rent"]
-    housing_df.loc[invalid_values, "Value"] = np.nan
-
-    housing_df = remove_outliers(housing_df, cols=["Rent", "Value"], quantile=0.2)
-
-    housing_df = apply_iterative_imputer(housing_df, ["Rent", "Value"])
-
-    rent_under_social_housing = housing_df["Rent"] < social_housing_rent
-    housing_df.loc[rent_under_social_housing, "Rent"] = social_housing_rent
-
-    restate_values = np.concatenate(
-        [
-            [property_values[landlord_id] / num_additional_properties[landlord_id]]
-            * num_additional_properties[landlord_id]
-            for landlord_id in landlord_ids
-        ]
-    )
-    # rented house values stay the same, but I am not sure why this is needed
-    # TODO check with Sam
-    housing_df.loc[owners_df.shape[0] :, "Value"] = restate_values
-
-    # owner occupied homes have imputed rents that match the total imputed rent
-    owned_houses = housing_df["Is Owner-Occupied"]
-    rescale_factor = total_imputed_rent / housing_df.loc[owned_houses, "Rent"].sum()
-    housing_df.loc[owned_houses, "Rent"] *= rescale_factor
-
-    owner_indices = synthetic_population.household_data["Tenure Status of the Main Residence"] == 1
-    synthetic_population.household_data.loc[owner_indices, "Rent Imputed"] = housing_df.loc[owned_houses, "Rent"].values
-
-    # Preprocess the data
-    preprocess(
-        synthetic_population=synthetic_population,
-        housing_market_data_dict=housing_market_data_dict,
-        rental_income_taxes=rental_income_taxes,
-        social_housing_rent=social_housing_rent,
-        total_imputed_rent=total_imputed_rent,
-    )
-
-    match_renters_to_properties(synthetic_population=synthetic_population, housing_market_df=housing_df)
-    # Optimize
-    find_optimal_matching(
-        synthetic_population=synthetic_population,
-        housing_market_data_dict=housing_market_data_dict,
-        rental_income_taxes=rental_income_taxes,
-    )
-
-    # Record the results
-    return housing_market_data_dict
-
-
 def create_owners_df(synthetic_population: SyntheticPopulation) -> pd.DataFrame:
+    """
+    Create a DataFrame of owners' information from the synthetic population.
+    Owners are identified through the synthetic population data, through tenure status == 1.
+
+    House data is created, so that each owner has a corresponding house ID, owner-occupied status, corresponding owner household ID,
+    and the inhabitant household ID (which is the same as the owner household ID for owners).
+    Values of house data are created by merging the owner household ID with the value of the main residence from the household data.
+
+    Rent is initialised to NaN, but will be filled later using imputed rent.
+
+    Args:
+        synthetic_population (SyntheticPopulation): The synthetic population data.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing owners' information, including house ID,
+                      owner-occupied status, corresponding owner household ID,
+                      corresponding inhabitant household ID, value of the main residence, and rent.
+    """
     # Handle households owning their house
     households_owning = synthetic_population.household_data["Tenure Status of the Main Residence"] == 1
     owners_df = pd.DataFrame(index=range(households_owning.sum()))
@@ -211,41 +152,6 @@ def create_owners_df(synthetic_population: SyntheticPopulation) -> pd.DataFrame:
     return owners_df
 
 
-def handle_households_owning(synthetic_population: SyntheticPopulation) -> dict:
-    housing_market_data_dict = {}
-
-    # Handle households owning their house
-    households_owning = synthetic_population.household_data["Tenure Status of the Main Residence"] == 1
-    housing_market_data_dict["House ID"] = list(range(np.sum(households_owning)))
-    housing_market_data_dict["Is Owner-Occupied"] = [True] * len(housing_market_data_dict["House ID"])
-    housing_market_data_dict["Corresponding Owner Household ID"] = list(
-        synthetic_population.household_data.loc[households_owning].index.values
-    )
-    housing_market_data_dict["Corresponding Inhabitant Household ID"] = list(
-        synthetic_population.household_data.loc[households_owning].index.values
-    )
-    housing_market_data_dict["Value"] = list(
-        synthetic_population.household_data.loc[households_owning, "Value of the Main Residence"].values
-    )
-    housing_market_data_dict["Rent"] = [np.nan] * len(housing_market_data_dict["Value"])
-
-    # Updating corresponding household data
-    synthetic_population.household_data["Corresponding Inhabited House ID"] = np.full(
-        len(synthetic_population.household_data), np.nan
-    )
-    synthetic_population.household_data.loc[
-        households_owning, "Corresponding Inhabited House ID"
-    ] = housing_market_data_dict["House ID"]
-    synthetic_population.household_data["Corresponding Property Owner"] = np.full(
-        len(synthetic_population.household_data), np.nan
-    )
-    synthetic_population.household_data.loc[households_owning, "Corresponding Property Owner"] = np.where(
-        households_owning
-    )[0]
-
-    return housing_market_data_dict
-
-
 def create_rental_df(
     num_additional_properties: np.ndarray,
     landlord_ids: np.ndarray | list,
@@ -254,6 +160,32 @@ def create_rental_df(
     rental_income: np.ndarray,
     rental_income_taxes: float,
 ) -> pd.DataFrame:
+    """
+    Create a rental DataFrame based on the given parameters.
+    A DataFrame is created, with a row for each rental property (of which there are num_additional_properties.sum()).
+    The index is set to start at id_start, and the house ID is set to the index + id_start.
+    The owner-occupied status is set to False, and the corresponding owner household ID is set to the landlord ID.
+    The inhabitant ID is not set, as this will be done through the matching.
+
+    The rent of the house is computed from the rental income of the landlord, and the number of additional properties owned. It is assumed
+    that the landlord rents all their additional properties at the same price. The same assumption holds for the value of the property.
+
+    Args:
+        num_additional_properties (np.ndarray): Array containing the number of additional properties for each landlord.
+        landlord_ids (np.ndarray | list): Array or list of landlord IDs.
+        property_values (np.ndarray): Array containing the values of the properties.
+        id_start (int): Starting ID for the rental properties.
+        rental_income (np.ndarray): Array containing the rental income for each landlord.
+        rental_income_taxes (float): Rental income tax rate.
+
+    Returns:
+        pd.DataFrame: Rental DataFrame with the following columns:
+            - "House ID": ID of the rental property.
+            - "Is Owner-Occupied": Boolean indicating if the property is owner-occupied.
+            - "Corresponding Owner Household ID": ID of the owner household.
+            - "Rent": Rental amount for the property.
+            - "Value": Value of the property.
+    """
     number_available_properties = num_additional_properties.sum()
     rental_df = pd.DataFrame(index=range(number_available_properties))
     rental_df["House ID"] = rental_df.index + id_start
@@ -287,130 +219,13 @@ def create_rental_df(
     return rental_df
 
 
-def preprocess(
-    synthetic_population: SyntheticPopulation,
-    housing_market_data_dict: dict,
-    rental_income_taxes: float,
-    social_housing_rent: float,
-    total_imputed_rent: float,
-) -> None:
-    """
-    Preprocesses the data for matching households with houses.
-
-    This function ensures that there aren't more renters than houses, rescales the total rent received to match the rent paid,
-    creates all remaining properties, assigns properties to property owners, cleans rent and value data, rescales property values,
-    and fills in imputed rents.
-
-    Args:
-        synthetic_population (SyntheticPopulation): An instance of the SyntheticPopulation class.
-        housing_market_data_dict (dict): A dictionary containing the housing market data.
-        rental_income_taxes (float): The rental income tax rate.
-        social_housing_rent (float): The social housing rent.
-        total_imputed_rent (float): The total imputed rent.
-
-    Returns:
-        None
-    """
-
-    # Make sure there aren't more renters than houses
-    landlord_ids, num_additional_properties = housing_info_from_population(rental_income_taxes, synthetic_population)
-
-    rental_income = synthetic_population.household_data["Rental Income from Real Estate"].values
-    property_values = synthetic_population.household_data["Value of other Properties"].values
-
-    # Create the property IDs. These IDs start from the last ID in the existing housing market data
-    # and continue up to the total number of properties.
-    rented_out_property_ids = list(
-        range(
-            len(housing_market_data_dict["House ID"]),
-            len(housing_market_data_dict["House ID"]) + num_additional_properties.sum(),
-        )
-    )
-
-    # Create the properties
-    housing_market_data_dict["House ID"] += rented_out_property_ids
-    housing_market_data_dict["Is Owner-Occupied"] += [False] * len(rented_out_property_ids)
-    housing_market_data_dict["Is Owner-Occupied"] = np.array(housing_market_data_dict["Is Owner-Occupied"])
-    housing_market_data_dict["Corresponding Owner Household ID"] += list(
-        np.concatenate([[landlord_id] * num_additional_properties[landlord_id] for landlord_id in landlord_ids])
-    )
-
-    # Set the rent and value of the properties
-    housing_market_data_dict["Rent"] += list(
-        1.0
-        / (1 - rental_income_taxes)
-        * np.concatenate(
-            [
-                [rental_income[landlord_id] / num_additional_properties[landlord_id]]
-                * num_additional_properties[landlord_id]
-                for landlord_id in landlord_ids
-            ]
-        )
-    )
-    housing_market_data_dict["Rent"] = np.array(housing_market_data_dict["Rent"])
-    num_non_additional_houses = len(housing_market_data_dict["Value"])
-    housing_market_data_dict["Value"] += list(
-        np.concatenate(
-            [
-                [property_values[landlord_id] / num_additional_properties[landlord_id]]
-                * num_additional_properties[landlord_id]
-                for landlord_id in landlord_ids
-            ]
-        )
-    )
-    housing_market_data_dict["Value"] = np.array(housing_market_data_dict["Value"])
-
-    # Assign properties to property owners
-    synthetic_population.household_data["Corresponding Additionally Owned Houses ID"] = np.array_split(
-        rented_out_property_ids,
-        np.cumsum(num_additional_properties),
-    )[:-1]
-
-    # Clean rent&value
-    housing_market_data_dict["Value"][
-        housing_market_data_dict["Value"] < 60 * housing_market_data_dict["Rent"]
-    ] = np.nan
-    cleaned_housing_market_data = remove_outliers(
-        data=pd.DataFrame({"Rent": housing_market_data_dict["Rent"], "Value": housing_market_data_dict["Value"]}),
-        cols=["Rent", "Value"],
-        quantile=0.2,
-    )
-    housing_market_data_dict["Rent"] = cleaned_housing_market_data["Rent"]
-    housing_market_data_dict["Value"] = cleaned_housing_market_data["Value"]
-    imputed_data = IterativeImputer().fit_transform(
-        np.stack([housing_market_data_dict["Rent"], housing_market_data_dict["Value"]], axis=1)
-    )
-    housing_market_data_dict["Rent"] = imputed_data[:, 0]
-    housing_market_data_dict["Value"] = imputed_data[:, 1]
-    housing_market_data_dict["Rent"][housing_market_data_dict["Rent"] < social_housing_rent] = social_housing_rent
-
-    # Rescale property values
-    housing_market_data_dict["Value"][num_non_additional_houses:] = np.concatenate(
-        [
-            [property_values[landlord_id] / num_additional_properties[landlord_id]]
-            * num_additional_properties[landlord_id]
-            for landlord_id in landlord_ids
-        ]
-    )
-
-    # Fill-in imputed rents
-    synthetic_population.household_data["Rent Imputed"] = 0
-    ind_curr_owning = synthetic_population.household_data["Tenure Status of the Main Residence"] == 1
-    housing_market_data_dict["Rent"][0 : ind_curr_owning.sum()] *= (
-        total_imputed_rent / housing_market_data_dict["Rent"][0 : ind_curr_owning.sum()].sum()
-    )
-    synthetic_population.household_data.loc[ind_curr_owning, "Rent Imputed"] = housing_market_data_dict["Rent"][
-        0 : ind_curr_owning.sum()
-    ]
-
-
 def housing_info_from_population(rental_income_taxes: float, synthetic_population: SyntheticPopulation):
     """
     Calculate housing information from the synthetic population data.
 
-    First, rental income is readjusted to match the rent paid minus taxes.
+    Renting households are identified through the tenure status of the main residence (== 0).
+    Rental income is readjusted to match the rent paid minus taxes.
     The number of additional properties is computed, along with the ids of landlords (households with additional properties).
-    Rental income and property values are also computed, and are returned.
 
     Args:
         rental_income_taxes (float): The tax rate applied to rental income.
@@ -479,7 +294,27 @@ def match_renters_to_properties(
     synthetic_population: SyntheticPopulation,
     housing_market_df: pd.DataFrame,
     max_matching_size: int = 1000,
-):
+) -> None:
+    """
+    Matches renters to properties based on their rent payments.
+    This will be done by identifying renters and the properties. The goal of this function is to match renters to properties
+    by minimising the difference between the rent paid by the household and the rent of the property.  Because the data is large,
+    the matching is done in chunks, with a maximum chunk size of max_matching_size. These chunks are obtained by sorting the data, as we expect
+    e.g. the rent paid by renters to be similar to the rent of the property they are matched to within each chunk.
+
+    Then, the matching is done within each chunk using the linear sum assignment algorithm from scipy. The housing market data and household
+    data are updated to reflect this matching.
+
+    The rental income of landlords is then computed to match the rent paid by the renters ex post.
+
+    Args:
+        synthetic_population (SyntheticPopulation): The synthetic population data.
+        housing_market_df (pd.DataFrame): The housing market data.
+        max_matching_size (int, optional): The maximum size of each matching chunk. Defaults to 1000.
+
+    Returns:
+        None
+    """
     rented = ~housing_market_df["Is Owner-Occupied"]
     rent_rec = housing_market_df.loc[rented, "Rent"].values
 
@@ -561,85 +396,3 @@ def match_renters_to_properties(
     synthetic_population.household_data.loc[
         earned_rent.index.values, "Rental Income from Real Estate"
     ] = earned_rent.values
-
-
-def find_optimal_matching(
-    synthetic_population: SyntheticPopulation,
-    housing_market_data_dict: dict,
-    rental_income_taxes: float,
-    max_matching_size: int = 1000,
-) -> None:
-    rented_houses = np.logical_not(housing_market_data_dict["Is Owner-Occupied"])
-    rent_rec = housing_market_data_dict["Rent"][rented_houses]
-    renters = synthetic_population.household_data["Tenure Status of the Main Residence"] == 0
-    renters_ind = np.where(renters)[0]
-    rent_paid = synthetic_population.household_data["Rent Paid"].values[renters]
-
-    # Find the optimal configuration
-    rent_rec_split = np.array_split(rent_rec, int(len(rent_rec) / max_matching_size))
-    rent_paid_split = np.array_split(rent_paid, int(len(rent_rec) / max_matching_size))
-    split_offset_rec, split_offset_paid = 0, 0
-    corr_renters_by_house_id_rel = np.full(rent_rec.shape, np.nan)
-    for chunk_ind in range(len(rent_rec_split)):
-        curr_rent_rec = rent_rec_split[chunk_ind]
-        curr_rent_paid = rent_paid_split[chunk_ind]
-        cost = sp.spatial.distance_matrix(curr_rent_rec[:, None], curr_rent_paid[:, None])
-        curr_properties, curr_renters = lsa(cost)
-        corr_renters_by_house_id_rel[curr_properties + split_offset_rec] = renters_ind[curr_renters + split_offset_paid]
-        split_offset_rec += len(curr_rent_rec)
-        split_offset_paid += len(curr_rent_paid)
-    corr_renters_by_house_id_hb = np.full(rented_houses.shape, np.nan)
-    corr_renters_by_house_id_hb[rented_houses] = corr_renters_by_house_id_rel
-
-    # Invert it
-    rent_house_map = dict(enumerate(corr_renters_by_house_id_hb))
-    house_rent_map = {int(v): k for k, v in rent_house_map.items() if not np.isnan(v)}
-    corr_house_by_renter = np.full(len(synthetic_population.household_data), np.nan)
-    for k in house_rent_map:
-        corr_house_by_renter[k] = house_rent_map[k]
-    corr_house_by_renter_rel = corr_house_by_renter[renters].astype(int)
-
-    # Update property data
-    housing_market_data_dict["Corresponding Inhabitant Household ID"] += list(
-        corr_renters_by_house_id_hb[rented_houses]
-    )
-    housing_market_data_dict["Corresponding Inhabitant Household ID"] = np.array(
-        housing_market_data_dict["Corresponding Inhabitant Household ID"]
-    )
-    housing_market_data_dict["Up for Rent"] = np.isnan(
-        housing_market_data_dict["Corresponding Inhabitant Household ID"]
-    )
-
-    # Update household data
-    property_owner_ids = np.where(synthetic_population.household_data["Rental Income from Real Estate"] != 0.0)[0]
-    synthetic_population.household_data["Corresponding Renters"] = [
-        [] for _ in range(len(synthetic_population.household_data))
-    ]
-    for po_id in property_owner_ids:
-        synthetic_population.household_data.at[po_id, "Corresponding Renters"] = list(
-            corr_renters_by_house_id_hb[
-                synthetic_population.household_data.loc[po_id, "Corresponding Additionally Owned Houses ID"]
-            ]
-        )
-    synthetic_population.household_data.loc[renters, "Corresponding Inhabited House ID"] = corr_house_by_renter_rel
-    synthetic_population.household_data.loc[renters, "Corresponding Property Owner"] = np.array(
-        housing_market_data_dict["Corresponding Owner Household ID"]
-    )[corr_house_by_renter_rel]
-
-    # Update rent paid
-    synthetic_population.household_data.loc[:, "Rent Paid"] = 0.0
-    for renter in np.where(renters)[0]:
-        synthetic_population.household_data.at[renter, "Rent Paid"] = housing_market_data_dict["Rent"][
-            int(corr_house_by_renter[renter])
-        ]
-
-    # Update received rent
-    synthetic_population.household_data.loc[:, "Rental Income from Real Estate"] = 0.0
-    for po in property_owner_ids:
-        additional_properties = synthetic_population.household_data.loc[
-            po, "Corresponding Additionally Owned Houses ID"
-        ]
-        additional_properties = [a for a in additional_properties if not housing_market_data_dict["Up for Rent"][a]]
-        synthetic_population.household_data.loc[po, "Rental Income from Real Estate"] = (
-            1 - rental_income_taxes
-        ) * housing_market_data_dict["Rent"][additional_properties].sum()

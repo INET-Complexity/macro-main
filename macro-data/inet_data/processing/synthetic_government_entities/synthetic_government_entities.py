@@ -3,11 +3,29 @@ from typing import Optional
 
 from sklearn.linear_model import LinearRegression
 
-import numpy as np
 import pandas as pd
 
 
 class SyntheticGovernmentEntities(ABC):
+    """
+    Represents a collection of synthetic government entities. These entities are used to represent government consumption.
+
+    Parameters:
+    - country_name (str): The name of the country.
+    - year (int): The year of the data.
+    - number_of_entities (int): The number of government entities.
+    - gov_entity_data (pd.DataFrame): The data for the government entities.
+    - government_consumption_model (Optional[LinearRegression]): The consumption model for the government (a linear
+    regression model to extrapolate government consumption growth).
+
+    Attributes:
+    - country_name (str): The name of the country.
+    - year (int): The year of the data.
+    - number_of_entities (int): The number of government entities.
+    - gov_entity_data (pd.DataFrame): The data for the government entities.
+    - government_consumption_model (Optional[LinearRegression]): The consumption model for the government.
+    """
+
     @abstractmethod
     def __init__(
         self,

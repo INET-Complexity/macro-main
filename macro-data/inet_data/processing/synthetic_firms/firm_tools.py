@@ -14,6 +14,25 @@ def draw_industry_firm_sizes(
     number_employees: int,
     firm_size_zeta_shape: float,
 ) -> np.ndarray:
+    """
+    Draw firm sizes for an industry based on the number of employees. The size distribution within each industry is
+    assumed to be a discrete power-law distribution, with a normalisation constant that is the Riemann zeta function.
+
+    In other words, the probability of a firm having n employees is
+    ..math::
+        p(n) = \frac{1}{n^{\zeta(s)} \zeta(s)}
+
+    where the exponent is s.
+
+    Args:
+        n_firms_in_industry (int): The number of firms in the industry.
+        number_employees (int): The total number of employees in the industry.
+        firm_size_zeta_shape (float): The shape parameter of the zeta distribution for firm sizes.
+
+    Returns:
+        np.ndarray: An array of firm sizes, where each element represents the number of employees in a firm.
+
+    """
     employees_by_industry_range = np.arange(1, number_employees + 1)
     if len(employees_by_industry_range) == 0:
         return np.zeros(n_firms_in_industry)
@@ -46,6 +65,18 @@ def draw_industry_firm_sizes(
 def distribute_industry_employee_remainder(
     sizes: np.ndarray, number_employees: int, n_firms_in_industry: int
 ) -> np.ndarray:
+    """
+    Distributes the remainder of employees among firms in an industry. This remainder is the difference between the
+    number of employees in the industry and the sum of the firm sizes (computed a the power-law distribution).
+
+    Args:
+        sizes (np.ndarray): An array of firm sizes.
+        number_employees (int): The total number of employees in the industry.
+        n_firms_in_industry (int): The number of firms in the industry.
+
+    Returns:
+        np.ndarray: An updated array of firm sizes after distributing the remainder of employees.
+    """
     remainder = number_employees - sizes.sum()
     abs_rem = np.abs(remainder)
     f_choices = np.random.choice(n_firms_in_industry, size=int(abs_rem))
@@ -65,6 +96,23 @@ def add_number_employees(
     n_firms_per_industry: np.ndarray | list,
     n_industries: int,
 ):
+    """
+    Adds the number of employees to the firm_data DataFrame based on the given firm size and industry data.
+    This first computes a priori firm sizes from power-law distributions with parameters given by the firm size zetas, then
+    distributes the remainder of employees (unmatched employees) among firms in each industry.
+
+    Finally, the "Number of Employees" column in the firm_data DataFrame is updated with the computed firm sizes.
+
+    Args:
+        firm_data (pd.DataFrame): The DataFrame containing firm data.
+        firm_size_zetas (np.ndarray | list | dict[int, float]): The firm size zetas for each industry.
+        n_employees_per_industry (np.ndarray | list): The number of employees per industry.
+        n_firms_per_industry (np.ndarray | list): The number of firms per industry.
+        n_industries (int): The total number of industries.
+
+    Returns:
+        pd.DataFrame: The firm_data DataFrame with the "Number of Employees" column updated.
+    """
     firm_data["Number of Employees"] = 0
     for industry in range(n_industries):
         # Sanity check
@@ -103,6 +151,25 @@ def add_wages(
     labour_compensation: np.ndarray,
     tau_sif: float,
 ) -> pd.DataFrame:
+    """
+    Add wages information to the firm_data DataFrame based on the given parameters.
+    Wages are computed as the total labour compensation for each industry divided by the number of employees in that industry.
+
+    Wages paid by firms are computed according to their total number of employees, and include the tax rate tau_sif.
+
+    Wages received by employees do not include the employer tax rate tau_sif, but are taxed later.
+
+    Parameters:
+        firm_data (pd.DataFrame): The DataFrame containing firm data.
+        n_employees_per_industry (list | np.ndarray): The number of employees per industry.
+        n_firms (int): The total number of firms.
+        n_industries (int): The total number of industries.
+        labour_compensation (np.ndarray): The compensation for each industry.
+        tau_sif (float): The tax rate.
+
+    Returns:
+        pd.DataFrame: The updated firm_data DataFrame with added wage information.
+    """
     firm_data["Total Wages"] = 0
     firm_data["Total Wages Paid"] = 0
     firm_wages = np.zeros(n_firms)
@@ -124,6 +191,18 @@ def add_wages(
 def add_production(
     firm_data: pd.DataFrame, n_employees_per_industry: list | np.ndarray, n_industries: int, output: np.ndarray
 ) -> pd.DataFrame:
+    """
+    Allocate production values to firms based on the total industry output and proportionally to the number of employees.
+
+    Parameters:
+        firm_data (pd.DataFrame): The DataFrame containing firm data.
+        n_employees_per_industry (list | np.ndarray): The number of employees per industry.
+        n_industries (int): The number of industries.
+        output (np.ndarray): The industry output values.
+
+    Returns:
+        pd.DataFrame: The updated firm_data DataFrame with production values added.
+    """
     firm_data["Production"] = np.nan
     for industry in range(n_industries):
         industry_mask = firm_data["Industry"] == industry
@@ -144,6 +223,29 @@ def initialise_basic_firm_fields(
     exchange_rate: float,
     tau_sif: float,
 ):
+    """
+    Initializes basic fields for each firm in the firm_data DataFrame.
+    First, firms are assigned to industries based on the number of firms per industry. Then, the number of employees of each firm
+    is computed based on the number of employees per industry and the firm size zetas. Wages are computed based on the number of
+    employees and the labour compensation for each industry. Finally, production values are computed based on the number of
+    employees and the industry output.
+
+    Prices are initialised to 1 in USD and then converted to the local currency using the exchange rate.
+
+    The corresponding firm data is returned.
+
+    Parameters:
+        firm_data (pd.DataFrame): The DataFrame containing firm data.
+        industry_data (dict[str, pd.DataFrame]): A dictionary mapping industry names to industry data DataFrames.
+        n_employees_per_industry (np.ndarray | list): An array or list containing the number of employees per industry.
+        n_firms_per_industry (NDArrayInt | list[int]): An array or list containing the number of firms per industry.
+        firm_size_zetas (dict[int, float]): A dictionary mapping firm sizes to zeta values.
+        exchange_rate (float): The exchange rate.
+        tau_sif (float): The tau_sif value.
+
+    Returns:
+        pd.DataFrame: The firm_data DataFrame with the initialized fields.
+    """
     n_industries = len(n_employees_per_industry)
     n_firms = sum(n_firms_per_industry)
     firm_data["Industry"] = np.array(
@@ -179,6 +281,29 @@ def function_parameters_dependent_initialisation(
     initial_inventory_to_input_fraction: float,
     intermediate_inputs_utilisation_rate: float,
 ):
+    """
+    Perform parameter-dependent initialization of firm data.
+
+    This depends on parameters that depend on the functions used to run the simulation, as they are used to compute
+    the initial values of inventories and input usage.
+
+    Args:
+        firm_data (pd.DataFrame): DataFrame containing firm data.
+        intermediate_inputs_productivity_matrix (np.ndarray): Matrix of intermediate inputs productivity.
+        capital_inputs_depreciation_matrix (np.ndarray): Matrix of capital inputs depreciation.
+        capital_inputs_productivity_matrix (np.ndarray): Matrix of capital inputs productivity.
+        total_firm_deposits (float): Total firm deposits.
+        total_firm_debt (float): Total firm debt.
+        assume_zero_initial_debt (bool): Flag indicating whether to assume zero initial debt.
+        assume_zero_initial_deposits (bool): Flag indicating whether to assume zero initial deposits.
+        capital_inputs_utilisation_rate (float): Capital inputs utilization rate.
+        initial_inventory_to_input_fraction (float): Fraction of initial inventory to input.
+        intermediate_inputs_utilisation_rate (float): Intermediate inputs utilization rate.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: Tuple containing capital inputs stock,
+        intermediate inputs stock, used capital inputs, and used intermediate inputs.
+    """
     # This needs to be moved to the macromodel package
     # note that firm_data, intermediate_inputs_productivity_matrix, capital_inputs_depreciation_matrix,
     # firm deposits, and firm debt will be attributes of the synthetic firm class

@@ -10,6 +10,27 @@ def create_all_exogenous_data(
     year_min: int = 2010,
     year_max: int = 2019,
 ) -> dict[str, dict[str, pd.DataFrame]]:
+    """
+    Create exogenous data for each country in the given list of country names.
+
+    This data includes:
+        - log inflation
+        - sectoral growth
+        - unemployment rate
+        - house price index
+        - vacancy rate
+        - total firm deposits and debt
+        - industry data from the input-output tables
+
+    Args:
+        readers (DataReaders): An instance of the DataReaders class that provides access to various data sources.
+        country_names (list[str]): A list of country names for which exogenous data needs to be created.
+        year_min (int, optional): The minimum year for which exogenous data should be collected. Defaults to 2010.
+        year_max (int, optional): The maximum year for which exogenous data should be collected. Defaults to 2019.
+
+    Returns:
+        dict[str, dict[str, pd.DataFrame]]: A dictionary containing exogenous data for each country, organized by country name and data type.
+    """
     exogenous_industry_data = compile_exogenous_industry_data(readers, country_names, year_min, year_max)
 
     # get the set intersection of country_names and the keys of exogenous_industry_data

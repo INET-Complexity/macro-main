@@ -10,6 +10,52 @@ from inet_data.readers.io_tables.util import aggregate_df
 
 # all in current USD
 class WIODReader:
+    """
+    A class for reading and manipulating World Input-Output Database (WIOD) data.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The input-output table as a pandas DataFrame.
+    considered_countries : list[str]
+        The list of countries considered for the analysis.
+    industries : list[str]
+        The list of industries in the input-output table.
+
+    Methods
+    -------
+    from_csv(cls, path: Path | str) -> "WIODReader":
+        Create a WIODReader instance from a CSV file.
+    read_csv(path: Path | str) -> pd.DataFrame:
+        Read a CSV file and return it as a pandas DataFrame.
+    agg_from_csv(cls, path: Path | str, considered_countries: list[str], aggregation_path: Path) -> "WIODReader":
+        Create a WIODReader instance with aggregated data from a CSV file.
+    aggregate_io(considered_countries: list[str], df: pd.DataFrame, aggregation: dict[str, list[str]]) -> pd.DataFrame:
+        Aggregate the input-output table based on the given countries and aggregation dictionary.
+    column_allc(self, country: str, symbol: str) -> pd.Series:
+        Get the column-wise sum of a specific symbol for a given country.
+    capital_formation(self, country: str) -> np.ndarray:
+        Get the capital formation values for a given country.
+    capital_weights(self, country: str) -> np.ndarray:
+        Get the capital weights for a given country.
+    hh_consumption(self, country: str) -> np.ndarray:
+        Get the household consumption values for a given country.
+    hh_consumption_weights(self, country: str) -> np.ndarray:
+        Get the household consumption weights for a given country.
+    govt_consumption(self, country: str) -> np.ndarray:
+        Get the government consumption values for a given country.
+    govt_cons_weights(self, country: str) -> np.ndarray:
+        Get the government consumption weights for a given country.
+    intermediate_inputs(self, country: str) -> np.ndarray:
+        Get the intermediate inputs for a given country.
+    intermediate_input_weights(self, country: str) -> np.ndarray:
+        Get the intermediate input weights for a given country.
+    total_exports(self, country: str) -> np.ndarray:
+        Get the total exports for a given country.
+    total_imports(self, country: str) -> np.ndarray:
+        Get the total imports for a given country.
+    """
+
     def __init__(self, df: pd.DataFrame, considered_countries: list[str], industries: list[str]):
         self.df = df
         self.industries = industries

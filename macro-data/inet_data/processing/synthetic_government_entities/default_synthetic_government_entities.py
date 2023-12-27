@@ -11,6 +11,30 @@ from inet_data.readers.default_readers import DataReaders
 
 
 class SyntheticDefaultGovernmentEntities(SyntheticGovernmentEntities):
+    """
+    Represents a collection of synthetic government entities. These entities are used to represent government consumption.
+
+    Parameters:
+    - country_name (str): The name of the country.
+    - year (int): The year of the data.
+    - number_of_entities (int): The number of government entities.
+    - gov_entity_data (pd.DataFrame): The data for the government entities.
+    - government_consumption_model (Optional[LinearRegression]): The consumption model for the government (a linear
+    regression model to extrapolate government consumption growth).
+
+    Attributes:
+    - country_name (str): The name of the country.
+    - year (int): The year of the data.
+    - number_of_entities (int): The number of government entities.
+    - gov_entity_data (pd.DataFrame): The data for the government entities.
+    - government_consumption_model (Optional[LinearRegression]): The consumption model for the government.
+
+
+    Methods:
+    - create_from_readers: Creates an instance of SyntheticDefaultGovernmentEntities from data readers.
+
+    """
+
     def __init__(
         self,
         country_name: str,

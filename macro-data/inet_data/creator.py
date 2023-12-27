@@ -94,6 +94,7 @@ class Creator:
     exchange_rates: pd.DataFrame
     trade_proportions: pd.DataFrame
 
+    # TODO: chunk this up into smaller functions?
     @classmethod
     def default_init(
         cls,

@@ -4,6 +4,15 @@ import pandas as pd
 
 
 class SyntheticCentralBank(ABC):
+    """
+    Represents a synthetic central bank for a specific country and year.
+
+    Attributes:
+        country_name (str): The name of the country.
+        year (int): The year of the central bank data.
+        central_bank_data (pd.DataFrame): The central bank data.
+    """
+
     @abstractmethod
     def __init__(
         self,
