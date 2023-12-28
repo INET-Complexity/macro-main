@@ -66,7 +66,7 @@ class Creator:
         raw_data_path: Path | str,
         random_seed: int = 0,
         create_exogenous_industry_data: bool = True,
-        testing: bool = True,
+        single_hfcs_survey: bool = True,
     ):
         # ensure that string paths are paths
         if isinstance(raw_data_path, str):
@@ -131,7 +131,7 @@ class Creator:
             scale=scale,
             prune_date=prune_date,
             create_exogenous_industry_data=create_exogenous_industry_data,
-            force_single_hfcs_survey=testing,
+            force_single_hfcs_survey=single_hfcs_survey,
             prune_date_format=prune_date_format,
         )
 
@@ -141,7 +141,7 @@ class Creator:
 
         exogenous_data = create_all_exogenous_data(readers, country_names) if create_exogenous_industry_data else None
 
-        year_range = 1 if testing else 10
+        year_range = 1 if single_hfcs_survey else 10
 
         synthetic_central_governments = {
             country: DefaultSyntheticCGovernment.create_from_readers(readers, country, year, year_range=year_range)

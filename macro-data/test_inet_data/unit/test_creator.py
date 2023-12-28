@@ -12,7 +12,7 @@ class TestCreator:
             configuration=configuration,
             raw_data_path=raw_data_path,
             create_exogenous_industry_data=False,
-            testing=True,
+            single_hfcs_survey=True,
         )
 
         with tempfile.TemporaryDirectory() as tmp:
