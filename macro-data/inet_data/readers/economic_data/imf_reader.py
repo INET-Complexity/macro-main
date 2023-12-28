@@ -6,15 +6,29 @@ from inet_data.readers.util.prune_util import prune_index
 
 
 class IMFReader:
-    def __init__(self, path: Path | str, scale: int):
+    # def __init__(self, path: Path | str, scale: int):
+    #     # Parameters
+    #     self.scale = scale
+    #
+    #     # Load data files
+    #     self.files_with_codes = self.get_files_with_codes()
+    #     self.data = {
+    #         key: pd.read_csv(path / (self.files_with_codes[key] + ".csv")) for key in self.files_with_codes.keys()
+    #     }
+
+    def __init__(self, data: dict[str, pd.DataFrame], scale: int):
         # Parameters
         self.scale = scale
 
         # Load data files
-        self.files_with_codes = self.get_files_with_codes()
-        self.data = {
-            key: pd.read_csv(path / (self.files_with_codes[key] + ".csv")) for key in self.files_with_codes.keys()
+        self.data = {key: data[key] for key in data.keys()}
+
+    @classmethod
+    def from_data(cls, data_path: Path | str, scale: int):
+        data = {
+            "bank_demography": pd.read_csv(data_path / "imf_fas_bank_demographics.csv"),
         }
+        return cls(data, scale)
 
     @staticmethod
     def get_files_with_codes() -> dict[str, str]:

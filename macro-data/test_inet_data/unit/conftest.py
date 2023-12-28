@@ -23,7 +23,7 @@ def configuration():
 
 @pytest.fixture(scope="module", name="readers")
 def readers(data_path):
-    readers = DataReaders.init_default_raw_data_path(
+    readers = DataReaders.from_raw_data(
         raw_data_path=data_path,
         country_names=["FRA"],
         country_names_short=["FR"],

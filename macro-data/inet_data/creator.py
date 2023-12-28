@@ -122,7 +122,7 @@ class Creator:
 
         prune_date = configuration["model"]["prune_date"]["value"]
         prune_date_format = configuration["model"]["prune_date"]["format"]
-        readers = DataReaders.init_default_raw_data_path(
+        readers = DataReaders.from_raw_data(
             raw_data_path=raw_data_path,
             country_names=country_names,
             country_names_short=country_names_short,

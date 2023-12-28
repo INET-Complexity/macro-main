@@ -85,7 +85,7 @@ class DataReaders:
     goods_criticality: GoodsCriticalityReader
 
     @classmethod
-    def init_default_raw_data_path(
+    def from_raw_data(
         cls,
         raw_data_path: Path | str,
         country_names: list[str],
@@ -166,7 +166,7 @@ class DataReaders:
             path=datapaths.policy_rates_path, country_code_path=datapaths.country_codes_path
         )
 
-        imf_reader = IMFReader(path=datapaths.imf_path, scale=scale)
+        imf_reader = IMFReader.from_data(data_path=datapaths.imf_path, scale=scale)
 
         ons_reader = ONSReader(path=datapaths.ons_path)
 
