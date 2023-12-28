@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from inet_data.processing.synthetic_central_bank.default_synthetic_central_bank import (
-    SyntheticDefaultCentralBanks,
+    DefaultSyntheticCentralBank,
 )
 
 PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
@@ -12,7 +12,7 @@ PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 
 class TestSyntheticCentralBanks:
     def test__create(self, readers):
-        central_banks = SyntheticDefaultCentralBanks.init_from_readers(
+        central_banks = DefaultSyntheticCentralBank.init_from_readers(
             country_name="FRA",
             year=2014,
             readers=readers,

@@ -12,7 +12,7 @@ from inet_data.processing.synthetic_population.synthetic_population import Synth
 from inet_data.readers.default_readers import DataReaders
 
 
-class SyntheticDefaultCentralGovernment(SyntheticCentralGovernment):
+class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
     def __init__(
         self,
         country_name: str,
@@ -118,7 +118,7 @@ class SyntheticDefaultCentralGovernment(SyntheticCentralGovernment):
             }
         )
 
-        central_gov = SyntheticDefaultCentralGovernment(
+        central_gov = DefaultSyntheticCGovernment(
             country_name=country_name,
             year=year,
             central_gov_data=central_gov_data,

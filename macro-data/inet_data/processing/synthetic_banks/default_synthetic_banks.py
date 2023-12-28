@@ -5,7 +5,7 @@ from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 from inet_data.readers.default_readers import DataReaders
 
 
-class SyntheticDefaultBanks(SyntheticBanks):
+class DefaultSyntheticBanks(SyntheticBanks):
     def __init__(
         self,
         country_name: str,

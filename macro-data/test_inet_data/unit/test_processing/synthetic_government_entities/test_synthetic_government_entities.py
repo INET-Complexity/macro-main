@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from inet_data.processing.synthetic_government_entities.default_synthetic_government_entities import (
-    SyntheticDefaultGovernmentEntities,
+    DefaultSyntheticGovernmentEntities,
 )
 
 PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
@@ -13,7 +13,7 @@ PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 class TestSyntheticGovernmentEntities:
     def test__create(self, readers, all_exogenous_data, industry_data):
         exogenous_country_data = all_exogenous_data.get("FRA", None)
-        synth_gov_fra = SyntheticDefaultGovernmentEntities.create_from_readers(
+        synth_gov_fra = DefaultSyntheticGovernmentEntities.create_from_readers(
             readers=readers,
             country_name="FRA",
             year=2014,

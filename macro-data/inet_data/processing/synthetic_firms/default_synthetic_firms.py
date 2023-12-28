@@ -13,7 +13,7 @@ from inet_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
 from inet_data.readers.default_readers import DataReaders
 
 
-class SyntheticDefaultFirms(SyntheticFirms):
+class DefaultSyntheticFirms(SyntheticFirms):
     def __init__(
         self,
         country_name: str,

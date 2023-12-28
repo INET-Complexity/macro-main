@@ -10,7 +10,7 @@ from inet_data.processing.synthetic_government_entities.synthetic_government_ent
 from inet_data.readers.default_readers import DataReaders
 
 
-class SyntheticDefaultGovernmentEntities(SyntheticGovernmentEntities):
+class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
     """
     Represents a collection of synthetic government entities. These entities are used to represent government consumption.
 

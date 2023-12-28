@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from inet_data.processing.synthetic_firms.default_synthetic_firms import (
-    SyntheticDefaultFirms,
+    DefaultSyntheticFirms,
 )
 
 PARENT = pathlib.Path(__file__).parent.parent.parent.parent.parent.resolve()
@@ -36,7 +36,7 @@ class TestSyntheticFirms:
         n_employees_per_industry = np.ones(18).astype(int)
         n_employees_per_industry *= 10_000
 
-        firms = SyntheticDefaultFirms.init_from_readers(
+        firms = DefaultSyntheticFirms.init_from_readers(
             readers=readers,
             country_name="FRA",
             year=2014,

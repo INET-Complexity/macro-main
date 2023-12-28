@@ -7,7 +7,7 @@ from inet_data.processing.synthetic_central_bank.synthetic_central_bank import (
 from inet_data.readers.default_readers import DataReaders
 
 
-class SyntheticDefaultCentralBanks(SyntheticCentralBank):
+class DefaultSyntheticCentralBank(SyntheticCentralBank):
     """
     A class representing synthetic central banks.
 

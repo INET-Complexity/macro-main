@@ -15,12 +15,12 @@ from inet_data.processing import (
     SyntheticGovernmentEntities,
     SyntheticHousingMarket,
     DefaultSyntheticRestOfTheWorld,
-    SyntheticDefaultCentralGovernment,
-    SyntheticDefaultGovernmentEntities,
-    SyntheticDefaultCentralBanks,
+    DefaultSyntheticCGovernment,
+    DefaultSyntheticGovernmentEntities,
+    DefaultSyntheticCentralBank,
     SyntheticHFCSPopulation,
-    SyntheticDefaultFirms,
-    SyntheticDefaultBanks,
+    DefaultSyntheticFirms,
+    DefaultSyntheticBanks,
     DefaultSyntheticHousingMarket,
     match_firms_with_banks,
     match_households_with_banks,
@@ -120,9 +120,6 @@ class Creator:
             for country in country_names
         }
 
-        # FUNCTIONS: this is a paramter of the central gov functions
-        rent_as_fraction_of_unemployment_rate = 0.25
-
         prune_date = configuration["model"]["prune_date"]["value"]
         prune_date_format = configuration["model"]["prune_date"]["format"]
         readers = DataReaders.init_default_raw_data_path(
@@ -147,9 +144,7 @@ class Creator:
         year_range = 1 if testing else 10
 
         synthetic_central_governments = {
-            country: SyntheticDefaultCentralGovernment.create_from_readers(
-                readers, country, year, year_range=year_range
-            )
+            country: DefaultSyntheticCGovernment.create_from_readers(readers, country, year, year_range=year_range)
             for country in country_names
         }
 
@@ -159,7 +154,7 @@ class Creator:
         }
 
         synthetic_gov_entities = {
-            country: SyntheticDefaultGovernmentEntities.create_from_readers(
+            country: DefaultSyntheticGovernmentEntities.create_from_readers(
                 readers=readers,
                 country_name=country,
                 year=year,
@@ -171,7 +166,7 @@ class Creator:
         }
 
         synthetic_central_banks = {
-            country: SyntheticDefaultCentralBanks.init_from_readers(country, year, readers) for country in country_names
+            country: DefaultSyntheticCentralBank.init_from_readers(country, year, readers) for country in country_names
         }
 
         synthetic_population: dict[str, SyntheticHFCSPopulation] = {
@@ -183,14 +178,13 @@ class Creator:
                 scale=scale,
                 industries=industries,
                 industry_data=industry_data,
-                rent_as_fraction_of_unemployment_rate=rent_as_fraction_of_unemployment_rate,
                 total_unemployment_benefits=total_unemployment_benefits[country],
             )
             for (country, country_short) in zip(country_names, country_names_short)
         }
 
         synthetic_firms = {
-            country: SyntheticDefaultFirms.init_from_readers(
+            country: DefaultSyntheticFirms.init_from_readers(
                 readers=readers,
                 country_name=country,
                 year=year,
@@ -205,7 +199,7 @@ class Creator:
         }
 
         synthetic_banks = {
-            country: SyntheticDefaultBanks.init_from_readers(
+            country: DefaultSyntheticBanks.init_from_readers(
                 single_bank=single_bank,
                 country_name=country,
                 year=year,

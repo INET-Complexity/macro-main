@@ -125,6 +125,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             wealth_distribution_model,
         )
 
+    # TODO rent as fraction of unemployment rate seems to be a parameter of government functions
     @classmethod
     def create_from_readers(
         cls,
@@ -136,7 +137,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         industry_data: dict[str, dict],
         industries: list[str],
         total_unemployment_benefits: float,
-        rent_as_fraction_of_unemployment_rate: float,
+        rent_as_fraction_of_unemployment_rate: float = 0.25,
         n_quantiles: int = 5,
     ):
         """
