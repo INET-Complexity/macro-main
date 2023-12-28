@@ -12,7 +12,7 @@ PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 
 class TestSyntheticRestOfTheWorld:
     def test__create(self, readers, all_exogenous_data, industry_data):
-        rest_of_the_world = DefaultSyntheticRestOfTheWorld.init_from_readers(
+        rest_of_the_world = DefaultSyntheticRestOfTheWorld.from_readers(
             year=2014,
             readers=readers,
             exogenous_row_data=all_exogenous_data.get("ROW", None),

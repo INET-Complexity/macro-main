@@ -51,7 +51,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
         )
 
     @classmethod
-    def init_from_readers(
+    def from_readers(
         cls,
         readers: DataReaders,
         country_name: str,

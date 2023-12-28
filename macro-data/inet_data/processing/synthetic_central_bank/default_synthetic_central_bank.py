@@ -34,7 +34,7 @@ class DefaultSyntheticCentralBank(SyntheticCentralBank):
         )
 
     @classmethod
-    def init_from_readers(cls, country_name: str, year: int, readers: DataReaders):
+    def from_readers(cls, country_name: str, year: int, readers: DataReaders):
         """
         Initializes a SyntheticCentralBank object using data from DataReaders, in particular the central bank policy rate.
 

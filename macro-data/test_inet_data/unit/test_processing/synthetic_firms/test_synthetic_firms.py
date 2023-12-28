@@ -36,7 +36,7 @@ class TestSyntheticFirms:
         n_employees_per_industry = np.ones(18).astype(int)
         n_employees_per_industry *= 10_000
 
-        firms = DefaultSyntheticFirms.init_from_readers(
+        firms = DefaultSyntheticFirms.from_readers(
             readers=readers,
             country_name="FRA",
             year=2014,

@@ -41,7 +41,7 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
         )
 
     @classmethod
-    def create_from_readers(
+    def from_readers(
         cls,
         readers: DataReaders,
         country_name: str,

@@ -144,7 +144,7 @@ class Creator:
         year_range = 1 if single_hfcs_survey else 10
 
         synthetic_central_governments = {
-            country: DefaultSyntheticCGovernment.create_from_readers(readers, country, year, year_range=year_range)
+            country: DefaultSyntheticCGovernment.from_readers(readers, country, year, year_range=year_range)
             for country in country_names
         }
 
@@ -154,7 +154,7 @@ class Creator:
         }
 
         synthetic_gov_entities = {
-            country: DefaultSyntheticGovernmentEntities.create_from_readers(
+            country: DefaultSyntheticGovernmentEntities.from_readers(
                 readers=readers,
                 country_name=country,
                 year=year,
@@ -166,11 +166,11 @@ class Creator:
         }
 
         synthetic_central_banks = {
-            country: DefaultSyntheticCentralBank.init_from_readers(country, year, readers) for country in country_names
+            country: DefaultSyntheticCentralBank.from_readers(country, year, readers) for country in country_names
         }
 
         synthetic_population: dict[str, SyntheticHFCSPopulation] = {
-            country: SyntheticHFCSPopulation.create_from_readers(
+            country: SyntheticHFCSPopulation.from_readers(
                 readers=readers,
                 country_name=country,
                 country_name_short=country_short,
@@ -184,7 +184,7 @@ class Creator:
         }
 
         synthetic_firms = {
-            country: DefaultSyntheticFirms.init_from_readers(
+            country: DefaultSyntheticFirms.from_readers(
                 readers=readers,
                 country_name=country,
                 year=year,
@@ -199,7 +199,7 @@ class Creator:
         }
 
         synthetic_banks = {
-            country: DefaultSyntheticBanks.init_from_readers(
+            country: DefaultSyntheticBanks.from_readers(
                 single_bank=single_bank,
                 country_name=country,
                 year=year,
@@ -209,7 +209,7 @@ class Creator:
             for country in country_names
         }
 
-        synthetic_row = DefaultSyntheticRestOfTheWorld.init_from_readers(
+        synthetic_row = DefaultSyntheticRestOfTheWorld.from_readers(
             readers=readers,
             year=year,
             exogenous_row_data=exogenous_data.get("ROW", None) if exogenous_data else None,

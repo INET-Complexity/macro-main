@@ -127,7 +127,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
     # TODO rent as fraction of unemployment rate seems to be a parameter of government functions
     @classmethod
-    def create_from_readers(
+    def from_readers(
         cls,
         readers: DataReaders,
         country_name: str,

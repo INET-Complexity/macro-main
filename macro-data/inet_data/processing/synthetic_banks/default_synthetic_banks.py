@@ -21,7 +21,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
         )
 
     @classmethod
-    def init_from_readers(cls, single_bank: bool, country_name: str, year: int, readers: DataReaders, scale: int):
+    def from_readers(cls, single_bank: bool, country_name: str, year: int, readers: DataReaders, scale: int):
         """
         Initialize a SyntheticBanks object from data readers.
         This method creates a single bank or multiple banks, depending on the single_bank

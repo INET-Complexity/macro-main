@@ -12,7 +12,7 @@ PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 
 class TestSyntheticCentralBanks:
     def test__create(self, readers):
-        central_banks = DefaultSyntheticCentralBank.init_from_readers(
+        central_banks = DefaultSyntheticCentralBank.from_readers(
             country_name="FRA",
             year=2014,
             readers=readers,

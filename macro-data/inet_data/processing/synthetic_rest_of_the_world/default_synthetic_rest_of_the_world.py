@@ -21,7 +21,7 @@ class DefaultSyntheticRestOfTheWorld(SyntheticRestOfTheWorld):
         super().__init__(year, row_data, exports_model, imports_model)
 
     @classmethod
-    def init_from_readers(
+    def from_readers(
         cls,
         year: int,
         readers: DataReaders,
