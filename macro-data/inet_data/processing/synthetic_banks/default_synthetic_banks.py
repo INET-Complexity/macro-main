@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 import pandas as pd
 
@@ -26,10 +24,12 @@ class SyntheticDefaultBanks(SyntheticBanks):
     def init_from_readers(cls, single_bank: bool, country_name: str, year: int, readers: DataReaders, scale: int):
         """
         Initialize a SyntheticBanks object from data readers.
-        This method creates a single bank or multiple banks, depending on the single_bank flag and on the number of bank branches
+        This method creates a single bank or multiple banks, depending on the single_bank
+        flag and on the number of bank branches
         in the country obtained from the data.
 
-        Bank equity is set to the total bank equity (obtained from Eurostat) in the country divided by the number of banks.
+        Bank equity is set to the total bank equity (obtained from Eurostat) in the country
+        divided by the number of banks.
 
 
         Args:

@@ -5,70 +5,34 @@ import numpy as np
 import pandas as pd
 import pickle as pkl
 
-
-from inet_data.processing.synthetic_banks.default_synthetic_banks import (
-    SyntheticDefaultBanks,
-)
-from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
-from inet_data.processing.synthetic_central_bank.default_synthetic_central_bank import (
-    SyntheticDefaultCentralBanks,
-)
-from inet_data.processing.synthetic_central_bank.synthetic_central_bank import (
+from inet_data.processing import (
+    SyntheticPopulation,
+    SyntheticFirms,
+    SyntheticCreditMarket,
+    SyntheticBanks,
     SyntheticCentralBank,
-)
-from inet_data.processing.synthetic_central_government.default_synthetic_central_government import (
-    SyntheticDefaultCentralGovernment,
-)
-from inet_data.processing.synthetic_central_government.synthetic_central_government import (
     SyntheticCentralGovernment,
-)
-from inet_data.processing.synthetic_credit_market.default_synthetic_credit_market import (
+    SyntheticGovernmentEntities,
+    SyntheticHousingMarket,
+    DefaultSyntheticRestOfTheWorld,
+    SyntheticDefaultCentralGovernment,
+    SyntheticDefaultGovernmentEntities,
+    SyntheticDefaultCentralBanks,
+    SyntheticHFCSPopulation,
+    SyntheticDefaultFirms,
+    SyntheticDefaultBanks,
+    DefaultSyntheticHousingMarket,
+    match_firms_with_banks,
+    match_households_with_banks,
+    set_housing_df,
+    match_individuals_with_firms_country,
     create_firm_loan_df,
     create_household_loan_df,
     create_mortgage_loan_df,
 )
-from inet_data.processing.synthetic_credit_market.synthetic_credit_market import (
-    SyntheticCreditMarket,
-)
-from inet_data.processing.synthetic_firms.default_synthetic_firms import (
-    SyntheticDefaultFirms,
-)
-from inet_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
-from inet_data.processing.synthetic_government_entities.default_synthetic_government_entities import (
-    SyntheticDefaultGovernmentEntities,
-)
-from inet_data.processing.synthetic_government_entities.synthetic_government_entities import (
-    SyntheticGovernmentEntities,
-)
-from inet_data.processing.synthetic_housing_market.default_synthetic_housing_market import (
-    DefaultSyntheticHousingMarket,
-)
-from inet_data.processing.synthetic_housing_market.synthetic_housing_market import (
-    SyntheticHousingMarket,
-)
-from inet_data.processing.synthetic_matching.matching_households_with_banks import match_households_with_banks
-from inet_data.processing.synthetic_matching.matching_households_with_houses import set_housing_df
-from inet_data.processing.synthetic_matching.matching_individuals_with_firms import (
-    match_individuals_with_firms_country,
-)
-from inet_data.processing.synthetic_matching.matching_firms_with_banks import (
-    match_firms_with_banks,
-)
 
-from inet_data.processing.synthetic_population.hfcs_synthetic_population import (
-    SyntheticHFCSPopulation,
-)
-from inet_data.processing.synthetic_population.synthetic_population import (
-    SyntheticPopulation,
-)
-from inet_data.processing.synthetic_rest_of_the_world.default_synthetic_rest_of_the_world import (
-    DefaultSyntheticRestOfTheWorld,
-)
-from inet_data.readers.default_readers import DataReaders
-from inet_data.readers.util.exogenous_data import create_all_exogenous_data
-from inet_data.readers.util.industry_extraction import compile_industry_data
-from inet_data.util.country_code_map import get_map_long_to_short
-from inet_data.util.process_config import process_config, initial_interest_rates
+from inet_data.readers import DataReaders, compile_industry_data, create_all_exogenous_data
+from inet_data.util import process_config, get_map_long_to_short, initial_interest_rates
 
 
 @dataclass
