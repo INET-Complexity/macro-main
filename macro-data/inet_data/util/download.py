@@ -6,6 +6,8 @@ import requests
 from tqdm import tqdm
 
 
+# TODO this should be more generic and not use a direct access to the google drive
+# ideally it should use an API and a key
 def download_data(
     raw_data_path: Path,
     drive_filename: str = "1GWl07o4MRllzF3hoBGF1fKHHlH8OoTt6",

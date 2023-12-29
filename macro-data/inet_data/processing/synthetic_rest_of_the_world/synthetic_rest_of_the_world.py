@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import numpy as np
 import pandas as pd
+
+from sklearn.linear_model import LinearRegression
 
 
 class SyntheticRestOfTheWorld(ABC):
@@ -9,49 +12,16 @@ class SyntheticRestOfTheWorld(ABC):
     def __init__(
         self,
         year: int,
+        row_data: pd.DataFrame,
+        exports_model: Optional[LinearRegression],
+        imports_model: Optional[LinearRegression],
     ):
         self.country_name = "ROW"
         self.year = year
 
         # Rest of the World data
-        self.row_data = pd.DataFrame()
+        self.row_data = row_data
 
         # Models
-        self.exports_model = None
-        self.imports_model = None
-
-    @abstractmethod
-    def create(
-        self,
-        row_imports: np.ndarray,
-        row_exports: np.ndarray,
-        exchange_rate_usd_to_lcu: float,
-        row_exports_data_growth: np.ndarray,
-        row_imports_data_growth: np.ndarray,
-    ) -> None:
-        pass
-
-    @abstractmethod
-    def set_imports(
-        self,
-        row_imports: np.ndarray,
-        exchange_rate_usd_to_lcu: float,
-        row_imports_data_growth: np.ndarray,
-    ) -> None:
-        pass
-
-    @abstractmethod
-    def set_exports(
-        self,
-        row_exports: np.ndarray,
-        row_exports_data_growth: np.ndarray,
-    ) -> None:
-        pass
-
-    @abstractmethod
-    def set_prices(
-        self,
-        n_industries: int,
-        exchange_rate_usd_to_lcu: float,
-    ) -> None:
-        pass
+        self.exports_model = exports_model
+        self.imports_model = imports_model

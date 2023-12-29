@@ -1,50 +1,20 @@
-from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
-import numpy as np
 import pandas as pd
 
 
-class SyntheticCreditMarket(ABC):
-    @abstractmethod
-    def __init__(
-        self,
-        country_name: str,
-        year: int,
-    ):
-        self.country_name = country_name
-        self.year = year
+@dataclass
+class SyntheticCreditMarket:
+    """
+    Represents a synthetic credit market for a specific country and year.
 
-        # Credit market data
-        self.credit_market_data = pd.DataFrame()
+    Attributes:
+        country_name (str): The name of the country.
+        year (int): The year of the credit market data.
+        credit_market_data (pd.DataFrame): The credit market data for the country and year (contains information on loans
+                                            including value, interest rate and maturity).
+    """
 
-    @abstractmethod
-    def create(
-        self,
-        bank_data: pd.DataFrame,
-        initial_firm_debt: np.ndarray,
-        initial_household_other_debt: np.ndarray,
-        initial_household_mortgage_debt: np.ndarray,
-        firms_corresponding_bank: np.ndarray,
-        households_corresponding_bank: np.ndarray,
-        initial_firm_loan_maturity: int,
-        household_consumption_loan_maturity: int,
-        mortgage_maturity: int,
-        assume_zero_initial_firm_debt: bool,
-    ) -> None:
-        pass
-
-    @abstractmethod
-    def set_initial_loans(
-        self,
-        bank_data: pd.DataFrame,
-        initial_firm_debt: np.ndarray,
-        initial_household_other_debt: np.ndarray,
-        initial_household_mortgage_debt: np.ndarray,
-        firms_corresponding_bank: np.ndarray,
-        households_corresponding_bank: np.ndarray,
-        initial_firm_loan_maturity: int,
-        household_consumption_loan_maturity: int,
-        mortgage_maturity: int,
-        assume_zero_initial_firm_debt: bool,
-    ) -> None:
-        pass
+    country_name: str
+    year: int
+    credit_market_data: pd.DataFrame

@@ -1,23 +1,57 @@
 import numpy as np
+import pandas as pd
 
 from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
+from inet_data.readers.default_readers import DataReaders
 
 
-class SyntheticDefaultBanks(SyntheticBanks):
+class DefaultSyntheticBanks(SyntheticBanks):
     def __init__(
         self,
         country_name: str,
         year: int,
         number_of_banks: int,
+        bank_data: pd.DataFrame,
     ):
         super().__init__(
             country_name,
             year,
             number_of_banks,
+            bank_data,
         )
 
-    def create(self, bank_equity: float) -> None:
-        self.create_agents(bank_equity=bank_equity)
+    @classmethod
+    def from_readers(cls, single_bank: bool, country_name: str, year: int, readers: DataReaders, scale: int):
+        """
+        Initialize a SyntheticBanks object from data readers.
+        This method creates a single bank or multiple banks, depending on the single_bank
+        flag and on the number of bank branches
+        in the country obtained from the data.
+
+        Bank equity is set to the total bank equity (obtained from Eurostat) in the country
+        divided by the number of banks.
+
+
+        Args:
+            cls (class): The class object.
+            single_bank (bool): Flag indicating whether to create a single bank or multiple banks.
+            country_name (str): The name of the country.
+            year (int): The year.
+            readers (DataReaders): The data readers object.
+            scale (int): The scaling factor.
+
+        Returns:
+            SyntheticBanks: The initialized SyntheticBanks object.
+        """
+        if single_bank:
+            number_of_banks = 1
+        else:
+            bank_branches = readers.oecd_econ.read_number_of_bank_branches(country=country_name, year=year)
+            number_of_banks = max(1, int(bank_branches / scale))
+
+        bank_equity = readers.eurostat.get_total_bank_equity(country=country_name, year=year)
+        bank_data = pd.DataFrame({"Equity": np.ones(number_of_banks) * bank_equity / number_of_banks})
+        return cls(country_name, year, number_of_banks, bank_data)
 
     def set_bank_equity(self, bank_equity: float) -> None:
         self.bank_data["Equity"] = np.full(self.number_of_banks, bank_equity / self.number_of_banks)

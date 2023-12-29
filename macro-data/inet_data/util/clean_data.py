@@ -8,6 +8,19 @@ def remove_outliers(
     cols: list[str],
     quantile: float = 0.05,
 ) -> pd.DataFrame:
+    """
+    Remove outliers from the specified columns of a DataFrame. Outliers are detected using a multivariate normal distribution,
+    and outliers are considered to be observations with a probability density below the specified quantile.
+
+    Args:
+        data (pd.DataFrame): The input DataFrame.
+        cols (list[str]): The list of column names to remove outliers from.
+        quantile (float, optional): The quantile threshold for outlier detection. Defaults to 0.05.
+
+    Returns:
+        pd.DataFrame: The DataFrame with outliers removed.
+
+    """
     # Load
     data_r = data[cols]
     for col in cols:

@@ -10,6 +10,16 @@ def match_households_with_banks(
     synthetic_population: SyntheticPopulation,
     synthetic_banks: SyntheticBanks,
 ) -> None:
+    """
+    Matches households with banks based on a random selection.
+
+    Args:
+        synthetic_population (SyntheticPopulation): The synthetic population data.
+        synthetic_banks (SyntheticBanks): The synthetic banks data.
+
+    Returns:
+        None
+    """
     bank_by_household = np.random.choice(
         range(synthetic_banks.number_of_banks),
         len(synthetic_population.household_data),

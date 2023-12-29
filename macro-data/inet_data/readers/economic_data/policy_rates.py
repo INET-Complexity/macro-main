@@ -3,6 +3,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from inet_data.readers.util.prune_util import prune_index
+
 
 class PolicyRatesReader:
     def __init__(self, path: Path | str, country_code_path: Path | str):
@@ -70,3 +72,15 @@ class PolicyRatesReader:
             "SWE",
             "GBR",
         ]
+
+    def prune(self, prune_date: str | int | pd.Timestamp, prune_date_format="%Y-%m-%d"):
+        """
+        Prunes the policy rate data based on a specified date.
+
+        Args:
+            prune_date (str | int | pd.Timestamp): The date to prune the data.
+            prune_date_format (str): The format of the prune_date string (default: "%Y-%m-%d").
+        """
+        # WB exchange rates
+        mask = prune_index(self.df.columns, prune_date, "Policy rates")
+        self.df = self.df.loc[:, mask]

@@ -947,6 +947,13 @@ model:
     options: ''
     type: int
     value: 2014
+  prune_date:
+    desc: The year of start of the pruned data. Must be smaller than the year of
+      initiation.
+    options: ''
+    type: int
+    value: 2010
+    format: "%Y"
 purpose:
   desc: The purpose of doing this simulation.
   options: ''

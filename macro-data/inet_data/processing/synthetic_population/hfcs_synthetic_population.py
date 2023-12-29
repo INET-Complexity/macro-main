@@ -1,23 +1,96 @@
-from collections import defaultdict
-from typing import Any
+import logging
+from typing import Optional
 
 import numpy as np
 import pandas as pd
+from scipy.optimize import minimize
 from sklearn.experimental import enable_iterative_imputer  # noqa
 from sklearn.impute import IterativeImputer  # noqa
-from tqdm import tqdm
+from sklearn.linear_model import LinearRegression
 
+from inet_data.processing.synthetic_credit_market.synthetic_credit_market import SyntheticCreditMarket
+from inet_data.processing.synthetic_population.hfcs_household_tools import (
+    set_household_types,
+    set_household_housing_data,
+)
+from inet_data.processing.synthetic_population.hfcs_individual_tools import process_individual_data
 from inet_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
 )
-from inet_data.readers.economic_data.oecd_economic_data import OECDEconData
-from inet_data.readers.economic_data.world_bank_reader import WorldBankReader
-from inet_data.readers.population_data.hfcs_reader import HFCSReader
+from inet_data.readers.default_readers import DataReaders
 from inet_data.util.clean_data import remove_outliers
+from inet_data.util.imputation import apply_iterative_imputer
 from inet_data.util.regressions import fit_linear
+
+RESTRICT_COLS = [
+    "Type",
+    "Corresponding Individuals ID",
+    "Corresponding Bank ID",
+    "Corresponding Inhabited House ID",
+    "Corresponding Renters",
+    "Corresponding Property Owner",
+    "Corresponding Additionally Owned Houses ID",
+    "Income",
+    "Employee Income",
+    "Regular Social Transfers",
+    "Rental Income from Real Estate",
+    "Income from Financial Assets",
+    "Saving Rate",
+    "Rent Paid",
+    "Rent Imputed",
+    "Wealth",
+    "Net Wealth",
+    "Wealth in Real Assets",
+    "Value of the Main Residence",
+    "Value of other Properties",
+    "Wealth Other Real Assets",
+    "Wealth in Deposits",
+    "Wealth in Other Financial Assets",
+    "Wealth in Financial Assets",
+    "Outstanding Balance of HMR Mortgages",
+    "Outstanding Balance of Mortgages on other Properties",
+    "Outstanding Balance of other Non-Mortgage Loans",
+    "Debt",
+    "Debt Installments",
+    "Tenure Status of the Main Residence",
+    "Number of Properties other than Household Main Residence",
+]
 
 
 class SyntheticHFCSPopulation(SyntheticPopulation):
+    """
+    A class representing a synthetic population generated from HFCSPopulation data.
+
+    Attributes:
+        country_name (str): The name of the country.
+        country_name_short (str): The short name of the country.
+        scale (int): The scale of the population.
+        year (int): The year of the population data.
+        industries (list[str]): The list of industries.
+        individual_data (pd.DataFrame): The DataFrame containing individual data.
+        household_data (pd.DataFrame): The DataFrame containing household data.
+        social_housing_rent (float): The rent for social housing.
+        coefficient_fa_income (float): The coefficient for FA income.
+        consumption_weights (np.ndarray): The array of consumption weights.
+        consumption_weights_by_income (np.ndarray): The array of consumption weights by income.
+
+    Methods:
+        create_from_readers(cls, readers, country_name, country_name_short, scale, year, industry_data, industries, total_unemployment_benefits, rent_as_fraction_of_unemployment_rate, n_quantiles=5):
+            Creates a SyntheticHFCSPopulation instance from data readers.
+
+        restrict(self):
+            Restricts the household data to selected columns.
+
+        compute_household_wealth(self):
+            Computes the wealth-related fields in the household data.
+
+        compute_household_income(self, total_social_transfers):
+            Computes the income-related fields in the household data.
+
+        set_household_housing_data(self, rent_as_fraction_of_unemployment_rate, unemployment_benefits_by_capita):
+            Sets the housing-related fields in the household data.
+    """
+
     def __init__(
         self,
         country_name: str,
@@ -25,519 +98,144 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         scale: int,
         year: int,
         industries: list[str],
+        individual_data: pd.DataFrame,
+        household_data: pd.DataFrame,
+        social_housing_rent: float,
+        coefficient_fa_income: float,
+        consumption_weights: np.ndarray,
+        consumption_weights_by_income: np.ndarray,
     ):
+        saving_rates_model = LinearRegression()
+        social_transfers_model = LinearRegression()
+        wealth_distribution_model = LinearRegression()
         super().__init__(
             country_name,
             country_name_short,
             scale,
             year,
             industries,
+            individual_data,
+            household_data,
+            social_housing_rent,
+            coefficient_fa_income,
+            consumption_weights,
+            consumption_weights_by_income,
+            saving_rates_model,
+            social_transfers_model,
+            wealth_distribution_model,
         )
 
-    def create(
-        self,
-        hfcs_reader: HFCSReader,
-        econ_reader: OECDEconData,
-        wb_reader: WorldBankReader,
-        n_households: int,
-        number_of_firms_by_industry: np.ndarray,
+    # TODO rent as fraction of unemployment rate seems to be a parameter of government functions
+    @classmethod
+    def from_readers(
+        cls,
+        readers: DataReaders,
+        country_name: str,
+        country_name_short: str,
+        scale: int,
+        year: int,
+        industry_data: dict[str, dict],
+        industries: list[str],
         total_unemployment_benefits: float,
-        rent_as_fraction_of_unemployment_rate: float,
-    ) -> None:
-        # Fetch HFCS data
-        hfcs_individuals_data = hfcs_reader.individuals_df
-        hfcs_households_data = hfcs_reader.households_df
+        rent_as_fraction_of_unemployment_rate: float = 0.25,
+        n_quantiles: int = 5,
+    ):
+        """
+        Creates a synthetic population from data readers.
 
-        # Create a mapping between households and individuals and vice-versa
-        ind_hh_map = dict(
-            zip(
-                hfcs_individuals_data.index,
-                hfcs_individuals_data["Corresponding Household ID"],
-            )
+        Args:
+            cls: The class object.
+            readers (DataReaders): The data readers object.
+            country_name (str): The name of the country.
+            country_name_short (str): The short name of the country.
+            scale (int): The scaling factor.
+            year (int): The year.
+            industry_data (dict[str, dict]): The industry data.
+            industries (list[str]): The list of industries.
+            total_unemployment_benefits (float): The total unemployment benefits.
+            rent_as_fraction_of_unemployment_rate (float): The rent as a fraction of the unemployment rate.
+            n_quantiles (int, optional): The number of quantiles. Defaults to 5.
+
+        Returns:
+            cls: The synthetic population object.
+        """
+
+        n_households = int(readers.eurostat.number_of_households(country_name, year) / scale)
+        hfcs_individuals_data = readers.hfcs[country_name].individuals_df
+        hfcs_households_data = readers.hfcs[country_name].households_df
+
+        household_data, individual_data = sample_households(hfcs_households_data, hfcs_individuals_data, n_households)
+
+        individual_data = process_individual_data(
+            country_name, individual_data, industries, readers, scale, total_unemployment_benefits, year
         )
-        hh_ind_map = defaultdict(list)
-        for key, value in ind_hh_map.items():
-            hh_ind_map[value].append(key)
-        hh_ind_map = dict(hh_ind_map)
+        n_unemployed = np.sum(individual_data["Activity Status"] == 2)
 
-        # Draw households at random
-        household_inds = np.random.choice(
-            range(len(hfcs_households_data)),
-            n_households,
-            p=hfcs_households_data["Weight"] / hfcs_households_data["Weight"].sum(),
-            replace=True,
-        )
-
-        # Compile new dataframes
-        self.compile_new_dataframes(
-            hfcs_households_data=hfcs_households_data,
-            hfcs_individuals_data=hfcs_individuals_data,
-            hh_ind_map=hh_ind_map,
-            household_inds=household_inds,
-        )
-
-        # Remove outliers
-        self.household_data = remove_outliers(
-            data=self.household_data,
+        household_data = remove_outliers(
+            data=household_data,
             cols=[
                 "Rent Paid",
                 "Income",
                 "Consumption of Consumer Goods/Services as a Share of Income",
             ],
         )
-        self.individual_data = remove_outliers(
-            data=self.individual_data,
-            cols=["Employee Income", "Gender", "Age", "Education", "Labour Status"],
+        household_data = household_data.loc[household_data["Corresponding Individuals ID"].notna()]
+
+        household_data = set_household_types(household_data, individual_data)
+
+        # DANGER if we don't have total unemployment benefits
+        # we set them to 0, must be checked!!!
+        if total_unemployment_benefits is None:
+            total_unemployment_benefits = 0.0
+            logging.warning("Total unemployment benefits not provided, setting them to 0.0")
+
+        household_data = set_household_housing_data(
+            household_data,
+            scale,
+            rent_as_fraction_of_unemployment_rate,
+            unemployment_benefits_by_capita=total_unemployment_benefits / n_unemployed,
         )
 
-        # Create individuals and households
-        self.create_individuals(
-            econ_reader,
-            wb_reader,
-            number_of_firms_by_industry,
-            total_unemployment_benefits,
-        )
-        self.create_households(
-            rent_as_fraction_of_unemployment_rate=rent_as_fraction_of_unemployment_rate,
-            unemployment_benefits_by_capita=total_unemployment_benefits
-            / np.sum(self.individual_data["Activity Status"] == 2),
-        )
-        self.number_employees_by_industry = self.get_number_employees_by_industry()
-        self.social_housing_rent = (
-            rent_as_fraction_of_unemployment_rate
-            * total_unemployment_benefits
-            / np.sum(self.individual_data["Activity Status"] == 2)
-        )
-
-    def compile_new_dataframes(
-        self,
-        hfcs_households_data: pd.DataFrame,
-        hfcs_individuals_data: pd.DataFrame,
-        hh_ind_map: dict,
-        household_inds: np.ndarray,
-    ) -> None:
-        household_inds_updated, hh_ind_map_updated = [], []
-        ind_rows = []
-        curr_ind_num = 0
-        for i, household_ind in tqdm(
-            enumerate(household_inds),
-            desc="Compiling population data frames for " + self.country_name,
-            total=len(household_inds),
-        ):
-            household_id = hfcs_households_data.index[household_ind]
-            ind_row = hfcs_individuals_data.loc[hh_ind_map[household_id]]
-            if len(ind_row) > 0:
-                ind_row["Corresponding Household ID"] = i
-                ind_rows.append(ind_row)
-                household_inds_updated.append(household_id)
-                hh_ind_map_updated.append(list(range(curr_ind_num, curr_ind_num + len(ind_row))))
-                curr_ind_num += len(ind_row)
-        household_inds_updated = np.array(household_inds_updated)
-        self.individual_data = pd.concat(ind_rows, axis=0)
-        self.individual_data.index = range(len(self.individual_data))
-        self.household_data = hfcs_households_data.loc[household_inds_updated].copy()
-        self.household_data.index = range(len(self.household_data))
-        self.household_data["Corresponding Individuals ID"] = [
-            hh_ind_map_updated[hid] for hid in self.household_data.index
-        ]
-        self.household_data.drop("Weight", axis=1, inplace=True)
-
-    def create_individuals(
-        self,
-        econ_reader: OECDEconData,
-        wb_reader: WorldBankReader,
-        number_of_firms_by_industry: np.ndarray,
-        total_unemployment_benefits: float,
-    ) -> None:
-        self.set_individual_gender()
-        self.set_individual_age()
-        self.set_individual_education()
-        self.set_individual_labour_status()
-        self.set_individual_activity_status(
-            unemployment_rate=wb_reader.get_unemployment_rate(
-                country=self.country_name,
-                year=self.year,
-            ),
-            participation_rate=wb_reader.get_participation_rate(
-                country=self.country_name,
-                year=self.year,
-            ),
-        )
-        self.set_individual_employment_nace()
-        self.set_individual_employee_income(
-            unemployment_benefits_by_individual=total_unemployment_benefits
-            / np.sum(self.individual_data["Activity Status"] == 2),
-        )
-        self.set_individual_unemployed_income(
-            unemployment_benefits_by_individual=total_unemployment_benefits
-            / np.sum(self.individual_data["Activity Status"] == 2),
-        )
-        self.set_income()
-
-        # Keep what we need
-        self.individual_data = self.individual_data[
-            [
-                "Gender",
-                "Age",
-                "Education",
-                "Activity Status",
-                "Employment Industry",
-                "Employee Income",
-                "Income from Unemployment Benefits",
-                "Income",
-                "Corresponding Household ID",
-            ]
-        ]
-
-    def set_individual_gender(self) -> None:
-        # Proportionally fill-in gender
-        missing_genders = self.individual_data["Gender"].isna()
-        p_male = (self.individual_data["Gender"] == 1).mean()
-        p_female = (self.individual_data["Gender"] == 2).mean()
-        p_total = p_male + p_female
-        p_male /= p_total
-        p_female /= p_total
-        self.individual_data.loc[missing_genders, "Gender"] = np.random.choice(
-            [1, 2],
-            missing_genders.sum(),
-            p=[
-                p_male,
-                p_female,
-            ],
-            replace=True,
-        )
-
-    def set_individual_age(self) -> None:
-        is_student = self.individual_data["Labour Status"] == 4
-        self.individual_data.loc[
-            is_student,
-            ["Gender", "Age"],
-        ] = IterativeImputer(min_value=6, max_value=18).fit_transform(
-            self.individual_data.loc[
-                is_student,
-                ["Gender", "Age"],
-            ].values
-        )
-        self.individual_data[["Gender", "Age"]] = IterativeImputer(min_value=0).fit_transform(
-            self.individual_data[["Gender", "Age"]].values
-        )
-
-    def set_individual_education(self) -> None:
-        # Impute education
-        self.individual_data[["Gender", "Age", "Education"]] = IterativeImputer().fit_transform(
-            self.individual_data[["Gender", "Age", "Education"]].values
-        )
-        self.individual_data["Education"] = self.individual_data["Education"].astype(int)
-
-    def set_individual_labour_status(self) -> None:
-        self.individual_data.loc[self.individual_data["Age"] < 16, "Labour Status"] = 4  # student
-        self.individual_data.loc[self.individual_data["Labour Status"].isna()] = 2  # unemployed
-
-    def set_individual_activity_status(
-        self,
-        unemployment_rate: float,
-        participation_rate: float,
-    ) -> None:
-        # Turn the labour status into an activity status
-        self.individual_data["Activity Status"] = self.individual_data["Labour Status"].map(
-            self.convert_labour_status_to_activity_status,
-        )
-
-        # Adjust according to the participation rate
-        current_participation_rate = np.sum(
-            np.logical_and(
-                self.individual_data["Activity Status"] != 3,
-                self.individual_data["Age"] >= 16,
-            )
-        ) / np.sum(self.individual_data["Age"] >= 16)
-        if participation_rate >= current_participation_rate:
-            n_additional_unemployed = int(
-                participation_rate * np.sum(self.individual_data["Age"] >= 16)
-                - np.sum(
-                    np.logical_and(
-                        self.individual_data["Activity Status"] != 3,
-                        self.individual_data["Age"] >= 16,
-                    )
-                )
-            )
-            ind_nea = np.where(
-                np.logical_and(
-                    self.individual_data["Activity Status"] == 3,
-                    self.individual_data["Age"] >= 16,
-                )
-            )[0]
-            rnd_ind = np.random.choice(
-                ind_nea,
-                np.min(n_additional_unemployed, len(ind_nea)),
-                replace=False,
-            )
-            self.individual_data.loc[rnd_ind, "Activity Status"] = 2
-        else:
-            n_additional_nea = int(
-                np.sum(
-                    np.logical_and(
-                        self.individual_data["Activity Status"] != 3,
-                        self.individual_data["Age"] >= 16,
-                    )
-                )
-                - participation_rate * np.sum(self.individual_data["Age"] >= 16)
-            )
-            ind_unemp = np.where(
-                np.logical_and(
-                    self.individual_data["Activity Status"] == 2,
-                    self.individual_data["Age"] >= 16,
-                )
-            )[0]
-            rnd_ind = np.random.choice(
-                ind_unemp,
-                min(n_additional_nea, len(ind_unemp)),
-                replace=False,
-            )
-            self.individual_data.loc[rnd_ind, "Activity Status"] = 3
-        self.individual_data.loc[
-            rnd_ind,
-            [
-                "Employment Industry",
-                "Employee Income",
-                "Income from Unemployment Benefits",
-                "Income",
-            ],
-        ] = np.nan
-
-        # Adjust according to the unemployment rate
-        current_unemployment_rate = np.sum(self.individual_data["Activity Status"] == 2) / (
-            np.sum(self.individual_data["Activity Status"] == 1) + np.sum(self.individual_data["Activity Status"] == 2)
-        )
-        if unemployment_rate >= current_unemployment_rate:
-            n_additional_unemployed = int(
-                unemployment_rate
-                * (
-                    np.sum(self.individual_data["Activity Status"] == 1)
-                    + np.sum(self.individual_data["Activity Status"] == 2)
-                )
-                - np.sum(self.individual_data["Activity Status"] == 2)
-            )
-            rnd_ind = np.random.choice(
-                np.where(self.individual_data["Activity Status"] == 1)[0],
-                n_additional_unemployed,
-                replace=False,
-            )
-            self.individual_data.loc[rnd_ind, "Activity Status"] = 2
-        else:
-            n_additional_employed = int(
-                np.sum(self.individual_data["Activity Status"] == 2)
-                - unemployment_rate
-                * (
-                    np.sum(self.individual_data["Activity Status"] == 1)
-                    + np.sum(self.individual_data["Activity Status"] == 2)
-                )
-            )
-            rnd_ind = np.random.choice(
-                np.where(
-                    self.individual_data["Activity Status"] == 2,
-                )[0],
-                n_additional_employed,
-                replace=False,
-            )
-            self.individual_data.loc[rnd_ind, "Activity Status"] = 1
-        self.individual_data.loc[
-            rnd_ind,
-            [
-                "Employment Industry",
-                "Employee Income",
-                "Income from Unemployment Benefits",
-                "Income",
-            ],
-        ] = np.nan
-
-    def set_individual_employment_nace(self) -> None:
-        self.individual_data.loc[
-            self.individual_data["Employment Industry"].isin(["R", "S"]),
-            "Employment Industry",
-        ] = "R_S"
-
-        # Convert to numbers
-        industry_map = dict(zip(self.industries, range(len(self.industries))))
-        self.individual_data["Employment Industry"] = self.individual_data["Employment Industry"].map(industry_map)
-
-        # Clean
-        self.individual_data.loc[
-            self.individual_data["Employment Industry"] == "-1",
-            "Employment Industry",
-        ] = np.nan
-        self.individual_data.loc[
-            self.individual_data["Employment Industry"] == "-2",
-            "Employment Industry",
-        ] = np.nan
-
-        # Get current frequency of NACE employments
-        frequencies = np.array(
-            [np.sum(self.individual_data["Employment Industry"] == ind) for ind in range(len(self.industries))]
-        ).astype(float)
-        frequencies /= np.sum(frequencies)
-
-        # Fill-in missing sectors
-        sectors_missing = np.where(frequencies == 0)[0]
-        individuals_missing_industry = np.where(
-            np.logical_and(
-                self.individual_data["Activity Status"] < 3,
-                pd.isnull(self.individual_data["Employment Industry"]).values,
-            )
-        )[0]
-        self.individual_data.loc[individuals_missing_industry, "Employment Industry"] = np.random.choice(
-            sectors_missing,
-            len(individuals_missing_industry),
-            replace=True,
-        )
-
-        """
-        # Distribute proportionally
-        individuals_missing_industry = np.where(
-            np.logical_and(
-                self.individual_data["Activity Status"] < 3,
-                pd.isnull(self.individual_data["Employment Industry"]).values,
-            )
-        )[0]
-        self.individual_data.loc[individuals_missing_industry, "Employment Industry"] = np.random.choice(
-            np.arange(len(self.industries)),
-            len(individuals_missing_industry),
-            p=frequencies,
-            replace=True,
-        )
-        """
-
-        # Assumption
-        self.individual_data.loc[self.individual_data["Activity Status"] == 3, "Employment Industry"] = np.nan
-
-    def set_individual_employee_income(
-        self,
-        unemployment_benefits_by_individual: float,
-    ) -> None:
-        is_employed = self.individual_data["Activity Status"] == 1
-
-        # We're not explicitly modelling this
-        self.individual_data["Employee Income"] += self.individual_data["Self-Employment Income"].fillna(0.0).values
-        self.individual_data.loc[
-            self.individual_data["Employee Income"] < 0,
+        # initialise fields to nans, will be filled later when computing wealth
+        non_initialised_fields = [
+            "Wealth Other Real Assets",
+            "Wealth in Real Assets",
+            "Wealth in Other Financial Assets",
+            "Wealth in Financial Assets",
+            "Wealth",
+            "Debt",
+            "Net Wealth",
             "Employee Income",
-        ] = 0.0
-        no_income = self.individual_data["Employee Income"] == 0.0
-        self.individual_data.loc[is_employed & no_income, "Employee Income"] = np.nan
-        self.individual_data.loc[
-            is_employed,
-            ["Employee Income", "Age", "Education"],
-        ] = IterativeImputer(min_value=0).fit_transform(
-            self.individual_data.loc[
-                is_employed,
-                [
-                    "Employee Income",
-                    "Age",
-                    "Education",
-                ],
-            ].values
-        )
+        ]
+        for field in non_initialised_fields:
+            household_data[field] = np.nan
 
-        # Only employed individuals receive employee income
-        self.individual_data.loc[self.individual_data["Activity Status"] != 1, "Employee Income"] = 0.0
+        social_housing_rent = rent_as_fraction_of_unemployment_rate * total_unemployment_benefits / n_unemployed
+        consumption_weights = industry_data[country_name]["industry_vectors"]["Household Consumption Weights"].values
+        consumption_weights_by_income = np.zeros((n_quantiles, len(consumption_weights)))
+        for i in range(n_quantiles):
+            consumption_weights_by_income[i] = consumption_weights
 
-        # Rescale that
-        self.individual_data.loc[:, "Employee Income"] *= self.scale
+        individual_data["Corresponding Firm ID"] = np.nan
 
-        # Monthly!
-        self.individual_data.loc[:, "Employee Income"] /= 12.0
-
-        # Employee income is at least the unemployment rate
-        is_employed = self.individual_data["Activity Status"] == 1
-        self.individual_data.loc[
-            np.logical_and(
-                is_employed,
-                self.individual_data["Employee Income"] < unemployment_benefits_by_individual,
-            ),
-            "Employee Income",
-        ] = unemployment_benefits_by_individual
-
-    def set_individual_unemployed_income(
-        self,
-        unemployment_benefits_by_individual: float,
-    ) -> None:
-        is_unemployed = self.individual_data["Activity Status"] == 2
-        not_unemployed = self.individual_data["Activity Status"] != 2
-
-        self.individual_data["Income from Unemployment Benefits"] = 0.0
-        self.individual_data.loc[
-            is_unemployed, "Income from Unemployment Benefits"
-        ] = unemployment_benefits_by_individual
-
-        # Only unemployed individuals receive unemployment income
-        self.individual_data.loc[not_unemployed, "Income from Unemployment Benefits"] = 0.0
-
-    def set_income(self) -> None:
-        self.individual_data["Income"] = (
-            self.individual_data["Employee Income"].fillna(0.0).values
-            + self.individual_data["Income from Unemployment Benefits"].fillna(0.0).values
-        )
-
-    def create_households(
-        self,
-        rent_as_fraction_of_unemployment_rate: float,
-        unemployment_benefits_by_capita: float,
-    ) -> None:
-        # Remove households without associated individuals
-        self.household_data = self.household_data.loc[self.household_data["Corresponding Individuals ID"].notna()]
-
-        # Determine the household type
-        self.set_household_types()
-
-        # Set housing inet_data
-        self.set_household_housing_data(
-            rent_as_fraction_of_unemployment_rate=rent_as_fraction_of_unemployment_rate,
-            unemployment_benefits_by_capita=unemployment_benefits_by_capita,
+        return cls(
+            country_name=country_name,
+            country_name_short=country_name_short,
+            scale=scale,
+            year=year,
+            industries=industries,
+            household_data=household_data,
+            individual_data=individual_data,
+            social_housing_rent=social_housing_rent,
+            consumption_weights=consumption_weights,
+            consumption_weights_by_income=consumption_weights_by_income,
+            coefficient_fa_income=0.0,
         )
 
     def restrict(self) -> None:
-        self.household_data = self.household_data[
-            [
-                "Type",
-                "Corresponding Individuals ID",
-                "Corresponding Bank ID",
-                "Corresponding Inhabited House ID",
-                "Corresponding Renters",
-                "Corresponding Property Owner",
-                "Corresponding Additionally Owned Houses ID",
-                #
-                "Income",
-                "Employee Income",
-                "Regular Social Transfers",
-                "Rental Income from Real Estate",
-                "Income from Financial Assets",
-                #
-                "Saving Rate",
-                #
-                "Rent Paid",
-                "Rent Imputed",
-                #
-                "Wealth",
-                "Net Wealth",
-                "Wealth in Real Assets",
-                "Value of the Main Residence",
-                "Value of other Properties",
-                "Wealth Other Real Assets",
-                "Wealth in Deposits",
-                "Wealth in Other Financial Assets",
-                "Wealth in Financial Assets",
-                #
-                "Outstanding Balance of HMR Mortgages",
-                "Outstanding Balance of Mortgages on other Properties",
-                "Outstanding Balance of other Non-Mortgage Loans",
-                "Debt",
-                "Debt Installments",
-                #
-                "Tenure Status of the Main Residence",
-                "Number of Properties other than Household Main Residence",
-            ]
-        ]
+        self.household_data = self.household_data[RESTRICT_COLS]
 
-    def compute_household_wealth(self, wealth_distribution_independents: list[str]) -> None:
+    def compute_household_wealth(self) -> None:
         self.set_household_other_real_assets_wealth()
         self.set_household_total_real_assets()
         self.set_household_deposits()
@@ -548,88 +246,35 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         self.set_household_other_debt()
         self.set_household_debt()
         self.set_household_net_wealth()
-        self.set_wealth_distribution_function(independents=wealth_distribution_independents)
+        # TODO: move to the model package
+        # self.set_wealth_distribution_function(independents=wealth_distribution_independents)
 
     def compute_household_income(
         self,
-        central_gov_config: dict[str, Any],
         total_social_transfers: float,
     ) -> None:
         self.set_household_social_transfers(
-            independents=central_gov_config["functions"]["household_social_transfers"]["parameters"]["independents"][
-                "value"
-            ],
             total_social_transfers=total_social_transfers,
         )
         self.set_household_employee_income()
         self.set_household_income_from_financial_assets()
         self.set_household_income()
 
-    # Converting HFCS labour status to model activity status
-    @staticmethod
-    def convert_labour_status_to_activity_status(ls: int) -> int:
-        individual_activity_status_map = {
-            1: 1,  # REGULAR_WORK -> EMPLOYED
-            2: 2,  # ON_LEAVE -> UNEMPLOYED
-            3: 2,  # UNEMPLOYED -> UNEMPLOYED
-            4: 3,  # STUDENT -> NOT_ECONOMICALLY_ACTIVE
-            5: 3,  # RETIREE -> NOT_ECONOMICALLY_ACTIVE
-            6: 3,  # DISABLED -> NOT_ECONOMICALLY_ACTIVE
-            7: 1,  # MILITARY_SOCIAL_SERVICE -> EMPLOYED
-            8: 2,  # DOMESTIC_TASKS -> UNEMPLOYED
-            9: 2,  # OTHER_NOT_FOR_PAY -> UNEMPLOYED
-        }
-        return individual_activity_status_map[ls]
-
-    # Naive determination of the household type based on the set of ages in the household
-    @staticmethod
-    def get_household_type(ages: np.ndarray) -> int:
-        ages = np.sort(ages)
-        match len(ages):
-            case 1:
-                if ages[0] < 64:
-                    return 51  # ONE_ADULT_YOUNGER_THAN_64
-                else:
-                    return 52  # ONE_ADULT_OLDER_THAN_65
-            case 2:
-                if 18 <= ages[0] < 64 and 18 <= ages[1] < 64:
-                    return 6  # TWO_ADULTS_YOUNGER_THAN_65
-                elif (18 <= ages[0] < 64 < ages[1]) or (ages[0] > 64 > ages[1] >= 18):
-                    return 7  # TWO_ADULTS_ONE_AT_LEAST_65
-                elif ages[0] < 18 and ages[1] < 18:
-                    raise ValueError("Children living together?")
-                else:
-                    return 9  # SINGLE_PARENT_WITH_CHILDREN
-            case 3:
-                if ages[0] < 18 <= ages[1] and ages[2] >= 18:
-                    return 10  # TWO_ADULTS_WITH_ONE_CHILD
-                elif np.all(ages) >= 18:
-                    return 8  # THREE_OR_MORE_ADULTS
-                else:
-                    return 9  # SINGLE_PARENT_WITH_CHILDREN
-            case _:
-                if len(ages) == 4:
-                    if ages[0] < 18 <= ages[2] and ages[1] < 18 <= ages[3]:
-                        return 11  # TWO_ADULTS_WITH_TWO_CHILDREN
-                else:
-                    if ages[-1] >= 18 and ages[-2] >= 18 and np.all(ages[0:-2] < 18):
-                        return 12  # TWO_ADULTS_WITH_AT_LEAST_THREE_CHILDREN
-
-                return 13  # THREE_OR_MORE_ADULTS_WITH_CHILDREN
-
-    def set_household_types(self) -> None:
-        i_natypes = np.where(self.household_data["Type"].isna())[0]
-        for i_natype in i_natypes:
-            corr_inds = np.array(self.household_data["Corresponding Individuals ID"][i_natype])
-            self.household_data.loc[i_natype, "Type"] = self.get_household_type(
-                self.individual_data.loc[corr_inds, "Age"].values
-            )
-
     def set_household_housing_data(
         self,
         rent_as_fraction_of_unemployment_rate: float,
         unemployment_benefits_by_capita: float,
     ) -> None:
+        """
+        Sets the housing data for each household in the synthetic population.
+
+        Args:
+            rent_as_fraction_of_unemployment_rate (float): The fraction of unemployment benefits used as rent.
+            unemployment_benefits_by_capita (float): The amount of unemployment benefits per capita.
+
+        Returns:
+            None
+        """
         # Whether the household owns or rents
         self.household_data.loc[
             self.household_data["Tenure Status of the Main Residence"] == 2,
@@ -856,7 +501,8 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             + self.household_data["Outstanding Balance of other Non-Mortgage Loans"]
         )
 
-    def set_debt_installments(self, credit_market_data: pd.DataFrame) -> None:
+    def set_debt_installments(self, credit_market: SyntheticCreditMarket) -> None:
+        credit_market_data = credit_market.credit_market_data
         credit_market_data_household_loans = credit_market_data.loc[credit_market_data["loan_type"].isin([4, 5])]
         debt_installments = np.zeros(len(self.household_data))
         for household_id in range(len(self.household_data)):
@@ -873,16 +519,26 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         self.household_data["Net Wealth"] = self.household_data["Wealth"] - self.household_data["Debt"]
 
     def set_wealth_distribution_function(self, independents: list[str]) -> None:
+        """
+        Sets the wealth distribution function based on the given independent variables.
+
+        Parameters:
+            independents (list[str]): List of independent variables.
+
+        Returns:
+            None
+        """
         self.household_data["Fraction Deposits / Total Financial Wealth"] = np.divide(
             self.household_data["Wealth in Deposits"].values.astype(float),
             self.household_data["Wealth in Financial Assets"].values.astype(float),
             out=np.ones_like(self.household_data["Wealth in Deposits"].values),
             where=self.household_data["Wealth in Financial Assets"].values.astype(float) != 0.0,
         )
-        _, self.wealth_distribution_model = fit_linear(
+        fit_linear(
             household_data=self.household_data,
             independents=independents,
             dependent="Fraction Deposits / Total Financial Wealth",
+            model=self.wealth_distribution_model,
         )
 
     def set_household_employee_income(self) -> None:
@@ -892,24 +548,23 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         ]
 
     def set_household_social_transfers(
-        self,
-        independents: list[str],
-        total_social_transfers: float,
+        self, total_social_transfers: float, independents: Optional[list[str]] = None
     ) -> None:
+        """
+        Sets the household social transfers based on the total social transfers and independent variables.
+
+        Parameters:
+            total_social_transfers (float): The total amount of social transfers.
+            independents (Optional[list[str]]): The list of independent variables. Defaults to None.
+
+        Returns:
+            None
+        """
+        if independents is None:
+            independents = ["Income", "Debt"]
         # Household regular social transfers and pensions, impute missing values
-        self.household_data.loc[
-            :,
-            ["Type", "Net Wealth", "Regular Social Transfers", "Income from Pensions"],
-        ] = IterativeImputer(min_value=0).fit_transform(
-            self.household_data.loc[
-                :,
-                [
-                    "Type",
-                    "Net Wealth",
-                    "Regular Social Transfers",
-                    "Income from Pensions",
-                ],
-            ].values
+        self.household_data = apply_iterative_imputer(
+            self.household_data, ["Type", "Net Wealth", "Regular Social Transfers"]
         )
 
         # Aggregate
@@ -917,10 +572,11 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
         # Social transfers for each household group
         self.household_data["Regular Social Transfers"] /= self.household_data["Regular Social Transfers"].sum()
-        social_transfers, self.social_transfers_model = fit_linear(
+        social_transfers = fit_linear(
             household_data=self.household_data,
             independents=independents,
             dependent="Regular Social Transfers",
+            model=self.social_transfers_model,
         )
         social_transfers[social_transfers < 0] = 0.0
         self.household_data["Regular Social Transfers"] = social_transfers
@@ -948,7 +604,12 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             + self.household_data["Income from Financial Assets"]
         )
 
-    def set_household_saving_rates(self, function_name: str, independents: list[str]) -> None:
+    def set_household_saving_rates(
+        self, function_name: str = "AverageSavingRatesSetter", independents: Optional[list[str]] = None
+    ) -> None:
+        # TODO: does this make sense? average consumption of goods/services is 36% (median similar too)
+        if independents is None:
+            independents = ["Income", "Debt"]
         # Some obvious cleaning
         self.household_data.loc[
             self.household_data["Consumption of Consumer Goods/Services as a Share of Income"].isin(["A"]),
@@ -962,8 +623,12 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             "Consumption of Consumer Goods/Services as a Share of Income",
         ] = np.nan
 
+        self.household_data["Consumption of Consumer Goods/Services as a Share of Income"] = self.household_data[
+            "Consumption of Consumer Goods/Services as a Share of Income"
+        ].astype(float)
+
         # Impute missing values
-        temp_imp = IterativeImputer(min_value=0, max_value=1).fit_transform(
+        imputed_consumption_share = IterativeImputer(min_value=0, max_value=1).fit_transform(
             self.household_data[
                 [
                     "Type",
@@ -973,18 +638,211 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
                     "Consumption of Consumer Goods/Services as a Share of Income",
                 ]
             ].values
-        )
-        self.household_data.loc[:, "Saving Rate"] = 1.0 - temp_imp[:, 4]
+        )[:, 4]
+        self.household_data["Saving Rate"] = 1.0 - imputed_consumption_share
 
         # Fit a model
-        saving_rates, self.saving_rates_model = fit_linear(
+        saving_rates = fit_linear(
             household_data=self.household_data,
             independents=independents,
             dependent="Saving Rate",
+            model=self.saving_rates_model,
         )
 
-        # Saving rates by household characteristics
-        if function_name == "AverageSavingRatesSetter":
-            self.household_data["Saving Rate"] = saving_rates.mean()
+        self.household_data["Saving Rate"] = saving_rates
+        # # Saving rates by household characteristics
+        # if function_name == "AverageSavingRatesSetter":
+        #     self.household_data["Saving Rate"] = saving_rates.mean()
+        # else:
+        #     self.household_data["Saving Rate"] = saving_rates
+
+    def normalise_household_consumption(
+        self,
+        iot_hh_consumption: np.ndarray | pd.Series,
+        vat: float,
+        positive_saving_rates_only: bool = True,
+        independents: Optional[list[str]] = None,
+    ) -> None:
+        if independents is None:
+            independents = ["Income", "Debt"]
+        cons_weights = self.consumption_weights
+        income = self.household_data["Income"].values
+        sr = self.household_data["Saving Rate"].values
+        current_hh_consumption = default_desired_consumption(
+            income_=income,
+            consumption_weights_=cons_weights,
+            saving_rates_=sr,
+            tau_vat_=vat,
+        )
+
+        # Adjust saving rates
+        factor = iot_hh_consumption.sum() / current_hh_consumption.sum()
+        self.household_data["Saving Rate"] = 1 - (1 - self.household_data["Saving Rate"]) * factor
+        if positive_saving_rates_only:
+            sr = self.household_data["Saving Rate"].values
+            sr[sr < 0] = 0.0
+            current_hh_consumption = default_desired_consumption(
+                income_=income,
+                consumption_weights_=cons_weights,
+                saving_rates_=sr,
+                tau_vat_=vat,
+            )
+            diff = iot_hh_consumption.sum() - current_hh_consumption.sum()
+            inc_sr = (1.0 / (1 + vat) * np.outer(cons_weights, sr * income).T).sum()
+            factor = 1.0 - diff / inc_sr
+            self.household_data["Saving Rate"] = factor * sr
+
+        # Overwrite the model
+        saving_rates = fit_linear(
+            household_data=self.household_data,
+            independents=independents,
+            dependent="Saving Rate",
+            model=self.saving_rates_model,
+        )
+        # self.household_data["Saving Rate"] = saving_rates
+
+    def match_consumption_weights_by_income(
+        self,
+        weights_by_income: np.ndarray | pd.DataFrame,
+        iot_hh_consumption: pd.Series,
+        vat: float,
+        consumption_variance: float = 0.1,
+    ) -> None:
+        n_quantiles = weights_by_income.shape[1]
+        if isinstance(iot_hh_consumption, pd.Series):
+            iot_hh_consumption_norm = (iot_hh_consumption / iot_hh_consumption.sum()).values
+            iot_hh_consumption = iot_hh_consumption.values
         else:
-            self.household_data["Saving Rate"] = saving_rates
+            iot_hh_consumption_norm = iot_hh_consumption / iot_hh_consumption.sum(axis=0)
+        if isinstance(weights_by_income, pd.DataFrame):
+            weights_by_income = weights_by_income.values
+        quintiles = pd.qcut(self.household_data["Income"], n_quantiles, labels=False)
+        disposable_income_by_quantile = (
+            self.household_data.groupby(quintiles).apply(lambda x: ((1 - x["Saving Rate"]) * x["Income"]).sum()).values
+        )
+
+        # set up optimisation
+
+        homogeneous_weights = np.outer(iot_hh_consumption_norm, np.ones(n_quantiles))
+        consumption_difference = (
+            lambda alpha: np.dot(
+                homogeneous_weights * alpha + weights_by_income * (1 - alpha), disposable_income_by_quantile
+            )
+            / (1 + vat)
+            - iot_hh_consumption
+        )
+
+        cost_fct = lambda alpha: np.sum((consumption_difference(alpha) / iot_hh_consumption.sum()) ** 2)
+
+        initial_guess = np.zeros(n_quantiles)  # Initial guess for alphas
+        bounds = [(0, 1 - consumption_variance)] * n_quantiles  # Each alpha[q] is between 0 and 1-consumption_variance
+
+        result = minimize(
+            cost_fct,
+            initial_guess,
+            bounds=bounds,
+            method="SLSQP",
+        )
+
+        # Apply the correction factors
+        alphas_solution = result.x
+        corrected_weights = homogeneous_weights * alphas_solution + weights_by_income * (1 - alphas_solution)
+        # Set the consumption weights
+        # note that the weights are transposed, [quantile, industry]
+
+        # TODO in practice this doesn't change much; weights seem to always saturate close to 1, except for poor qs
+        self.consumption_weights_by_income = corrected_weights.T
+
+
+def split_array(array_to_split: np.ndarray) -> list[list[int]]:
+    """
+    Splits an array into subarrays based on the values in the input array.
+
+    Args:
+        array_to_split (np.ndarray): The array to be split.
+
+    Returns:
+        list[list[int]]: A list of subarrays, where each subarray contains consecutive elements with the same value.
+
+    Example:
+        >>> array = np.array([1, 1, 2, 2, 2, 3, 3, 3, 3])
+        >>> split_array(array)
+        [[1, 1], [2, 2, 2], [3, 3, 3, 3]]
+    """
+    result = []
+    current_sum = 0
+    for num in array_to_split:
+        result.append(list(range(current_sum, current_sum + num)))
+        current_sum += num
+    return result
+
+
+def sample_households(
+    hfcs_households_data: pd.DataFrame, hfcs_individuals_data: pd.DataFrame, n_households: int
+) -> (pd.DataFrame, pd.DataFrame):
+    """
+    This function samples a specified number of households from the given HFCS households data,
+    and also selects the corresponding individuals from the HFCS individuals data.
+
+    Households are first sampled with replacement. Corresponding individuals are selected, and can be duplicated if
+    their corresponding household was sampled more than once.
+
+    Parameters:
+    hfcs_households_data (pd.DataFrame): A DataFrame containing HFCS households data.
+    hfcs_individuals_data (pd.DataFrame): A DataFrame containing HFCS individuals data.
+    n_households (int): The number of households to sample.
+
+    Returns:
+    tuple: A tuple containing two DataFrames. The first DataFrame contains the selected households
+    and the second DataFrame contains the individuals corresponding to the selected households.
+
+    The function works as follows:
+    1. Randomly selects a number of households from the hfcs_households_data DataFrame.
+    2. Selects the corresponding individuals from the hfcs_individuals_data DataFrame.
+    3. Adds the list of individuals per household to the selected households DataFrame.
+    4. Resets the indices of the returned DataFrames for consistency.
+    """
+    # Step 1: Sample households with replacement
+    weights = hfcs_households_data["Weight"] / hfcs_households_data["Weight"].sum()
+    sampled_household_indices = np.random.choice(hfcs_households_data.index, n_households, p=weights, replace=True)
+
+    # Create a list of DataFrames for each sampled household with a new unique ID
+    household_dataframes = []
+    individual_dataframes = []
+    new_individual_id = 0
+    for new_household_id, old_household_id in enumerate(sampled_household_indices):
+        # Add household with new ID
+        household = hfcs_households_data.loc[old_household_id].copy()
+        household["New Household ID"] = new_household_id
+        household_dataframes.append(household)
+
+        # Duplicate corresponding individuals and assign new IDs
+        individuals = hfcs_individuals_data[
+            hfcs_individuals_data["Corresponding Household ID"] == old_household_id
+        ].copy()
+        individuals["New Household ID"] = new_household_id
+        individuals["New Individual ID"] = range(new_individual_id, new_individual_id + len(individuals))
+        new_individual_id += len(individuals)
+        individual_dataframes.append(individuals)
+
+    # Concatenate the lists into single DataFrames
+    household_selection = pd.DataFrame(household_dataframes).reset_index(drop=True)
+    individual_selection = pd.concat(individual_dataframes).reset_index(drop=True)
+
+    # Step 4: Update the household_selection DataFrame
+    corresponding_individuals = individual_selection.groupby("New Household ID")["New Individual ID"].apply(list)
+    household_selection.set_index("New Household ID", inplace=True)
+    household_selection["Corresponding Individuals ID"] = corresponding_individuals
+
+    individual_selection["Corresponding Household ID"] = individual_selection["New Household ID"]
+
+    return household_selection, individual_selection
+
+
+def default_desired_consumption(
+    income_: np.ndarray,
+    consumption_weights_: np.ndarray,
+    saving_rates_: np.ndarray,
+    tau_vat_: float,
+) -> np.ndarray:
+    return 1.0 / (1 + tau_vat_) * np.outer(consumption_weights_, (1 - saving_rates_) * income_).T

@@ -1,11 +1,13 @@
+import pandas as pd
+
 from inet_data.processing.synthetic_housing_market.synthetic_housing_market import (
     SyntheticHousingMarket,
 )
 
 
 class DefaultSyntheticHousingMarket(SyntheticHousingMarket):
-    def create(self) -> None:
-        pass
-
-    def set_initial_conditions(self) -> None:
-        self.housing_market_data["Newly on the Rental Market"] = False
+    @classmethod
+    def init_from_datadict(cls, year: int, country_name: str, housing_data_dict: dict):
+        housing_market_data = pd.DataFrame(housing_data_dict)
+        housing_market_data["Newly on the Rental Market"] = False
+        return cls(country_name, year, housing_market_data)

@@ -11,6 +11,70 @@ from inet_data.readers.io_tables.util import aggregate_df
 
 
 class ICIOReader:
+    """
+    A class for reading and manipulating Input-Output Tables (IOT) from the OECD Inter-Country Input Output Tables.
+
+    Parameters
+    ----------
+    iot : pd.DataFrame
+        The input-output table.
+    considered_countries : list[str]
+        List of countries considered for the aggregation.
+    industries : list[str]
+        List of industries.
+    imputed_rents : dict[str, float]
+        Dictionary of imputed rents for each country.
+    year : int
+        The year of the input-output table.
+
+    Methods
+    -------
+    agg_from_csv(cls, path, pivot_path, considered_countries, aggregation_path, industries, year, exchange_rates, imputed_rent_fraction)
+        Class method to aggregate the input-output table from CSV files (i.e. map unused countries to the ROW).
+    read_df(path)
+        Static method to read the input-output table from a CSV file.
+    aggregate_io(considered_countries, df, aggregation)
+        Static method to aggregate the input-output table.
+    normalise_iot()
+        Normalizes the input-output table by adjusting value-added.
+    column_allc(country_name, symbol)
+        Returns the sum of columns for a specific country and symbol.
+    get_monthly_total_output(country_name)
+        Returns the monthly total output for a specific country.
+    get_monthly_intermediate_inputs_use(country_name)
+        Returns the monthly intermediate inputs use for a specific country.
+    get_monthly_intermediate_inputs_supply(country_name)
+        Returns the monthly intermediate inputs supply for a specific country.
+    get_monthly_intermediate_inputs_domestic(country_name)
+        Returns the monthly domestic intermediate inputs for a specific country.
+    get_monthly_capital_inputs(country_name)
+        Returns the monthly capital inputs for a specific country.
+    get_gfcf_column(country_name)
+        Returns the Gross Fixed Capital Formation (GFCF) column for a specific country.
+    get_monthly_capital_inputs_domestic(country_name)
+        Returns the monthly domestic capital inputs for a specific country.
+    get_monthly_value_added(country_name)
+        Returns the monthly value added for a specific country.
+    get_monthly_taxes_less_subsidies(country_name)
+        Returns the monthly taxes less subsidies for a specific country.
+    get_taxes_less_subsidies_rates(country_name)
+        Returns the taxes less subsidies rates for a specific country.
+    get_monthly_hh_consumption(country_name)
+        Returns the monthly household consumption for a specific country.
+    get_monthly_hh_consumption_domestic(country_name)
+        Returns the monthly domestic household consumption for a specific country.
+    get_hh_consumption_weights(country_name)
+        Returns the household consumption weights for a specific country.
+    get_monthly_govt_consumption(country_name)
+        Returns the monthly government consumption for a specific country.
+    get_monthly_govt_consumption_domestic(country_name)
+        Returns the monthly domestic government consumption for a specific country.
+    govt_consumption_weights(country_name)
+        Returns the government consumption weights for a specific country.
+    get_imports(country_name)
+        Returns the imports for a specific country.
+    """
+
     def __init__(
         self,
         iot: pd.DataFrame,
@@ -40,7 +104,7 @@ class ICIOReader:
         year: int,
         exchange_rates: WorldBankRatesReader,
         imputed_rent_fraction: dict[str, float],
-    ):
+    ) -> "ICIOReader":
         # This is quite slow, so adding the option of loading it
         if os.path.isfile(pivot_path):
             df = pd.read_csv(pivot_path, index_col=[0, 1], header=[0, 1])

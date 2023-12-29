@@ -1,66 +1,30 @@
 import pathlib
 
 import numpy as np
+import pandas as pd
 
 from inet_data.processing.synthetic_population.hfcs_synthetic_population import (
     SyntheticHFCSPopulation,
+    sample_households,
 )
 
 PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 
 
 class TestSyntheticPopulation:
-    def test__create(self, readers):
-        population = SyntheticHFCSPopulation(
+    def test__init(self, readers, configuration, industry_data):
+        industries = configuration["model"]["industries"]["value"]
+
+        population = SyntheticHFCSPopulation.from_readers(
+            readers=readers,
             country_name="FRA",
-            country_name_short="FR",
-            scale=10000,
             year=2014,
-            industries=[
-                "A",
-                "B",
-                "C",
-                "D",
-                "E",
-                "F",
-                "G",
-                "H",
-                "I",
-                "J",
-                "K",
-                "L",
-                "M",
-                "N",
-                "O",
-                "P",
-                "Q",
-                "R_S",
-            ],
-        )
-        population.create(
-            hfcs_reader=readers["hfcs"]["FRA"],
-            econ_reader=readers["oecd_econ"],
-            wb_reader=readers["world_bank"],
-            n_households=1000,
-            number_of_firms_by_industry=np.ones(18).astype(int),
-            total_unemployment_benefits=10000.0,
-            rent_as_fraction_of_unemployment_rate=0.3,
-        )
-        population.set_consumption_weights(
-            consumption_weights=np.full(18, 1.0 / 18),
-        )
-        population.compute_household_wealth(wealth_distribution_independents=["Income"])
-        population.compute_household_income(
-            central_gov_config={
-                "functions": {
-                    "household_social_transfers": {
-                        "parameters": {
-                            "independents": {"value": ["Wealth"]},
-                        }
-                    }
-                }
-            },
-            total_social_transfers=1000.0,
+            scale=10000,
+            country_name_short="FR",
+            industries=industries,
+            industry_data=industry_data,
+            rent_as_fraction_of_unemployment_rate=0.5,
+            total_unemployment_benefits=1000.0,
         )
 
         # Check if we have all the necessary fields
@@ -122,3 +86,33 @@ class TestSyntheticPopulation:
 
         # Check individual age
         assert np.all(population.individual_data["Age"] >= 0)
+
+
+def test__household_sampling(readers):
+    country_name = "FRA"
+    year = 2014
+    scale = 10_000
+    n_households = int(readers.eurostat.number_of_households(country_name, year) / scale)
+    hfcs_individuals_data = readers.hfcs[country_name].individuals_df
+    hfcs_households_data = readers.hfcs[country_name].households_df
+
+    household_selection, individual_selection = sample_households(
+        hfcs_households_data, hfcs_individuals_data, n_households
+    )
+
+    assert household_selection.shape[0] == n_households
+    assert individual_selection["New Household ID"].nunique() == n_households
+    assert np.all(
+        individual_selection.groupby(["New Household ID"])["Gender"].count()
+        == household_selection["Corresponding Individuals ID"].apply(len)
+    )
+
+    large_households = household_selection["Corresponding Individuals ID"].apply(len) > 2
+
+    sample = np.random.choice(household_selection.index[large_households], size=10)
+
+    for i in sample:
+        individuals = household_selection.loc[i, "Corresponding Individuals ID"]
+        assert individual_selection.loc[individuals, "Corresponding Household ID"].nunique() == 1
+        assert np.all(individual_selection.loc[individuals, "Corresponding Household ID"] == i)
+    assert True

@@ -1,10 +1,68 @@
+import warnings
+from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
 
+from inet_data.readers.util.prune_util import DataFilterWarning, prune_index
+
+
+def get_perc_growth_series(country: str, growth_df: pd.DataFrame, series_name: Optional[str] = None):
+    df = growth_df.copy()
+    df.rename(columns={"TIME": "Country"}, inplace=True)
+    df.set_index("Country", inplace=True)
+    df = df.T
+    df.index = pd.to_datetime(df.index, format="%Y-%m")
+    series = df.loc[:, country]
+    if series_name is not None:
+        series.name = series_name
+    return series
+
 
 class EuroStatReader:
+    """
+    A class for reading and retrieving economic data from EuroStat.
+
+    Args:
+        path (Path | str): The path to the directory containing the data files.
+        country_code_path (Path | str): The path to the country code CSV file.
+
+    Attributes:
+        c_map (pd.DataFrame): The country code mapping DataFrame.
+        files_with_codes (dict[str, str]): A dictionary mapping data file names to their codes.
+        data (dict[str, pd.DataFrame]): A dictionary containing the loaded data files.
+
+    Methods:
+        get_files_with_codes(): Returns the dictionary mapping data file names to their codes.
+        country_code_switch(codes): Converts 2-digit country codes to 3-digit country codes.
+        find_value(df, country, year): Finds the value for a specific country and year in a DataFrame.
+        nonfin_firm_debt_ratios(country, year): Returns the non-financial firm debt ratios for a specific country and year.
+        get_total_nonfin_firm_debt(country, year): Returns the total non-financial firm debt for a specific country and year.
+        get_total_fin_firm_debt(country, year): Returns the total financial firm debt for a specific country and year.
+        nonfin_firm_deposit_ratios(country, year): Returns the non-financial firm deposit ratios for a specific country and year.
+        get_quarterly_gdp(country, year, quarter): Returns the quarterly GDP for a specific country, year, and quarter.
+        get_monthly_gdp(country, year, month): Returns the monthly GDP for a specific country, year, and month.
+        get_total_nonfin_firm_deposits(country, year): Returns the total non-financial firm deposits for a specific country and year.
+        get_total_bank_equity(country, year): Returns the total bank equity for a specific country and year.
+        cb_debt_ratios(country, year): Returns the central bank debt ratios for a specific country and year.
+        cb_equity_ratios(country, year): Returns the central bank equity ratios for a specific country and year.
+        general_gov_debt_ratios(country, year): Returns the general government debt ratios for a specific country and year.
+        central_gov_debt_ratios(country, year): Returns the central government debt ratios for a specific country and year.
+        shortterm_interest_rates(country, year, months): Returns the short-term interest rates for a specific country, year, and number of months.
+        longterm_central_gov_bond_rates(country, year): Returns the long-term central government bond rates for a specific country and year.
+        dividend_payout_ratio(country, year): Returns the dividend payout ratio for a specific country and year.
+        firm_risk_premium(country, year): Returns the firm risk premium for a specific country and year.
+        number_of_households(country, year): Returns the number of households for a specific country and year.
+        taxrate_on_capital_formation(country, year): Returns the tax rate on capital formation for a specific country and year.
+        get_perc_sectoral_growth(country): Returns the percentage sectoral growth for a specific country.
+        get_total_industry_debt_and_deposits(country_name): Returns the total industry debt and deposits for a specific country.
+        get_imputed_rent_fraction_of_country(country, year): Returns the imputed rent fraction for a specific country and year.
+        get_imputed_rent_fraction(country_names, year): Returns the imputed rent fraction for a specific list of countries and year.
+        prune(prune_date): Prunes the data to only include data from a specific date.
+    """
+
     def __init__(self, path: Path | str, country_code_path: Path | str):
         # Handle country codes
         self.c_map = pd.read_csv(country_code_path)
@@ -56,9 +114,32 @@ class EuroStatReader:
         }
 
     def country_code_switch(self, codes):
+        """
+        Converts a list of Alpha-2 country codes to Alpha-3 country codes.
+
+        Args:
+            codes (list): A list of Alpha-2 country codes.
+
+        Returns:
+            list: A list of corresponding Alpha-3 country codes.
+        """
         return [self.c_map.loc[self.c_map["Alpha-2 code"] == c, "Alpha-3 code"].values[0] for c in codes]
 
     def find_value(self, df, country: str, year: str) -> float:
+        """
+        Find the value in the given DataFrame for the specified country and year.
+
+        Args:
+            df (pd.DataFrame): The DataFrame containing the data.
+            country (str): The name of the country.
+            year (str): The year.
+
+        Returns:
+            float: The value found in the DataFrame.
+
+        Raises:
+            ValueError: If multiple data points are found for the given country and year.
+        """
         res = df.loc[(df["geo"] == country) & (df["TIME_PERIOD"] == int(year)), "OBS_VALUE"].values
         if len(res) == 0:
             return self.find_value(df, country, str(int(year) + 1))
@@ -68,6 +149,17 @@ class EuroStatReader:
             raise ValueError("Multiple inet_data points found in", df, country, year)
 
     def nonfin_firm_debt_ratios(self, country: str, year: int) -> float:
+        """
+        Calculate the non-financial firm debt ratio for a specific country and year.
+
+        Args:
+            country (str): The name of the country.
+            year (int): The year for which the debt ratio is calculated.
+
+        Returns:
+            float: The non-financial firm debt ratio.
+
+        """
         df = self.data["firm_debt_ratio"]
         return self.find_value(df, country, str(year)) / 100.0
 
@@ -188,6 +280,16 @@ class EuroStatReader:
     # numerator only available in current prices
     # denominator only available in historic prices
     def dividend_payout_ratio(self, country: str, year: int) -> float:
+        """
+        Calculate the dividend payout ratio for a given country and year.
+
+        Parameters:
+        - country (str): The name of the country.
+        - year (int): The year for which to calculate the dividend payout ratio.
+
+        Returns:
+        - float: The dividend payout ratio.
+        """
         df = self.data["nonfinancial_transactions"]
 
         hh_prop_df = df[(df["na_item"] == "D4") & (df["direct"] == "RECV") & (df["sector"] == "S14")]
@@ -204,6 +306,16 @@ class EuroStatReader:
         return (hh_prop + hh_surplus) / firm_surplus
 
     def firm_risk_premium(self, country: str, year: int) -> float:
+        """
+        Calculate the firm risk premium for a given country and year.
+
+        Parameters:
+        country (str): The country for which the risk premium is calculated.
+        year (int): The year for which the risk premium is calculated.
+
+        Returns:
+        float: The calculated firm risk premium.
+        """
         euribor_rate = self.shortterm_interest_rates("EA", year, 3)
 
         df = self.data["nonfinancial_transactions"]
@@ -241,77 +353,27 @@ class EuroStatReader:
         return taxes / capform
 
     def get_perc_sectoral_growth(self, country: str) -> pd.DataFrame:
+        """
+        Retrieves the percentage sectoral growth data for a specific country.
+
+        Args:
+            country (str): The name of the country.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the percentage sectoral growth data.
+        """
         # Get growth rates
-        data_b = self.data["perc_growth_sector_B"].loc[self.data["perc_growth_sector_B"]["TIME"] == country]
-        data_c = self.data["perc_growth_sector_C"].loc[self.data["perc_growth_sector_C"]["TIME"] == country]
-        data_d = self.data["perc_growth_sector_D"].loc[self.data["perc_growth_sector_D"]["TIME"] == country]
-        data_f = self.data["perc_growth_sector_F"].loc[self.data["perc_growth_sector_F"]["TIME"] == country]
-        data_serv = self.data["perc_growth_services"].loc[self.data["perc_growth_services"]["TIME"] == country]
-        dates, vals_b, vals_c, vals_d, vals_f, vals_serv = [], [], [], [], [], []
-        for year in range(1970, 2024):
-            for month in range(1, 13):
-                s_month = str(month) if month > 9 else "0" + str(month)
-                dates.append(str(year) + "-" + str(month))
+        data_b = get_perc_growth_series(country=country, growth_df=self.data["perc_growth_sector_B"], series_name="B")
+        data_c = get_perc_growth_series(country=country, growth_df=self.data["perc_growth_sector_C"], series_name="C")
+        data_d = get_perc_growth_series(country=country, growth_df=self.data["perc_growth_sector_D"], series_name="D")
+        data_f = get_perc_growth_series(country=country, growth_df=self.data["perc_growth_sector_F"], series_name="F")
 
-                # Sector B
-                if str(year) + "-" + s_month in data_b.columns:
-                    val_b = data_b.loc[:, str(year) + "-" + s_month].values
-                    if len(val_b) == 0:
-                        vals_b.append(np.nan)
-                    else:
-                        vals_b.append(val_b[0])
-                else:
-                    vals_b.append(np.nan)
-
-                # Sector C
-                if str(year) + "-" + s_month in data_c.columns:
-                    val_c = data_c.loc[:, str(year) + "-" + s_month].values
-                    if len(val_c) == 0:
-                        vals_c.append(np.nan)
-                    else:
-                        vals_c.append(val_c[0])
-                else:
-                    vals_c.append(np.nan)
-
-                # Sector D
-                if str(year) + "-" + s_month in data_d.columns:
-                    val_d = data_d.loc[:, str(year) + "-" + s_month].values
-                    if len(val_d) == 0:
-                        vals_d.append(np.nan)
-                    else:
-                        vals_d.append(val_d[0])
-                else:
-                    vals_d.append(np.nan)
-
-                # Sector F
-                if str(year) + "-" + s_month in data_f.columns:
-                    val_f = data_f.loc[:, str(year) + "-" + s_month].values
-                    if len(val_f) == 0:
-                        vals_f.append(np.nan)
-                    else:
-                        vals_f.append(val_f[0])
-                else:
-                    vals_f.append(np.nan)
-
-                # Services
-                if str(year) + "-" + s_month in data_serv.columns:
-                    val_serv = data_serv.loc[:, str(year) + "-" + s_month].values
-                    if len(val_serv) == 0:
-                        vals_serv.append(np.nan)
-                    else:
-                        vals_serv.append(val_serv[0])
-                else:
-                    vals_serv.append(np.nan)
-
-        # Create a dataframe
-        growth_df = pd.DataFrame(
-            {
-                "B": np.array(vals_b).astype(float) / 100.0,
-                "C": np.array(vals_c).astype(float) / 100.0,
-                "D": np.array(vals_d).astype(float) / 100.0,
-                "F": np.array(vals_f).astype(float) / 100.0,
-            }
+        services = get_perc_growth_series(
+            country=country, growth_df=self.data["perc_growth_services"], series_name="Services"
         )
+
+        growth_df = pd.concat([data_b, data_c, data_d, data_f], axis=1)
+
         for serv_ind in [
             "A",
             "E",
@@ -328,8 +390,11 @@ class EuroStatReader:
             "Q",
             "R_S",
         ]:
-            growth_df[serv_ind] = np.array(vals_serv).astype(float) / 100.0
-        growth_df.index = dates
+            growth_df[serv_ind] = services
+
+        growth_df = growth_df.astype(float)
+        growth_df /= 100.0
+
         growth_df.columns.name = "Industry"
         growth_df.index.name = "Time"
         growth_df.sort_index(axis=1, inplace=True)
@@ -369,3 +434,43 @@ class EuroStatReader:
         fractions = {c: self.get_imputed_rent_fraction_of_country(c, year) for c in country_names}
         fractions["ROW"] = np.mean(list(fractions.values()))  # c'est la vie
         return fractions
+
+    def prune(self, prune_date: str | int | datetime, prune_date_format: str = "%Y-%m-%d"):
+        # Convert prune_date to datetime
+        if isinstance(prune_date, str):
+            prune_date = datetime.strptime(prune_date, prune_date_format)
+        elif isinstance(prune_date, int):
+            prune_date = datetime.strptime(str(prune_date), "%Y")
+        elif isinstance(prune_date, datetime):
+            pass
+        else:
+            raise ValueError(f"prune_date must be a str, int, or datetime, not {type(prune_date)}.")
+
+        # Eurostat
+        for key, value in self.data.items():
+            if "TIME_PERIOD" in value.columns:
+                dates = value["TIME_PERIOD"].apply(convert_date)
+                mask = dates >= prune_date
+                if mask.sum() == 0:
+                    warnings.warn(
+                        f"No rows were kept for date {prune_date} in Eurostat dataset {key}.",
+                        DataFilterWarning,
+                    )
+                self.data[key] = value.loc[mask, :]
+            else:
+                mask = prune_index(value.columns, prune_date, f"Eurostat {key}")
+                self.data[key] = value.loc[:, mask]
+        return self
+
+
+def convert_date(date: str | int):
+    if isinstance(date, int):
+        return pd.to_datetime(date, format="%Y")
+    # Check if the date is in quarterly format like '2012-Q1'
+    if "Q" in date:
+        year, quarter = date.split("-Q")
+        month = (int(quarter) - 1) * 3 + 1  # Convert quarter to month
+        return pd.to_datetime(f"{year}-{month:02d}-01")  # Format: YYYY-MM-DD
+    else:
+        # For other formats, directly use to_datetime
+        return pd.to_datetime(date, errors="coerce", yearfirst=True)

@@ -8,6 +8,16 @@ def match_firms_with_banks(
     synthetic_firms: SyntheticFirms,
     synthetic_banks: SyntheticBanks,
 ) -> None:
+    """
+    Matches synthetic firms with synthetic banks based on random assignment.
+
+    Args:
+        synthetic_firms (SyntheticFirms): The synthetic firms dataset.
+        synthetic_banks (SyntheticBanks): The synthetic banks dataset.
+
+    Returns:
+        None
+    """
     bank_by_firm = np.random.choice(
         range(synthetic_banks.number_of_banks),
         synthetic_firms.number_of_firms,

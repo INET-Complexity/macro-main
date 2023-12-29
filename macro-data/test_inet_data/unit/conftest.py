@@ -2,8 +2,10 @@ import pathlib
 
 import pytest
 
-from inet_data.readers.handle_readers import init_readers
-from inet_data.readers.util.matching_iot_with_sea import compile_industry_data
+from inet_data.readers.default_readers import DataReaders
+from inet_data.readers.util.exogenous_data import create_all_exogenous_data
+from inet_data.readers.util.industry_extraction import compile_industry_data, compile_exogenous_industry_data
+from inet_data.util.process_config import process_config
 
 PARENT = pathlib.Path(__file__).parent.resolve()
 DATA_PATH = PARENT / "sample_raw_data"
@@ -14,13 +16,18 @@ def data_path():
     return DATA_PATH
 
 
+@pytest.fixture(scope="module", name="configuration")
+def configuration():
+    return process_config(config_path=PARENT / "default_unit_test.yaml")
+
+
 @pytest.fixture(scope="module", name="readers")
 def readers(data_path):
-    return init_readers(
+    readers = DataReaders.from_raw_data(
         raw_data_path=data_path,
         country_names=["FRA"],
         country_names_short=["FR"],
-        year=2014,
+        simulation_year=2014,
         scale=100000,
         industries=[
             "A",
@@ -42,17 +49,25 @@ def readers(data_path):
             "Q",
             "R_S",
         ],
-        testing=True,
+        force_single_hfcs_survey=True,
     )
+    return readers
 
 
 @pytest.fixture(scope="module", name="industry_data")
-def industry_data(data_path, readers):
-    return compile_industry_data(
-        current_icio_reader=readers["icio"][2014],
-        sea_reader=readers["wiod_sea"],
-        econ_reader=readers["oecd_econ"],
-        exchange_rates=readers["exchange_rates"],
-        country_names=["FRA"],
-        config={"model": {"single_firm_per_industry": {"value": True}}},
-    )
+def industry_data(readers):
+    return compile_industry_data(year=2014, readers=readers, country_names=["FRA"], single_firm_per_industry=True)
+
+
+@pytest.fixture(scope="module", name="exogenous_industry_data")
+def exogenous_industry_data(readers):
+    country_names = ["FRA"]
+    exogenous_industry_data = compile_exogenous_industry_data(readers, country_names)
+    return exogenous_industry_data
+
+
+@pytest.fixture(scope="module", name="all_exogenous_data")
+def all_exogenous_data(readers):
+    country_names = ["FRA"]
+    all_exogenous_data = create_all_exogenous_data(readers, country_names)
+    return all_exogenous_data

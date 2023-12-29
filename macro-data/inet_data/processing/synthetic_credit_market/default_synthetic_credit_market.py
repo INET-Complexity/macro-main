@@ -1,114 +1,135 @@
-import numpy as np
 import pandas as pd
 
-from inet_data.processing.synthetic_credit_market.synthetic_credit_market import (
-    SyntheticCreditMarket,
-)
+from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
+
+from inet_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
+from inet_data.processing.synthetic_population.synthetic_population import SyntheticPopulation
 
 
-class DefaultSyntheticCreditMarket(SyntheticCreditMarket):
-    def __init__(
-        self,
-        country_name: str,
-        year: int,
-    ):
-        super().__init__(
-            country_name,
-            year,
-        )
+def create_firm_loan_df(firms: SyntheticFirms, banks: SyntheticBanks, firm_loan_maturity: int = 60) -> pd.DataFrame:
+    """
+    Create a DataFrame of firm loans.
+    Loans are created for all firms with debt, and are set with a loan status of 2 (firm loan).
 
-    def create(
-        self,
-        bank_data: pd.DataFrame,
-        initial_firm_debt: np.ndarray,
-        initial_household_other_debt: np.ndarray,
-        initial_household_mortgage_debt: np.ndarray,
-        firms_corresponding_bank: np.ndarray,
-        households_corresponding_bank: np.ndarray,
-        initial_firm_loan_maturity: int,
-        household_consumption_loan_maturity: int,
-        mortgage_maturity: int,
-        assume_zero_initial_firm_debt: bool,
-    ) -> None:
-        self.set_initial_loans(
-            bank_data=bank_data,
-            initial_firm_debt=initial_firm_debt,
-            initial_household_other_debt=initial_household_other_debt,
-            initial_household_mortgage_debt=initial_household_mortgage_debt,
-            firms_corresponding_bank=firms_corresponding_bank,
-            households_corresponding_bank=households_corresponding_bank,
-            initial_firm_loan_maturity=initial_firm_loan_maturity,
-            household_consumption_loan_maturity=household_consumption_loan_maturity,
-            mortgage_maturity=mortgage_maturity,
-            assume_zero_initial_firm_debt=assume_zero_initial_firm_debt,
-        )
+    The corresponding loan value is set to the firm's debt, and the loan interest rate is set to the long-term
+    loan of the corresponding bank.
 
-    def set_initial_loans(
-        self,
-        bank_data: pd.DataFrame,
-        initial_firm_debt: np.ndarray,
-        initial_household_other_debt: np.ndarray,
-        initial_household_mortgage_debt: np.ndarray,
-        firms_corresponding_bank: np.ndarray,
-        households_corresponding_bank: np.ndarray,
-        initial_firm_loan_maturity: int,
-        household_consumption_loan_maturity: int,
-        mortgage_maturity: int,
-        assume_zero_initial_firm_debt: bool,
-    ) -> None:
-        loan_data: dict = {
-            "loan_type": [],
-            "loan_value_initial": [],
-            "loan_value": [],
-            "loan_maturity": [],
-            "loan_interest_rate": [],
-            "loan_bank_id": [],
-            "loan_recipient_id": [],
-        }
+    Loan maturity is set exogenously (default: 60 months).
 
-        # Firm loans
-        if not assume_zero_initial_firm_debt:
-            for firm_id in range(initial_firm_debt.shape[0]):
-                if initial_firm_debt[firm_id] > 0:
-                    loan_data["loan_type"].append(2)  # long-term loan
-                    loan_data["loan_value_initial"].append(initial_firm_debt[firm_id])
-                    loan_data["loan_value"].append(initial_firm_debt[firm_id])
-                    loan_data["loan_maturity"].append(initial_firm_loan_maturity)
-                    loan_data["loan_interest_rate"].append(
-                        bank_data["Long-Term Interest Rates on Firm Loans"][firms_corresponding_bank[firm_id]]
-                    )
-                    loan_data["loan_bank_id"].append(firms_corresponding_bank[firm_id])
-                    loan_data["loan_recipient_id"].append(firm_id)
+    Args:
+        firms (SyntheticFirms): Object containing firm data.
+        banks (SyntheticBanks): Object containing bank data.
+        firm_loan_maturity (int, optional): Loan maturity in months. Defaults to 60.
 
-        # Household consumption loans
-        for household_id in range(initial_household_other_debt.shape[0]):
-            if initial_household_other_debt[household_id] > 0:
-                loan_data["loan_type"].append(4)  # consumption expansion loan
-                loan_data["loan_value_initial"].append(initial_household_other_debt[household_id])
-                loan_data["loan_value"].append(initial_household_other_debt[household_id])
-                loan_data["loan_maturity"].append(household_consumption_loan_maturity)
-                loan_data["loan_interest_rate"].append(
-                    bank_data["Interest Rates on Household Consumption Loans"][
-                        households_corresponding_bank[household_id]
-                    ]
-                )
-                loan_data["loan_bank_id"].append(households_corresponding_bank[household_id])
-                loan_data["loan_recipient_id"].append(household_id)
+    Returns:
+        pd.DataFrame: DataFrame containing firm loan information.
+    """
+    selection = firms.firm_data["Debt"] > 0
+    data_sel = firms.firm_data.loc[selection]
 
-        # Mortgages
-        for household_id in range(initial_household_mortgage_debt.shape[0]):
-            if initial_household_mortgage_debt[household_id] > 0:
-                loan_data["loan_type"].append(5)  # mortgage
-                loan_data["loan_value_initial"].append(initial_household_mortgage_debt[household_id])
-                loan_data["loan_value"].append(initial_household_mortgage_debt[household_id])
-                loan_data["loan_maturity"].append(mortgage_maturity)
-                loan_data["loan_interest_rate"].append(
-                    bank_data["Interest Rates on Mortgages"][households_corresponding_bank[household_id]]
-                )
-                loan_data["loan_bank_id"].append(households_corresponding_bank[household_id])
-                loan_data["loan_recipient_id"].append(household_id)
+    loan_df = pd.DataFrame(index=data_sel.index)
+    loan_df["loan_type"] = 2
+    loan_df["loan_value_initial"] = data_sel["Debt"]
+    loan_df["loan_value"] = data_sel["Debt"]
+    loan_df["loan_bank_id"] = data_sel["Corresponding Bank ID"]
+    loan_df["loan_recipient_id"] = data_sel.index
 
-        # Compile it all
-        self.credit_market_data = pd.DataFrame(data=loan_data)
-        self.credit_market_data.index.name = "Loans"
-        self.credit_market_data.columns.name = "Loan Properties"
+    loan_df = pd.merge(
+        left=loan_df,
+        right=banks.bank_data["Long-Term Interest Rates on Firm Loans"],
+        left_on="loan_bank_id",
+        right_index=True,
+    )
+
+    loan_df.rename(columns={"Long-Term Interest Rates on Firm Loans": "loan_interest_rate"}, inplace=True)
+    loan_df["loan_maturity"] = firm_loan_maturity
+    return loan_df
+
+
+def create_household_loan_df(
+    synthetic_population: SyntheticPopulation, synthetic_banks: SyntheticBanks, consumption_loan_maturity: int = 12
+) -> pd.DataFrame:
+    """
+    Create a DataFrame of household loans based on synthetic population data and synthetic bank data.
+
+    Loans are created for all households with debt, and are set with a loan status of 4 (household loan).
+
+    The corresponding loan value is set to the household's debt, and the loan interest rate is set to the consumption
+    loan interest rate of the corresponding bank.
+
+    Loan maturity is set exogenously (default: 12 months).
+
+    Parameters:
+        synthetic_population (SyntheticPopulation): Object containing synthetic population data.
+        synthetic_banks (SyntheticBanks): Object containing synthetic bank data.
+        consumption_loan_maturity (int, optional): Maturity period of the loans in months. Defaults to 12.
+
+    Returns:
+        pd.DataFrame: DataFrame containing household loan information.
+    """
+    debt_col = "Outstanding Balance of other Non-Mortgage Loans"
+    selection = synthetic_population.household_data[debt_col] > 0
+    data_sel = synthetic_population.household_data.loc[selection]
+
+    loan_df = pd.DataFrame(index=data_sel.index)
+    loan_df["loan_type"] = 4
+    loan_df["loan_value_initial"] = data_sel[debt_col]
+    loan_df["loan_value"] = data_sel[debt_col]
+    loan_df["loan_bank_id"] = data_sel["Corresponding Bank ID"]
+    loan_df["loan_recipient_id"] = data_sel.index
+
+    loan_df = pd.merge(
+        left=loan_df,
+        right=synthetic_banks.bank_data["Interest Rates on Household Consumption Loans"],
+        left_on="loan_bank_id",
+        right_index=True,
+    )
+
+    loan_df.rename(columns={"Interest Rates on Household Consumption Loans": "loan_interest_rate"}, inplace=True)
+    loan_df["loan_maturity"] = consumption_loan_maturity
+    return loan_df
+
+
+def create_mortgage_loan_df(
+    synthetic_population: SyntheticPopulation, synthetic_banks: SyntheticBanks, mortgage_loan_maturity: int = 120
+) -> pd.DataFrame:
+    """
+    Create a DataFrame of mortgage loan data based on the synthetic population and synthetic banks.
+
+    Loans are created for all households with mortgage debt (including mortgages on their own property and mortgages on rental properties),
+    and are set with a loan status of 5 (mortgage loan).
+
+    The corresponding loan value is set to the household's mortgage debt, and the loan interest rate is set to the mortgage loan interest rate
+    of the corresponding bank.
+
+    Parameters:
+        synthetic_population (SyntheticPopulation): The synthetic population data.
+        synthetic_banks (SyntheticBanks): The synthetic banks data.
+        mortgage_loan_maturity (int, optional): The maturity period of the mortgage loan in months. Defaults to 120.
+
+    Returns:
+        pd.DataFrame: The DataFrame containing the mortgage loan data.
+    """
+    debt_columns = ["Outstanding Balance of HMR Mortgages", "Outstanding Balance of Mortgages on other Properties"]
+
+    total_debt = synthetic_population.household_data[debt_columns].sum(axis=1)
+    selection = total_debt > 0
+    data_sel = synthetic_population.household_data.loc[selection]
+
+    loan_df = pd.DataFrame(index=data_sel.index)
+    loan_df["loan_type"] = 5
+    loan_df["loan_value_initial"] = data_sel[debt_columns].sum(axis=1)
+    loan_df["loan_value"] = data_sel[debt_columns].sum(axis=1)
+    loan_df["loan_bank_id"] = data_sel["Corresponding Bank ID"]
+    loan_df["loan_recipient_id"] = data_sel.index
+
+    loan_df = pd.merge(
+        left=loan_df,
+        right=synthetic_banks.bank_data["Interest Rates on Mortgages"],
+        left_on="loan_bank_id",
+        right_index=True,
+    )
+
+    loan_df.rename(columns={"Interest Rates on Mortgages": "loan_interest_rate"}, inplace=True)
+    loan_df["loan_maturity"] = mortgage_loan_maturity
+    return loan_df
