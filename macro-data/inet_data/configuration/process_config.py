@@ -4,6 +4,16 @@ import yaml
 from copy import deepcopy
 
 
+def split_country_configs(country_config: dict) -> dict[str, Any]:
+    new_config = {}
+    for key, value in country_config.items():
+        # Split the key by '&' and assign the same value to each country code
+        countries = key.split("&")
+        for country in countries:
+            new_config[country] = value
+    return new_config
+
+
 def process_config(config_path: str | Path | dict) -> dict[str, Any]:
     """
     Process the configuration file (yaml) or dictionary.

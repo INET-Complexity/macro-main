@@ -32,7 +32,8 @@ from inet_data.processing import (
 )
 
 from inet_data.readers import DataReaders, compile_industry_data, create_all_exogenous_data
-from inet_data.util import process_config, get_map_long_to_short, initial_interest_rates
+from inet_data.util import get_map_long_to_short
+from inet_data.configuration import process_config, initial_interest_rates
 
 
 @dataclass

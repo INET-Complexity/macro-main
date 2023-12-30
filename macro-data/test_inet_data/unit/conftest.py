@@ -5,7 +5,7 @@ import pytest
 from inet_data.readers.default_readers import DataReaders
 from inet_data.readers.util.exogenous_data import create_all_exogenous_data
 from inet_data.readers.util.industry_extraction import compile_industry_data, compile_exogenous_industry_data
-from inet_data.util.process_config import process_config
+from inet_data.configuration.process_config import process_config
 
 PARENT = pathlib.Path(__file__).parent.resolve()
 DATA_PATH = PARENT / "sample_raw_data"
@@ -19,6 +19,16 @@ def data_path():
 @pytest.fixture(scope="module", name="configuration")
 def configuration():
     return process_config(config_path=PARENT / "default_unit_test.yaml")
+
+
+@pytest.fixture(scope="module", name="data_config_path")
+def configuration2():
+    return PARENT / "default_data_config.yaml"
+
+
+@pytest.fixture(scope="module", name="gen_data_config_path")
+def configuration3():
+    return PARENT / "data_config_gen.yaml"
 
 
 @pytest.fixture(scope="module", name="readers")
