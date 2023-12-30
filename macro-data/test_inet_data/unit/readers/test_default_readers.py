@@ -1,3 +1,5 @@
+from datetime import date
+
 from inet_data.readers.default_readers import prune_icio_dict
 from inet_data.readers.util.exogenous_data import create_all_exogenous_data
 
@@ -13,7 +15,9 @@ def test__prune_icio_dict():
         2020: "dummy",
     }
 
-    pruned_dict = prune_icio_dict(dummy_dict, 2016)
+    prune_date = date(year=2016, month=1, day=1)
+
+    pruned_dict = prune_icio_dict(dummy_dict, prune_date)
     assert pruned_dict == {2016: "dummy", 2017: "dummy", 2018: "dummy", 2019: "dummy", 2020: "dummy"}
 
 

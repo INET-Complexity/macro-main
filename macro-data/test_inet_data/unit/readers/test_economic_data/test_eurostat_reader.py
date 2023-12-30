@@ -1,3 +1,4 @@
+import pandas as pd
 import pytest
 
 
@@ -77,4 +78,5 @@ class TestEuroStatReader:
         assert readers.eurostat.get_monthly_gdp("FRA", 2014, 12) == pytest.approx(544749e6, abs=1e6)
 
     def test__prune(self, readers):
-        readers.eurostat.prune("2012-01-01")
+        prune_date = pd.to_datetime("2012-01-01").date()
+        readers.eurostat.prune(prune_date)
