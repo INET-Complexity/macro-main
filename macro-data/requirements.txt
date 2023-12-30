@@ -9,3 +9,4 @@ scipy==1.11.2
 requests==2.31.0
 skops==0.8.0
 pydantic==1.10.12
+pytest-cov==4.1.0
