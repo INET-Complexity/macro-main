@@ -1,5 +1,5 @@
 import warnings
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Iterable, Tuple, Any, Optional
 
@@ -96,9 +96,8 @@ class DataReaders:
         create_exogenous_industry_data: bool = False,
         imputed_rent_year: int = 2014,
         exog_data_range: Tuple[int, int] = (2010, 2018),
-        prune_date: str | int | datetime = None,
+        prune_date: Optional[date] = None,
         force_single_hfcs_survey: bool = False,
-        prune_date_format: str = "%Y-%m-%d",
     ):
         raw_data_path = Path(raw_data_path)
         short_names = {
@@ -173,14 +172,14 @@ class DataReaders:
         world_bank = WorldBankReader(path=datapaths.world_bank_path)
 
         if prune_date:
-            exchange_rates.prune(prune_date, prune_date_format=prune_date_format)
-            eurostat.prune(prune_date, prune_date_format=prune_date_format)
+            exchange_rates.prune(prune_date)
+            eurostat.prune(prune_date)
             icio = prune_icio_dict(icio, prune_date)
-            wiod_sea.prune(prune_date, date_format=prune_date_format)
-            oecd_econ.prune(prune_date, prune_date_format=prune_date_format)
-            policy_rates.prune(prune_date, prune_date_format=prune_date_format)
-            imf_reader.prune(prune_date, prune_date_format=prune_date_format)
-            world_bank.prune(prune_date, prune_date_format=prune_date_format)
+            wiod_sea.prune(prune_date)
+            oecd_econ.prune(prune_date)
+            policy_rates.prune(prune_date)
+            imf_reader.prune(prune_date)
+            world_bank.prune(prune_date)
 
         return cls(
             icio=icio,
@@ -251,15 +250,10 @@ class DataReaders:
         ) * self.world_bank.get_current_monthly_gdp(country_name, year)
 
 
-def prune_icio_dict(icio_dict: dict[int, Any], prune_date: str | int | datetime):
+def prune_icio_dict(icio_dict: dict[int, Any], prune_date: date):
     # make sure prune date is the year in int format
-    if isinstance(prune_date, str):
-        prune_date = pd.to_datetime(prune_date, format="%Y-%m-%d").year
-        prune_date = int(prune_date)
-    elif isinstance(prune_date, datetime):
-        prune_date = prune_date.year
 
-    icio_dict = {year: icio for year, icio in icio_dict.items() if year >= prune_date}
+    icio_dict = {year: icio for year, icio in icio_dict.items() if year >= prune_date.year}
 
     if not icio_dict:
         warnings.warn(

@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from pathlib import Path
 
 import numpy as np
@@ -73,13 +74,12 @@ class PolicyRatesReader:
             "GBR",
         ]
 
-    def prune(self, prune_date: str | int | pd.Timestamp, prune_date_format="%Y-%m-%d"):
+    def prune(self, prune_date: date):
         """
         Prunes the policy rate data based on a specified date.
 
         Args:
-            prune_date (str | int | pd.Timestamp): The date to prune the data.
-            prune_date_format (str): The format of the prune_date string (default: "%Y-%m-%d").
+            prune_date (date): The date to prune the data.
         """
         # WB exchange rates
         mask = prune_index(self.df.columns, prune_date, "Policy rates")

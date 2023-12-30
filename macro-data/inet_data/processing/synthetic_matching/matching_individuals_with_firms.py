@@ -13,7 +13,7 @@ from inet_data.readers.default_readers import DataReaders
 def preprocess(
     synthetic_population: SyntheticPopulation,
     synthetic_firms: SyntheticFirms,
-    industry: int,
+    industry_index: int,
     income_taxes: float,
     employee_social_contribution_taxes: float,
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -28,7 +28,7 @@ def preprocess(
     Args:
         synthetic_population (SyntheticPopulation): An instance of the SyntheticPopulation class.
         synthetic_firms (SyntheticFirms): An instance of the SyntheticFirms class.
-        industry (int): The industry to be processed.
+        industry_index (int): The index of the industry to be processed.
         income_taxes (float): The income tax rate.
         employee_social_contribution_taxes (float): The employee social contribution tax rate.
 
@@ -41,10 +41,10 @@ def preprocess(
     """
     # Sanity check
     ind_employees = np.flatnonzero(
-        (synthetic_population.individual_data["Employment Industry"] == industry)
+        (synthetic_population.individual_data["Employment Industry"] == industry_index)
         & (synthetic_population.individual_data["Activity Status"] == 1)
     )
-    num_employees = synthetic_population.number_employees_by_industry[industry]
+    num_employees = synthetic_population.number_employees_by_industry[industry_index]
     if len(ind_employees) != num_employees:
         raise ValueError(
             "Employee Employment NACEs do not match the numbers of employees",
@@ -53,7 +53,7 @@ def preprocess(
         )
 
     # Rescale income
-    firm_ids = np.flatnonzero(synthetic_firms.firm_data["Industry"] == industry)
+    firm_ids = np.flatnonzero(synthetic_firms.firm_data["Industry"] == industry_index)
     total_employee_income = synthetic_population.individual_data.loc[ind_employees, "Employee Income"].sum()
     labour_taxes = 1 - employee_social_contribution_taxes - income_taxes * (1 - employee_social_contribution_taxes)
     if total_employee_income == 0.0:
@@ -92,7 +92,7 @@ def preprocess(
 def find_optimal_matching(
     synthetic_population: SyntheticPopulation,
     synthetic_firms: SyntheticFirms,
-    industry: int,
+    industry_index: int,
     income_taxes: float,
     employee_social_contribution_taxes: float,
     wages_offered: np.ndarray,
@@ -110,7 +110,7 @@ def find_optimal_matching(
     Args:
         synthetic_population (SyntheticPopulation): An instance of the SyntheticPopulation class.
         synthetic_firms (SyntheticFirms): An instance of the SyntheticFirms class.
-        industry (int): The industry to be processed.
+        industry_index (int): The index of the industry to be processed.
         income_taxes (float): The income tax rate.
         employee_social_contribution_taxes (float): The employee social contribution tax rate.
         wages_offered (np.ndarray): An array representing the wages offered by each firm for each position.
@@ -121,7 +121,7 @@ def find_optimal_matching(
         None
     """
     # Create a cost matrix
-    in_industry = synthetic_population.individual_data["Employment Industry"] == industry
+    in_industry = synthetic_population.individual_data["Employment Industry"] == industry_index
     employed = synthetic_population.individual_data["Activity Status"] == 1
     employed_ind = np.flatnonzero(in_industry & employed)
     employed_wages = synthetic_population.individual_data["Employee Income"].values[employed_ind]
@@ -135,7 +135,7 @@ def find_optimal_matching(
 
     # Record the results
     synthetic_population.individual_data.loc[employed_ind, "Corresponding Firm ID"] = corr_firms
-    for ind, firm_id in enumerate(np.where(synthetic_firms.firm_data["Industry"] == industry)[0]):
+    for ind, firm_id in enumerate(np.where(synthetic_firms.firm_data["Industry"] == industry_index)[0]):
         corr_ind = employed_ind[corr_firms == firm_id]
         synthetic_firms.firm_data.at[firm_id, "Employees ID"] = list(corr_ind)
 
@@ -159,7 +159,7 @@ def find_optimal_matching(
 
 def match_individuals_with_firms_country(
     country: str,
-    industries: list[int] | np.ndarray,
+    industries: list[str] | np.ndarray,
     readers: DataReaders,
     synthetic_firms: SyntheticFirms,
     synthetic_population: SyntheticPopulation,
@@ -179,11 +179,11 @@ def match_individuals_with_firms_country(
     Returns:
         None
     """
-    for industry in range(len(industries)):
+    for industry_index in range(len(industries)):
         wage_offered, pos_corr_firm = preprocess(
             synthetic_population=synthetic_population,
             synthetic_firms=synthetic_firms,
-            industry=industry,
+            industry_index=industry_index,
             income_taxes=readers.oecd_econ.read_tau_income(country=country, year=year),
             employee_social_contribution_taxes=readers.oecd_econ.read_tau_siw(country=country, year=year),
         )
@@ -191,7 +191,7 @@ def match_individuals_with_firms_country(
         find_optimal_matching(
             synthetic_population=synthetic_population,
             synthetic_firms=synthetic_firms,
-            industry=industry,
+            industry_index=industry_index,
             income_taxes=readers.oecd_econ.read_tau_income(country=country, year=year),
             employee_social_contribution_taxes=readers.oecd_econ.read_tau_siw(country=country, year=year),
             wages_offered=wage_offered,

@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -59,16 +60,14 @@ class WorldBankRatesReader:
     def from_usd_to_lcu(self, country: str, year: int) -> float:
         return self.from_usd(country, year)
 
-    def prune(self, prune_date: str | int | pd.Timestamp, prune_date_format="%Y-%m-%d"):
+    def prune(self, prune_date: date):
         """
         Prunes the exchange rate data based on a specified date.
 
         Args:
-            prune_date (str | int | pd.Timestamp): The date to prune the data.
+            prune_date (datetime): The date to prune the data.
             prune_date_format (str): The format of the prune_date string (default: "%Y-%m-%d").
         """
         # WB exchange rates
-        if not isinstance(prune_date, pd.Timestamp):
-            prune_date = pd.to_datetime(prune_date, format=prune_date_format)
         mask = prune_index(self.df.columns, prune_date, "WB exchange rates")
         self.df = self.df.loc[:, mask]

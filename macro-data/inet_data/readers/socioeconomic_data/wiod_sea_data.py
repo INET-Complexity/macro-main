@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
 
 import numpy as np
@@ -142,7 +142,7 @@ class WIODSEAReader:
         """
         return self.get_values_in_usd(country, field) * self.exchange_rates.from_usd_to_lcu(country, self.year)
 
-    def prune(self, prune_date: int | datetime | str, date_format: str = "%Y-%m-%d"):
+    def prune(self, prune_date: date):
         """
         Prune the exchange rate data based on a given date.
 
@@ -151,5 +151,5 @@ class WIODSEAReader:
             date_format (str, optional): The format of the prune_date if it is a string. Defaults to "%Y-%m-%d".
         """
         # WIOD_SEA
-        mask = prune_index(self.exchange_rates.df.columns, prune_date, "WIOD_SEA", date_format=date_format)
+        mask = prune_index(self.exchange_rates.df.columns, prune_date, "WIOD_SEA")
         self.exchange_rates.df = self.exchange_rates.df.loc[:, mask]

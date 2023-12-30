@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -59,6 +60,6 @@ class IMFReader:
     def total_commercial_loans(self, year: int, country: str) -> float:
         return self.get_value(year, country, "Outstanding loans from commercial banks") * 1e6
 
-    def prune(self, prune_date: str | int | pd.Timestamp, prune_date_format="%Y-%m-%d"):
-        mask = prune_index(self.data["bank_demography"].columns, prune_date, prune_date_format)
+    def prune(self, prune_date: date):
+        mask = prune_index(self.data["bank_demography"].columns, prune_date)
         self.data["bank_demography"] = self.data["bank_demography"].loc[:, mask]
