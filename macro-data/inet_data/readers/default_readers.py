@@ -1,5 +1,6 @@
 import warnings
-from datetime import date, datetime
+from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Iterable, Tuple, Any, Optional
 
@@ -19,8 +20,6 @@ from inet_data.readers.economic_data.world_bank_reader import WorldBankReader
 from inet_data.readers.io_tables.icio_reader import ICIOReader
 from inet_data.readers.population_data.hfcs_reader import HFCSReader
 from inet_data.readers.socioeconomic_data.wiod_sea_data import WIODSEAReader
-from dataclasses import dataclass
-
 from inet_data.readers.util.prune_util import DataFilterWarning
 
 

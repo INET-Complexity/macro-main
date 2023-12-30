@@ -3,9 +3,6 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
 
-from inet_data.readers.default_readers import DataReaders
-from inet_data.readers.economic_data.oecd_economic_data import OECDEconData
-
 
 class SyntheticFirms(ABC):
     """

@@ -1,7 +1,8 @@
-from typing import Any, Union
-from pathlib import Path
-import yaml
 from copy import deepcopy
+from pathlib import Path
+from typing import Any, Union
+
+import yaml
 
 
 def split_country_configs(country_config: dict) -> dict[str, Any]:

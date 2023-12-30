@@ -1,10 +1,11 @@
+import pickle as pkl
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import pickle as pkl
 
+from inet_data.configuration import Configuration
 from inet_data.processing import (
     SyntheticPopulation,
     SyntheticFirms,
@@ -30,10 +31,8 @@ from inet_data.processing import (
     create_household_loan_df,
     create_mortgage_loan_df,
 )
-
 from inet_data.readers import DataReaders, compile_industry_data, create_all_exogenous_data
 from inet_data.util import get_map_long_to_short
-from inet_data.configuration import Configuration
 
 
 @dataclass

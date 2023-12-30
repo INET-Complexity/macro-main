@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from sklearn.linear_model import LinearRegression
-
 import pandas as pd
+from sklearn.linear_model import LinearRegression
 
 
 class SyntheticGovernmentEntities(ABC):

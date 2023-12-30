@@ -2,9 +2,9 @@ import logging
 from functools import reduce
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from scipy import special
-import numpy.typing as npt
 
 NDArrayInt = npt.NDArray[np.int_]
 

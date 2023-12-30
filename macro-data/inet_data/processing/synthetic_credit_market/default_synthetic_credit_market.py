@@ -1,7 +1,6 @@
 import pandas as pd
 
 from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
-
 from inet_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
 from inet_data.processing.synthetic_population.synthetic_population import SyntheticPopulation
 

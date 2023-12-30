@@ -1,7 +1,6 @@
 import numpy as np
 import scipy as sp
 from scipy.optimize import linear_sum_assignment as lsa
-from tqdm import trange
 
 from inet_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
 from inet_data.processing.synthetic_population.synthetic_population import (

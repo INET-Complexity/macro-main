@@ -1,7 +1,7 @@
 import json
 import logging
 import warnings
-from datetime import datetime, date
+from datetime import date
 from pathlib import Path
 
 import numpy as np
