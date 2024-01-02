@@ -60,12 +60,12 @@ class DefaultSyntheticFirms(SyntheticFirms):
         scale: int,
         industry_data: dict[str, pd.DataFrame],
         n_employees_per_industry: np.ndarray,
-        assume_zero_initial_deposits: bool,
-        assume_zero_initial_debt: bool,
+        zero_initial_deposits: bool,
+        zero_initial_debt: bool,
         initial_inventory_to_input_fraction: float = 0,
         intermediate_inputs_utilisation_rate: float = 1.0,
         capital_inputs_utilisation_rate: float = 1.0,
-    ):
+    ) -> "DefaultSyntheticFirms":
         n_firms_per_industry = industry_data["industry_vectors"]["Number of Firms"].values
         n_firms = n_firms_per_industry.sum()
 
@@ -107,8 +107,8 @@ class DefaultSyntheticFirms(SyntheticFirms):
             capital_inputs_productivity_matrix,
             total_firm_deposits,
             total_firm_debt,
-            assume_zero_initial_debt,
-            assume_zero_initial_deposits,
+            zero_initial_debt,
+            zero_initial_deposits,
             capital_inputs_utilisation_rate,
             initial_inventory_to_input_fraction,
             intermediate_inputs_utilisation_rate,

@@ -139,7 +139,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         total_unemployment_benefits: float,
         rent_as_fraction_of_unemployment_rate: float = 0.25,
         n_quantiles: int = 5,
-    ):
+    ) -> "SyntheticHFCSPopulation":
         """
         Creates a synthetic population from data readers.
 
