@@ -1,7 +1,9 @@
 import pathlib
 
+
 import pytest
 
+from inet_data.configuration.countries import Country
 from inet_data.readers.default_readers import DataReaders
 from inet_data.readers.util.exogenous_data import create_all_exogenous_data
 from inet_data.readers.util.industry_extraction import compile_industry_data, compile_exogenous_industry_data
@@ -33,12 +35,14 @@ def configuration3():
 
 @pytest.fixture(scope="module", name="readers")
 def readers(data_path):
+    france = Country("FRA")
     readers = DataReaders.from_raw_data(
         raw_data_path=data_path,
         country_names=["FRA"],
         country_names_short=["FR"],
         simulation_year=2014,
-        scale_dict=100000,
+        # need to put in Afghanistan because that is used in tests...
+        scale_dict={france: 100000, "AFG": 100000},
         industries=[
             "A",
             "B",
@@ -66,7 +70,9 @@ def readers(data_path):
 
 @pytest.fixture(scope="module", name="industry_data")
 def industry_data(readers):
-    return compile_industry_data(year=2014, readers=readers, country_names=["FRA"], single_firm_per_industry=True)
+    return compile_industry_data(
+        year=2014, readers=readers, country_names=["FRA"], single_firm_per_industry={"FRA": True}
+    )
 
 
 @pytest.fixture(scope="module", name="exogenous_industry_data")

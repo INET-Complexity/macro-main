@@ -27,6 +27,8 @@ from inet_data.processing import (
     match_households_with_banks,
     set_housing_df,
     match_individuals_with_firms_country,
+)
+from inet_data.processing.synthetic_credit_market.default_synthetic_credit_market import (
     create_firm_loan_df,
     create_household_loan_df,
     create_mortgage_loan_df,

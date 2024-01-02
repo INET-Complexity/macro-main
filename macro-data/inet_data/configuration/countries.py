@@ -1,10 +1,15 @@
 from enum import StrEnum
+from pathlib import Path
 import yaml
 
-with open("3_codes.yaml", "r") as f:
+
+# get this file's directory path
+THIS_FILE_PATH = Path(__file__).parent.resolve()
+
+with open(THIS_FILE_PATH / "3_codes.yaml", "r") as f:
     country_codes = yaml.safe_load(f)
 
-with open("country_names.yaml", "r") as f:
+with open(THIS_FILE_PATH / "country_names.yaml", "r") as f:
     country_names = yaml.safe_load(f)
 
 

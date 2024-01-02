@@ -1,11 +1,13 @@
 from dataclasses import dataclass
 
 import pandas as pd
+from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 
-from inet_data.processing import (
-    SyntheticFirms,
-    SyntheticPopulation,
-    SyntheticBanks,
+from inet_data.processing.synthetic_population.synthetic_population import SyntheticPopulation
+
+from inet_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
+
+from inet_data.processing.synthetic_credit_market.default_synthetic_credit_market import (
     create_firm_loan_df,
     create_household_loan_df,
     create_mortgage_loan_df,
