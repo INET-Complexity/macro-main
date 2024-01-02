@@ -58,7 +58,7 @@ class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
         country_name: str,
         year: int,
         exogenous_country_data: Optional[dict[str, pd.DataFrame]],
-        industry_data: dict[str, dict[str, pd.DataFrame]],
+        industry_data: dict[str, pd.DataFrame],
         single_government_entity: bool,
     ):
         create_model = False
@@ -76,17 +76,13 @@ class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
         else:
             total_gov_consumption_growth = None
 
-        monthly_govt_consumption_in_usd = industry_data[country_name]["industry_vectors"][
-            "Government Consumption in USD"
-        ].values
-        monthly_govt_consumption_in_lcu = industry_data[country_name]["industry_vectors"][
-            "Government Consumption in LCU"
-        ].values
-        total_monthly_va_lcu = industry_data[country_name]["industry_vectors"]["Value Added in LCU"].sum()
+        monthly_govt_consumption_in_usd = industry_data["industry_vectors"]["Government Consumption in USD"].values
+        monthly_govt_consumption_in_lcu = industry_data["industry_vectors"]["Government Consumption in LCU"].values
+        total_monthly_va_lcu = industry_data["industry_vectors"]["Value Added in LCU"].sum()
         total_number_of_firms = int(
             readers.oecd_econ.read_business_demography(
                 country=country_name,
-                output=pd.Series(industry_data[country_name]["industry_vectors"]["Output"].values),
+                output=pd.Series(industry_data["industry_vectors"]["Output"].values),
                 year=year,
             ).sum()
         )

@@ -134,7 +134,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         country_name_short: str,
         scale: int,
         year: int,
-        industry_data: dict[str, dict],
+        industry_data: dict[str, pd.DataFrame],
         industries: list[str],
         total_unemployment_benefits: float,
         rent_as_fraction_of_unemployment_rate: float = 0.25,
@@ -211,7 +211,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             household_data[field] = np.nan
 
         social_housing_rent = rent_as_fraction_of_unemployment_rate * total_unemployment_benefits / n_unemployed
-        consumption_weights = industry_data[country_name]["industry_vectors"]["Household Consumption Weights"].values
+        consumption_weights = industry_data["industry_vectors"]["Household Consumption Weights"].values
         consumption_weights_by_income = np.zeros((n_quantiles, len(consumption_weights)))
         for i in range(n_quantiles):
             consumption_weights_by_income[i] = consumption_weights

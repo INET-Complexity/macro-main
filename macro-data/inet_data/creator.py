@@ -153,7 +153,7 @@ class Creator:
                 country_name=country,
                 year=year,
                 exogenous_country_data=exogenous_data.get(country, None) if exogenous_data else None,
-                industry_data=industry_data,
+                industry_data=industry_data[country],
                 single_government_entity=single_government_entity,
             )
             for country in country_names
@@ -171,7 +171,7 @@ class Creator:
                 year=year,
                 scale=scale,
                 industries=industries,
-                industry_data=industry_data,
+                industry_data=industry_data[country],
                 total_unemployment_benefits=total_unemployment_benefits[country],
             )
             for (country, country_short) in zip(country_names, country_names_short)
