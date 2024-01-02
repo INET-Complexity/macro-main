@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 
 from inet_data.processing.synthetic_central_bank.synthetic_central_bank import (

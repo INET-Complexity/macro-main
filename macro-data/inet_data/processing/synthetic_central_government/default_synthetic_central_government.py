@@ -3,12 +3,9 @@ from typing import Optional
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 from inet_data.processing.synthetic_central_government.synthetic_central_government import (
     SyntheticCentralGovernment,
 )
-from inet_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
-from inet_data.processing.synthetic_population.synthetic_population import SyntheticPopulation
 from inet_data.readers.default_readers import DataReaders
 
 

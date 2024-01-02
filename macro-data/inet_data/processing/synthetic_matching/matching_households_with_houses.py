@@ -5,9 +5,6 @@ from scipy.optimize import linear_sum_assignment as lsa
 from sklearn.experimental import enable_iterative_imputer  # noqa
 from sklearn.impute import IterativeImputer  # noqa
 
-from inet_data.processing.synthetic_housing_market.synthetic_housing_market import (
-    SyntheticHousingMarket,
-)
 from inet_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
 )

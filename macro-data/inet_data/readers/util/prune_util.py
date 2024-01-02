@@ -1,5 +1,4 @@
-import warnings
-from datetime import datetime
+from datetime import date
 from typing import Optional
 
 import pandas as pd
@@ -11,7 +10,7 @@ class DataFilterWarning(Warning):
 
 def prune_index(
     index: pd.Index,
-    prune_date: str | datetime | int,
+    prune_date: date,
     dataset_name: Optional[str] = None,
     date_format: str = "%Y-%m-%d",
 ) -> list[str]:
@@ -23,16 +22,10 @@ def prune_index(
      2. The values that can be parsed as a date and are greater than or equal to the date provided
     """
 
-    # if date is str, convert to datetime
-    if isinstance(prune_date, str):
-        prune_date = pd.to_datetime(prune_date, format="%Y-%m-%d")
-    elif isinstance(prune_date, int):
-        prune_date = pd.to_datetime(str(prune_date), format="%Y")
-
     # identify indices of columns that can be parsed as a date
     as_datetime = pd.to_datetime(index, errors="coerce")
 
     non_date_cols = list(index[as_datetime.isna()])
-    selected_date_cols = list(index[as_datetime >= prune_date])
+    selected_date_cols = list(index[as_datetime >= pd.to_datetime(prune_date)])
 
     return non_date_cols + selected_date_cols

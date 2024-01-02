@@ -1,10 +1,11 @@
+import pickle as pkl
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import pickle as pkl
 
+from inet_data.configuration import Configuration
 from inet_data.processing import (
     SyntheticPopulation,
     SyntheticFirms,
@@ -30,9 +31,8 @@ from inet_data.processing import (
     create_household_loan_df,
     create_mortgage_loan_df,
 )
-
 from inet_data.readers import DataReaders, compile_industry_data, create_all_exogenous_data
-from inet_data.util import process_config, get_map_long_to_short, initial_interest_rates
+from inet_data.util import get_map_long_to_short
 
 
 @dataclass
@@ -62,7 +62,7 @@ class Creator:
     @classmethod
     def default_init(
         cls,
-        configuration: str | Path | dict,
+        configuration: Configuration,
         raw_data_path: Path | str,
         random_seed: int = 0,
         create_exogenous_industry_data: bool = True,
@@ -72,56 +72,51 @@ class Creator:
         if isinstance(raw_data_path, str):
             raw_data_path = Path(raw_data_path)
 
-        configuration = process_config(configuration)
         np.random.seed(random_seed)
 
-        country_names = configuration["model"]["country_names"]["value"]
+        country_names = configuration.countries
         country_names_short = list(map(get_map_long_to_short(raw_data_path).get, country_names))
-        industries = configuration["model"]["industries"]["value"]
-        scale = configuration["model"]["scale"]["value"]
-        year = configuration["model"]["year"]["value"]
-        single_firm_per_industry = configuration["model"]["single_firm_per_industry"]["value"]
-        single_government_entity = configuration["model"]["single_government_entity"]["value"]
+        industries = configuration.industries
+        scale = configuration.scale
+        year = configuration.year
+        single_firm_per_industry = configuration.single_firm_per_industry
+        single_government_entity = configuration.single_government_entity
         assume_zero_initial_deposits = {
-            country_name: configuration["init"][country_name]["firms"]["parameters"]["assume_zero_initial_deposits"][
-                "value"
-            ]
+            country_name: configuration.country_configs[country_name].firms_configuration.zero_initial_deposits
             for country_name in country_names
         }
         assume_zero_initial_debt = {
-            country_name: configuration["init"][country_name]["firms"]["parameters"]["assume_zero_initial_debt"][
-                "value"
-            ]
+            country_name: configuration.country_configs[country_name].firms_configuration.zero_initial_debt
             for country_name in country_names
         }
-        single_bank = configuration["model"]["single_bank"]["value"]
+        single_bank = configuration.single_bank
 
         firm_loan_maturity = {
-            country: configuration["init"][country]["banks"]["parameters"]["long_term_firm_loan_maturity"]["value"]
+            country: configuration.country_configs[country].banks_configuration.long_term_firm_loan_maturity
             for country in country_names
         }
 
         hh_consumption_maturity = {
-            country: configuration["init"][country]["banks"]["parameters"][
-                "household_consumption_expansion_loan_maturity"
-            ]["value"]
+            country: configuration.country_configs[country].banks_configuration.consumption_exp_loan_maturity
             for country in country_names
         }
 
         mortgage_maturity = {
-            country: configuration["init"][country]["banks"]["parameters"]["mortgage_maturity"]["value"]
+            country: configuration.country_configs[country].banks_configuration.mortgage_maturity
             for country in country_names
         }
 
-        interest_rate_data = {country: initial_interest_rates(configuration, country) for country in country_names}
+        interest_rate_data = {
+            country: dict(configuration.country_configs[country].banks_configuration.interest_rates)
+            for country in country_names
+        }
 
         assume_zero_firm_debt = {
-            country: configuration["init"][country]["firms"]["parameters"]["assume_zero_initial_debt"]["value"]
+            country: configuration.country_configs[country].firms_configuration.zero_initial_debt
             for country in country_names
         }
 
-        prune_date = configuration["model"]["prune_date"]["value"]
-        prune_date_format = configuration["model"]["prune_date"]["format"]
+        prune_date = configuration.prune_date
         readers = DataReaders.from_raw_data(
             raw_data_path=raw_data_path,
             country_names=country_names,
@@ -132,7 +127,6 @@ class Creator:
             prune_date=prune_date,
             create_exogenous_industry_data=create_exogenous_industry_data,
             force_single_hfcs_survey=single_hfcs_survey,
-            prune_date_format=prune_date_format,
         )
 
         industry_data = compile_industry_data(

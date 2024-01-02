@@ -135,9 +135,9 @@ class SyntheticBanks(ABC):
     def initialise_rates_profits_liabilities(
         self,
         readers: DataReaders,
-        bank_markup_interest_rate_household_consumption_loans: float,
-        bank_markup_interest_rate_mortgages: float,
-        bank_markup_interest_rate_overdraft_household: float,
+        consumption_loans_markup: float,
+        mortgage_markup: float,
+        household_overdraft_markup: float,
     ):
         policy_rate = readers.policy_rates.cb_policy_rate(self.country_name, self.year)
 
@@ -155,10 +155,10 @@ class SyntheticBanks(ABC):
             bank_markup_interest_rate_short_term_firm_loans=bank_markup_interest_rate_short_term_firm_loans,
             bank_markup_interest_rate_long_term_firm_loans=bank_markup_interest_rate_long_term_firm_loans,
             bank_markup_interest_rate_household_payday_loans=bank_markup_interest_rate_household_payday_loans,
-            bank_markup_interest_rate_household_consumption_loans=bank_markup_interest_rate_household_consumption_loans,
-            bank_markup_interest_rate_mortgages=bank_markup_interest_rate_mortgages,
+            bank_markup_interest_rate_household_consumption_loans=consumption_loans_markup,
+            bank_markup_interest_rate_mortgages=mortgage_markup,
             bank_markup_interest_rate_overdraft_firm=bank_markup_interest_rate_overdraft_firm,
-            bank_markup_interest_rate_overdraft_household=bank_markup_interest_rate_overdraft_household,
+            bank_markup_interest_rate_overdraft_household=household_overdraft_markup,
         )
 
         self.set_interest_received_from_loans()

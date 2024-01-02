@@ -1,5 +1,5 @@
 import warnings
-from datetime import datetime
+from datetime import date
 from pathlib import Path
 from typing import Optional
 
@@ -435,22 +435,12 @@ class EuroStatReader:
         fractions["ROW"] = np.mean(list(fractions.values()))  # c'est la vie
         return fractions
 
-    def prune(self, prune_date: str | int | datetime, prune_date_format: str = "%Y-%m-%d"):
-        # Convert prune_date to datetime
-        if isinstance(prune_date, str):
-            prune_date = datetime.strptime(prune_date, prune_date_format)
-        elif isinstance(prune_date, int):
-            prune_date = datetime.strptime(str(prune_date), "%Y")
-        elif isinstance(prune_date, datetime):
-            pass
-        else:
-            raise ValueError(f"prune_date must be a str, int, or datetime, not {type(prune_date)}.")
-
+    def prune(self, prune_date: date):
         # Eurostat
         for key, value in self.data.items():
             if "TIME_PERIOD" in value.columns:
                 dates = value["TIME_PERIOD"].apply(convert_date)
-                mask = dates >= prune_date
+                mask = dates.dt.date >= prune_date
                 if mask.sum() == 0:
                     warnings.warn(
                         f"No rows were kept for date {prune_date} in Eurostat dataset {key}.",

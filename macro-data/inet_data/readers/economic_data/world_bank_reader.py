@@ -1,6 +1,7 @@
-import warnings
-from pathlib import Path
 import logging
+import warnings
+from datetime import date
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -207,22 +208,16 @@ class WorldBankReader:
         inflation_data.columns = ["Real CPI Inflation", "Real PPI Inflation"]
         return inflation_data
 
-    def prune(self, prune_date: int | str | pd.Timestamp, prune_date_format: str = "%Y-%m-%d") -> None:
+    def prune(self, prune_date: date) -> None:
         """
         Prunes the data based on a given prune date.
 
         Parameters:
-            prune_date (int | str | pd.Timestamp): The date to prune the data. Can be an integer, string, or pandas Timestamp.
-            prune_date_format (str): The format of the prune_date if it is a string. Default is "%Y-%m-%d".
+            prune_date (date): The date to prune the data. Can be an integer, string, or pandas Timestamp.
 
         Returns:
             None
         """
-
-        if isinstance(prune_date, str):
-            prune_date = pd.to_datetime(prune_date, format=prune_date_format)
-        elif isinstance(prune_date, int):
-            prune_date = pd.to_datetime(str(prune_date), format="%Y")
 
         for key, value in self.data.items():
             years_as_columns = True
@@ -233,7 +228,7 @@ class WorldBankReader:
                     dates = pd.to_datetime(value[col], errors="coerce", format="mixed")
                     if dates.isnull().sum() == 0:
                         logging.log(level=logging.DEBUG, msg=f"WBank: NAT dates {dates.isna().sum()}.")
-                        mask = dates >= prune_date
+                        mask = dates >= pd.to_datetime(prune_date)
                         if mask.sum() == 0:
                             warnings.warn(
                                 f"No rows were kept for date {prune_date} in World Bank dataset {key}.",

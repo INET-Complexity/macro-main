@@ -1,7 +1,18 @@
-from typing import Any, Union
-from pathlib import Path
-import yaml
 from copy import deepcopy
+from pathlib import Path
+from typing import Any, Union
+
+import yaml
+
+
+def split_country_configs(country_config: dict) -> dict[str, Any]:
+    new_config = {}
+    for key, value in country_config.items():
+        # Split the key by '&' and assign the same value to each country code
+        countries = key.split("&")
+        for country in countries:
+            new_config[country] = value
+    return new_config
 
 
 def process_config(config_path: str | Path | dict) -> dict[str, Any]:

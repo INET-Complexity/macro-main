@@ -1,12 +1,21 @@
+import yaml
+
 from inet_data import Creator
 from pathlib import Path
 import tempfile
+
+from inet_data.configuration import Configuration
 
 TEST_PATH = Path(__file__).parent.parent.resolve()
 
 
 class TestCreator:
-    def test__create(self, configuration):
+    def test__create(self, data_config_path):
+        with open(data_config_path, "r") as f:
+            config_dict = yaml.safe_load(f)
+        # not necessary to do the country splitting here
+        # since the fixture used only has one country key
+        configuration = Configuration(**config_dict)
         raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
         creator = Creator.default_init(
             configuration=configuration,
