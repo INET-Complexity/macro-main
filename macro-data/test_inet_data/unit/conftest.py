@@ -38,7 +38,7 @@ def readers(data_path):
         country_names=["FRA"],
         country_names_short=["FR"],
         simulation_year=2014,
-        scale=100000,
+        scale_dict=100000,
         industries=[
             "A",
             "B",

@@ -51,14 +51,12 @@ class SyntheticCountry:
         cls,
         country: Country,
         year: int,
-        scale: int,
         country_configuration: CountryConfiguration,
         industry: list[str],
         readers: DataReaders,
         exogenous_country_data: Optional[dict[str, pd.DataFrame]],
         country_industry_data: dict[str, pd.DataFrame],
         year_range: int,
-        single_government_entity: bool,
     ):
         central_government = DefaultSyntheticCGovernment.from_readers(readers, country, year, year_range=year_range)
 
@@ -70,7 +68,7 @@ class SyntheticCountry:
             year=year,
             exogenous_country_data=exogenous_country_data,
             industry_data=country_industry_data,
-            single_government_entity=single_government_entity,
+            single_government_entity=country_configuration.single_government_entity,
         )
 
         central_bank = DefaultSyntheticCentralBank.from_readers(country, year, readers)
@@ -81,7 +79,7 @@ class SyntheticCountry:
             year=year,
             industry_data=country_industry_data,
             industries=industry,
-            scale=scale,
+            scale=country_configuration.scale,
             total_unemployment_benefits=total_unemployment_benefits,
             country_name_short=country.to_two_letter_code(),
         )
@@ -94,6 +92,4 @@ class SyntheticCountry:
             industries=industry,
             scale=scale,
             n_employees_per_industry=population.n_employees_per_industry,
-            single_firm_per_industry=country_configuration.firms_configuratio,
-            single_bank=country_configuration.single_bank,
         )

@@ -77,10 +77,8 @@ class Creator:
         country_names = configuration.countries
         country_names_short = list(map(get_map_long_to_short(raw_data_path).get, country_names))
         industries = configuration.industries
-        scale = configuration.scale
         year = configuration.year
-        single_firm_per_industry = configuration.single_firm_per_industry
-        single_government_entity = configuration.single_government_entity
+
         assume_zero_initial_deposits = {
             country_name: configuration.country_configs[country_name].firms_configuration.zero_initial_deposits
             for country_name in country_names
@@ -89,7 +87,6 @@ class Creator:
             country_name: configuration.country_configs[country_name].firms_configuration.zero_initial_debt
             for country_name in country_names
         }
-        single_bank = configuration.single_bank
 
         firm_loan_maturity = {
             country: configuration.country_configs[country].banks_configuration.long_term_firm_loan_maturity
@@ -116,6 +113,8 @@ class Creator:
             for country in country_names
         }
 
+        scale_dict = {country: configuration.country_configs[country].scale for country in country_names}
+
         prune_date = configuration.prune_date
         readers = DataReaders.from_raw_data(
             raw_data_path=raw_data_path,
@@ -123,14 +122,18 @@ class Creator:
             country_names_short=country_names_short,
             industries=industries,
             simulation_year=year,
-            scale=scale,
+            scale_dict=scale_dict,
             prune_date=prune_date,
             create_exogenous_industry_data=create_exogenous_industry_data,
             force_single_hfcs_survey=single_hfcs_survey,
         )
 
+        single_firm_dict = {
+            country: configuration.country_configs[country].single_firm_per_industry for country in country_names
+        }
+        # TODO refactor this to get a dict
         industry_data = compile_industry_data(
-            year=year, readers=readers, country_names=country_names, single_firm_per_industry=single_firm_per_industry
+            year=year, readers=readers, country_names=country_names, single_firm_per_industry=single_firm_dict
         )
 
         exogenous_data = create_all_exogenous_data(readers, country_names) if create_exogenous_industry_data else None
@@ -154,7 +157,7 @@ class Creator:
                 year=year,
                 exogenous_country_data=exogenous_data.get(country, None) if exogenous_data else None,
                 industry_data=industry_data[country],
-                single_government_entity=single_government_entity,
+                single_government_entity=configuration.country_configs[country].single_government_entity,
             )
             for country in country_names
         }
@@ -169,7 +172,7 @@ class Creator:
                 country_name=country,
                 country_name_short=country_short,
                 year=year,
-                scale=scale,
+                scale=scale_dict[country],
                 industries=industries,
                 industry_data=industry_data[country],
                 total_unemployment_benefits=total_unemployment_benefits[country],
@@ -187,18 +190,18 @@ class Creator:
                 assume_zero_initial_debt=assume_zero_initial_debt[country],
                 industries=industries,
                 n_employees_per_industry=synthetic_population[country].number_employees_by_industry,
-                scale=scale,
+                scale=scale_dict[country],
             )
             for country in country_names
         }
 
         synthetic_banks = {
             country: DefaultSyntheticBanks.from_readers(
-                single_bank=single_bank,
+                single_bank=configuration.country_configs[country].single_bank,
                 country_name=country,
                 year=year,
                 readers=readers,
-                scale=scale,
+                scale=scale_dict[country],
             )
             for country in country_names
         }
