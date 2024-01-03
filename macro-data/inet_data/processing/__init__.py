@@ -26,3 +26,5 @@ from .synthetic_population.hfcs_synthetic_population import SyntheticHFCSPopulat
 from .synthetic_population.synthetic_population import SyntheticPopulation
 from .synthetic_rest_of_the_world.default_synthetic_rest_of_the_world import DefaultSyntheticRestOfTheWorld
 from .synthetic_rest_of_the_world.synthetic_rest_of_the_world import SyntheticRestOfTheWorld
+
+from .synthetic_country import SyntheticCountry
