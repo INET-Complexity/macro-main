@@ -13,7 +13,7 @@ PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 
 class TestSyntheticPopulation:
     def test__init(self, readers, configuration, industry_data):
-        industries = configuration["model"]["industries"]["value"]
+        industries = configuration.industries
 
         population = SyntheticHFCSPopulation.from_readers(
             readers=readers,

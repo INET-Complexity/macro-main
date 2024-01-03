@@ -2,7 +2,9 @@ import pathlib
 
 
 import pytest
+import yaml
 
+from inet_data.configuration import Configuration
 from inet_data.configuration.countries import Country
 from inet_data.readers.default_readers import DataReaders
 from inet_data.readers.util.exogenous_data import create_all_exogenous_data
@@ -20,7 +22,13 @@ def data_path():
 
 @pytest.fixture(scope="module", name="configuration")
 def configuration():
-    return process_config(config_path=PARENT / "default_unit_test.yaml")
+    data_config_path = PARENT / "default_data_config.yaml"
+    with open(data_config_path, "r") as f:
+        config_dict = yaml.safe_load(f)
+        # not necessary to do the country splitting here
+        # since the fixture used only has one country key
+    configuration = Configuration(**config_dict)
+    return configuration
 
 
 @pytest.fixture(scope="module", name="data_config_path")
