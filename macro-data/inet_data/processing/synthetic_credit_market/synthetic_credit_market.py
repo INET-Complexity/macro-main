@@ -14,30 +14,19 @@ from inet_data.processing.synthetic_credit_market.default_synthetic_credit_marke
 )
 
 
-credit_market_columns = [
-    "loan_type",
-    "loan_value_initial",
-    "loan_value",
-    "loan_bank_id",
-    "loan_recipient_id",
-    "loan_interest_rate",
-    "loan_maturity",
-]
-
-
 @dataclass
 class SyntheticCreditMarket:
     """
     Represents a synthetic credit market for a specific country and year.
 
     The credit market data is stored in a pandas DataFrame with the following columns:
-    - loan_type: The type of the loan (2 for firm loans, 4 for household loans, 5 for mortgage loans).
-    - loan_value_initial Initial: The initial value of the loan.
-    - loan_value: The current value of the loan.
-    - loan_bank_id: The ID of the bank that issued the loan.
-    - loan_recipient_id: The ID of the loan recipient.
-    - loan_interest_rate: The interest rate of the loan.
-    - loan_maturity: The maturity of the loan (in months).
+        - loan_type: The type of the loan (2 for firm loans, 4 for household loans, 5 for mortgage loans).
+        - loan_value_initial Initial: The initial value of the loan.
+        - loan_value: The current value of the loan.
+        - loan_bank_id: The ID of the bank that issued the loan.
+        - loan_recipient_id: The ID of the loan recipient.
+        - loan_interest_rate: The interest rate of the loan.
+        - loan_maturity: The maturity of the loan (in months).
 
 
     Attributes:

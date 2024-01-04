@@ -9,29 +9,29 @@ class SyntheticFirms(ABC):
     Represents a synthetic firms object.
 
     The firm data is stored in a pandas DataFrame with the following columns:
-    - Industry: The industry of the firm.
-    - Number of Employees: The number of employees of the firm.
-    - Total Wages: The total wages of the firm.
-    - Total Wages Paid: The total wages paid by the firm.
-    - Production: The production of the firm (in LCU).
-    - Price in USD: The price of the firm (in USD).
-    - Price: The price of the firm (in LCU).
-    - Labour Inputs: The labour inputs of the firm (in LCU).
-    - Inventory: The inventory of the firm (in LCU).
-    - Demand: The demand of the firm (in LCU).
-    - Deposits: The deposits of the firm (in LCU).
-    - Debt: The debt of the firm (in LCU).
-    - Equity: The equity of the firm (in LCU).
-    - Employees ID: The IDs of the employees of the firm.
-    - Corresponding Bank ID: The ID of the corresponding bank of the firm.
-    - Taxes paid on Production: The taxes paid on production of the firm (in LCU).
-    - Interest paid on deposits: The interest paid on deposits of the firm (in LCU).
-    - Interest paid on loans: The interest paid on loans of the firm (in LCU).
-    - Interest paid: The interest paid of the firm (in LCU).
-    - Profits: The profits of the firm (in LCU).
-    - Unit Costs: The unit costs of the firm (in LCU).
-    - Corporate Taxes Paid: The corporate taxes paid of the firm (in LCU).
-    - Debt Installments: The debt installments of the firm (in LCU).
+        - Industry: The industry of the firm.
+        - Number of Employees: The number of employees of the firm.
+        - Total Wages: The total wages of the firm.
+        - Total Wages Paid: The total wages paid by the firm.
+        - Production: The production of the firm (in LCU).
+        - Price in USD: The price of the firm (in USD).
+        - Price: The price of the firm (in LCU).
+        - Labour Inputs: The labour inputs of the firm (in LCU).
+        - Inventory: The inventory of the firm (in LCU).
+        - Demand: The demand of the firm (in LCU).
+        - Deposits: The deposits of the firm (in LCU).
+        - Debt: The debt of the firm (in LCU).
+        - Equity: The equity of the firm (in LCU).
+        - Employees ID: The IDs of the employees of the firm.
+        - Corresponding Bank ID: The ID of the corresponding bank of the firm.
+        - Taxes paid on Production: The taxes paid on production of the firm (in LCU).
+        - Interest paid on deposits: The interest paid on deposits of the firm (in LCU).
+        - Interest paid on loans: The interest paid on loans of the firm (in LCU).
+        - Interest paid: The interest paid of the firm (in LCU).
+        - Profits: The profits of the firm (in LCU).
+        - Unit Costs: The unit costs of the firm (in LCU).
+        - Corporate Taxes Paid: The corporate taxes paid of the firm (in LCU).
+        - Debt Installments: The debt installments of the firm (in LCU).
 
     Args:
         country_name (str): The name of the country.

@@ -15,22 +15,22 @@ class SyntheticCentralGovernment(ABC):
     Represents a synthetic central government.
 
     The central government data is stored in a pandas DataFrame with the following columns:
-    - Total Unemployment Benefits: The total unemployment benefits.
-    - Other Social Benefits: All other social benefits.
-    - Debt: Central government debt.
-    - Bank Equity Injection: The equity injection into the banks.
-    - Total Social Housing Rent: The total social housing rent.
-    - Taxes on Production: The taxes on production.
-    - VAT: Value-Added Tax.
-    - Capital Formation Taxes: The capital formation taxes.
-    - Export Taxes: The export taxes.
-    - Corporate Taxes: The corporate taxes.
-    - Employer SI Tax: The employer social insurance tax.
-    - Employee SI Tax: The employee social insurance tax.
-    - Income Taxes: The income taxes.
-    - Rental Income Taxes: The rental income taxes.
-    - Revenue: The total revenue.
-    - Taxes on Products: The taxes on products.
+        - Total Unemployment Benefits: The total unemployment benefits.
+        - Other Social Benefits: All other social benefits.
+        - Debt: Central government debt.
+        - Bank Equity Injection: The equity injection into the banks.
+        - Total Social Housing Rent: The total social housing rent.
+        - Taxes on Production: The taxes on production.
+        - VAT: Value-Added Tax.
+        - Capital Formation Taxes: The capital formation taxes.
+        - Export Taxes: The export taxes.
+        - Corporate Taxes: The corporate taxes.
+        - Employer SI Tax: The employer social insurance tax.
+        - Employee SI Tax: The employee social insurance tax.
+        - Income Taxes: The income taxes.
+        - Rental Income Taxes: The rental income taxes.
+        - Revenue: The total revenue.
+        - Taxes on Products: The taxes on products.
 
     Attributes:
         country_name (str): The name of the country.

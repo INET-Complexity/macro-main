@@ -13,30 +13,30 @@ class SyntheticBanks(ABC):
     Abstract base class representing a collection of synthetic banks.
 
     The bank data is stored in a pandas DataFrame with the following columns (one row per bank):
-    - Equity: The equity of the bank.
-    - Corresponding Firms ID: The IDs of the firms corresponding to the bank.
-    - Corresponding Households ID: The IDs of the households corresponding to the bank.
-    - Deposits from Households: The deposits from households.
-    - Mortgages to Households: The mortgages to households.
-    - Consumption Loans to Households: The consumption loans to households.
-    - Deposits from Firms: The deposits from firms.
-    - Loans to Firms: The loans to firms.
-    - Deposits: The deposits.
-    - Short-Term Interest Rates on Firm Loans: The short-term interest rates on firm loans.
-    - Long-Term Interest Rates on Firm Loans: The long-term interest rates on firm loans.
-    - Interest Rates on Household Payday Loans: The interest rates on household payday loans.
-    - Interest Rates on Household Consumption Loans: The interest rates on household consumption loans.
-    - Interest Rates on Mortgages: The interest rates on mortgages.
-    - Interest Rates on Firm Deposits: The interest rates on firm deposits.
-    - Overdraft Rate on Firm Deposits: The overdraft rate on firm deposits.
-    - Interest Rates on Household Deposits: The interest rates on household deposits.
-    - Overdraft Rate on Household Deposits: The overdraft rate on household deposits.
-    - Interest received from Loans: The interest received from loans.
-    - Interest received from Deposits: The interest received from deposits.
-    - Profits: The profits.
-    - Corporate Taxes Paid: The corporate taxes paid.
-    - Liability: The liability.
-    - Market Share: The market share.
+        - Equity: The equity of the bank.
+        - Corresponding Firms ID: The IDs of the firms corresponding to the bank.
+        - Corresponding Households ID: The IDs of the households corresponding to the bank.
+        - Deposits from Households: The deposits from households.
+        - Mortgages to Households: The mortgages to households.
+        - Consumption Loans to Households: The consumption loans to households.
+        - Deposits from Firms: The deposits from firms.
+        - Loans to Firms: The loans to firms.
+        - Deposits: The deposits.
+        - Short-Term Interest Rates on Firm Loans: The short-term interest rates on firm loans.
+        - Long-Term Interest Rates on Firm Loans: The long-term interest rates on firm loans.
+        - Interest Rates on Household Payday Loans: The interest rates on household payday loans.
+        - Interest Rates on Household Consumption Loans: The interest rates on household consumption loans.
+        - Interest Rates on Mortgages: The interest rates on mortgages.
+        - Interest Rates on Firm Deposits: The interest rates on firm deposits.
+        - Overdraft Rate on Firm Deposits: The overdraft rate on firm deposits.
+        - Interest Rates on Household Deposits: The interest rates on household deposits.
+        - Overdraft Rate on Household Deposits: The overdraft rate on household deposits.
+        - Interest received from Loans: The interest received from loans.
+        - Interest received from Deposits: The interest received from deposits.
+        - Profits: The profits.
+        - Corporate Taxes Paid: The corporate taxes paid.
+        - Liability: The liability.
+        - Market Share: The market share.
 
 
     Attributes:
