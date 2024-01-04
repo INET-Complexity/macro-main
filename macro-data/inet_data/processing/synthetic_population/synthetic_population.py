@@ -6,9 +6,89 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 
 
+RESTRICT_COLS = [
+    "Type",
+    "Corresponding Individuals ID",
+    "Corresponding Bank ID",
+    "Corresponding Inhabited House ID",
+    "Corresponding Renters",
+    "Corresponding Property Owner",
+    "Corresponding Additionally Owned Houses ID",
+    "Income",
+    "Employee Income",
+    "Regular Social Transfers",
+    "Rental Income from Real Estate",
+    "Income from Financial Assets",
+    "Saving Rate",
+    "Rent Paid",
+    "Rent Imputed",
+    "Wealth",
+    "Net Wealth",
+    "Wealth in Real Assets",
+    "Value of the Main Residence",
+    "Value of other Properties",
+    "Wealth Other Real Assets",
+    "Wealth in Deposits",
+    "Wealth in Other Financial Assets",
+    "Wealth in Financial Assets",
+    "Outstanding Balance of HMR Mortgages",
+    "Outstanding Balance of Mortgages on other Properties",
+    "Outstanding Balance of other Non-Mortgage Loans",
+    "Debt",
+    "Debt Installments",
+    "Tenure Status of the Main Residence",
+    "Number of Properties other than Household Main Residence",
+]
+
+
 class SyntheticPopulation(ABC):
     """
     Represents a synthetic population for a specific country and year.
+
+    The household data is a pandas data frame with the following columns:
+        - Type: The type of the household (1: single, 2: couple, 3: single parent, 4: couple with children).
+        - Corresponding Individuals ID: The IDs of the individuals in the household.
+        - Corresponding Bank ID: The ID of the bank the household is associated with.
+        - Corresponding Inhabited House ID: The ID of the house the household inhabits.
+        - Corresponding Renters: The IDs of the individuals in the household who rent.
+        - Corresponding Property Owner: The IDs of the individuals in the household who own property.
+        - Corresponding Additionally Owned Houses ID: The IDs of the houses the household owns.
+        - Income: The total income of the household.
+        - Employee Income: The income of the household from employment.
+        - Regular Social Transfers: The income of the household from social transfers.
+        - Rental Income from Real Estate: The income of the household from rental of real estate.
+        - Income from Financial Assets: The income of the household from financial assets.
+        - Saving Rate: The saving rate of the household.
+        - Rent Paid: The rent paid by the household.
+        - Rent Imputed: The imputed rent of the household.
+        - Wealth: The total wealth of the household.
+        - Net Wealth: The net wealth of the household.
+        - Wealth in Real Assets: The wealth of the household in real assets.
+        - Value of the Main Residence: The value of the main residence of the household.
+        - Value of other Properties: The value of other properties of the household.
+        - Wealth Other Real Assets: The wealth of the household in other real assets.
+        - Wealth in Deposits: The wealth of the household in deposits.
+        - Wealth in Other Financial Assets: The wealth of the household in other financial assets.
+        - Wealth in Financial Assets: The wealth of the household in financial assets.
+        - Outstanding Balance of HMR Mortgages: The outstanding balance of the household's HMR mortgages.
+        - Outstanding Balance of Mortgages on other Properties: The outstanding balance of the household's mortgages on other properties.
+        - Outstanding Balance of other Non-Mortgage Loans: The outstanding balance of the household's other non-mortgage loans.
+        - Debt: The total debt of the household.
+        - Debt Installments: The debt installments of the household (monthly payments of debt).
+        - Tenure Status of the Main Residence: The tenure status of the main residence of the household.
+        - Number of Properties other than Household Main Residence: The number of properties other than the household's main residence.
+
+    The individual data is a pandas data frame with the following columns:
+        - Gender: The gender of the individual (1: male, 2: female)
+        - Age: The age of the individual.
+        - Education: The education level of the individual (ISCED classification).
+        - Activity Status: The activity status of the individual (1: employed, 2: unemployed, 3: not economically active).
+        - Employment Industry: The industry of the individual's employment.
+        - Employee Income: The income of the individual from employment.
+        - Income from Unemployment Benefits: The income of the individual from unemployment benefits.
+        - Income: The total income of the individual.
+        - Corresponding Household ID: The ID of the household the individual belongs to.
+        - Corresponding Firm ID: The ID of the firm the individual works for.
 
     Attributes:
         country_name (str): The name of the country.
@@ -136,9 +216,7 @@ class SyntheticPopulation(ABC):
         ...
 
     @abstractmethod
-    def set_household_saving_rates(
-        self, function_name: str = "AverageSavingRatesSetter", independents: Optional[list[str]] = None
-    ) -> None:
+    def set_household_saving_rates(self, independents: Optional[list[str]] = None) -> None:
         ...
 
     @abstractmethod

@@ -95,6 +95,9 @@ class DefaultSyntheticFirms(SyntheticFirms):
         capital_inputs_productivity_matrix = industry_data["capital_inputs_productivity_matrix"].values
         intermediate_inputs_productivity_matrix = industry_data["intermediate_inputs_productivity_matrix"].values
         capital_inputs_depreciation_matrix = industry_data["capital_inputs_depreciation_matrix"].values
+
+        # TODO needs to be updated if function parameters change
+
         (
             capital_inputs_stock,
             intermediate_inputs_stock,

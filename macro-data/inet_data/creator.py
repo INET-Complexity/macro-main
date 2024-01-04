@@ -6,10 +6,7 @@ import numpy as np
 import pandas as pd
 
 from inet_data.configuration import Configuration
-from inet_data.processing import (
-    DefaultSyntheticRestOfTheWorld,
-    SyntheticCountry,
-)
+from inet_data.processing import DefaultSyntheticRestOfTheWorld, SyntheticCountry, SyntheticRestOfTheWorld
 from inet_data.readers import DataReaders, compile_industry_data, create_all_exogenous_data
 from inet_data.util import get_map_long_to_short
 
@@ -18,11 +15,18 @@ from inet_data.util import get_map_long_to_short
 class Creator:
     """
     This class is used to create all the synthetic data for the INET model.
-    Dictionaries have country names as keys and the corresponding synthetic data as values.
+    Consists of a dictionary with countries as keys and the synthetic countries as values.
+
+    Attributes:
+        synthetic_countries (dict[str, SyntheticCountry]): The synthetic countries.
+        synthetic_rest_of_the_world (SyntheticRestOfTheWorld): The synthetic rest of the world.
+        goods_criticality_matrix (np.ndarray | pd.DataFrame): The goods criticality matrix.
+        exchange_rates (pd.DataFrame): The exchange rates.
+        trade_proportions (pd.DataFrame): The trade proportions.
     """
 
     synthetic_countries: dict[str, SyntheticCountry]
-    synthetic_rest_of_the_world: DefaultSyntheticRestOfTheWorld
+    synthetic_rest_of_the_world: SyntheticRestOfTheWorld
     goods_criticality_matrix: np.ndarray | pd.DataFrame
     exchange_rates: pd.DataFrame
     trade_proportions: pd.DataFrame
@@ -36,6 +40,20 @@ class Creator:
         create_exogenous_industry_data: bool = True,
         single_hfcs_survey: bool = True,
     ) -> "Creator":
+        """
+        Initializes a data Creator object with the given parameters. The Creator will contain all the synthetic data
+        needed to run the model.
+
+        Args:
+            configuration (Configuration): The data configuration.
+            raw_data_path (Path | str): The path to the raw data.
+            random_seed (int, optional): The random seed for reproducibility. Defaults to 0.
+            create_exogenous_industry_data (bool, optional): Whether to create exogenous industry data. Defaults to True.
+            single_hfcs_survey (bool, optional): Whether to use a single HFCS survey. Defaults to True.
+
+        Returns:
+            Creator: The initialized Creator object.
+        """
         # ensure that string paths are paths
         if isinstance(raw_data_path, str):
             raw_data_path = Path(raw_data_path)
@@ -77,7 +95,7 @@ class Creator:
         # currently only EU countries implemented
 
         synthetic_countries = {
-            country: SyntheticCountry.create_eu_synthetic_country(
+            country: SyntheticCountry.eu_synthetic_country(
                 country=country,
                 year=year,
                 country_configuration=configuration.country_configs[country],

@@ -31,7 +31,21 @@ from inet_data.readers import DataReaders
 
 @dataclass
 class SyntheticCountry:
-    """Class for creating synthetic countries."""
+    """Container class for synthetic countries.
+
+    Attributes:
+        population: Synthetic population.
+        firms: Synthetic firms.
+        credit_market: Synthetic credit market.
+        banks: Synthetic banks.
+        central_bank: Synthetic central bank.
+        central_government: Synthetic central government.
+        government_entities: Synthetic government entities.
+        housing_market: Synthetic housing market.
+        dividend_payout_ratio: Dividend payout ratio.
+        long_term_interest_rate: Long term interest rate.
+        policy_rate_markup: Policy rate markup.
+    """
 
     population: SyntheticPopulation
     firms: SyntheticFirms
@@ -46,7 +60,7 @@ class SyntheticCountry:
     policy_rate_markup: float
 
     @classmethod
-    def create_eu_synthetic_country(
+    def eu_synthetic_country(
         cls,
         country: Country,
         year: int,
@@ -56,7 +70,24 @@ class SyntheticCountry:
         exogenous_country_data: Optional[dict[str, pd.DataFrame]],
         country_industry_data: dict[str, pd.DataFrame],
         year_range: int,
-    ):
+    ) -> "SyntheticCountry":
+        """
+        Create a synthetic country object for the European Union.
+
+        Args:
+            country: The country for which the synthetic country object is created.
+            year: The year for which the synthetic country object is created.
+            country_configuration: The configuration settings for the country.
+            industries: The list of industries in the country.
+            readers: The data readers used to read data for the synthetic country object.
+            exogenous_country_data: The exogenous data for the country.
+            country_industry_data: The industry data for the country.
+            year_range: The range of years for which data is considered (determines the amount of data used to decide benefits setting).
+
+        Returns:
+            The synthetic country object.
+
+        """
         central_government = DefaultSyntheticCGovernment.from_readers(readers, country, year, year_range=year_range)
 
         total_unemployment_benefits = central_government.central_gov_data["Total Unemployment Benefits"].values[0]
@@ -72,7 +103,7 @@ class SyntheticCountry:
 
         central_bank = DefaultSyntheticCentralBank.from_readers(country, year, readers)
 
-        population = SyntheticHFCSPopulation.from_readers(
+        population: SyntheticHFCSPopulation = SyntheticHFCSPopulation.from_readers(
             readers=readers,
             country_name=country,
             year=year,
