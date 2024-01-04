@@ -13,7 +13,7 @@ PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 
 class TestSyntheticPopulation:
     def test__init(self, readers, configuration, industry_data):
-        industries = configuration["model"]["industries"]["value"]
+        industries = configuration.industries
 
         population = SyntheticHFCSPopulation.from_readers(
             readers=readers,
@@ -22,7 +22,7 @@ class TestSyntheticPopulation:
             scale=10000,
             country_name_short="FR",
             industries=industries,
-            industry_data=industry_data,
+            industry_data=industry_data["FRA"],
             rent_as_fraction_of_unemployment_rate=0.5,
             total_unemployment_benefits=1000.0,
         )

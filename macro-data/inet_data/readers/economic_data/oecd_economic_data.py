@@ -9,6 +9,7 @@ import pandas as pd
 from scipy.optimize import curve_fit
 from scipy.special import zetac
 
+from inet_data.configuration.countries import Country
 from inet_data.readers.util.prune_util import DataFilterWarning
 
 
@@ -18,10 +19,10 @@ class OECDEconData:
         path: Path | str,
         industry_mappings_path: Path,
         sector_mapping_path: Path,
-        scale: int,
+        scale_dict: dict[Country, int],
     ):
         # Parameters
-        self.scale = scale
+        self.scale_dict = scale_dict
         self.industry_mapping = json.load(open(industry_mappings_path))
         self.sector_mapping = json.load(open(sector_mapping_path))
 
@@ -84,7 +85,7 @@ class OECDEconData:
             "experimental_consumption_statistics": "EGDNA_PUBLIC",
         }
 
-    def employees_by_industry(self, year: int, country: str) -> pd.Series:
+    def employees_by_industry(self, year: int, country: str | Country) -> pd.Series:
         # noinspection PyTypeChecker
         df = self.data["employment_by_industry"]
         df = df.loc[(df["Time"] == year) & (df["SEX"] == "TT") & (df["LOCATION"] == country)].copy()
@@ -98,11 +99,11 @@ class OECDEconData:
         col_data = df.groupby(["industry_indices"])["Value"].sum()
         col_data = col_data.reindex(range(len(self.default_industries)))
         col_data.fillna(col_data.median(), inplace=True)
-        return col_data.values.astype("int") / self.scale
+        return col_data.values.astype("int") / self.scale_dict[country]
 
     def read_business_demography(
         self,
-        country: str,
+        country: str | Country,
         output: pd.Series,
         year: int,
     ) -> np.ndarray:
@@ -152,7 +153,7 @@ class OECDEconData:
         )
         isic_table.loc[missing_data] = output.loc[missing_data].apply(lambda x: fit_params[0] * x + fit_params[1])
 
-        isic_table /= self.scale
+        isic_table /= self.scale_dict[country]
 
         isic_table = isic_table.astype("int")
         return isic_table.values.astype(int)

@@ -43,8 +43,8 @@ class TestSyntheticFirms:
             industries=industries,
             industry_data=industry_data["FRA"],
             n_employees_per_industry=n_employees_per_industry,
-            assume_zero_initial_debt=False,
-            assume_zero_initial_deposits=False,
+            zero_initial_debt=False,
+            zero_initial_deposits=False,
             scale=10000,
         )
 

@@ -9,6 +9,10 @@ class SyntheticGovernmentEntities(ABC):
     """
     Represents a collection of synthetic government entities. These entities are used to represent government consumption.
 
+    The government entity data is stored in a pandas DataFrame with the following columns:
+        - Consumption in LCU: The consumption of the government entity (in LCU).
+        - Consumption in USD: The consumption of the government entity (in USD).
+
     Parameters:
     - country_name (str): The name of the country.
     - year (int): The year of the data.

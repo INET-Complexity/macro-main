@@ -21,14 +21,6 @@ industries:
   - P
   - Q
   - R_S
-scale:
-  10000
-single_bank:
-  false
-single_firm_per_industry:
-  false
-single_government_entity:
-  false
 year:
   2014
 prune_date:
@@ -36,6 +28,14 @@ prune_date:
 
 country_configs:
   FRA&DEU:
+    scale:
+      10000
+    single_bank:
+      false
+    single_firm_per_industry:
+      false
+    single_government_entity:
+      false
     firms_configuration:
       zero_initial_deposits:
         true
@@ -59,6 +59,14 @@ country_configs:
           0.01
 
   GBR:
+    scale:
+      10000
+    single_bank:
+      false
+    single_firm_per_industry:
+      false
+    single_government_entity:
+      false
     firms_configuration:
       zero_initial_deposits:
         true

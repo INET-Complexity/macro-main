@@ -12,7 +12,7 @@ def compile_industry_data(
     year: int,
     readers: DataReaders,
     country_names: list[str],
-    single_firm_per_industry: bool,
+    single_firm_per_industry: dict[str, bool],
 ) -> dict[str, dict[str, pd.DataFrame]]:
     industry_data = {}
     current_icio_reader = readers.icio[year]
@@ -43,7 +43,7 @@ def compile_industry_data(
             exchange_rate,
             sea_reader,
             econ_reader,
-            single_firm_per_industry,
+            single_firm_per_industry[country_name],
             trade_partners=country_names + ["ROW"],
         )
 

@@ -7,6 +7,7 @@ from typing import Iterable, Tuple, Any, Optional
 import numpy as np
 import pandas as pd
 
+from inet_data.configuration.countries import Country
 from inet_data.readers.criticality_data.goods_criticality_reader import (
     GoodsCriticalityReader,
 )
@@ -90,7 +91,7 @@ class DataReaders:
         country_names: list[str],
         country_names_short: list[str],
         simulation_year: int,
-        scale: int,
+        scale_dict: dict[Country, int],
         industries: list[str],
         create_exogenous_industry_data: bool = False,
         imputed_rent_year: int = 2014,
@@ -157,14 +158,14 @@ class DataReaders:
             path=datapaths.oecd_econ_path,
             industry_mappings_path=datapaths.oecd_econ_mapping_path,
             sector_mapping_path=datapaths.icio_agg_path,
-            scale=scale,
+            scale_dict=scale_dict,
         )
 
         policy_rates = PolicyRatesReader(
             path=datapaths.policy_rates_path, country_code_path=datapaths.country_codes_path
         )
 
-        imf_reader = IMFReader.from_data(data_path=datapaths.imf_path, scale=scale)
+        imf_reader = IMFReader.from_data(data_path=datapaths.imf_path, scale_dict=scale_dict)
 
         ons_reader = ONSReader(path=datapaths.ons_path)
 

@@ -18,7 +18,7 @@ class TestSyntheticGovernmentEntities:
             country_name="FRA",
             year=2014,
             exogenous_country_data=exogenous_country_data,
-            industry_data=industry_data,
+            industry_data=industry_data["FRA"],
             single_government_entity=True,
         )
         assert synth_gov_fra.number_of_entities == 1
