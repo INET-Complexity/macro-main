@@ -160,8 +160,8 @@ def match_individuals_with_firms_country(
     country: str,
     industries: list[str] | np.ndarray,
     readers: DataReaders,
-    synthetic_firms: SyntheticFirms,
-    synthetic_population: SyntheticPopulation,
+    firms: SyntheticFirms,
+    population: SyntheticPopulation,
     year: int,
 ):
     """
@@ -171,8 +171,8 @@ def match_individuals_with_firms_country(
         country (str): The country for which the matching is performed.
         industries (list[int] | np.ndarray): The industries to consider for matching.
         readers (DataReaders): An object that provides access to data readers.
-        synthetic_firms (SyntheticFirms): An object that represents synthetic firms data.
-        synthetic_population (SyntheticPopulation): An object that represents synthetic population data.
+        firms (SyntheticFirms): An object that represents synthetic firms data.
+        population (SyntheticPopulation): An object that represents synthetic population data.
         year (int): The year for which the matching is performed.
 
     Returns:
@@ -180,16 +180,16 @@ def match_individuals_with_firms_country(
     """
     for industry_index in range(len(industries)):
         wage_offered, pos_corr_firm = preprocess(
-            synthetic_population=synthetic_population,
-            synthetic_firms=synthetic_firms,
+            synthetic_population=population,
+            synthetic_firms=firms,
             industry_index=industry_index,
             income_taxes=readers.oecd_econ.read_tau_income(country=country, year=year),
             employee_social_contribution_taxes=readers.oecd_econ.read_tau_siw(country=country, year=year),
         )
 
         find_optimal_matching(
-            synthetic_population=synthetic_population,
-            synthetic_firms=synthetic_firms,
+            synthetic_population=population,
+            synthetic_firms=firms,
             industry_index=industry_index,
             income_taxes=readers.oecd_econ.read_tau_income(country=country, year=year),
             employee_social_contribution_taxes=readers.oecd_econ.read_tau_siw(country=country, year=year),

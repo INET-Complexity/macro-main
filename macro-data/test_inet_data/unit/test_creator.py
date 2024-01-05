@@ -30,6 +30,6 @@ class TestCreator:
             creator.save(tmp_file)
             new_creator = Creator.init_from_pickle(tmp_file)
 
-        assert creator.synthetic_firms.keys() == {"FRA"}
+        assert creator.synthetic_countries.keys() == {"FRA"}
 
-        assert new_creator.synthetic_firms.keys() == {"FRA"}
+        assert new_creator.synthetic_countries.keys() == {"FRA"}

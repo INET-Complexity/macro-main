@@ -6,31 +6,7 @@ import numpy as np
 import pandas as pd
 
 from inet_data.configuration import Configuration
-from inet_data.processing import (
-    SyntheticPopulation,
-    SyntheticFirms,
-    SyntheticCreditMarket,
-    SyntheticBanks,
-    SyntheticCentralBank,
-    SyntheticCentralGovernment,
-    SyntheticGovernmentEntities,
-    SyntheticHousingMarket,
-    DefaultSyntheticRestOfTheWorld,
-    DefaultSyntheticCGovernment,
-    DefaultSyntheticGovernmentEntities,
-    DefaultSyntheticCentralBank,
-    SyntheticHFCSPopulation,
-    DefaultSyntheticFirms,
-    DefaultSyntheticBanks,
-    DefaultSyntheticHousingMarket,
-    match_firms_with_banks,
-    match_households_with_banks,
-    set_housing_df,
-    match_individuals_with_firms_country,
-    create_firm_loan_df,
-    create_household_loan_df,
-    create_mortgage_loan_df,
-)
+from inet_data.processing import DefaultSyntheticRestOfTheWorld, SyntheticCountry, SyntheticRestOfTheWorld
 from inet_data.readers import DataReaders, compile_industry_data, create_all_exogenous_data
 from inet_data.util import get_map_long_to_short
 
@@ -39,26 +15,22 @@ from inet_data.util import get_map_long_to_short
 class Creator:
     """
     This class is used to create all the synthetic data for the INET model.
-    Dictionaries have country names as keys and the corresponding synthetic data as values.
+    Consists of a dictionary with countries as keys and the synthetic countries as values.
+
+    Attributes:
+        synthetic_countries (dict[str, SyntheticCountry]): The synthetic countries.
+        synthetic_rest_of_the_world (SyntheticRestOfTheWorld): The synthetic rest of the world.
+        goods_criticality_matrix (np.ndarray | pd.DataFrame): The goods criticality matrix.
+        exchange_rates (pd.DataFrame): The exchange rates.
+        trade_proportions (pd.DataFrame): The trade proportions.
     """
 
-    synthetic_population: dict[str, SyntheticPopulation]
-    synthetic_firms: dict[str, SyntheticFirms]
-    synthetic_banks: dict[str, SyntheticBanks]
-    synthetic_credit_market: dict[str, SyntheticCreditMarket]
-    synthetic_central_bank: dict[str, SyntheticCentralBank]
-    synthetic_central_government: dict[str, SyntheticCentralGovernment]
-    synthetic_government_entities: dict[str, SyntheticGovernmentEntities]
-    synthetic_housing_market: dict[str, SyntheticHousingMarket]
-    synthetic_rest_of_the_world: DefaultSyntheticRestOfTheWorld
-    dividend_payout_ratio: dict[str, float]
-    policy_rate_markup: dict[str, float]
-    long_term_interest_rates: dict[str, float]
+    synthetic_countries: dict[str, SyntheticCountry]
+    synthetic_rest_of_the_world: SyntheticRestOfTheWorld
     goods_criticality_matrix: np.ndarray | pd.DataFrame
     exchange_rates: pd.DataFrame
     trade_proportions: pd.DataFrame
 
-    # TODO: chunk this up into smaller functions?
     @classmethod
     def default_init(
         cls,
@@ -67,7 +39,21 @@ class Creator:
         random_seed: int = 0,
         create_exogenous_industry_data: bool = True,
         single_hfcs_survey: bool = True,
-    ):
+    ) -> "Creator":
+        """
+        Initializes a data Creator object with the given parameters. The Creator will contain all the synthetic data
+        needed to run the model.
+
+        Args:
+            configuration (Configuration): The data configuration.
+            raw_data_path (Path | str): The path to the raw data.
+            random_seed (int, optional): The random seed for reproducibility. Defaults to 0.
+            create_exogenous_industry_data (bool, optional): Whether to create exogenous industry data. Defaults to True.
+            single_hfcs_survey (bool, optional): Whether to use a single HFCS survey. Defaults to True.
+
+        Returns:
+            Creator: The initialized Creator object.
+        """
         # ensure that string paths are paths
         if isinstance(raw_data_path, str):
             raw_data_path = Path(raw_data_path)
@@ -77,44 +63,9 @@ class Creator:
         country_names = configuration.countries
         country_names_short = list(map(get_map_long_to_short(raw_data_path).get, country_names))
         industries = configuration.industries
-        scale = configuration.scale
         year = configuration.year
-        single_firm_per_industry = configuration.single_firm_per_industry
-        single_government_entity = configuration.single_government_entity
-        assume_zero_initial_deposits = {
-            country_name: configuration.country_configs[country_name].firms_configuration.zero_initial_deposits
-            for country_name in country_names
-        }
-        assume_zero_initial_debt = {
-            country_name: configuration.country_configs[country_name].firms_configuration.zero_initial_debt
-            for country_name in country_names
-        }
-        single_bank = configuration.single_bank
 
-        firm_loan_maturity = {
-            country: configuration.country_configs[country].banks_configuration.long_term_firm_loan_maturity
-            for country in country_names
-        }
-
-        hh_consumption_maturity = {
-            country: configuration.country_configs[country].banks_configuration.consumption_exp_loan_maturity
-            for country in country_names
-        }
-
-        mortgage_maturity = {
-            country: configuration.country_configs[country].banks_configuration.mortgage_maturity
-            for country in country_names
-        }
-
-        interest_rate_data = {
-            country: dict(configuration.country_configs[country].banks_configuration.interest_rates)
-            for country in country_names
-        }
-
-        assume_zero_firm_debt = {
-            country: configuration.country_configs[country].firms_configuration.zero_initial_debt
-            for country in country_names
-        }
+        scale_dict = {country: configuration.country_configs[country].scale for country in country_names}
 
         prune_date = configuration.prune_date
         readers = DataReaders.from_raw_data(
@@ -123,85 +74,41 @@ class Creator:
             country_names_short=country_names_short,
             industries=industries,
             simulation_year=year,
-            scale=scale,
+            scale_dict=scale_dict,
             prune_date=prune_date,
             create_exogenous_industry_data=create_exogenous_industry_data,
             force_single_hfcs_survey=single_hfcs_survey,
         )
 
-        industry_data = compile_industry_data(
-            year=year, readers=readers, country_names=country_names, single_firm_per_industry=single_firm_per_industry
-        )
+        single_firm_dict = {
+            country: configuration.country_configs[country].single_firm_per_industry for country in country_names
+        }
 
-        exogenous_data = create_all_exogenous_data(readers, country_names) if create_exogenous_industry_data else None
+        industry_data = compile_industry_data(
+            year=year, readers=readers, country_names=country_names, single_firm_per_industry=single_firm_dict
+        )
 
         year_range = 1 if single_hfcs_survey else 10
 
-        synthetic_central_governments = {
-            country: DefaultSyntheticCGovernment.from_readers(readers, country, year, year_range=year_range)
-            for country in country_names
-        }
+        exogenous_data = create_all_exogenous_data(readers, country_names) if create_exogenous_industry_data else None
 
-        total_unemployment_benefits = {
-            country: synthetic_central_governments[country].central_gov_data["Total Unemployment Benefits"].values[0]
-            for country in country_names
-        }
+        # currently only EU countries implemented
 
-        synthetic_gov_entities = {
-            country: DefaultSyntheticGovernmentEntities.from_readers(
-                readers=readers,
-                country_name=country,
+        synthetic_countries = {
+            country: SyntheticCountry.eu_synthetic_country(
+                country=country,
                 year=year,
+                country_configuration=configuration.country_configs[country],
+                industries=industries,
+                readers=readers,
                 exogenous_country_data=exogenous_data.get(country, None) if exogenous_data else None,
-                industry_data=industry_data,
-                single_government_entity=single_government_entity,
+                country_industry_data=industry_data[country],
+                year_range=year_range,
             )
             for country in country_names
         }
 
-        synthetic_central_banks = {
-            country: DefaultSyntheticCentralBank.from_readers(country, year, readers) for country in country_names
-        }
-
-        synthetic_population: dict[str, SyntheticHFCSPopulation] = {
-            country: SyntheticHFCSPopulation.from_readers(
-                readers=readers,
-                country_name=country,
-                country_name_short=country_short,
-                year=year,
-                scale=scale,
-                industries=industries,
-                industry_data=industry_data,
-                total_unemployment_benefits=total_unemployment_benefits[country],
-            )
-            for (country, country_short) in zip(country_names, country_names_short)
-        }
-
-        synthetic_firms = {
-            country: DefaultSyntheticFirms.from_readers(
-                readers=readers,
-                country_name=country,
-                year=year,
-                industry_data=industry_data[country],
-                assume_zero_initial_deposits=assume_zero_initial_deposits[country],
-                assume_zero_initial_debt=assume_zero_initial_debt[country],
-                industries=industries,
-                n_employees_per_industry=synthetic_population[country].number_employees_by_industry,
-                scale=scale,
-            )
-            for country in country_names
-        }
-
-        synthetic_banks = {
-            country: DefaultSyntheticBanks.from_readers(
-                single_bank=single_bank,
-                country_name=country,
-                year=year,
-                readers=readers,
-                scale=scale,
-            )
-            for country in country_names
-        }
+        goods_criticality = readers.goods_criticality.criticality_matrix
 
         synthetic_row = DefaultSyntheticRestOfTheWorld.from_readers(
             readers=readers,
@@ -210,171 +117,15 @@ class Creator:
             row_industry_data=industry_data["ROW"],
         )
 
-        # housing market data is initialised through the matching
-        # where a dictionary is created with country names as keys and housing market data as values
-        synthetic_housing_market = {}
-
-        # credit market data is initialised through the matching
-        # where a dictionary is created with country names as keys and credit market data as values
-        synthetic_credit_market = {}
-
-        for country_name in country_names:
-            match_individuals_with_firms_country(
-                country_name,
-                industries,
-                readers,
-                synthetic_firms[country_name],
-                synthetic_population[country_name],
-                year,
-            )
-
-            match_firms_with_banks(
-                synthetic_firms=synthetic_firms[country_name],
-                synthetic_banks=synthetic_banks[country_name],
-            )
-            match_households_with_banks(
-                synthetic_population=synthetic_population[country_name],
-                synthetic_banks=synthetic_banks[country_name],
-            )
-
-            country_housing_data = set_housing_df(
-                synthetic_population[country_name],
-                rental_income_taxes=readers.oecd_econ.read_tau_income(country_name, year),
-                social_housing_rent=synthetic_population[country_name].social_housing_rent,
-                total_imputed_rent=readers.icio[year].imputed_rents[country_name],
-            )
-
-            synthetic_housing_market[country_name] = DefaultSyntheticHousingMarket(
-                year=year,
-                country_name=country_name,
-                housing_market_data=country_housing_data,
-            )
-
-            # TODO : these functions do things that depend on the function parameters
-            # they need to be moved to the model package
-            synthetic_population[country_name].compute_household_wealth()
-            synthetic_population[country_name].compute_household_income(
-                total_social_transfers=synthetic_central_governments[country_name]
-                .central_gov_data["Other Social Benefits"]
-                .values[0],
-            )
-
-            # TODO: same for set household savings rates
-            synthetic_population[country_name].set_household_saving_rates()
-
-            iot_hh_consumption = industry_data[country_name]["industry_vectors"]["Household Consumption in LCU"]
-            vat = readers.world_bank.get_tau_vat(country_name, year)
-            synthetic_population[country_name].normalise_household_consumption(
-                iot_hh_consumption=iot_hh_consumption, vat=vat
-            )
-
-            weights_by_income = readers.oecd_econ.get_household_consumption_by_income_quantile(
-                country=country_name, year=year
-            )
-
-            synthetic_population[country_name].match_consumption_weights_by_income(
-                weights_by_income=weights_by_income, iot_hh_consumption=iot_hh_consumption, vat=vat
-            )
-
-            synthetic_banks[country_name].initialise_deposits_and_loans(
-                synthetic_population=synthetic_population[country_name],
-                synthetic_firms=synthetic_firms[country_name],
-            )
-
-            synthetic_banks[country_name].initialise_rates_profits_liabilities(
-                readers, **interest_rate_data[country_name]
-            )
-
-            if assume_zero_firm_debt[country_name]:
-                firm_loan_df = create_firm_loan_df(
-                    synthetic_firms[country_name],
-                    synthetic_banks[country_name],
-                    firm_loan_maturity=firm_loan_maturity[country_name],
-                )
-            else:
-                firm_loan_df = None
-
-            household_loan_df = create_household_loan_df(
-                synthetic_population[country_name],
-                synthetic_banks[country_name],
-                hh_consumption_maturity[country_name],
-            )
-
-            mortgage_loan_df = create_mortgage_loan_df(
-                synthetic_population[country_name],
-                synthetic_banks[country_name],
-                mortgage_maturity[country_name],
-            )
-
-            valid_firm_df = (firm_loan_df is not None) and (firm_loan_df.shape[0] > 0)
-
-            if valid_firm_df:
-                credit_list = [firm_loan_df, household_loan_df, mortgage_loan_df]
-            else:
-                credit_list = [household_loan_df, mortgage_loan_df]
-
-            credit_market_data = pd.concat(credit_list, ignore_index=True)
-
-            credit_market_data.index.name = "Loans"
-            credit_market_data.columns.name = "Loan Properties"
-
-            synthetic_credit_market[country_name] = SyntheticCreditMarket(
-                year=year,
-                country_name=country_name,
-                credit_market_data=credit_market_data,
-            )
-
-            synthetic_population[country_name].set_debt_installments(synthetic_credit_market[country_name])
-
-            synthetic_firms[country_name].set_additional_initial_conditions(
-                readers=readers,
-                industry_data=industry_data[country_name],
-                synthetic_banks=synthetic_banks[country_name],
-                synthetic_credit_market=synthetic_credit_market[country_name],
-            )
-
-            synthetic_central_governments[country_name].update_fields(
-                readers,
-                synthetic_population[country_name],
-                synthetic_firms[country_name],
-                synthetic_banks[country_name],
-                industry_data[country_name],
-            )
-
-            # don't save all columns for temporary population
-            synthetic_population[country_name].restrict()
-
-        dividend_payout_ratio = {
-            country: readers.eurostat.dividend_payout_ratio(country, year) for country in country_names
-        }
         exchange_rates = readers.exchange_rates.df
-
-        long_term_interest_rates = {
-            country: readers.oecd_econ.read_long_term_interest_rates(country, year) for country in country_names
-        }
-
-        policy_rate_markup = {country: readers.eurostat.firm_risk_premium(country, year) for country in country_names}
-
         trade_proportions = readers.icio[year].get_trade_proportions()
 
-        goods_criticality = readers.goods_criticality.criticality_matrix
-
         return cls(
-            synthetic_population=synthetic_population,
-            synthetic_firms=synthetic_firms,
-            synthetic_banks=synthetic_banks,
-            synthetic_credit_market=synthetic_credit_market,
-            synthetic_central_bank=synthetic_central_banks,
-            synthetic_central_government=synthetic_central_governments,
-            synthetic_government_entities=synthetic_gov_entities,
-            synthetic_housing_market=synthetic_housing_market,
+            synthetic_countries=synthetic_countries,
             synthetic_rest_of_the_world=synthetic_row,
-            dividend_payout_ratio=dividend_payout_ratio,
-            exchange_rates=exchange_rates,
-            long_term_interest_rates=long_term_interest_rates,
-            policy_rate_markup=policy_rate_markup,
-            trade_proportions=trade_proportions,
             goods_criticality_matrix=goods_criticality,
+            exchange_rates=exchange_rates,
+            trade_proportions=trade_proportions,
         )
 
     @classmethod

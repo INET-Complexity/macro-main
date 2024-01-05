@@ -10,6 +10,9 @@ class DefaultSyntheticCentralBank(SyntheticCentralBank):
     """
     A class representing synthetic central banks.
 
+    The central bank data is stored in a pandas DataFrame with a single column:
+        - Policy Rate: The policy rate.
+
     Attributes:
         country_name (str): The name of the country.
         year (int): The year.

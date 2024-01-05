@@ -57,10 +57,18 @@ class CountryConfiguration(BaseModel):
     Attributes:
         firms_configuration (FirmsConfiguration): The configuration for firms.
         banks_configuration (BanksConfiguration): The configuration for banks.
+        single_bank (bool): Single bank flag.
+        single_firm_per_industry (bool): Single firm per industry flag.
+        single_government_entity (bool): Single government entity flag.
+        scale (int): scale of the country (number of agents represented by a synthetic agent).
     """
 
     firms_configuration: FirmsConfiguration
     banks_configuration: BanksConfiguration
+    single_bank: bool
+    single_firm_per_industry: bool
+    single_government_entity: bool
+    scale: int
 
 
 class Configuration(BaseModel):
@@ -69,24 +77,16 @@ class Configuration(BaseModel):
 
     Attributes:
         industries (list[str]): List of industries.
-        scale (int): Scale value.
         year (int): Year value.
         prune_date (date): Prune date value.
-        single_bank (bool): Single bank flag.
-        single_firm_per_industry (bool): Single firm per industry flag.
-        single_government_entity (bool): Single government entity flag.
         country_configs (dict[Country, CountryConfiguration]): Dictionary of country configurations.
         purpose (str): Purpose for this simulation.
         author (str): Author of this simulation.
     """
 
     industries: list[str]
-    scale: int
     year: int
     prune_date: date
-    single_bank: bool
-    single_firm_per_industry: bool
-    single_government_entity: bool
     country_configs: dict[Country, CountryConfiguration]
     purpose: str
     author: str = "INET/Macrocosm"

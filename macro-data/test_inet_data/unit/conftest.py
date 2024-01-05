@@ -1,7 +1,11 @@
 import pathlib
 
-import pytest
 
+import pytest
+import yaml
+
+from inet_data.configuration import Configuration
+from inet_data.configuration.countries import Country
 from inet_data.readers.default_readers import DataReaders
 from inet_data.readers.util.exogenous_data import create_all_exogenous_data
 from inet_data.readers.util.industry_extraction import compile_industry_data, compile_exogenous_industry_data
@@ -18,7 +22,13 @@ def data_path():
 
 @pytest.fixture(scope="module", name="configuration")
 def configuration():
-    return process_config(config_path=PARENT / "default_unit_test.yaml")
+    data_config_path = PARENT / "default_data_config.yaml"
+    with open(data_config_path, "r") as f:
+        config_dict = yaml.safe_load(f)
+        # not necessary to do the country splitting here
+        # since the fixture used only has one country key
+    configuration = Configuration(**config_dict)
+    return configuration
 
 
 @pytest.fixture(scope="module", name="data_config_path")
@@ -33,12 +43,14 @@ def configuration3():
 
 @pytest.fixture(scope="module", name="readers")
 def readers(data_path):
+    france = Country("FRA")
     readers = DataReaders.from_raw_data(
         raw_data_path=data_path,
         country_names=["FRA"],
         country_names_short=["FR"],
         simulation_year=2014,
-        scale=100000,
+        # need to put in Afghanistan because that is used in tests...
+        scale_dict={france: 100000, "AFG": 100000},
         industries=[
             "A",
             "B",
@@ -66,7 +78,9 @@ def readers(data_path):
 
 @pytest.fixture(scope="module", name="industry_data")
 def industry_data(readers):
-    return compile_industry_data(year=2014, readers=readers, country_names=["FRA"], single_firm_per_industry=True)
+    return compile_industry_data(
+        year=2014, readers=readers, country_names=["FRA"], single_firm_per_industry={"FRA": True}
+    )
 
 
 @pytest.fixture(scope="module", name="exogenous_industry_data")
