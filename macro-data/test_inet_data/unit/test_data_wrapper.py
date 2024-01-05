@@ -4,7 +4,7 @@ from inet_data import DataWrapper
 from pathlib import Path
 import tempfile
 
-from inet_data.configuration import Configuration
+from inet_data.configuration import DataConfiguration
 
 TEST_PATH = Path(__file__).parent.parent.resolve()
 
@@ -15,7 +15,7 @@ class TestCreator:
             config_dict = yaml.safe_load(f)
         # not necessary to do the country splitting here
         # since the fixture used only has one country key
-        configuration = Configuration(**config_dict)
+        configuration = DataConfiguration(**config_dict)
         raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
         creator = DataWrapper.from_config(
             configuration=configuration,

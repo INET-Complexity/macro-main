@@ -4,7 +4,7 @@ import pathlib
 import pytest
 import yaml
 
-from inet_data.configuration import Configuration
+from inet_data.configuration import DataConfiguration
 from inet_data.configuration.countries import Country
 from inet_data.readers.default_readers import DataReaders
 from inet_data.readers.util.exogenous_data import create_all_exogenous_data
@@ -27,7 +27,7 @@ def configuration():
         config_dict = yaml.safe_load(f)
         # not necessary to do the country splitting here
         # since the fixture used only has one country key
-    configuration = Configuration(**config_dict)
+    configuration = DataConfiguration(**config_dict)
     return configuration
 
 

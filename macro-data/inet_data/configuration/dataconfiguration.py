@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from .countries import Country
 
 
-class FirmsConfiguration(BaseModel):
+class FirmsDataConfiguration(BaseModel):
     """
     Configuration settings for firms.
 
@@ -33,7 +33,7 @@ class InterestRates(BaseModel):
     household_overdraft_markup: float
 
 
-class BanksConfiguration(BaseModel):
+class BanksDataConfiguration(BaseModel):
     """
     Configuration class for banks.
 
@@ -50,28 +50,28 @@ class BanksConfiguration(BaseModel):
     interest_rates: InterestRates
 
 
-class CountryConfiguration(BaseModel):
+class CountryDataConfiguration(BaseModel):
     """
     Represents the configuration for a country.
 
     Attributes:
-        firms_configuration (FirmsConfiguration): The configuration for firms.
-        banks_configuration (BanksConfiguration): The configuration for banks.
+        firms_configuration (FirmsDataConfiguration): The configuration for firms.
+        banks_configuration (BanksDataConfiguration): The configuration for banks.
         single_bank (bool): Single bank flag.
         single_firm_per_industry (bool): Single firm per industry flag.
         single_government_entity (bool): Single government entity flag.
         scale (int): scale of the country (number of agents represented by a synthetic agent).
     """
 
-    firms_configuration: FirmsConfiguration
-    banks_configuration: BanksConfiguration
+    firms_configuration: FirmsDataConfiguration
+    banks_configuration: BanksDataConfiguration
     single_bank: bool
     single_firm_per_industry: bool
     single_government_entity: bool
     scale: int
 
 
-class Configuration(BaseModel):
+class DataConfiguration(BaseModel):
     """
     Represents a configuration object for the data package.
 
@@ -79,7 +79,7 @@ class Configuration(BaseModel):
         industries (list[str]): List of industries.
         year (int): Year value.
         prune_date (date): Prune date value.
-        country_configs (dict[Country, CountryConfiguration]): Dictionary of country configurations.
+        country_configs (dict[Country, CountryDataConfiguration]): Dictionary of country configurations.
         purpose (str): Purpose for this simulation.
         author (str): Author of this simulation.
     """
@@ -87,7 +87,7 @@ class Configuration(BaseModel):
     industries: list[str]
     year: int
     prune_date: date
-    country_configs: dict[Country, CountryConfiguration]
+    country_configs: dict[Country, CountryDataConfiguration]
     purpose: str
     author: str = "INET/Macrocosm"
 

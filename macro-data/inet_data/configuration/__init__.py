@@ -1,2 +1,2 @@
-from .configuration import Configuration, CountryConfiguration
+from .dataconfiguration import DataConfiguration, CountryDataConfiguration
 from .process_config import split_country_configs, process_config, initial_interest_rates

@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from inet_data.configuration import Configuration
+from inet_data.configuration import DataConfiguration
 from inet_data.processing import DefaultSyntheticRestOfTheWorld, SyntheticCountry, SyntheticRestOfTheWorld
 from inet_data.readers import DataReaders, compile_industry_data, create_all_exogenous_data
 from inet_data.util import get_map_long_to_short
@@ -34,7 +34,7 @@ class DataWrapper:
     @classmethod
     def from_config(
         cls,
-        configuration: Configuration,
+        configuration: DataConfiguration,
         raw_data_path: Path | str,
         random_seed: int = 0,
         create_exogenous_industry_data: bool = True,
@@ -45,7 +45,7 @@ class DataWrapper:
         needed to run the model.
 
         Args:
-            configuration (Configuration): The data configuration.
+            configuration (DataConfiguration): The data configuration.
             raw_data_path (Path | str): The path to the raw data.
             random_seed (int, optional): The random seed for reproducibility. Defaults to 0.
             create_exogenous_industry_data (bool, optional): Whether to create exogenous industry data. Defaults to True.
