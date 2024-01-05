@@ -53,16 +53,16 @@ This will then download and process the data into the required directories. A de
 Note that to have more control over the direct data generation, you can modify the call to the creator, as follows
 
 ```python
-from inet_data import Creator, create_code
+from inet_data import DataWrapper, create_code
 
 processed_data_code = create_code()
-Creator(
+DataWrapper(
     config_path=config_file_path,
     raw_data_path=data_dir_path / "raw_data",
     processed_data_path=data_dir_path
-    / "processed_data"
-    / processed_data_code
-    / "data.h5",
+                        / "processed_data"
+                        / processed_data_code
+                        / "data.h5",
     force_download=False,
     create_exogenous_industry_data=True,
     random_seed=0,

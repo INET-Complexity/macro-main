@@ -3,7 +3,7 @@ from typing import Optional
 
 import pandas as pd
 
-from inet_data.configuration import CountryConfiguration
+from inet_data.configuration import CountryDataConfiguration
 from inet_data.configuration.countries import Country
 from inet_data.processing import (
     SyntheticPopulation,
@@ -64,7 +64,7 @@ class SyntheticCountry:
         cls,
         country: Country,
         year: int,
-        country_configuration: CountryConfiguration,
+        country_configuration: CountryDataConfiguration,
         industries: list[str],
         readers: DataReaders,
         exogenous_country_data: Optional[dict[str, pd.DataFrame]],
