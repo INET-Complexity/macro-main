@@ -17,7 +17,7 @@ class TestCreator:
         # since the fixture used only has one country key
         configuration = Configuration(**config_dict)
         raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
-        creator = DataWrapper.default_init(
+        creator = DataWrapper.from_config(
             configuration=configuration,
             raw_data_path=raw_data_path,
             create_exogenous_industry_data=False,

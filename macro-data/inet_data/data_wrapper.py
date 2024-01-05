@@ -32,7 +32,7 @@ class DataWrapper:
     trade_proportions: pd.DataFrame
 
     @classmethod
-    def default_init(
+    def from_config(
         cls,
         configuration: Configuration,
         raw_data_path: Path | str,
