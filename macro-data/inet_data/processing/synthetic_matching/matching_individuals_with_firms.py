@@ -196,3 +196,7 @@ def match_individuals_with_firms_country(
             wages_offered=wage_offered,
             pos_corr_firm=pos_corr_firm,
         )
+
+    population.set_individual_labour_inputs(
+        firm_production=firms.firm_data["Production"], firm_employees=firms.firm_data["Employees ID"]
+    )
