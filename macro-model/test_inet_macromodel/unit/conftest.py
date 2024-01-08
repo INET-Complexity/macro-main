@@ -5,6 +5,8 @@ import pandas as pd
 
 from pathlib import Path
 
+from inet_data import DataWrapper
+
 from inet_macromodel.individuals import Individuals
 from inet_macromodel.households import Households
 from inet_macromodel.firms import Firms
@@ -350,54 +352,54 @@ def test_government_entities(test_industries, test_config):
     )
 
 
-@pytest.fixture(scope="module", name="test_banks")
-def test_banks(test_industries, test_config):
-    banks = Banks.from_data(
-        country_name="FRA",
-        all_country_names=["FRA"],
-        year=2014,
-        t_max=12,
-        n_industries=len(test_industries),
-        scale=1,
-        data=pd.DataFrame(
-            {
-                "Equity": [100.0],
-                "Deposits": [100.0],
-                "Profits": [5.0],
-                "Market Share": [1.0],
-                "Liability": [1.0],
-                "Deposits from Firms": [100.0],
-                "Deposits from Households": [200.0],
-                "Loans to Firms": [50.0],
-                "Consumption Loans to Households": [10.0],
-                "Mortgages to Households": [400.0],
-                "Interest received from Loans": [50.0],
-                "Interest received from Deposits": [30.0],
-                "Short-Term Interest Rates on Firm Loans": [0.02],
-                "Long-Term Interest Rates on Firm Loans": [0.01],
-                "Interest Rates on Household Payday Loans": [0.03],
-                "Interest Rates on Household Consumption Loans": [0.01],
-                "Interest Rates on Mortgages": [0.02],
-                "Interest Rates on Firm Deposits": [0.04],
-                "Overdraft Rate on Firm Deposits": [0.02],
-                "Interest Rates on Household Deposits": [0.04],
-                "Overdraft Rate on Household Deposits": [0.02],
-            }
-        ),
-        corr_firms=pd.DataFrame({"Corresponding Firm ID": [np.arange(18)]}),
-        corr_households=pd.DataFrame({"Corresponding Household ID": [np.arange(18)]}),
-        policy_rate_markup=0.05,
-        long_term_ir=0.01,
-        config=test_config["FRA"]["banks"],
-        init_config=test_config["init"]["FRA"]["banks"],
-    )
-
-    # Set interest rates
-    banks.set_interest_rates(
-        central_bank_policy_rate=0.02,
-    )
-
-    return banks
+# @pytest.fixture(scope="module", name="test_banks")
+# def test_banks(test_industries, test_config):
+#     banks = Banks.from_data(
+#         country_name="FRA",
+#         all_country_names=["FRA"],
+#         year=2014,
+#         t_max=12,
+#         n_industries=len(test_industries),
+#         scale=1,
+#         data=pd.DataFrame(
+#             {
+#                 "Equity": [100.0],
+#                 "Deposits": [100.0],
+#                 "Profits": [5.0],
+#                 "Market Share": [1.0],
+#                 "Liability": [1.0],
+#                 "Deposits from Firms": [100.0],
+#                 "Deposits from Households": [200.0],
+#                 "Loans to Firms": [50.0],
+#                 "Consumption Loans to Households": [10.0],
+#                 "Mortgages to Households": [400.0],
+#                 "Interest received from Loans": [50.0],
+#                 "Interest received from Deposits": [30.0],
+#                 "Short-Term Interest Rates on Firm Loans": [0.02],
+#                 "Long-Term Interest Rates on Firm Loans": [0.01],
+#                 "Interest Rates on Household Payday Loans": [0.03],
+#                 "Interest Rates on Household Consumption Loans": [0.01],
+#                 "Interest Rates on Mortgages": [0.02],
+#                 "Interest Rates on Firm Deposits": [0.04],
+#                 "Overdraft Rate on Firm Deposits": [0.02],
+#                 "Interest Rates on Household Deposits": [0.04],
+#                 "Overdraft Rate on Household Deposits": [0.02],
+#             }
+#         ),
+#         corr_firms=pd.DataFrame({"Corresponding Firm ID": [np.arange(18)]}),
+#         corr_households=pd.DataFrame({"Corresponding Household ID": [np.arange(18)]}),
+#         policy_rate_markup=0.05,
+#         long_term_ir=0.01,
+#         config=test_config["FRA"]["banks"],
+#         init_config=test_config["init"]["FRA"]["banks"],
+#     )
+#
+#     # Set interest rates
+#     banks.set_interest_rates(
+#         central_bank_policy_rate=0.02,
+#     )
+#
+#     return banks
 
 
 @pytest.fixture(scope="module", name="test_central_bank")
@@ -705,3 +707,9 @@ def test_country(
         housing_market=test_housing_market,
         exogenous=test_exogenous,
     )
+
+
+@pytest.fixture(scope="module", name="datawrapper")
+def read_data():
+    pickle_path = Path(__file__).parent.parent / "pickled_data" / "agents.pkl"
+    return DataWrapper.init_from_pickle(pickle_path)

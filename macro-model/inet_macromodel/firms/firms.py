@@ -23,7 +23,7 @@ class Firms(Agent):
         t_max: int,
         n_industries: int,
         n_transactors: int,
-        functions: dict[str, Any],
+        functions: dict[str, Callable],
         parameters: dict[str, Any],
         ts: TimeSeries,
         states: dict[str, np.ndarray],
