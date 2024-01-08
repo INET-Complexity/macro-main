@@ -43,7 +43,7 @@ def functions_from_model(model: BaseModel, loc: str):
     for field_name, field_value in model:
         path_name = field_value.path_name
         name = field_value.name
-        parameters = field_value.parameters if "parameters" in field_value else {}
+        parameters = field_value.parameters
 
         module = __import__(f"{loc}.func.{path_name}", fromlist=[name])
         cls = getattr(module, name)
