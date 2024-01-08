@@ -34,17 +34,18 @@ class SyntheticCountry:
     """Container class for synthetic countries.
 
     Attributes:
-        population: Synthetic population.
-        firms: Synthetic firms.
-        credit_market: Synthetic credit market.
-        banks: Synthetic banks.
-        central_bank: Synthetic central bank.
-        central_government: Synthetic central government.
-        government_entities: Synthetic government entities.
-        housing_market: Synthetic housing market.
-        dividend_payout_ratio: Dividend payout ratio.
-        long_term_interest_rate: Long term interest rate.
-        policy_rate_markup: Policy rate markup.
+        population (SyntheticPopulation): Synthetic population.
+        firms (SyntheticFirms): Synthetic firms.
+        credit_market (SyntheticCreditMarket): Synthetic credit market.
+        banks (SyntheticBanks): Synthetic banks.
+        central_bank (SyntheticCentralBank): Synthetic central bank.
+        central_government (SyntheticCentralGovernment): Synthetic central government.
+        government_entities (SyntheticGovernmentEntities): Synthetic government entities.
+        housing_market (SyntheticHousingMarket): Synthetic housing market.
+        dividend_payout_ratio (float): Dividend payout ratio.
+        long_term_interest_rate (float): Long term interest rate.
+        policy_rate_markup (float): Policy rate markup.
+        vat (float): Value added tax.
     """
 
     population: SyntheticPopulation
@@ -58,6 +59,7 @@ class SyntheticCountry:
     dividend_payout_ratio: float
     long_term_interest_rate: float
     policy_rate_markup: float
+    vat: float
 
     @classmethod
     def eu_synthetic_country(
@@ -232,4 +234,5 @@ class SyntheticCountry:
             dividend_payout_ratio=dividend_payout_ratio,
             long_term_interest_rate=long_term_interest_rate,
             policy_rate_markup=policy_rate_markup,
+            vat=vat,
         )

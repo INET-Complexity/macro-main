@@ -23,6 +23,7 @@ class DataWrapper:
         goods_criticality_matrix (np.ndarray | pd.DataFrame): The goods criticality matrix.
         exchange_rates (pd.DataFrame): The exchange rates.
         trade_proportions (pd.DataFrame): The trade proportions.
+        configuration (DataConfiguration): The data configuration.
     """
 
     synthetic_countries: dict[str, SyntheticCountry]
@@ -30,6 +31,7 @@ class DataWrapper:
     goods_criticality_matrix: np.ndarray | pd.DataFrame
     exchange_rates: pd.DataFrame
     trade_proportions: pd.DataFrame
+    configuration: DataConfiguration
 
     @classmethod
     def from_config(
@@ -126,6 +128,7 @@ class DataWrapper:
             goods_criticality_matrix=goods_criticality,
             exchange_rates=exchange_rates,
             trade_proportions=trade_proportions,
+            configuration=configuration,
         )
 
     @classmethod
