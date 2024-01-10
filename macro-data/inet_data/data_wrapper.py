@@ -50,7 +50,7 @@ class DataWrapper:
             configuration (DataConfiguration): The data configuration.
             raw_data_path (Path | str): The path to the raw data.
             random_seed (int, optional): The random seed for reproducibility. Defaults to 0.
-            create_exogenous_industry_data (bool, optional): Whether to create exogenous industry data. Defaults to True.
+            create_exogenous_industry_data (bool, optional): Whether to create exogenous industry data. Default True.
             single_hfcs_survey (bool, optional): Whether to use a single HFCS survey. Defaults to True.
 
         Returns:
