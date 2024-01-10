@@ -23,7 +23,7 @@ class Agent:
         self.n_transactors_sell = n_transactors_sell
         self.n_transactors_buy = n_transactors_buy
         self.states = states
-        self.transactor_settings = transactor_settings
+        self.transactor_settings = transactor_settings if transactor_settings else {}
 
         self.transactor_buyer_states = {}
         self.transactor_seller_states = {}

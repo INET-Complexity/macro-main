@@ -42,7 +42,7 @@ class ReservationWagesFunction(BaseModel):
 
     path_name: str = "reservation_wages"
     name: Literal["DefaultReservationWageSetter"] = "DefaultReservationWageSetter"
-    parameters: dict[str, Any] = {"unemployed_reservation_wage_timespan": 0.0}
+    parameters: dict[str, Any] = {"unemployed_reservation_wage_timespan": 0}
 
 
 class IndividualsFunctions(BaseModel):

@@ -7,11 +7,11 @@ from inet_macromodel.util.get_histogram import get_histogram
 
 def create_households_timeseries(
     data: pd.DataFrame,
-    initial_industry_consumption: np.ndarray,
-    n_industries: int,
+    initial_consumption_by_industry: np.ndarray,
     scale: int,
     vat: float,
 ) -> TimeSeries:
+    n_industries = len(initial_consumption_by_industry)
     return TimeSeries(
         n_households=len(data),
         #
@@ -20,8 +20,8 @@ def create_households_timeseries(
         target_consumption=np.full((len(data), n_industries), np.nan),
         amount_bought=np.full(len(data), np.nan),
         consumption=np.full(len(data), np.nan),
-        total_consumption=[(1 + vat) * initial_industry_consumption.sum()],
-        industry_consumption=initial_industry_consumption,
+        total_consumption=[(1 + vat) * initial_consumption_by_industry.sum()],
+        industry_consumption=initial_consumption_by_industry,
         investment_in_other_real_assets=np.full(len(data), np.nan),
         total_investment_in_other_real_assets=[0.0],
         #
