@@ -60,6 +60,7 @@ class SyntheticCountry:
     long_term_interest_rate: float
     policy_rate_markup: float
     vat: float
+    industry_data: dict[str, pd.DataFrame]
 
     @classmethod
     def eu_synthetic_country(
@@ -235,4 +236,5 @@ class SyntheticCountry:
             long_term_interest_rate=long_term_interest_rate,
             policy_rate_markup=policy_rate_markup,
             vat=vat,
+            industry_data=country_industry_data,
         )
