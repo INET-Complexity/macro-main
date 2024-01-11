@@ -36,7 +36,7 @@ class Individuals(Agent):
             ts,
             states,
         )
-        self.functions = functions
+        self.functions: dict[str, Any] = functions
 
     @classmethod
     def from_pickled_agent(
@@ -89,79 +89,6 @@ class Individuals(Agent):
             states["Corresponding Firm ID"][states["Corresponding Firm ID"] < 0] = -1
 
         return cls(country_name, all_country_names, n_industries, functions, ts, states)
-
-    # @classmethod
-    # def from_data(
-    #     cls,
-    #     country_name: str,
-    #     all_country_names: list[str],
-    #     year: int,
-    #     t_max: int,
-    #     n_industries: int,
-    #     scale: int,
-    #     data: pd.DataFrame,
-    #     config: dict[str, Any],
-    # ) -> "Individuals":
-    #     # Get corresponding functions and parameters
-    #     functions = get_functions(
-    #         config["functions"],
-    #         loc="inet_macromodel.individuals",
-    #         func_dir=Path(__file__).parent / "func",
-    #     )
-    #     if "parameters" in config.keys():
-    #         parameters = config["parameters"].copy()
-    #     else:
-    #         parameters = {}
-    #
-    #     # Create the corresponding time series object
-    #     ts = create_individuals_timeseries(data, scale)
-    #
-    #     # Additional states
-    #     states: dict[str, float | np.ndarray | list[np.ndarray]] = {}
-    #     for state_name in [
-    #         "Gender",
-    #         "Age",
-    #         "Education",
-    #         "Activity Status",
-    #         "Employment Industry",
-    #         "Income",
-    #         "Employee Income",
-    #         "Income from Unemployment Benefits",
-    #         "Corresponding Household ID",
-    #         "Corresponding Firm ID",
-    #     ]:
-    #         if state_name not in data.columns:
-    #             raise ValueError("Missing " + state_name + " from the data for initialising individuals.")
-    #         states[state_name] = data[state_name].values
-    #
-    #     # Update the activity status
-    #     states["Activity Status"] = np.array(map_to_enum(states["Activity Status"], ActivityStatus))
-    #
-    #     # Update gender
-    #     states["Gender"] = np.array(map_to_enum(states["Gender"], Gender))
-    #
-    #     # Level of education
-    #     states["Education"] = np.array(map_to_enum(states["Education"], Education))
-    #
-    #     # Cosmetics
-    #     with warnings.catch_warnings():
-    #         warnings.simplefilter("ignore")
-    #         states["Corresponding Household ID"] = states["Corresponding Household ID"].astype(int)
-    #         states["Corresponding Firm ID"] = states["Corresponding Firm ID"].astype(int)
-    #         states["Corresponding Firm ID"][states["Corresponding Firm ID"] < 0] = -1
-    #
-    #     return cls(
-    #         country_name,
-    #         all_country_names,
-    #         year,
-    #         t_max,
-    #         n_industries,
-    #         ts.current("n_individuals"),
-    #         functions,
-    #         parameters,
-    #         ts,
-    #         states,
-    #     )
 
     def compute_labour_inputs(self) -> np.ndarray:
         return self.functions["labour_inputs"].update_labour_inputs(

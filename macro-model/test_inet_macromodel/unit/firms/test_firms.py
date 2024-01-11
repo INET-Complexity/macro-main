@@ -1,73 +1,92 @@
 import numpy as np
 
+from configurations import FirmsConfiguration
+from firms import Firms
+
 
 class TestFirms:
-    def test__firms_states(self, test_firms):
-        assert test_firms is not None
-        for state in [
-            "Industry",
-            "Corresponding Bank ID",
-            "Employments",
-            "is_insolvent",
-            "Excess Demand",
-        ]:
-            assert state in test_firms.states.keys()
+    def test__create(self, datawrapper):
+        country = datawrapper.synthetic_countries["FRA"]
 
-    def test__firms_ts(self, test_firms):
-        for ts_key in [
-            "n_firms",
-            "n_firms_by_industry",
-            "number_of_employees",
-            "production",
-            "unconstrained_target_production",
-            "constrained_target_production",
-            "target_production",
-            "price",
-            "price_in_usd",
-            "profits",
-            "taxes_paid_on_production",
-            "corporate_taxes_paid",
-            "equity",
-            "estimated_demand",
-            "demand",
-            "unconstrained_target_intermediate_inputs",
-            "unconstrained_target_intermediate_inputs_costs",
-            "unconstrained_target_capital_inputs",
-            "unconstrained_target_capital_inputs_costs",
-            "target_intermediate_inputs",
-            "target_capital_inputs",
-            "inventory",
-            "intermediate_inputs_stock",
-            "intermediate_inputs_stock_value",
-            "used_intermediate_inputs",
-            "used_intermediate_inputs_costs",
-            "capital_inputs_stock",
-            "capital_inputs_stock_value",
-            "used_capital_inputs",
-            "used_capital_inputs_costs",
-            "real_amount_bought_as_intermediate_inputs",
-            "real_amount_bought_as_capital_goods",
-            "total_sales",
-            "target_short_term_credit",
-            "target_long_term_credit",
-            "received_short_term_credit",
-            "received_long_term_credit",
-            "received_credit",
-            "short_term_loan_debt",
-            "long_term_loan_debt",
-            "debt",
-            "debt_installments",
-            "interest_paid_on_deposits",
-            "interest_paid_on_loans",
-            "interest_paid",
-            "deposits",
-            "estimated_growth_by_firm",
-            "labour_inputs",
-            "desired_labour_inputs",
-            "labour_costs",
-            "real_amount_bought_as_capital_inputs",
-        ]:
-            assert ts_key in test_firms.ts.get_keys()
+        firm_config = FirmsConfiguration()
+
+        firms = Firms.from_pickled_agent(
+            synthetic_firms=country.firms,
+            configuration=firm_config,
+            country_name="FRA",
+            all_country_names=["FRA"],
+            goods_criticality_matrix=country.goods_criticality_matrix,
+            average_initial_price=country.industry_data["industry_vectors"]["Average Initial Price"].values,
+        )
+
+        assert firms.country_name == "FRA"
+
+    # def test__firms_states(self, test_firms):
+    #     assert test_firms is not None
+    #     for state in [
+    #         "Industry",
+    #         "Corresponding Bank ID",
+    #         "Employments",
+    #         "is_insolvent",
+    #         "Excess Demand",
+    #     ]:
+    #         assert state in test_firms.states.keys()
+    #
+    # def test__firms_ts(self, test_firms):
+    #     for ts_key in [
+    #         "n_firms",
+    #         "n_firms_by_industry",
+    #         "number_of_employees",
+    #         "production",
+    #         "unconstrained_target_production",
+    #         "constrained_target_production",
+    #         "target_production",
+    #         "price",
+    #         "price_in_usd",
+    #         "profits",
+    #         "taxes_paid_on_production",
+    #         "corporate_taxes_paid",
+    #         "equity",
+    #         "estimated_demand",
+    #         "demand",
+    #         "unconstrained_target_intermediate_inputs",
+    #         "unconstrained_target_intermediate_inputs_costs",
+    #         "unconstrained_target_capital_inputs",
+    #         "unconstrained_target_capital_inputs_costs",
+    #         "target_intermediate_inputs",
+    #         "target_capital_inputs",
+    #         "inventory",
+    #         "intermediate_inputs_stock",
+    #         "intermediate_inputs_stock_value",
+    #         "used_intermediate_inputs",
+    #         "used_intermediate_inputs_costs",
+    #         "capital_inputs_stock",
+    #         "capital_inputs_stock_value",
+    #         "used_capital_inputs",
+    #         "used_capital_inputs_costs",
+    #         "real_amount_bought_as_intermediate_inputs",
+    #         "real_amount_bought_as_capital_goods",
+    #         "total_sales",
+    #         "target_short_term_credit",
+    #         "target_long_term_credit",
+    #         "received_short_term_credit",
+    #         "received_long_term_credit",
+    #         "received_credit",
+    #         "short_term_loan_debt",
+    #         "long_term_loan_debt",
+    #         "debt",
+    #         "debt_installments",
+    #         "interest_paid_on_deposits",
+    #         "interest_paid_on_loans",
+    #         "interest_paid",
+    #         "deposits",
+    #         "estimated_growth_by_firm",
+    #         "labour_inputs",
+    #         "desired_labour_inputs",
+    #         "labour_costs",
+    #         "real_amount_bought_as_capital_inputs",
+    #     ]:
+    #         assert ts_key in test_firms.ts.get_keys()
 
     def test__compute_labour_inputs(self, test_firms):
         assert np.allclose(

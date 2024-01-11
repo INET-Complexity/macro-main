@@ -2,3 +2,4 @@ from .bank_configuration import BankConfiguration, BankParameters
 from .central_bank_configuration import CentralBankConfiguration
 from .individuals_configuration import IndividualsConfiguration
 from .households_configuration import HouseholdsConfiguration
+from .firms_configuration import FirmsConfiguration

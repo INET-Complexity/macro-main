@@ -2,12 +2,15 @@ import numpy as np
 import pandas as pd
 
 from pathlib import Path
+
+from inet_data import SyntheticFirms
 from mergedeep import merge
 
+from configurations import FirmsConfiguration
 from inet_macromodel.agents.agent import Agent
 from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.goods_market.value_type import ValueType
-from inet_macromodel.util.function_mapping import get_functions
+from inet_macromodel.util.function_mapping import get_functions, functions_from_model
 from inet_macromodel.firms.firm_ts import create_firms_timeseries
 from inet_macromodel.credit_market.credit_market import CreditMarket
 
@@ -19,25 +22,22 @@ class Firms(Agent):
         self,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
-        n_transactors: int,
         functions: dict[str, Callable],
-        parameters: dict[str, Any],
         ts: TimeSeries,
         states: dict[str, np.ndarray],
+        intermediate_inputs_productivity_matrix: np.ndarray,
+        capital_inputs_productivity_matrix: np.ndarray,
+        capital_inputs_depreciation_matrix: np.ndarray,
+        goods_criticality_matrix: np.ndarray,
     ):
+        n_transactors = ts.current("n_firms")
         super().__init__(
             country_name,
             all_country_names,
-            year,
-            t_max,
             n_industries,
             n_transactors,
             n_transactors,
-            functions,
-            parameters,
             ts,
             states,
             transactor_settings={
@@ -48,13 +48,79 @@ class Firms(Agent):
             },
         )
 
+        self.functions: dict[str, Any] = functions
+        self.intermediate_inputs_productivity_matrix = intermediate_inputs_productivity_matrix
+        self.capital_inputs_productivity_matrix = capital_inputs_productivity_matrix
+        self.capital_inputs_depreciation_matrix = capital_inputs_depreciation_matrix
+        self.goods_criticality_matrix = goods_criticality_matrix
+
+    @classmethod
+    def from_pickled_agent(
+        cls,
+        synthetic_firms: SyntheticFirms,
+        configuration: FirmsConfiguration,
+        country_name: str,
+        all_country_names: list[str],
+        goods_criticality_matrix: pd.DataFrame | np.ndarray,
+        average_initial_price: np.ndarray,
+    ):
+        functions = functions_from_model(model=configuration.functions, loc="inet_macromodel.firms")
+
+        intermediate_inputs_productivity_matrix = synthetic_firms.intermediate_inputs_productivity_matrix
+        capital_inputs_productivity_matrix = synthetic_firms.capital_inputs_productivity_matrix
+        capital_inputs_depreciation_matrix = synthetic_firms.capital_inputs_depreciation_matrix
+        if isinstance(goods_criticality_matrix, pd.DataFrame):
+            goods_criticality_matrix = goods_criticality_matrix.values
+
+        corr_employees = synthetic_firms.firm_data["Employees ID"]
+
+        corr_employees = [[int(x) for x in sublist if not pd.isna(x)] for sublist in corr_employees]
+
+        data = synthetic_firms.firm_data.drop(columns=["Employees ID"]).astype(float).rename_axis("Firm ID")
+
+        ts = create_firms_timeseries(
+            data=data,
+            intermediate_inputs_stock=synthetic_firms.intermediate_inputs_stock,
+            used_intermediate_inputs=synthetic_firms.used_intermediate_inputs,
+            capital_inputs_stock=synthetic_firms.capital_inputs_stock,
+            used_capital_inputs=synthetic_firms.used_capital_inputs,
+            initial_good_prices=average_initial_price,
+            n_industries=len(synthetic_firms.industries),
+            calculate_hill_exponent=configuration.calculate_hill_exponent,
+        )
+
+        states: dict[str, Any] = {}
+
+        for state_name in [
+            "Industry",
+            "Corresponding Bank ID",
+        ]:
+            if state_name not in data.columns:
+                raise ValueError("Missing " + state_name + " from the data for initialising firms.")
+            states[state_name] = data[state_name].values.astype(int)
+
+        states["Employments"] = corr_employees
+        states["is_insolvent"] = np.full(data.shape[0], False)
+        states["Excess Demand"] = np.zeros(data.shape[0])
+
+        return cls(
+            country_name,
+            all_country_names,
+            len(synthetic_firms.industries),
+            functions,
+            ts,
+            states,
+            intermediate_inputs_productivity_matrix,
+            capital_inputs_productivity_matrix,
+            capital_inputs_depreciation_matrix,
+            goods_criticality_matrix,
+        )
+
     @classmethod
     def from_data(
         cls,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
         data: pd.DataFrame,
         corr_employees: pd.DataFrame,
@@ -115,12 +181,8 @@ class Firms(Agent):
         return cls(
             country_name,
             all_country_names,
-            year,
-            t_max,
             n_industries,
-            ts.current("n_firms"),
             functions,
-            parameters,
             ts,
             states,
         )
