@@ -20,7 +20,6 @@ class DataWrapper:
     Attributes:
         synthetic_countries (dict[str, SyntheticCountry]): The synthetic countries.
         synthetic_rest_of_the_world (SyntheticRestOfTheWorld): The synthetic rest of the world.
-        goods_criticality_matrix (np.ndarray | pd.DataFrame): The goods criticality matrix.
         exchange_rates (pd.DataFrame): The exchange rates.
         trade_proportions (pd.DataFrame): The trade proportions.
         configuration (DataConfiguration): The data configuration.
@@ -28,7 +27,6 @@ class DataWrapper:
 
     synthetic_countries: dict[str, SyntheticCountry]
     synthetic_rest_of_the_world: SyntheticRestOfTheWorld
-    goods_criticality_matrix: np.ndarray | pd.DataFrame
     exchange_rates: pd.DataFrame
     trade_proportions: pd.DataFrame
     configuration: DataConfiguration
@@ -106,11 +104,10 @@ class DataWrapper:
                 exogenous_country_data=exogenous_data.get(country, None) if exogenous_data else None,
                 country_industry_data=industry_data[country],
                 year_range=year_range,
+                goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
             )
             for country in country_names
         }
-
-        goods_criticality = readers.goods_criticality.criticality_matrix
 
         synthetic_row = DefaultSyntheticRestOfTheWorld.from_readers(
             readers=readers,
@@ -125,7 +122,6 @@ class DataWrapper:
         return cls(
             synthetic_countries=synthetic_countries,
             synthetic_rest_of_the_world=synthetic_row,
-            goods_criticality_matrix=goods_criticality,
             exchange_rates=exchange_rates,
             trade_proportions=trade_proportions,
             configuration=configuration,

@@ -46,6 +46,7 @@ class SyntheticCountry:
         long_term_interest_rate (float): Long term interest rate.
         policy_rate_markup (float): Policy rate markup.
         vat (float): Value added tax.
+        industry_data (dict[str, pd.DataFrame]): Industry data for the country (includes various industry data).
     """
 
     population: SyntheticPopulation
@@ -61,6 +62,7 @@ class SyntheticCountry:
     policy_rate_markup: float
     vat: float
     industry_data: dict[str, pd.DataFrame]
+    goods_criticality_matrix: pd.DataFrame
 
     @classmethod
     def eu_synthetic_country(
@@ -73,6 +75,7 @@ class SyntheticCountry:
         exogenous_country_data: Optional[dict[str, pd.DataFrame]],
         country_industry_data: dict[str, pd.DataFrame],
         year_range: int,
+        goods_criticality_matrix: pd.DataFrame,
     ) -> "SyntheticCountry":
         """
         Create a synthetic country object for the European Union.
@@ -86,9 +89,11 @@ class SyntheticCountry:
             exogenous_country_data: The exogenous data for the country.
             country_industry_data: The industry data for the country.
             year_range: The range of years for which data is considered (determines the amount of data used to decide benefits setting).
+            goods_criticality_matrix: The goods criticality matrix.
 
         Returns:
             The synthetic country object.
+
 
         """
         central_government = DefaultSyntheticCGovernment.from_readers(readers, country, year, year_range=year_range)
@@ -237,4 +242,5 @@ class SyntheticCountry:
             policy_rate_markup=policy_rate_markup,
             vat=vat,
             industry_data=country_industry_data,
+            goods_criticality_matrix=goods_criticality_matrix,
         )

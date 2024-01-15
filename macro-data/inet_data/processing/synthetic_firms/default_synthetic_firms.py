@@ -137,7 +137,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
             capital_inputs_depreciation_matrix=capital_inputs_depreciation_matrix,
         )
 
-    ### THINGS TO BE SET AFTER MATCHING
+    # THINGS TO BE SET AFTER MATCHING
     def set_taxes_paid_on_production(self, taxes_less_subsidies_rates: np.ndarray) -> None:
         self.firm_data["Taxes paid on Production"] = (
             taxes_less_subsidies_rates[self.firm_data["Industry"].values]
