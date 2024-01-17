@@ -3,10 +3,13 @@ import pandas as pd
 
 from pathlib import Path
 
+from inet_data import SyntheticGovernmentEntities
+
+from configurations import GovernmentEntitiesConfiguration
 from inet_macromodel.agents.agent import Agent
 from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.goods_market.value_type import ValueType
-from inet_macromodel.util.function_mapping import get_functions
+from inet_macromodel.util.function_mapping import get_functions, functions_from_model
 from inet_macromodel.government_entities.government_entities_ts import (
     create_government_entities_timeseries,
 )
@@ -19,25 +22,18 @@ class GovernmentEntities(Agent):
         self,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
         n_transactors: int,
         functions: dict[str, Any],
-        parameters: dict[str, Any],
         ts: TimeSeries,
-        states: dict[str, float | np.ndarray | list[np.ndarray]],
+        states: dict[str, Any],
     ):
         super().__init__(
             country_name,
             all_country_names,
-            year,
-            t_max,
-            n_industries,
             n_industries,
             n_transactors,
-            functions,
-            parameters,
+            n_transactors,
             ts,
             states,
             transactor_settings={
@@ -46,6 +42,35 @@ class GovernmentEntities(Agent):
                 "Buyer Priority": 0,
                 "Seller Priority": 0,
             },
+        )
+        self.functions = functions
+
+    @classmethod
+    def from_pickled_agent(
+        cls,
+        synthetic_government_entities: SyntheticGovernmentEntities,
+        configuration: GovernmentEntitiesConfiguration,
+        country_name: str,
+        all_country_names: list[str],
+        n_industries: int,
+    ):
+        functions = functions_from_model(model=configuration.functions, loc="inet_macromodel.government_entities")
+
+        ts = create_government_entities_timeseries(
+            data=synthetic_government_entities.gov_entity_data,
+            n_government_entities=synthetic_government_entities.number_of_entities,
+        )
+
+        states = {"government_consumption_model": synthetic_government_entities.government_consumption_model}
+
+        return cls(
+            country_name=country_name,
+            all_country_names=all_country_names,
+            n_industries=n_industries,
+            n_transactors=synthetic_government_entities.number_of_entities,
+            functions=functions,
+            ts=ts,
+            states=states,
         )
 
     @classmethod
