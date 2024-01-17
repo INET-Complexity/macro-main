@@ -1,6 +1,6 @@
 from typing import Literal, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class BoughtGoodsDistributor(BaseModel):
@@ -185,8 +185,10 @@ class FirmsFunctions(BaseModel):
 
 
 class FirmsParameters(BaseModel):
-    capital_inputs_delay: list[int] = []
-    depreciation_rates: list[float] = []
+    capital_inputs_delay: list[int] = [0 for _ in range(18)]
+    depreciation_rates: list[float] = [0.0 for _ in range(18)]
+    capital_inputs_utilisation_rate: float = Field(1.0, ge=0.0, le=1.0)
+    intermediate_inputs_utilisation_rate: float = Field(1.0, ge=0.0, le=1.0)
 
 
 class FirmsConfiguration(BaseModel):

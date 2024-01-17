@@ -1,16 +1,13 @@
 import numpy as np
 import pandas as pd
 
-from pathlib import Path
-
 from inet_data import SyntheticFirms
-from mergedeep import merge
 
 from configurations import FirmsConfiguration
 from inet_macromodel.agents.agent import Agent
 from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.goods_market.value_type import ValueType
-from inet_macromodel.util.function_mapping import get_functions, functions_from_model
+from inet_macromodel.util.function_mapping import functions_from_model
 from inet_macromodel.firms.firm_ts import create_firms_timeseries
 from inet_macromodel.credit_market.credit_market import CreditMarket
 
@@ -30,6 +27,10 @@ class Firms(Agent):
         capital_inputs_productivity_matrix: np.ndarray,
         capital_inputs_depreciation_matrix: np.ndarray,
         goods_criticality_matrix: np.ndarray,
+        intermediate_inputs_utilisation_rate: float,
+        capital_inputs_utilisation_rate: float,
+        depreciation_rates: np.ndarray,
+        capital_inputs_delay: np.ndarray,
     ):
         n_transactors = ts.current("n_firms")
         super().__init__(
@@ -53,6 +54,10 @@ class Firms(Agent):
         self.capital_inputs_productivity_matrix = capital_inputs_productivity_matrix
         self.capital_inputs_depreciation_matrix = capital_inputs_depreciation_matrix
         self.goods_criticality_matrix = goods_criticality_matrix
+        self.intermediate_inputs_utilisation_rate = intermediate_inputs_utilisation_rate
+        self.capital_inputs_utilisation_rate = capital_inputs_utilisation_rate
+        self.capital_inputs_delay = capital_inputs_delay
+        self.depreciation_rates = depreciation_rates
 
     @classmethod
     def from_pickled_agent(
@@ -114,77 +119,10 @@ class Firms(Agent):
             capital_inputs_productivity_matrix,
             capital_inputs_depreciation_matrix,
             goods_criticality_matrix,
-        )
-
-    @classmethod
-    def from_data(
-        cls,
-        country_name: str,
-        all_country_names: list[str],
-        n_industries: int,
-        data: pd.DataFrame,
-        corr_employees: pd.DataFrame,
-        intermediate_inputs_stock: pd.DataFrame,
-        used_intermediate_inputs: pd.DataFrame,
-        capital_inputs_stock: pd.DataFrame,
-        used_capital_inputs: pd.DataFrame,
-        intermediate_inputs_productivity_matrix: pd.DataFrame,
-        capital_inputs_productivity_matrix: pd.DataFrame,
-        capital_inputs_depreciation_matrix: pd.DataFrame,
-        industry_vectors: pd.DataFrame,
-        goods_criticality_matrix: pd.DataFrame,
-        calculate_hill_exponent: bool,
-        config: dict[str, Any],
-        init_config: dict[str, Any],
-    ) -> "Firms":
-        parameters, functions = {}, {}
-        merge(parameters, config["parameters"], init_config["parameters"])
-        merge(functions, config["functions"], init_config["functions"])
-
-        # Get corresponding functions and parameters
-        functions = get_functions(
-            functions,
-            loc="inet_macromodel.firms",
-            func_dir=Path(__file__).parent / "func",
-        )
-        parameters["Intermediate Inputs Productivity Matrix"] = intermediate_inputs_productivity_matrix.values
-        parameters["Capital Inputs Productivity Matrix"] = capital_inputs_productivity_matrix.values
-        parameters["Capital Inputs Depreciation Matrix"] = capital_inputs_depreciation_matrix.values
-        parameters["Industry Vectors"] = industry_vectors
-        parameters["Goods Criticality Matrix"] = goods_criticality_matrix
-
-        # Create the corresponding time series object
-        ts = create_firms_timeseries(
-            data=data,
-            intermediate_inputs_stock=intermediate_inputs_stock.values,
-            used_intermediate_inputs=used_intermediate_inputs.values,
-            capital_inputs_stock=capital_inputs_stock.values,
-            used_capital_inputs=used_capital_inputs.values,
-            initial_good_prices=industry_vectors["Average Initial Price"].values,
-            n_industries=n_industries,
-            calculate_hill_exponent=calculate_hill_exponent,
-        )
-
-        # Additional states
-        states: dict[str, Any] = {}
-        for state_name in [
-            "Industry",
-            "Corresponding Bank ID",
-        ]:
-            if state_name not in data.columns:
-                raise ValueError("Missing " + state_name + " from the data for initialising firms.")
-            states[state_name] = data[state_name].values.astype(int)
-        states["Employments"] = [corr_employees.values[i][0] for i in range(len(corr_employees.values))]
-        states["is_insolvent"] = np.full(len(data), False)
-        states["Excess Demand"] = np.zeros(len(data))
-
-        return cls(
-            country_name,
-            all_country_names,
-            n_industries,
-            functions,
-            ts,
-            states,
+            configuration.parameters.intermediate_inputs_utilisation_rate,
+            configuration.parameters.capital_inputs_utilisation_rate,
+            np.array(configuration.parameters.depreciation_rates),
+            np.array(configuration.parameters.capital_inputs_delay),
         )
 
     def update_number_of_firms(self) -> None:
@@ -241,17 +179,15 @@ class Firms(Agent):
 
     def compute_constrained_target_production(self) -> np.ndarray:
         current_limiting_stock = self.functions["production"].compute_limiting_stock(
-            intermediate_inputs_productivity_matrix=self.parameters["Intermediate Inputs Productivity Matrix"][
+            intermediate_inputs_productivity_matrix=self.intermediate_inputs_productivity_matrix[
                 :, self.states["Industry"]
             ].T,
             intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
-            capital_inputs_productivity_matrix=self.parameters["Capital Inputs Productivity Matrix"][
-                :, self.states["Industry"]
-            ].T,
+            capital_inputs_productivity_matrix=self.capital_inputs_productivity_matrix[:, self.states["Industry"]].T,
             capital_inputs_stock=self.ts.current("capital_inputs_stock"),
-            intermediate_inputs_utilisation_rate=self.parameters["intermediate_inputs_utilisation_rate"]["value"],
-            capital_inputs_utilisation_rate=self.parameters["capital_inputs_utilisation_rate"]["value"],
-            goods_criticality_matrix=self.parameters["Goods Criticality Matrix"].values[:, self.states["Industry"]].T,
+            intermediate_inputs_utilisation_rate=self.intermediate_inputs_utilisation_rate,
+            capital_inputs_utilisation_rate=self.capital_inputs_utilisation_rate,
+            goods_criticality_matrix=self.goods_criticality_matrix[:, self.states["Industry"]].T,
         )
 
         return self.functions["target_production"].compute_constrained_target_production(
@@ -292,17 +228,15 @@ class Firms(Agent):
         return self.functions["production"].compute_production(
             desired_production=self.ts.current("constrained_target_production"),
             current_labour_inputs=self.ts.current("labour_inputs"),
-            intermediate_inputs_productivity_matrix=self.parameters["Intermediate Inputs Productivity Matrix"][
+            intermediate_inputs_productivity_matrix=self.intermediate_inputs_productivity_matrix[
                 :, self.states["Industry"]
             ].T,
             intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
-            capital_inputs_productivity_matrix=self.parameters["Capital Inputs Productivity Matrix"][
-                :, self.states["Industry"]
-            ].T,
+            capital_inputs_productivity_matrix=self.capital_inputs_productivity_matrix[:, self.states["Industry"]].T,
             capital_inputs_stock=self.ts.current("capital_inputs_stock"),
-            intermediate_inputs_utilisation_rate=self.parameters["intermediate_inputs_utilisation_rate"]["value"],
-            capital_inputs_utilisation_rate=self.parameters["capital_inputs_utilisation_rate"]["value"],
-            goods_criticality_matrix=self.parameters["Goods Criticality Matrix"].values[:, self.states["Industry"]].T,
+            intermediate_inputs_utilisation_rate=self.intermediate_inputs_utilisation_rate,
+            capital_inputs_utilisation_rate=self.capital_inputs_utilisation_rate,
+            goods_criticality_matrix=self.goods_criticality_matrix[:, self.states["Industry"]].T,
         )
 
     def compute_total_sales(self) -> np.ndarray:
@@ -379,7 +313,7 @@ class Firms(Agent):
     def compute_unconstrained_demand_for_intermediate_inputs(self) -> np.ndarray:
         return self.functions["target_intermediate_inputs"].compute_unconstrained_target_intermediate_inputs(
             current_target_production=self.ts.current("target_production"),
-            intermediate_inputs_productivity_matrix=self.parameters["Intermediate Inputs Productivity Matrix"][
+            intermediate_inputs_productivity_matrix=self.intermediate_inputs_productivity_matrix[
                 :, self.states["Industry"]
             ].T,
             prev_intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
@@ -397,9 +331,7 @@ class Firms(Agent):
     def compute_unconstrained_demand_for_capital_inputs(self) -> np.ndarray:
         return self.functions["target_capital_inputs"].compute_unconstrained_target_capital_inputs(
             current_target_production=self.ts.current("target_production"),
-            capital_inputs_depreciation_matrix=self.parameters["Capital Inputs Depreciation Matrix"][
-                :, self.states["Industry"]
-            ].T,
+            capital_inputs_depreciation_matrix=self.capital_inputs_depreciation_matrix[:, self.states["Industry"]].T,
             prev_capital_inputs_stock=self.ts.current("capital_inputs_stock"),
             initial_capital_inputs_stock=self.ts.initial("capital_inputs_stock"),
             prev_production=self.ts.current("production"),
@@ -546,7 +478,7 @@ class Firms(Agent):
         )
         return np.maximum(
             0.0,
-            (1 - np.array(self.parameters["depreciation_rates"]["value"])[self.states["Industry"]]) * new_inventories,
+            (1 - self.depreciation_rates[self.states["Industry"]]) * new_inventories,
         )
 
     def compute_nominal_inventory(self, current_good_prices: np.ndarray) -> np.ndarray:
@@ -555,11 +487,11 @@ class Firms(Agent):
     def compute_used_intermediate_inputs(self):
         return self.functions["production"].compute_intermediate_inputs_used(
             realised_production=self.ts.current("production"),
-            intermediate_inputs_productivity_matrix=self.parameters["Intermediate Inputs Productivity Matrix"][
+            intermediate_inputs_productivity_matrix=self.intermediate_inputs_productivity_matrix[
                 :, self.states["Industry"]
             ].T,
             intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
-            goods_criticality_matrix=self.parameters["Goods Criticality Matrix"].values[:, self.states["Industry"]].T,
+            goods_criticality_matrix=self.goods_criticality_matrix[:, self.states["Industry"]].T,
         )
 
     def compute_used_intermediate_inputs_costs(self, current_good_prices: np.ndarray) -> np.ndarray:
@@ -579,11 +511,9 @@ class Firms(Agent):
     def compute_used_capital_inputs(self):
         return self.functions["production"].compute_capital_inputs_used(
             realised_production=self.ts.current("production"),
-            capital_inputs_depreciation_matrix=self.parameters["Capital Inputs Depreciation Matrix"][
-                :, self.states["Industry"]
-            ].T,
+            capital_inputs_depreciation_matrix=self.capital_inputs_depreciation_matrix[:, self.states["Industry"]].T,
             capital_inputs_stock=self.ts.current("capital_inputs_stock"),
-            goods_criticality_matrix=self.parameters["Goods Criticality Matrix"].values[:, self.states["Industry"]].T,
+            goods_criticality_matrix=self.goods_criticality_matrix[:, self.states["Industry"]].T,
         )
 
     def compute_used_capital_inputs_costs(self, current_good_prices: np.ndarray) -> np.ndarray:
@@ -594,7 +524,7 @@ class Firms(Agent):
         hist_bought_capital = np.array(self.ts.historic("real_amount_bought_as_capital_goods")[1:])
         delayed_bought_capital = np.zeros((self.ts.current("n_firms"), self.n_industries))
         for g in range(self.n_industries):
-            delay = self.parameters["capital_inputs_delay"]["value"][g]
+            delay = self.capital_inputs_delay["value"][g]
             if delay < hist_bought_capital.shape[0]:
                 delayed_bought_capital[:, g] = hist_bought_capital[-delay - 1, :, g]
 
