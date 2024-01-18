@@ -82,6 +82,7 @@ def create_firms_timeseries(
         #
         real_amount_bought_as_intermediate_inputs=np.full((len(data), n_industries), np.nan),
         real_amount_bought_as_capital_goods=np.full((len(data), n_industries), np.nan),
+        real_amount_bought_as_capital_inputs=np.full((len(data), n_industries), np.nan),
         total_sales=data["Price"].values * data["Production"].values - data["Taxes paid on Production"].values,
         #
         target_short_term_credit=np.zeros(len(data)),

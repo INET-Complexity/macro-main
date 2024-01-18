@@ -524,7 +524,7 @@ class Firms(Agent):
         hist_bought_capital = np.array(self.ts.historic("real_amount_bought_as_capital_goods")[1:])
         delayed_bought_capital = np.zeros((self.ts.current("n_firms"), self.n_industries))
         for g in range(self.n_industries):
-            delay = self.capital_inputs_delay["value"][g]
+            delay = self.capital_inputs_delay[g]
             if delay < hist_bought_capital.shape[0]:
                 delayed_bought_capital[:, g] = hist_bought_capital[-delay - 1, :, g]
 

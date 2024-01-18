@@ -7,6 +7,7 @@ from pathlib import Path
 
 from inet_data import DataWrapper
 
+from configurations import IndividualsConfiguration, FirmsConfiguration
 from inet_macromodel.individuals import Individuals
 from inet_macromodel.households import Households
 from inet_macromodel.firms import Firms
@@ -77,31 +78,18 @@ def test_industry_vectors():
 
 
 @pytest.fixture(scope="module", name="test_individuals")
-def test_individuals(test_industries, test_config):
-    return Individuals.from_data(
+def test_individuals(datawrapper):
+    synthetic_population = datawrapper.synthetic_countries["FRA"].population
+
+    test_individuals = Individuals.from_pickled_agent(
+        synthetic_population=synthetic_population,
+        configuration=IndividualsConfiguration(),
         country_name="FRA",
         all_country_names=["FRA"],
-        year=2014,
-        t_max=12,
-        n_industries=len(test_industries),
-        scale=1,
-        data=pd.DataFrame(
-            {
-                "Gender": np.full(18, 2),
-                "Age": np.full(18, 30),
-                "Education": np.full(18, 4),
-                "Activity Status": np.full(18, 1),
-                "Employment Industry": np.arange(18),
-                "Employee Income": np.full(18, 100.0),
-                "Income from Unemployment Benefits": np.full(18, 0.0),
-                "Income": np.full(18, 100.0),
-                "Labour Inputs": np.full(18, 1.0),
-                "Corresponding Firm ID": np.arange(18),
-                "Corresponding Household ID": np.arange(18),
-            }
-        ),
-        config=test_config["FRA"]["individuals"],
+        n_industries=18,
+        scale=10_000,
     )
+    return test_individuals
 
 
 @pytest.fixture(scope="module", name="test_households")
@@ -187,92 +175,20 @@ def test_households(test_industries, test_config):
 
 
 @pytest.fixture(scope="module", name="test_firms")
-def test_firms(test_industries, test_industry_vectors, test_config):
-    firms = Firms.from_data(
+def test_firms(datawrapper):
+    country = datawrapper.synthetic_countries["FRA"]
+
+    firm_config = FirmsConfiguration()
+
+    firms = Firms.from_pickled_agent(
+        synthetic_firms=country.firms,
+        configuration=firm_config,
         country_name="FRA",
         all_country_names=["FRA"],
-        year=2014,
-        t_max=12,
-        n_industries=len(test_industries),
-        data=pd.DataFrame(
-            {
-                "Industry": np.arange(18),
-                "Corresponding Bank ID": np.full(18, 0),
-                "Number of Employees": np.full(18, 1),
-                "Total Wages": np.full(18, 100.0),
-                "Total Wages Paid": np.full(18, 100.0),
-                "Production": np.full(18, 1.0),
-                "Price in USD": np.full(18, 1.0),
-                "Price": np.full(18, 1.0),
-                "Profits": np.full(18, 0.0),
-                "Unit Costs": np.full(18, 1.0),
-                "Demand": np.full(18, 1.0),
-                "Inventory": np.full(18, 0.0),
-                "Deposits": np.full(18, 0.0),
-                "Debt": np.full(18, 0.0),
-                "Labour Inputs": np.full(18, 1.0),
-                "Taxes paid on Production": np.full(18, 0.1),
-                "Corporate Taxes Paid": np.full(18, 0.1),
-                "Equity": np.full(18, 10.0),
-                "Debt Installments": np.full(18, 2.0),
-                "Interest paid on deposits": np.full(18, 1.0),
-                "Interest paid on loans": np.full(18, 1.0),
-                "Interest paid": np.full(18, 2.0),
-            }
-        ),
-        corr_employees=pd.DataFrame(
-            {
-                "Corresponding Individual ID": [np.array([i]) for i in range(18)],
-            }
-        ),
-        intermediate_inputs_stock=pd.DataFrame(
-            data=np.diag(np.full(18, 0.5)),
-            index=pd.Index(range(18), name="Firm ID"),
-            columns=pd.Index(test_industries, name="Industries"),
-        ),
-        used_intermediate_inputs=pd.DataFrame(
-            data=np.diag(np.full(18, 0.5)),
-            index=pd.Index(range(18), name="Firm ID"),
-            columns=pd.Index(test_industries, name="Industries"),
-        ),
-        capital_inputs_stock=pd.DataFrame(
-            data=np.diag(np.full(18, 1.0)),
-            index=pd.Index(range(18), name="Firm ID"),
-            columns=pd.Index(test_industries, name="Industries"),
-        ),
-        used_capital_inputs=pd.DataFrame(
-            data=np.diag(np.full(18, 0.1)),
-            index=pd.Index(range(18), name="Firm ID"),
-            columns=pd.Index(test_industries, name="Industries"),
-        ),
-        intermediate_inputs_productivity_matrix=pd.DataFrame(
-            data=np.diag(np.full(18, 2.0)),
-            index=pd.Index(test_industries, name="Industries"),
-            columns=pd.Index(test_industries, name="Industries"),
-        ),
-        capital_inputs_productivity_matrix=pd.DataFrame(
-            data=np.diag(np.full(18, 1.0)),
-            index=pd.Index(test_industries, name="Industries"),
-            columns=pd.Index(test_industries, name="Industries"),
-        ),
-        capital_inputs_depreciation_matrix=pd.DataFrame(
-            data=np.diag(np.full(18, 0.1)),
-            index=pd.Index(test_industries, name="Industries"),
-            columns=pd.Index(test_industries, name="Industries"),
-        ),
-        industry_vectors=test_industry_vectors,
-        goods_criticality_matrix=pd.DataFrame(
-            data=np.zeros((18, 18)),
-            index=pd.Index(test_industries, name="Demand"),
-            columns=pd.Index(test_industries, name="Supply"),
-        ),
-        calculate_hill_exponent=False,
-        config=test_config["FRA"]["firms"],
-        init_config=test_config["init"]["FRA"]["firms"],
+        goods_criticality_matrix=country.goods_criticality_matrix,
+        average_initial_price=country.industry_data["industry_vectors"]["Average Initial Price"].values,
     )
-    firms.ts["real_amount_bought_as_intermediate_inputs"] = np.full((18, 18), 10.0)
-    firms.ts["real_amount_bought_as_capital_inputs"] = np.full((18, 18), 10.0)
-    firms.states["Amount sold"] = np.full(18, 0.5)
+
     return firms
 
 
@@ -350,56 +266,6 @@ def test_government_entities(test_industries, test_config):
         government_consumption_model=None,
         config=test_config["FRA"]["government_entities"],
     )
-
-
-# @pytest.fixture(scope="module", name="test_banks")
-# def test_banks(test_industries, test_config):
-#     banks = Banks.from_data(
-#         country_name="FRA",
-#         all_country_names=["FRA"],
-#         year=2014,
-#         t_max=12,
-#         n_industries=len(test_industries),
-#         scale=1,
-#         data=pd.DataFrame(
-#             {
-#                 "Equity": [100.0],
-#                 "Deposits": [100.0],
-#                 "Profits": [5.0],
-#                 "Market Share": [1.0],
-#                 "Liability": [1.0],
-#                 "Deposits from Firms": [100.0],
-#                 "Deposits from Households": [200.0],
-#                 "Loans to Firms": [50.0],
-#                 "Consumption Loans to Households": [10.0],
-#                 "Mortgages to Households": [400.0],
-#                 "Interest received from Loans": [50.0],
-#                 "Interest received from Deposits": [30.0],
-#                 "Short-Term Interest Rates on Firm Loans": [0.02],
-#                 "Long-Term Interest Rates on Firm Loans": [0.01],
-#                 "Interest Rates on Household Payday Loans": [0.03],
-#                 "Interest Rates on Household Consumption Loans": [0.01],
-#                 "Interest Rates on Mortgages": [0.02],
-#                 "Interest Rates on Firm Deposits": [0.04],
-#                 "Overdraft Rate on Firm Deposits": [0.02],
-#                 "Interest Rates on Household Deposits": [0.04],
-#                 "Overdraft Rate on Household Deposits": [0.02],
-#             }
-#         ),
-#         corr_firms=pd.DataFrame({"Corresponding Firm ID": [np.arange(18)]}),
-#         corr_households=pd.DataFrame({"Corresponding Household ID": [np.arange(18)]}),
-#         policy_rate_markup=0.05,
-#         long_term_ir=0.01,
-#         config=test_config["FRA"]["banks"],
-#         init_config=test_config["init"]["FRA"]["banks"],
-#     )
-#
-#     # Set interest rates
-#     banks.set_interest_rates(
-#         central_bank_policy_rate=0.02,
-#     )
-#
-#     return banks
 
 
 @pytest.fixture(scope="module", name="test_central_bank")

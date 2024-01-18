@@ -4,3 +4,4 @@ from .individuals_configuration import IndividualsConfiguration
 from .households_configuration import HouseholdsConfiguration
 from .firms_configuration import FirmsConfiguration
 from .government_entities_configuration import GovernmentEntitiesConfiguration
+from .central_government_configuration import CentralGovernmentConfiguration
