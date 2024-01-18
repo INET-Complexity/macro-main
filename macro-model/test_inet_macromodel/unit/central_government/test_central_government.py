@@ -1,9 +1,36 @@
 import numpy as np
 
+from central_government import CentralGovernment
+from configurations import CentralGovernmentConfiguration
 from inet_macromodel.individuals.individual_properties import ActivityStatus
 
 
 class TestCentralGovernment:
+    def test__create(self, datawrapper, test_individuals):
+        country = datawrapper.synthetic_countries["FRA"]
+        synthetic_central_government = country.central_government
+
+        central_government_config = CentralGovernmentConfiguration()
+
+        taxes_less_subsidies = country.industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values
+
+        n_industries = len(datawrapper.configuration.industries)
+
+        n_unemployed = np.sum(test_individuals.states["Activity Status"] == ActivityStatus.UNEMPLOYED)
+
+        central_government = CentralGovernment.from_pickled_agent(
+            synthetic_central_government=synthetic_central_government,
+            configuration=central_government_config,
+            country_name="FRA",
+            all_country_names=["FRA"],
+            taxes_net_subsidies=taxes_less_subsidies,
+            tax_data=country.tax_data,
+            n_industries=n_industries,
+            number_of_unemployed_individuals=n_unemployed,
+        )
+
+        assert central_government.country_name == "FRA"
+
     def test__central_government_states(self, test_central_government):
         assert test_central_government is not None
         for state in [

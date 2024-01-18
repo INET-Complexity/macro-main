@@ -2,11 +2,15 @@ import numpy as np
 import pandas as pd
 
 from pathlib import Path
+
+from inet_data import SyntheticCentralGovernment
+from inet_data.processing.tax_data import TaxData
 from mergedeep import merge
 
+from configurations import CentralGovernmentConfiguration
 from inet_macromodel.agents.agent import Agent
 from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.util.function_mapping import get_functions
+from inet_macromodel.util.function_mapping import get_functions, functions_from_model
 from inet_macromodel.individuals.individual_properties import ActivityStatus
 from inet_macromodel.central_government.central_government_ts import (
     create_central_government_timeseries,
@@ -20,24 +24,61 @@ class CentralGovernment(Agent):
         self,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
         functions: dict[str, Any],
-        parameters: dict[str, Any],
         ts: TimeSeries,
         states: dict[str, float | np.ndarray | list[np.ndarray]],
     ):
         super().__init__(
             country_name,
             all_country_names,
-            year,
-            t_max,
             n_industries,
             0,
             0,
+            ts,
+            states,
+        )
+        self.functions = functions
+
+    @classmethod
+    def from_pickled_agent(
+        cls,
+        synthetic_central_government: SyntheticCentralGovernment,
+        configuration: CentralGovernmentConfiguration,
+        n_industries: int,
+        country_name: str,
+        all_country_names: list[str],
+        tax_data: TaxData,
+        number_of_unemployed_individuals: int,
+        taxes_net_subsidies: np.ndarray,
+    ):
+        functions = functions_from_model(model=configuration.functions, loc="inet_macromodel.central_government")
+
+        states = {
+            "Value-added Tax": tax_data.value_added_tax,
+            "Export Tax": tax_data.export_tax,
+            "Employer Social Insurance Tax": tax_data.employer_social_insurance_tax,
+            "Employee Social Insurance Tax": tax_data.employee_social_insurance_tax,
+            "Profit Tax": tax_data.profit_tax,
+            "Income Tax": tax_data.income_tax,
+            "Capital Formation Tax": tax_data.capital_formation_tax,
+            "Taxes Less Subsidies Rates": taxes_net_subsidies,
+            "unemployment_benefits_model": synthetic_central_government.unemployment_benefits_model,
+            "other_benefits_model": synthetic_central_government.other_benefits_model,
+        }
+
+        data = (synthetic_central_government.central_gov_data.astype(float)).rename_axis("Central Government ID")
+
+        ts = create_central_government_timeseries(
+            data=data,
+            number_of_unemployed_individuals=number_of_unemployed_individuals,
+        )
+
+        return cls(
+            country_name,
+            all_country_names,
+            n_industries,
             functions,
-            parameters,
             ts,
             states,
         )
@@ -78,6 +119,9 @@ class CentralGovernment(Agent):
 
         # Additional states
         states: dict[str, float | np.ndarray] = {}
+
+        states["Value-added Tax"] = tax_data.value_added_tax
+
         for state_name in [
             "Value-added Tax",
             "Export Tax",
