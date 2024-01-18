@@ -26,6 +26,7 @@ from inet_data.processing import (
     set_housing_df,
     match_individuals_with_firms_country,
 )
+from inet_data.processing.country_data import TaxData, ExogenousCountryData
 from inet_data.readers import DataReaders
 
 
@@ -63,6 +64,8 @@ class SyntheticCountry:
     vat: float
     industry_data: dict[str, pd.DataFrame]
     goods_criticality_matrix: pd.DataFrame
+    tax_data: TaxData
+    exogenous_data: ExogenousCountryData
 
     @classmethod
     def eu_synthetic_country(
@@ -76,6 +79,7 @@ class SyntheticCountry:
         country_industry_data: dict[str, pd.DataFrame],
         year_range: int,
         goods_criticality_matrix: pd.DataFrame,
+        exogenous_data: dict[str, pd.DataFrame],
     ) -> "SyntheticCountry":
         """
         Create a synthetic country object for the European Union.
@@ -166,6 +170,19 @@ class SyntheticCountry:
             year=year, housing_market_data=housing_data, country_name=country
         )
 
+        exogenous_data = ExogenousCountryData(**exogenous_data)
+
+        population.compute_household_wealth()
+        vat = readers.world_bank.get_tau_vat(country, year)
+
+        dividend_payout_ratio = readers.eurostat.dividend_payout_ratio(country=country, year=year)
+
+        long_term_interest_rate = readers.oecd_econ.read_long_term_interest_rates(country=country, year=year)
+
+        policy_rate_markup = readers.eurostat.firm_risk_premium(country=country, year=year)
+
+        tax_data = TaxData.from_readers(readers, country, year)
+
         # TODO : these functions do things that depend on the function parameters
         population.compute_household_wealth()
 
@@ -176,8 +193,6 @@ class SyntheticCountry:
         population.set_household_saving_rates()
 
         iot_consumption = country_industry_data["industry_vectors"]["Household Consumption in LCU"]
-
-        vat = readers.world_bank.get_tau_vat(country, year)
 
         population.normalise_household_consumption(iot_hh_consumption=iot_consumption, vat=vat)
 
@@ -222,12 +237,6 @@ class SyntheticCountry:
 
         population.restrict()
 
-        dividend_payout_ratio = readers.eurostat.dividend_payout_ratio(country=country, year=year)
-
-        long_term_interest_rate = readers.oecd_econ.read_long_term_interest_rates(country=country, year=year)
-
-        policy_rate_markup = readers.eurostat.firm_risk_premium(country=country, year=year)
-
         return cls(
             population=population,
             firms=firms,
@@ -243,4 +252,6 @@ class SyntheticCountry:
             vat=vat,
             industry_data=country_industry_data,
             goods_criticality_matrix=goods_criticality_matrix,
+            tax_data=tax_data,
+            exogenous_data=exogenous_data,
         )

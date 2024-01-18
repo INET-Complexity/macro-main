@@ -72,6 +72,7 @@ def readers(data_path):
             "R_S",
         ],
         force_single_hfcs_survey=True,
+        single_icio_survey=True,
     )
     return readers
 

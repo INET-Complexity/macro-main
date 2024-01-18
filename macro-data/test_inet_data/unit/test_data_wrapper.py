@@ -20,7 +20,6 @@ class TestCreator:
         creator = DataWrapper.from_config(
             configuration=configuration,
             raw_data_path=raw_data_path,
-            create_exogenous_industry_data=False,
             single_hfcs_survey=True,
         )
 

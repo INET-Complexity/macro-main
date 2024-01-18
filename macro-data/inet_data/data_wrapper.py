@@ -37,8 +37,8 @@ class DataWrapper:
         configuration: DataConfiguration,
         raw_data_path: Path | str,
         random_seed: int = 0,
-        create_exogenous_industry_data: bool = True,
         single_hfcs_survey: bool = True,
+        single_icio_survey: bool = True,
     ) -> "DataWrapper":
         """
         Initializes a DataWrapper object with the given parameters. The DataWrapper will contain all the synthetic data
@@ -50,6 +50,7 @@ class DataWrapper:
             random_seed (int, optional): The random seed for reproducibility. Defaults to 0.
             create_exogenous_industry_data (bool, optional): Whether to create exogenous industry data. Default True.
             single_hfcs_survey (bool, optional): Whether to use a single HFCS survey. Defaults to True.
+            single_icio_survey (bool, optional): Whether to use a single ICIO survey. Defaults to True.
 
         Returns:
             DataWrapper: The initialized DataWrapper.
@@ -76,8 +77,8 @@ class DataWrapper:
             simulation_year=year,
             scale_dict=scale_dict,
             prune_date=prune_date,
-            create_exogenous_industry_data=create_exogenous_industry_data,
             force_single_hfcs_survey=single_hfcs_survey,
+            single_icio_survey=single_icio_survey,
         )
 
         single_firm_dict = {
@@ -90,7 +91,7 @@ class DataWrapper:
 
         year_range = 1 if single_hfcs_survey else 10
 
-        exogenous_data = create_all_exogenous_data(readers, country_names) if create_exogenous_industry_data else None
+        exogenous_data = create_all_exogenous_data(readers, country_names)
 
         # currently only EU countries implemented
 
@@ -105,6 +106,7 @@ class DataWrapper:
                 country_industry_data=industry_data[country],
                 year_range=year_range,
                 goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
+                exogenous_data=exogenous_data[country],
             )
             for country in country_names
         }
