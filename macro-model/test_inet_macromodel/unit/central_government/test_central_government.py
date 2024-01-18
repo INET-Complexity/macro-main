@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from central_government import CentralGovernment
 from configurations import CentralGovernmentConfiguration
@@ -6,30 +7,8 @@ from inet_macromodel.individuals.individual_properties import ActivityStatus
 
 
 class TestCentralGovernment:
-    def test__create(self, datawrapper, test_individuals):
-        country = datawrapper.synthetic_countries["FRA"]
-        synthetic_central_government = country.central_government
-
-        central_government_config = CentralGovernmentConfiguration()
-
-        taxes_less_subsidies = country.industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values
-
-        n_industries = len(datawrapper.configuration.industries)
-
-        n_unemployed = np.sum(test_individuals.states["Activity Status"] == ActivityStatus.UNEMPLOYED)
-
-        central_government = CentralGovernment.from_pickled_agent(
-            synthetic_central_government=synthetic_central_government,
-            configuration=central_government_config,
-            country_name="FRA",
-            all_country_names=["FRA"],
-            taxes_net_subsidies=taxes_less_subsidies,
-            tax_data=country.tax_data,
-            n_industries=n_industries,
-            number_of_unemployed_individuals=n_unemployed,
-        )
-
-        assert central_government.country_name == "FRA"
+    def test__create(self, test_central_government):
+        assert test_central_government.country_name == "FRA"
 
     def test__central_government_states(self, test_central_government):
         assert test_central_government is not None
@@ -52,11 +31,12 @@ class TestCentralGovernment:
             assert ts_key in test_central_government.ts.get_keys()
 
     def test__distribute_unemployment_benefits_to_individuals(self, test_central_government):
+        benefits = test_central_government.ts.current("unemployment_benefits_by_individual")
         assert np.allclose(
             test_central_government.distribute_unemployment_benefits_to_individuals(
                 current_individual_activity_status=np.array([ActivityStatus.EMPLOYED, ActivityStatus.UNEMPLOYED]),
             ),
-            np.array([0.0, 1800.0]),
+            np.array([0.0, benefits[0]]),
         )
 
     def test__compute_taxes_revenue_deficit_debt(self, test_central_government):
@@ -77,4 +57,6 @@ class TestCentralGovernment:
         )
         test_central_government.ts["debt"] = np.array([50.0])
         test_central_government.ts["revenue"] = np.array([40.0])
-        assert test_central_government.compute_revenue(household_rent_paid_to_government=100.0) == 140.0
+        assert test_central_government.compute_revenue(household_rent_paid_to_government=100.0) == pytest.approx(
+            226.37, abs=1e-1
+        )

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from inet_data import DataWrapper
 
-from configurations import IndividualsConfiguration, FirmsConfiguration
+from configurations import IndividualsConfiguration, FirmsConfiguration, CentralGovernmentConfiguration
 from inet_macromodel.individuals import Individuals
 from inet_macromodel.households import Households
 from inet_macromodel.firms import Firms
@@ -193,59 +193,30 @@ def test_firms(datawrapper):
 
 
 @pytest.fixture(scope="module", name="test_central_government")
-def test_central_government(test_industries, test_config):
-    central_gov = CentralGovernment.from_data(
+def test_central_government(datawrapper, test_individuals):
+    country = datawrapper.synthetic_countries["FRA"]
+    synthetic_central_government = country.central_government
+
+    central_government_config = CentralGovernmentConfiguration()
+
+    taxes_less_subsidies = country.industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values
+
+    n_industries = len(datawrapper.configuration.industries)
+
+    n_unemployed = np.sum(test_individuals.states["Activity Status"] == ActivityStatus.UNEMPLOYED)
+
+    central_government = CentralGovernment.from_pickled_agent(
+        synthetic_central_government=synthetic_central_government,
+        configuration=central_government_config,
         country_name="FRA",
         all_country_names=["FRA"],
-        year=2014,
-        t_max=12,
-        n_industries=len(test_industries),
-        data=pd.DataFrame(
-            {
-                "Debt": [0.0],
-                "Unemployment Benefits by Individual": [100.0],
-                "Total Unemployment Benefits": [1800.0],
-                "Other Social Benefits": [400.0],
-                "Bank Equity Injection": [0.0],
-                "Taxes on Production": [10.0],
-                "VAT": [1.0],
-                "Capital Formation Taxes": [5.0],
-                "Corporate Taxes": [1.0],
-                "Export Taxes": [5.0],
-                "Income Taxes": [4.0],
-                "Rental Income Taxes": [1.0],
-                "Employee SI Tax": [30.0],
-                "Employer SI Tax": [15.0],
-                "Taxes on Products": [3.0],
-                "Total Social Housing Rent": [100.0],
-                "Revenue": [300.0],
-            }
-        ),
-        tax_data=pd.DataFrame(
-            {
-                "Value-added Tax": [0.0],
-                "Export Tax": [0.0],
-                "Employer Social Insurance Tax": [0.0],
-                "Employee Social Insurance Tax": [0.0],
-                "Profit Tax": [0.0],
-                "Income Tax": [0.0],
-                "Capital Formation Tax": [0.0],
-            }
-        ),
-        taxes_net_subsidies=np.full(18, 0.05),
-        number_of_unemployed_individuals=1,
-        unemployment_benefits_model=None,
-        other_benefits_model=None,
-        config=test_config["FRA"]["central_government"],
-        init_config=test_config["init"]["FRA"]["central_government"],
-    )
-    central_gov.update_benefits(
-        historic_cpi_inflation=[np.array([0.01])],
-        exogenous_cpi_inflation=np.array([0.01]),
-        current_unemployment_rate=0.1,
+        taxes_net_subsidies=taxes_less_subsidies,
+        tax_data=country.tax_data,
+        n_industries=n_industries,
+        number_of_unemployed_individuals=n_unemployed,
     )
 
-    return central_gov
+    return central_government
 
 
 @pytest.fixture(scope="module", name="test_government_entities")
