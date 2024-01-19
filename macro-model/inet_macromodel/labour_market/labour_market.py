@@ -2,10 +2,11 @@ import numpy as np
 
 from pathlib import Path
 
+from configurations import LabourMarketConfiguration
 from inet_macromodel.firms.firms import Firms
 from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.households.households import Households
-from inet_macromodel.util.function_mapping import get_functions
+from inet_macromodel.util.function_mapping import get_functions, functions_from_model
 from inet_macromodel.individuals.individuals import Individuals
 from inet_macromodel.individuals.individual_properties import ActivityStatus
 from inet_macromodel.labour_market.labour_market_ts import create_labour_market_timeseries
@@ -29,8 +30,31 @@ class LabourMarket:
     @classmethod
     def from_agents(
         cls,
+        individuals: Individuals,
+        labour_market_configuration: LabourMarketConfiguration,
+        country_name: str,
+        n_industries: int,
     ):
-        ...
+        # initial_individual_activity=individuals.states["Activity Status"],
+        #                 initial_individual_employment_industry=individuals.states["Employment Industry"],
+        #             )
+
+        initial_individual_activity = individuals.states["Activity Status"]
+        initial_individual_employment_industry = individuals.states["Employment Industry"]
+
+        functions = functions_from_model(labour_market_configuration.functions, loc="inet_macromodel.labour_market")
+        ts = create_labour_market_timeseries(
+            initial_individual_activity=initial_individual_activity,
+            initial_individual_employment_industry=initial_individual_employment_industry,
+            n_industries=n_industries,
+        )
+
+        return cls(
+            country_name,
+            n_industries,
+            functions,
+            ts,
+        )
 
     @classmethod
     def from_data(

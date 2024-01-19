@@ -2,7 +2,7 @@ import numpy as np
 
 from inet_data import SyntheticBanks
 
-from inet_macromodel.configurations import BankParameters, BankConfiguration
+from inet_macromodel.configurations import BankParameters, BanksConfiguration
 from inet_macromodel.agents.agent import Agent
 from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.util.function_mapping import get_functions, functions_from_model
@@ -42,7 +42,7 @@ class Banks(Agent):
     def from_pickled_agent(
         cls,
         synthetic_banks: SyntheticBanks,
-        configuration: BankConfiguration,
+        configuration: BanksConfiguration,
         policy_rate_markup: float,
         long_term_ir: float,
         n_industries: int,

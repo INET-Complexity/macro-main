@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 from .labour_market_configuration import LabourMarketConfiguration
 from .housing_market_configuration import HousingMarketConfiguration
+from .credit_market_configuration import CreditMarketConfiguration
 
 
 class CountryConfiguration(BaseModel):
@@ -29,3 +30,5 @@ class CountryConfiguration(BaseModel):
     banks: BanksConfiguration = BanksConfiguration()
     exchange_rates: ExchangeRatesConfiguration = ExchangeRatesConfiguration()
     labour_market: LabourMarketConfiguration = LabourMarketConfiguration()
+    housing_market: HousingMarketConfiguration = HousingMarketConfiguration()
+    credit_market: CreditMarketConfiguration = CreditMarketConfiguration()

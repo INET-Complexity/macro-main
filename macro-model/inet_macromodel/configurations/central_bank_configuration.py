@@ -10,6 +10,7 @@ class CentralBankPolicy(BaseModel):
 
     path_name: str = "policy_rate"
     name: Literal["ConstantPolicyRate"] = "ConstantPolicyRate"
+    parameters: dict = {}
 
 
 class CentralBankFunctions(BaseModel):

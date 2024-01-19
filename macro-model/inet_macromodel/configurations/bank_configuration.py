@@ -73,7 +73,7 @@ class BankFunctions(BaseModel):
     interest_rates: InterestRateFunction = InterestRateFunction()
 
 
-class BankConfiguration(BaseModel):
+class BanksConfiguration(BaseModel):
     """
     Represents the configuration for a bank.
     """

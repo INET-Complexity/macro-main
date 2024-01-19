@@ -26,13 +26,11 @@ class CreditMarket:
     def __init__(
         self,
         country_name: str,
-        n_industries: int,
         functions: dict[str, Any],
         ts: TimeSeries,
         loan_data: pd.DataFrame,
     ):
         self.country_name = country_name
-        self.n_industries = n_industries
         self.functions = functions
         self.ts = ts
         self.loan_data = loan_data
@@ -43,14 +41,13 @@ class CreditMarket:
         synthetic_credit_market: SyntheticCreditMarket,
         credit_market_configuration: CreditMarketConfiguration,
         country_name: str,
-        n_industries: int,
     ) -> "CreditMarket":
         functions = functions_from_model(
             credit_market_configuration.functions,
             loc="inet_macromodel.credit_market",
         )
 
-        loan_data = synthetic_credit_market[country_name].credit_market_data.astype(float)
+        loan_data = synthetic_credit_market.credit_market_data.astype(float)
         loan_data.rename_axis("Loans", inplace=True)
 
         loan_data["loan_type"] = np.array(map_to_enum(loan_data["loan_type"].values, LoanTypes))
@@ -61,7 +58,6 @@ class CreditMarket:
 
         return cls(
             country_name,
-            n_industries,
             functions,
             ts,
             loan_data,
@@ -71,7 +67,6 @@ class CreditMarket:
     def from_data(
         cls,
         country_name: str,
-        n_industries: int,
         data: pd.DataFrame,
         config: dict[str, Any],
     ) -> "CreditMarket":
@@ -97,7 +92,6 @@ class CreditMarket:
 
         return cls(
             country_name,
-            n_industries,
             functions,
             ts,
             loan_data,

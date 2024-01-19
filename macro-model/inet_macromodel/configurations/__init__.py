@@ -1,4 +1,4 @@
-from .bank_configuration import BankConfiguration, BankParameters
+from .bank_configuration import BanksConfiguration, BankParameters
 from .central_bank_configuration import CentralBankConfiguration
 from .individuals_configuration import IndividualsConfiguration
 from .households_configuration import HouseholdsConfiguration
@@ -7,3 +7,7 @@ from .government_entities_configuration import GovernmentEntitiesConfiguration
 from .central_government_configuration import CentralGovernmentConfiguration
 from .economy_configuration import EconomyConfiguration
 from .exchange_rates_configuration import ExchangeRatesConfiguration
+from .country_configuration import CountryConfiguration
+from .labour_market_configuration import LabourMarketConfiguration
+from .credit_market_configuration import CreditMarketConfiguration
+from .housing_market_configuration import HousingMarketConfiguration

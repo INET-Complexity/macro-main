@@ -1,7 +1,11 @@
 import logging
 
 import numpy as np
+from inet_data import SyntheticCountry
 
+from configurations import CountryConfiguration
+from exchange_rates import ExchangeRates
+from individuals.individual_properties import ActivityStatus
 from inet_macromodel.banks.banks import Banks
 from inet_macromodel.central_bank.central_bank import CentralBank
 from inet_macromodel.central_government.central_government import CentralGovernment
@@ -22,8 +26,6 @@ class Country:
     def __init__(
         self,
         country_name: str,
-        year: int,
-        t_max: int,
         scale: int,
         individuals: Individuals,
         households: Households,
@@ -40,8 +42,6 @@ class Country:
     ):
         # Parameters
         self.country_name = country_name
-        self.year = year
-        self.t_max = t_max
         self.scale = scale
 
         # Agents
@@ -66,6 +66,157 @@ class Country:
 
         # Exogenous data
         self.exogenous = exogenous
+
+    @classmethod
+    def from_pickled_country(
+        cls,
+        synthetic_country: SyntheticCountry,
+        country_configuration: CountryConfiguration,
+        exchange_rates: ExchangeRates,
+        country_name: str,
+        all_country_names: list[str],
+        industries: list[str],
+        initial_year: int,
+        t_max: int,
+    ) -> "Country":
+        scale = synthetic_country.scale
+
+        n_industries = len(industries)
+
+        synthetic_population = synthetic_country.population
+        individuals = Individuals.from_pickled_agent(
+            synthetic_population=synthetic_population,
+            configuration=country_configuration.individuals,
+            country_name=country_name,
+            all_country_names=all_country_names,
+            n_industries=n_industries,
+            scale=scale,
+        )
+
+        initial_consumption_by_industry = synthetic_country.industry_data["industry_vectors"][
+            "Household Consumption in LCU"
+        ]
+        households = Households.from_pickled_agent(
+            synthetic_population=synthetic_population,
+            configuration=country_configuration.households,
+            country_name=country_name,
+            all_country_names=all_country_names,
+            industries=industries,
+            initial_consumption_by_industry=initial_consumption_by_industry,
+            value_added_tax=synthetic_country.vat,
+            scale=scale,
+        )
+
+        average_initial_price = synthetic_country.industry_data["industry_vectors"]["Average Initial Price"].values
+        firms = Firms.from_pickled_agent(
+            synthetic_firms=synthetic_country.firms,
+            configuration=country_configuration.firms,
+            country_name=country_name,
+            all_country_names=all_country_names,
+            goods_criticality_matrix=synthetic_country.goods_criticality_matrix,
+            average_initial_price=average_initial_price,
+        )
+
+        taxes_less_subsidies = synthetic_country.industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values
+
+        n_unemployed = (individuals.states["Activity Status"] == ActivityStatus.UNEMPLOYED).sum()
+
+        central_government = CentralGovernment.from_pickled_agent(
+            synthetic_central_government=synthetic_country.central_government,
+            configuration=country_configuration.central_government,
+            country_name=country_name,
+            all_country_names=all_country_names,
+            taxes_net_subsidies=taxes_less_subsidies,
+            number_of_unemployed_individuals=n_unemployed,
+            tax_data=synthetic_country.tax_data,
+            n_industries=n_industries,
+        )
+
+        government_entities = GovernmentEntities.from_pickled_agent(
+            synthetic_government_entities=synthetic_country.government_entities,
+            configuration=country_configuration.government_entities,
+            country_name=country_name,
+            all_country_names=all_country_names,
+            n_industries=n_industries,
+        )
+
+        banks = Banks.from_pickled_agent(
+            synthetic_banks=synthetic_country.banks,
+            configuration=country_configuration.banks,
+            policy_rate_markup=synthetic_country.policy_rate_markup,
+            country_name=country_name,
+            all_country_names=all_country_names,
+            long_term_ir=synthetic_country.long_term_interest_rate,
+            n_industries=n_industries,
+            scale=scale,
+        )
+
+        central_bank = CentralBank.from_pickled_agent(
+            synthetic_central_bank=synthetic_country.central_bank,
+            configuration=country_configuration.central_bank,
+            country_name=country_name,
+            all_country_names=all_country_names,
+            n_industries=n_industries,
+        )
+
+        exogenous = Exogenous.from_pickled_agent(
+            synthetic_country=synthetic_country,
+            exchange_rates=exchange_rates,
+            country_name=country_name,
+            all_country_names=all_country_names,
+            initial_year=initial_year,
+            t_max=t_max,
+        )
+
+        economy = Economy.from_agents(
+            country_name=country_name,
+            all_country_names=all_country_names,
+            economy_configuration=country_configuration.economy,
+            individuals=individuals,
+            firms=firms,
+            central_government=central_government,
+            government_entities=government_entities,
+            households=households,
+            initial_sentiment=(country_configuration.economy.functions.sentiment.parameters["value"]),
+            exogenous=exogenous,
+        )
+
+        labour_market = LabourMarket.from_agents(
+            individuals=individuals,
+            labour_market_configuration=country_configuration.labour_market,
+            country_name=country_name,
+            n_industries=n_industries,
+        )
+
+        credit_market = CreditMarket.from_pickled_market(
+            synthetic_credit_market=synthetic_country.credit_market,
+            credit_market_configuration=country_configuration.credit_market,
+            country_name=country_name,
+        )
+
+        housing_market = HousingMarket.from_pickled_market(
+            synthetic_housing_market=synthetic_country.housing_market,
+            housing_market_configuration=country_configuration.housing_market,
+            country_name=country_name,
+            scale=scale,
+        )
+
+        return cls(
+            country_name=country_name,
+            scale=scale,
+            individuals=individuals,
+            households=households,
+            firms=firms,
+            central_government=central_government,
+            government_entities=government_entities,
+            banks=banks,
+            central_bank=central_bank,
+            economy=economy,
+            labour_market=labour_market,
+            credit_market=credit_market,
+            housing_market=housing_market,
+            exogenous=exogenous,
+        )
 
     def initialisation_phase(self, exchange_rate_usd_to_lcu: float) -> None:
         self.exchange_rate_usd_to_lcu = exchange_rate_usd_to_lcu

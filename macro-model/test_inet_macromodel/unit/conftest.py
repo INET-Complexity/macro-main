@@ -11,11 +11,12 @@ from configurations import (
     IndividualsConfiguration,
     FirmsConfiguration,
     CentralGovernmentConfiguration,
-    BankConfiguration,
+    BanksConfiguration,
     HouseholdsConfiguration,
     ExchangeRatesConfiguration,
     GovernmentEntitiesConfiguration,
     EconomyConfiguration,
+    CentralBankConfiguration,
 )
 from inet_macromodel.exchange_rates import ExchangeRates
 from inet_macromodel.individuals import Individuals
@@ -189,21 +190,15 @@ def test_government_entities(datawrapper):
 
 
 @pytest.fixture(scope="module", name="test_central_bank")
-def test_central_bank(test_industries, test_config):
-    central_bank = CentralBank.from_data(
+def test_central_bank(datawrapper):
+    synthetic_central_bank = datawrapper.synthetic_countries["FRA"].central_bank
+
+    central_bank = CentralBank.from_pickled_agent(
+        synthetic_central_bank=synthetic_central_bank,
+        configuration=CentralBankConfiguration(),
         country_name="FRA",
-        all_country_names=["FRA", "ROW"],
-        year=2014,
-        t_max=12,
-        n_industries=len(test_industries),
-        data=pd.DataFrame(
-            {
-                "Debt to the ROW": [0.0],
-                "Equity": [100.0],
-                "Policy Rate": [0.02],
-            }
-        ),
-        config=test_config["FRA"]["central_bank"],
+        all_country_names=["FRA"],
+        n_industries=18,
     )
     return central_bank
 
@@ -310,7 +305,7 @@ def test_banks(datawrapper):
 
     test_banks = Banks.from_pickled_agent(
         synthetic_banks=synthetic_banks,
-        configuration=BankConfiguration(),
+        configuration=BanksConfiguration(),
         policy_rate_markup=0.1,
         long_term_ir=0.1,
         n_industries=18,
