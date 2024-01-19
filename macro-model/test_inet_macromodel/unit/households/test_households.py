@@ -5,43 +5,25 @@ from households import Households
 
 
 class TestHouseholds:
-    def test__create(self, datawrapper):
-        data_config = datawrapper.configuration
-        industries = data_config.industries
-        country = datawrapper.synthetic_countries["FRA"]
-        population = country.population
-        initial_consumption_by_industry = country.industry_data["industry_vectors"]["Household Consumption in LCU"]
-        scale = data_config.country_configs["FRA"].scale
+    def test__create(self, test_households):
+        assert test_households.country_name == "FRA"
 
-        households = Households.from_pickled_agent(
-            synthetic_population=population,
-            configuration=HouseholdsConfiguration(),
-            country_name="FRA",
-            all_country_names=["FRA"],
-            industries=industries,
-            initial_consumption_by_industry=initial_consumption_by_industry,
-            value_added_tax=country.vat,
-            scale=scale,
-        )
+    def test__households_states(self, test_households):
+        assert test_households is not None
+        for state in [
+            "saving_rates_model",
+            "social_transfers_model",
+            "average_saving_rate",
+            "Type",
+            "Corresponding Bank ID",
+            "Corresponding Inhabited House ID",
+            "Corresponding Property Owner",
+            "Tenure Status of the Main Residence",
+            "corr_individuals",
+            "corr_renters",
+        ]:
+            assert state in test_households.states.keys()
 
-        assert households.country_name == "FRA"
-
-    # def test__households_states(self, test_households):
-    #     assert test_households is not None
-    #     for state in [
-    #         "saving_rates_model",
-    #         "social_transfers_model",
-    #         "average_saving_rate",
-    #         "Type",
-    #         "Corresponding Bank ID",
-    #         "Corresponding Inhabited House ID",
-    #         "Corresponding Property Owner",
-    #         "Tenure Status of the Main Residence",
-    #         "corr_individuals",
-    #         "corr_renters",
-    #     ]:
-    #         assert state in test_households.states.keys()
-    #
     # def test__households_ts(self, test_households):
     #     for ts_key in [
     #         "n_households",

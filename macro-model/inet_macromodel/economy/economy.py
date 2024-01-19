@@ -3,12 +3,14 @@ import pandas as pd
 
 from pathlib import Path
 
-from inet_data import SyntheticCountry
-
+from central_government import CentralGovernment
+from configurations import EconomyConfiguration
+from exogenous import Exogenous
+from individuals import Individuals
 from inet_macromodel.firms.firms import Firms
 from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.households.households import Households
-from inet_macromodel.util.function_mapping import get_functions
+from inet_macromodel.util.function_mapping import get_functions, functions_from_model
 from inet_macromodel.economy.economy_ts import create_economy_timeseries
 from inet_macromodel.individuals.individual_properties import ActivityStatus
 from inet_macromodel.government_entities.government_entities import GovernmentEntities
@@ -24,7 +26,6 @@ class Economy:
         n_industries: int,
         functions: dict[str, Any],
         ts: TimeSeries,
-        states: dict[str, float | np.ndarray | list[np.ndarray]],
     ):
         self.country_name = country_name
         self.all_country_names = all_country_names
@@ -32,15 +33,98 @@ class Economy:
         self.functions = functions
         self.n_industries = n_industries
         self.ts = ts
-        self.states = states
 
     @classmethod
     def from_agents(
         cls,
         country_name: str,
         all_country_names: list[str],
+        economy_configuration: EconomyConfiguration,
+        firms: Firms,
+        households: Households,
+        individuals: Individuals,
+        government_entities: GovernmentEntities,
+        central_government: CentralGovernment,
+        exogenous: Exogenous,
+        initial_sentiment: float,
     ):
-        ...
+        initial_firm_prices = firms.ts.current("price")
+        initial_firm_total_sales = firms.ts.current("total_sales").sum()
+        initial_firm_total_used_ii = firms.ts.current("used_intermediate_inputs_costs").sum()
+        initial_total_taxes_on_products = central_government.ts.current("taxes_on_products")[0]
+        initial_change_in_firm_stock_inventories = (
+            firms.ts.current("total_inventory_change").sum()
+            + firms.ts.current("total_intermediate_inputs_bought_costs").sum()
+            - firms.ts.current("used_intermediate_inputs_costs").sum()
+            + firms.ts.current("total_capital_inputs_bought_costs").sum()
+        )
+        initial_total_operating_surplus_plus_wages = (
+            firms.ts.current("gross_operating_surplus_mixed_income").sum() + firms.ts.current("total_wage").sum()
+        )
+
+        all_other_countries = [c for c in all_country_names if c != country_name]
+
+        initial_individual_activity = individuals.states["Activity Status"]
+        initial_cpi_inflation = exogenous.ts.initial("cpi_inflation")[0]
+        initial_ppi_inflation = exogenous.ts.initial("ppi_inflation")[0]
+        initial_nominal_house_price_index_growth = exogenous.ts.initial("nominal_house_price_index_growth")[0]
+        initial_real_rent_paid = households.ts.current("rent")
+        initial_imp_rent_paid = households.ts.current("rent_imputed")
+        initial_hh_rental_income = households.ts.current("income_rental")
+        initial_hh_consumption = households.ts.current("total_consumption")[0]
+        initial_gov_consumption = government_entities.ts.current("total_consumption")[0]
+        initial_cg_rent_received = central_government.ts.current("total_rent_received")[0]
+        initial_cg_taxes_rental_income = central_government.ts.current("taxes_rental_income")[0]
+        initial_sectoral_growth = exogenous.ts.initial("sectoral_growth")
+        initial_imports = exogenous.ts.initial("sectoral_imports")
+        initial_imports_by_country = {
+            c: exogenous.ts.initial("sectoral_imports_from_" + c) for c in all_other_countries
+        }
+        initial_exports = exogenous.ts.initial("sectoral_exports")
+        initial_exports_by_country = {c: exogenous.ts.initial("sectoral_exports_to_" + c) for c in all_other_countries}
+        export_taxes = central_government.states["Export Tax"]
+
+        ts = create_economy_timeseries(
+            country_name=country_name,
+            all_country_names=all_country_names,
+            n_industries=firms.n_industries,
+            initial_firm_prices=initial_firm_prices,
+            initial_firm_total_sales=initial_firm_total_sales,
+            initial_firm_total_used_ii=initial_firm_total_used_ii,
+            initial_total_taxes_on_products=initial_total_taxes_on_products,
+            initial_change_in_firm_stock_inventories=initial_change_in_firm_stock_inventories,
+            initial_total_operating_surplus_plus_wages=initial_total_operating_surplus_plus_wages,
+            initial_individual_activity=initial_individual_activity,
+            initial_cpi_inflation=initial_cpi_inflation,
+            initial_ppi_inflation=initial_ppi_inflation,
+            initial_nominal_house_price_index_growth=initial_nominal_house_price_index_growth,
+            initial_real_rent_paid=initial_real_rent_paid,
+            initial_imp_rent_paid=initial_imp_rent_paid,
+            initial_hh_rental_income=initial_hh_rental_income,
+            initial_hh_consumption=initial_hh_consumption,
+            initial_gov_consumption=initial_gov_consumption,
+            initial_cg_rent_received=initial_cg_rent_received,
+            initial_cg_taxes_rental_income=initial_cg_taxes_rental_income,
+            initial_sectoral_growth=initial_sectoral_growth,
+            initial_sentiment=initial_sentiment,
+            initial_imports=initial_imports,
+            initial_imports_by_country=initial_imports_by_country,
+            initial_exports=initial_exports,
+            initial_exports_by_country=initial_exports_by_country,
+            export_taxes=export_taxes,
+        )
+
+        functions = functions_from_model(economy_configuration.functions, loc="inet_macromodel.economy")
+
+        n_industries = firms.n_industries
+
+        return cls(
+            country_name,
+            all_country_names,
+            n_industries,
+            functions,
+            ts,
+        )
 
     @classmethod
     def from_data(
@@ -87,9 +171,6 @@ class Economy:
             parameters = {}
         parameters["n_industries"] = n_industries
 
-        # Additional states
-        states: dict[str, float | np.ndarray | list[np.ndarray]] = {}
-
         # Create the corresponding time series object
         if not np.all(initial_firm_prices == initial_firm_prices[0]):
             raise ValueError("Initial prices must be equal.")
@@ -128,7 +209,6 @@ class Economy:
             n_industries,
             functions,
             ts,
-            states,
         )
 
     def set_estimates(
