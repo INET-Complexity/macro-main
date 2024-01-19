@@ -3,6 +3,8 @@ import pandas as pd
 
 from pathlib import Path
 
+from inet_data import SyntheticCountry
+
 from inet_macromodel.firms.firms import Firms
 from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.households.households import Households
@@ -19,31 +21,32 @@ class Economy:
         self,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
         functions: dict[str, Any],
-        parameters: dict[str, Any],
         ts: TimeSeries,
         states: dict[str, float | np.ndarray | list[np.ndarray]],
     ):
         self.country_name = country_name
         self.all_country_names = all_country_names
-        self.year = year
-        self.t_max = t_max
         self.n_industries = n_industries
         self.functions = functions
-        self.parameters = parameters
+        self.n_industries = n_industries
         self.ts = ts
         self.states = states
+
+    @classmethod
+    def from_agents(
+        cls,
+        country_name: str,
+        all_country_names: list[str],
+    ):
+        ...
 
     @classmethod
     def from_data(
         cls,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
         initial_firm_prices: np.ndarray,
         initial_firm_total_sales: float,
@@ -122,11 +125,8 @@ class Economy:
         return cls(
             country_name,
             all_country_names,
-            year,
-            t_max,
             n_industries,
             functions,
-            parameters,
             ts,
             states,
         )

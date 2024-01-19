@@ -5,3 +5,5 @@ from .households_configuration import HouseholdsConfiguration
 from .firms_configuration import FirmsConfiguration
 from .government_entities_configuration import GovernmentEntitiesConfiguration
 from .central_government_configuration import CentralGovernmentConfiguration
+from .economy_configuration import EconomyConfiguration
+from .exchange_rates_configuration import ExchangeRatesConfiguration
