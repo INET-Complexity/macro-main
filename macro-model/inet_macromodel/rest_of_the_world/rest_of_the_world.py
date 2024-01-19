@@ -3,10 +3,13 @@ import pandas as pd
 
 from pathlib import Path
 
+from inet_data import SyntheticRestOfTheWorld
+
+from configurations import RestOfTheWorldConfiguration
 from inet_macromodel.agents.agent import Agent
 from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.goods_market.value_type import ValueType
-from inet_macromodel.util.function_mapping import get_functions
+from inet_macromodel.util.function_mapping import get_functions, functions_from_model
 from inet_macromodel.rest_of_the_world.rest_of_the_world_ts import create_rest_of_the_world_timeseries
 
 from typing import Any, Optional
@@ -17,24 +20,17 @@ class RestOfTheWorld(Agent):
         self,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
         functions: dict[str, Any],
-        parameters: dict[str, Any],
         ts: TimeSeries,
         states: dict[str, float | np.ndarray | list[np.ndarray]],
     ):
         super().__init__(
             country_name,
             all_country_names,
-            year,
-            t_max,
             n_industries,
             n_industries,
             1,
-            functions,
-            parameters,
             ts,
             states,
             transactor_settings={
@@ -45,13 +41,54 @@ class RestOfTheWorld(Agent):
             },
         )
 
+        self.functions = functions
+
+    @classmethod
+    def from_pickled_row(
+        cls,
+        country_name: str,
+        all_country_names: list[str],
+        n_industries: int,
+        synthetic_row: SyntheticRestOfTheWorld,
+        configuration: RestOfTheWorldConfiguration,
+        average_ppi_inflation: float,
+    ) -> "RestOfTheWorld":
+        functions = functions_from_model(model=configuration.functions, loc="inet_macromodel.rest_of_the_world")
+
+        data = synthetic_row.row_data.astype(float)
+        data.rename_axis("Industry", inplace=True)
+
+        row_exports_model = synthetic_row.exports_model
+        row_imports_model = synthetic_row.imports_model
+
+        ts = create_rest_of_the_world_timeseries(
+            data=data,
+            initial_inflation=functions["inflation"].compute_inflation(
+                average_country_ppi_inflation=average_ppi_inflation
+            ),
+            n_industries=n_industries,
+        )
+
+        states = {
+            "row_exports_model": row_exports_model,
+            "row_imports_model": row_imports_model,
+            "Industry": np.arange(n_industries),
+        }
+
+        return cls(
+            country_name,
+            all_country_names,
+            n_industries,
+            functions,
+            ts,
+            states,
+        )
+
     @classmethod
     def from_data(
         cls,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
         data: pd.DataFrame,
         row_exports_model: Optional[Any],
@@ -89,11 +126,8 @@ class RestOfTheWorld(Agent):
         return cls(
             country_name,
             all_country_names,
-            year,
-            t_max,
             n_industries,
             functions,
-            parameters,
             ts,
             states,
         )
