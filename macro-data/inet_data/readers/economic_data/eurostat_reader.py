@@ -410,6 +410,8 @@ class EuroStatReader:
                 dates.append(str(year) + "-" + str(month))
                 total_deposits.append(dep)
                 total_debt.append(debt)
+
+        dates = pd.to_datetime(dates, format="%Y-%m")
         return pd.DataFrame(
             index=dates,
             data={

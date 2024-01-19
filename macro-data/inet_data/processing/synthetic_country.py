@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 import pandas as pd
 
@@ -66,6 +65,7 @@ class SyntheticCountry:
     goods_criticality_matrix: pd.DataFrame
     tax_data: TaxData
     exogenous_data: ExogenousCountryData
+    scale: int
 
     @classmethod
     def eu_synthetic_country(
@@ -75,11 +75,10 @@ class SyntheticCountry:
         country_configuration: CountryDataConfiguration,
         industries: list[str],
         readers: DataReaders,
-        exogenous_country_data: Optional[dict[str, pd.DataFrame]],
+        exogenous_country_data: dict[str, pd.DataFrame],
         country_industry_data: dict[str, pd.DataFrame],
         year_range: int,
         goods_criticality_matrix: pd.DataFrame,
-        exogenous_data: dict[str, pd.DataFrame],
     ) -> "SyntheticCountry":
         """
         Create a synthetic country object for the European Union.
@@ -97,8 +96,6 @@ class SyntheticCountry:
 
         Returns:
             The synthetic country object.
-
-
         """
         central_government = DefaultSyntheticCGovernment.from_readers(readers, country, year, year_range=year_range)
 
@@ -170,7 +167,7 @@ class SyntheticCountry:
             year=year, housing_market_data=housing_data, country_name=country
         )
 
-        exogenous_data = ExogenousCountryData(**exogenous_data)
+        exogenous_data = ExogenousCountryData(**exogenous_country_data)
 
         population.compute_household_wealth()
         vat = readers.world_bank.get_tau_vat(country, year)
@@ -254,4 +251,5 @@ class SyntheticCountry:
             goods_criticality_matrix=goods_criticality_matrix,
             tax_data=tax_data,
             exogenous_data=exogenous_data,
+            scale=country_configuration.scale,
         )
