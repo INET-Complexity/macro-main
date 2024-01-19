@@ -17,27 +17,25 @@ class LabourMarket:
     def __init__(
         self,
         country_name: str,
-        year: int,
-        t_max: int,
         n_industries: int,
         functions: dict[str, Any],
-        parameters: dict[str, Any],
         ts: TimeSeries,
     ):
         self.country_name = country_name
-        self.year = year
-        self.t_max = t_max
         self.n_industries = n_industries
         self.functions = functions
-        self.parameters = parameters
         self.ts = ts
+
+    @classmethod
+    def from_agents(
+        cls,
+    ):
+        ...
 
     @classmethod
     def from_data(
         cls,
         country_name: str,
-        year: int,
-        t_max: int,
         n_industries: int,
         initial_individual_activity: np.ndarray,
         initial_individual_employment_industry: np.ndarray,
@@ -65,11 +63,8 @@ class LabourMarket:
 
         return cls(
             country_name,
-            year,
-            t_max,
             n_industries,
             functions,
-            parameters,
             ts,
         )
 

@@ -5,9 +5,12 @@ import pandas as pd
 
 from pathlib import Path
 
+from inet_data import SyntheticCreditMarket
+
+from configurations import CreditMarketConfiguration
 from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.util.property_mapping import map_to_enum
-from inet_macromodel.util.function_mapping import get_functions
+from inet_macromodel.util.function_mapping import get_functions, functions_from_model
 from inet_macromodel.credit_market.types_of_loans import LoanTypes
 from inet_macromodel.credit_market.credit_market_ts import create_credit_market_timeseries
 
@@ -23,29 +26,51 @@ class CreditMarket:
     def __init__(
         self,
         country_name: str,
-        year: int,
-        t_max: int,
         n_industries: int,
         functions: dict[str, Any],
-        parameters: dict[str, Any],
         ts: TimeSeries,
         loan_data: pd.DataFrame,
     ):
         self.country_name = country_name
-        self.year = year
-        self.t_max = t_max
         self.n_industries = n_industries
         self.functions = functions
-        self.parameters = parameters
         self.ts = ts
         self.loan_data = loan_data
+
+    @classmethod
+    def from_pickled_market(
+        cls,
+        synthetic_credit_market: SyntheticCreditMarket,
+        credit_market_configuration: CreditMarketConfiguration,
+        country_name: str,
+        n_industries: int,
+    ) -> "CreditMarket":
+        functions = functions_from_model(
+            credit_market_configuration.functions,
+            loc="inet_macromodel.credit_market",
+        )
+
+        loan_data = synthetic_credit_market[country_name].credit_market_data.astype(float)
+        loan_data.rename_axis("Loans", inplace=True)
+
+        loan_data["loan_type"] = np.array(map_to_enum(loan_data["loan_type"].values, LoanTypes))
+        loan_data["loan_bank_id"] = loan_data["loan_bank_id"].astype(int)
+        loan_data["loan_recipient_id"] = loan_data["loan_recipient_id"].astype(int)
+
+        ts = create_credit_market_timeseries(loan_data)
+
+        return cls(
+            country_name,
+            n_industries,
+            functions,
+            ts,
+            loan_data,
+        )
 
     @classmethod
     def from_data(
         cls,
         country_name: str,
-        year: int,
-        t_max: int,
         n_industries: int,
         data: pd.DataFrame,
         config: dict[str, Any],
@@ -72,11 +97,8 @@ class CreditMarket:
 
         return cls(
             country_name,
-            year,
-            t_max,
             n_industries,
             functions,
-            parameters,
             ts,
             loan_data,
         )
