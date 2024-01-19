@@ -7,7 +7,12 @@ from pathlib import Path
 
 from inet_data import DataWrapper
 
-from configurations import IndividualsConfiguration, FirmsConfiguration, CentralGovernmentConfiguration
+from configurations import (
+    IndividualsConfiguration,
+    FirmsConfiguration,
+    CentralGovernmentConfiguration,
+    BankConfiguration,
+)
 from inet_macromodel.individuals import Individuals
 from inet_macromodel.households import Households
 from inet_macromodel.firms import Firms
@@ -455,6 +460,25 @@ def test_exogenous():
             index=["2013-12", "2014-1", "2014-2"],
         ).T,
     )
+
+
+@pytest.fixture(scope="module", name="test_banks")
+def test_banks(datawrapper):
+    synthetic_banks = datawrapper.synthetic_countries["FRA"].banks
+
+    test_banks = Banks.from_pickled_agent(
+        synthetic_banks=synthetic_banks,
+        configuration=BankConfiguration(),
+        policy_rate_markup=0.1,
+        long_term_ir=0.1,
+        n_industries=18,
+        country_name="FRA",
+        scale=10000,
+        all_country_names=["FRA"],
+    )
+
+    test_banks.set_interest_rates(central_bank_policy_rate=0.02)
+    return test_banks
 
 
 @pytest.fixture(scope="module", name="test_default_goods_market")
