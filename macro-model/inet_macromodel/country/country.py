@@ -240,7 +240,6 @@ class Country:
         self.households.ts.income_social_transfers.append(
             self.households.compute_social_transfer_income(
                 total_other_social_transfers=self.central_government.ts.current("total_other_benefits")[0],
-                central_government_init=self.central_government.parameters,
             )
         )
         self.households.ts.total_income_social_transfers.append(
@@ -287,7 +286,7 @@ class Country:
             observed_fraction_value_price=self.housing_market.ts.current("observed_fraction_value_price"),
             observed_fraction_rent_value=self.housing_market.ts.current("observed_fraction_rent_value"),
             expected_hpi_growth=self.economy.ts.current("estimated_nominal_house_price_index_growth")[0],
-            assumed_mortgage_maturity=self.banks.parameters["mortgage_maturity"]["value"],
+            assumed_mortgage_maturity=self.banks.parameters.mortgage_maturity,
             rental_income_taxes=self.central_government.states["Income Tax"],
         )
 
