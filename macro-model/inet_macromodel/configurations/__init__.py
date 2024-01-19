@@ -11,3 +11,4 @@ from .country_configuration import CountryConfiguration
 from .labour_market_configuration import LabourMarketConfiguration
 from .credit_market_configuration import CreditMarketConfiguration
 from .housing_market_configuration import HousingMarketConfiguration
+from .row_configuration import RestOfTheWorldConfiguration
