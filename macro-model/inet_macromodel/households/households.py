@@ -293,9 +293,8 @@ class Households(Agent):
     def compute_social_transfer_income(
         self,
         total_other_social_transfers: float,
-        central_government_init: dict[str, Any],
     ) -> np.ndarray:
-        inds = central_government_init["functions"]["household_social_transfers"]["parameters"]["independents"]["value"]
+        inds = ["Income", "Debt"]
         return self.functions["social_transfers"].get_social_transfers(
             n_households=self.ts.current("n_households"),
             total_other_social_transfers=total_other_social_transfers,
