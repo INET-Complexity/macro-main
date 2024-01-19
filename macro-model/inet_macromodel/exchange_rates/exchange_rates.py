@@ -1,5 +1,6 @@
 import pandas as pd
 
+from configurations import ExchangeRatesConfiguration
 from inet_macromodel.exchange_rates.exchange_rates_ts import create_exchange_rates_timeseries
 
 
@@ -19,6 +20,21 @@ class ExchangeRates:
         # Create the corresponding time series object
         self.ts = create_exchange_rates_timeseries(
             initial_exchange_rates=self.get_current_exchange_rates_from_usd_to_lcu(self.initial_year)
+        )
+
+    @classmethod
+    def from_data(
+        cls,
+        exchange_rates_data: pd.DataFrame,
+        exchange_rate_config: ExchangeRatesConfiguration,
+        initial_year: int,
+        country_names: list[str],
+    ):
+        return cls(
+            exchange_rate_type=exchange_rate_config.exchange_rate_type,
+            initial_year=initial_year,
+            country_names=country_names,
+            historic_exchange_rate_data=exchange_rates_data,
         )
 
     def get_current_exchange_rates_from_usd_to_lcu(self, current_year: int) -> list[float]:
