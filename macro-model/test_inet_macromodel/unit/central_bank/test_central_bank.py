@@ -3,16 +3,8 @@ from configurations import CentralBankConfiguration
 
 
 class TestCentralBank:
-    def test__init(self, datawrapper):
+    def test__init(self, test_central_bank, datawrapper):
         synthetic_central_bank = datawrapper.synthetic_countries["FRA"].central_bank
-
-        test_central_bank = CentralBank.from_pickled_agent(
-            synthetic_central_bank=synthetic_central_bank,
-            configuration=CentralBankConfiguration(),
-            country_name="FRA",
-            all_country_names=["FRA"],
-            n_industries=18,
-        )
 
         # check that set is empty
         assert not test_central_bank.states

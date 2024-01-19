@@ -1,5 +1,5 @@
 from inet_macromodel.banks import Banks
-from inet_macromodel.configurations import BankConfiguration
+from inet_macromodel.configurations import BanksConfiguration
 
 
 class TestBanks:
