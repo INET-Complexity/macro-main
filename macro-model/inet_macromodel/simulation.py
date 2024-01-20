@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 
 import numpy as np
@@ -8,6 +9,7 @@ from country import Country
 from exchange_rates import ExchangeRates
 from goods_market import GoodsMarket
 from rest_of_the_world import RestOfTheWorld
+from timestep import Timestep
 
 
 @dataclass
@@ -16,6 +18,7 @@ class Simulation:
     rest_of_the_world: RestOfTheWorld
     goods_market: GoodsMarket
     exchange_rates: ExchangeRates
+    timestep: Timestep
 
     @classmethod
     def from_datawrapper(
@@ -60,16 +63,76 @@ class Simulation:
             average_ppi_inflation=average_ppi_inflation,
         )
 
+        goods_market_participants = {
+            country_name: country.get_goods_market_participants() for country_name, country in countries.items()
+        }
+
+        goods_market_participants["ROW"] = [rest_of_the_world]
+
         goods_market = GoodsMarket.from_data(
             n_industries=datawrapper.n_industries,
             trade_proportions=datawrapper.trade_proportions,
             configuration=simulation_configuration.goods_market_configuration,
-            goods_market_participants={**countries, "ROW": rest_of_the_world},
+            goods_market_participants=goods_market_participants,
         )
+
+        if simulation_configuration.seed:
+            np.random.seed(simulation_configuration.seed)
+
+        timestep = Timestep(year=datawrapper.configuration.year, month=1)
 
         return cls(
             countries=countries,
             rest_of_the_world=rest_of_the_world,
             goods_market=goods_market,
             exchange_rates=exchange_rates,
+            timestep=timestep,
         )
+
+    def iterate(self):
+        self.exchange_rates.set_current_exchange_rates(current_year=self.timestep.year)
+
+        for ind, country in enumerate(self.countries.values()):
+            logging.info("Country: %s", country.country_name)
+            country.initialisation_phase(exchange_rate_usd_to_lcu=self.exchange_rates.ts.current("exchange_rates")[ind])
+            country.estimation_phase()
+            country.target_setting_phase()
+            country.clear_labour_market()
+            country.update_planning_metrics()
+
+            # Clearing the housing and the credit market
+            logging.info("Clearing the housing and the credit market")
+            country.prepare_housing_market_clearing()
+            country.clear_housing_market()
+            country.prepare_credit_market_clearing()
+            country.clear_credit_market()
+            country.process_housing_market_clearing()
+            country.process_credit_market_clearing()
+
+            # Prepare goods market clearing
+            logging.info("Prepare goods market clearing")
+            country.prepare_goods_market_clearing()
+
+        # Prepare goods market clearing
+        logging.info("Prepare goods market clearing (ROW)")
+        self.rest_of_the_world.update_planning_metrics(
+            average_country_ppi_inflation=np.mean(
+                [self.countries[c].economy.ts.current("ppi_inflation")[0] for c in self.countries.keys()]
+            ),
+        )
+
+        logging.info("Clearing the goods market")
+        # Clearing the goods market
+        self.goods_market.prepare()
+        self.goods_market.clear()
+        self.goods_market.record()
+
+        logging.info("Updating metrics")
+        # After goods market clearing
+        self.rest_of_the_world.record_bought_goods()
+        for country in self.countries.values():
+            country.update_realised_metrics()
+            country.update_population_structure()
+
+        # Next month
+        self.timestep.step()

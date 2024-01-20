@@ -2,10 +2,13 @@ import logging
 
 import numpy as np
 from inet_data import SyntheticCountry
+from inet_macromodel.rest_of_the_world import RestOfTheWorld
 
-from configurations import CountryConfiguration
-from exchange_rates import ExchangeRates
-from individuals.individual_properties import ActivityStatus
+from inet_macromodel.agents.agent import Agent
+
+from inet_macromodel.configurations import CountryConfiguration
+from inet_macromodel.exchange_rates import ExchangeRates
+from inet_macromodel.individuals.individual_properties import ActivityStatus
 from inet_macromodel.banks.banks import Banks
 from inet_macromodel.central_bank.central_bank import CentralBank
 from inet_macromodel.central_government.central_government import CentralGovernment
@@ -858,6 +861,9 @@ class Country:
             + self.central_government.ts.current("total_rent_received")[0]
             + self.central_government.ts.current("taxes_rental_income")[0],
         )
+
+    def get_goods_market_participants(self) -> list[Agent | RestOfTheWorld]:
+        return [self.firms, self.households, self.government_entities]
 
     def update_population_structure(self) -> None:
         self.individuals.update_demography()

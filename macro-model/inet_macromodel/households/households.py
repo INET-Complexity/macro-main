@@ -36,12 +36,13 @@ class Households(Agent):
         consumption_weights_by_income: np.ndarray,
         use_consumption_weights_by_income: bool,
     ):
+        n_entities = ts.current("n_households")
         super().__init__(
             country_name,
             all_country_names,
             n_industries,
-            0,
-            0,
+            n_entities,
+            n_entities,
             ts,
             states,
             transactor_settings={
@@ -376,11 +377,9 @@ class Households(Agent):
             household_benefits=self.states["Number of Adults"] * per_capita_unemployment_benefits
             + self.ts.current("income_social_transfers"),
             historic_consumption=self.ts.historic("consumption"),
-            consumption_weights=self.parameters["consumption_weights_data"],
-            consumption_weights_by_income=self.parameters["consumption_weights_by_income_data"],
-            take_consumption_weights_by_income_quantile=self.parameters["parameters"][
-                "take_consumption_weights_by_income_quantile"
-            ],
+            consumption_weights=self.consumption_weights,
+            consumption_weights_by_income=self.consumption_weights_by_income,
+            take_consumption_weights_by_income_quantile=self.use_consumption_weights_by_income,
             tau_vat=tau_vat,
         )
 
@@ -588,11 +587,9 @@ class Households(Agent):
             target_consumption_ce=self.ts.current("target_consumption_ce"),
             target_consumption_expansion_loans=self.ts.current("target_consumption_expansion_loans"),
             received_consumption_expansion_loans=self.ts.current("received_consumption_expansion_loans"),
-            consumption_weights=self.parameters["consumption_weights_data"],
-            consumption_weights_by_income=self.parameters["consumption_weights_by_income_data"],
-            take_consumption_weights_by_income_quantile=self.parameters["parameters"][
-                "take_consumption_weights_by_income_quantile"
-            ],
+            consumption_weights=self.consumption_weights,
+            consumption_weights_by_income=self.consumption_weights_by_income,
+            take_consumption_weights_by_income_quantile=self.use_consumption_weights_by_income,
         )
 
     def prepare_buying_goods(self) -> None:

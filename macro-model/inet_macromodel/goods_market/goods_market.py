@@ -30,7 +30,7 @@ class GoodsMarket:
         n_industries: int,
         trade_proportions: pd.DataFrame,
         configuration: GoodsMarketConfiguration,
-        goods_market_participants: dict[str, Agent],
+        goods_market_participants: dict[str, list[Agent]],
     ) -> "GoodsMarket":
         # Get corresponding functions
         functions = functions_from_model(configuration.functions, loc="inet_macromodel.goods_market")

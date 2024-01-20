@@ -606,8 +606,6 @@ class Runner:
     ) -> LabourMarket:
         return LabourMarket.from_data(
             country_name=country_name,
-            year=self.config["model"]["year"]["value"],
-            t_max=self.t_max,
             n_industries=self.n_industries,
             initial_individual_activity=initial_individual_activity,
             initial_individual_employment_industry=initial_individual_employment_industry,
@@ -797,8 +795,6 @@ class Runner:
         return RestOfTheWorld.from_data(
             country_name="ROW",
             all_country_names=self.config["model"]["country_names"]["value"] + ["ROW"],
-            year=self.config["model"]["year"]["value"],
-            t_max=self.t_max,
             n_industries=self.n_industries,
             data=pd.DataFrame(pd.read_hdf(self.processed_data_path, "synthetic_rest_of_the_world")),
             row_exports_model=sio.load(self.processed_data_path.parent / "row_exports_model.skops", trusted=True),
