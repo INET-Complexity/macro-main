@@ -250,7 +250,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         self.set_household_debt()
         self.set_household_net_wealth()
         # TODO: move to the model package
-        # self.set_wealth_distribution_function(independents=wealth_distribution_independents)
+        self.set_wealth_distribution_function()
 
     def compute_household_income(
         self,
@@ -405,7 +405,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         """
         self.household_data["Net Wealth"] = self.household_data["Wealth"] - self.household_data["Debt"]
 
-    def set_wealth_distribution_function(self, independents: list[str]) -> None:
+    def set_wealth_distribution_function(self, independents: list[str] = ["Income", "Debt"]) -> None:
         """
         Sets the wealth distribution function based on the given independent variables.
 
