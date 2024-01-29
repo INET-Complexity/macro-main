@@ -226,7 +226,7 @@ class SyntheticCountry:
         total_rent: float,
         central_bank: SyntheticCentralBank,
         weights_by_income: pd.DataFrame,
-    ):
+    ) -> tuple[SyntheticCreditMarket, ExogenousCountryData, SyntheticHousingMarket]:
         income_taxes = tax_data.income_tax
         employee_social_contribution_taxes = tax_data.employee_social_insurance_tax
         match_individuals_with_firms_country(
@@ -246,7 +246,6 @@ class SyntheticCountry:
         )
         housing_market = DefaultSyntheticHousingMarket(housing_market_data=housing_data, country_name=country)
         population.compute_household_wealth()
-        # TODO : these functions do things that depend on the function parameters
         independents = None
         # here this only changes if we change the independents of the function (e.g. income, debt)
         # not worth it to change it now
@@ -346,14 +345,14 @@ class SyntheticCountry:
     def reset_firm_function_dependent(
         self,
         capital_inputs_utilisation_rate: float,
-        iniital_inventory_to_inputs_fraction: float,
+        initial_inventory_to_input_fraction: float,
         intermediate_inputs_utilisation_rate: float,
         zero_initial_debt: bool,
         zero_initial_deposits: bool,
     ):
         self.firms.reset_function_parameters(
             capital_inputs_utilisation_rate=capital_inputs_utilisation_rate,
-            initial_inventory_to_input_fraction=iniital_inventory_to_inputs_fraction,
+            initial_inventory_to_input_fraction=initial_inventory_to_input_fraction,
             intermediate_inputs_utilisation_rate=intermediate_inputs_utilisation_rate,
             zero_initial_debt=zero_initial_debt,
             zero_initial_deposits=zero_initial_deposits,
@@ -363,7 +362,7 @@ class SyntheticCountry:
         owned_houses = housing_data["Is Owner-Occupied"]
         total_rent = housing_data.loc[owned_houses, "Rent"].sum()
 
-        self.eu_post_agents_init(
+        credit_market, exogenous_data, housing_market = self.eu_post_agents_init(
             banks=self.banks,
             central_government=self.central_government,
             country=self.country_name,
@@ -378,3 +377,7 @@ class SyntheticCountry:
             weights_by_income=self.weights_by_income,
             total_rent=total_rent,
         )
+
+        self.credit_market = credit_market
+        self.exogenous_data = exogenous_data
+        self.housing_market = housing_market

@@ -32,3 +32,13 @@ class TestCreator:
         assert creator.synthetic_countries.keys() == {"FRA"}
 
         assert new_creator.synthetic_countries.keys() == {"FRA"}
+
+        new_creator.synthetic_countries["FRA"].reset_firm_function_dependent(
+            capital_inputs_utilisation_rate=0.1,
+            initial_inventory_to_input_fraction=0.1,
+            intermediate_inputs_utilisation_rate=0.2,
+            zero_initial_debt=False,
+            zero_initial_deposits=False,
+        )
+
+        assert True
