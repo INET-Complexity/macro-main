@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
+from inet_data.processing.synthetic_credit_market.synthetic_credit_market import SyntheticCreditMarket
 
 RESTRICT_COLS = [
     "Type",
@@ -191,6 +192,7 @@ class SyntheticPopulation(ABC):
     def compute_household_income(
         self,
         total_social_transfers: float,
+        independents: Optional[list[str]] = None,
     ) -> None:
         ...
 
@@ -212,7 +214,7 @@ class SyntheticPopulation(ABC):
         self.consumption_weights = consumption_weights.copy()
 
     @abstractmethod
-    def set_debt_installments(self, credit_market_data: pd.DataFrame) -> None:
+    def set_debt_installments(self, credit_market_data: SyntheticCreditMarket) -> None:
         ...
 
     @abstractmethod
@@ -220,7 +222,7 @@ class SyntheticPopulation(ABC):
         ...
 
     @abstractmethod
-    def compute_household_wealth(self) -> None:
+    def compute_household_wealth(self, independents: Optional[list[str]] = None) -> None:
         ...
 
     def set_income(self) -> None:
@@ -230,4 +232,22 @@ class SyntheticPopulation(ABC):
         )
 
     def restrict(self):
+        ...
+
+    def normalise_household_consumption(
+        self,
+        iot_hh_consumption: np.ndarray | pd.Series,
+        vat: float,
+        positive_saving_rates_only: bool = True,
+        independents: Optional[list[str]] = None,
+    ):
+        ...
+
+    def match_consumption_weights_by_income(
+        self,
+        weights_by_income: np.ndarray | pd.DataFrame,
+        iot_hh_consumption: pd.Series,
+        vat: float,
+        consumption_variance: float = 0.1,
+    ) -> None:
         ...

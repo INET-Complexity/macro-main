@@ -2,10 +2,9 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import pandas as pd
+from inet_data.processing import SyntheticFirms
 
-from inet_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
 from inet_data.processing.synthetic_population.synthetic_population import SyntheticPopulation
-from inet_data.readers.default_readers import DataReaders
 
 
 class SyntheticBanks(ABC):
@@ -161,17 +160,13 @@ class SyntheticBanks(ABC):
 
     def initialise_rates_profits_liabilities(
         self,
-        readers: DataReaders,
+        policy_rate: float,
+        tau_bank: float,
+        risk_premium: float,
         consumption_loans_markup: float,
         mortgage_markup: float,
         household_overdraft_markup: float,
     ):
-        policy_rate = readers.policy_rates.cb_policy_rate(self.country_name, self.year)
-
-        # bank tax rate set to same as corporate tax rate
-        tau_bank = readers.oecd_econ.read_tau_firm(self.country_name, self.year)
-
-        risk_premium = readers.eurostat.firm_risk_premium(self.country_name, self.year)
         bank_markup_interest_rate_short_term_firm_loans = risk_premium
         bank_markup_interest_rate_long_term_firm_loans = risk_premium
         bank_markup_interest_rate_household_payday_loans = risk_premium

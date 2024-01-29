@@ -12,6 +12,7 @@ class TaxData:
     profit_tax: float
     income_tax: float
     capital_formation_tax: float
+    risk_premium: float
 
     @classmethod
     def from_readers(cls, readers: DataReaders, country: str, year: int):
@@ -22,5 +23,6 @@ class TaxData:
             employee_social_insurance_tax=readers.oecd_econ.read_tau_siw(country, year),
             profit_tax=readers.oecd_econ.read_tau_firm(country, year),
             income_tax=readers.oecd_econ.read_tau_income(country, year),
+            risk_premium=readers.eurostat.firm_risk_premium(country, year),
             capital_formation_tax=readers.eurostat.taxrate_on_capital_formation(country, year),
         )

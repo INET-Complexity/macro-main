@@ -3,6 +3,7 @@ import logging
 import numpy as np
 import pandas as pd
 
+from inet_data.processing.country_data import TaxData
 from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 from inet_data.processing.synthetic_credit_market.synthetic_credit_market import SyntheticCreditMarket
 from inet_data.processing.synthetic_firms.firm_tools import (
@@ -137,6 +138,38 @@ class DefaultSyntheticFirms(SyntheticFirms):
             capital_inputs_depreciation_matrix=capital_inputs_depreciation_matrix,
         )
 
+    def reset_function_parameters(
+        self,
+        capital_inputs_utilisation_rate: float,
+        initial_inventory_to_input_fraction: float,
+        intermediate_inputs_utilisation_rate: float,
+        zero_initial_debt: bool,
+        zero_initial_deposits: bool,
+    ):
+        (
+            capital_inputs_stock,
+            intermediate_inputs_stock,
+            used_capital_inputs,
+            used_intermediate_inputs,
+        ) = function_parameters_dependent_initialisation(
+            firm_data=self.firm_data,
+            intermediate_inputs_productivity_matrix=self.intermediate_inputs_productivity_matrix,
+            capital_inputs_depreciation_matrix=self.capital_inputs_depreciation_matrix,
+            capital_inputs_productivity_matrix=self.capital_inputs_productivity_matrix,
+            total_firm_deposits=self.total_firm_deposits,
+            total_firm_debt=self.total_firm_debt,
+            assume_zero_initial_debt=zero_initial_debt,
+            assume_zero_initial_deposits=zero_initial_deposits,
+            capital_inputs_utilisation_rate=capital_inputs_utilisation_rate,
+            initial_inventory_to_input_fraction=initial_inventory_to_input_fraction,
+            intermediate_inputs_utilisation_rate=intermediate_inputs_utilisation_rate,
+        )
+
+        self.intermediate_inputs_stock = intermediate_inputs_stock
+        self.used_intermediate_inputs = used_intermediate_inputs
+        self.capital_inputs_stock = capital_inputs_stock
+        self.used_capital_inputs = used_capital_inputs
+
     # THINGS TO BE SET AFTER MATCHING
     def set_taxes_paid_on_production(self, taxes_less_subsidies_rates: np.ndarray) -> None:
         self.firm_data["Taxes paid on Production"] = (
@@ -257,10 +290,10 @@ class DefaultSyntheticFirms(SyntheticFirms):
 
     def set_additional_initial_conditions(
         self,
-        readers: DataReaders,
         industry_data: dict[str, pd.DataFrame],
         synthetic_banks: SyntheticBanks,
         synthetic_credit_market: SyntheticCreditMarket,
+        tax_data: TaxData,
     ) -> None:
         taxes_less_subsidies_rates = industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values
         interest_rate_on_firm_deposits = synthetic_banks.bank_data["Interest Rates on Firm Deposits"].values
@@ -278,17 +311,17 @@ class DefaultSyntheticFirms(SyntheticFirms):
         self.set_firm_profits(
             intermediate_inputs_productivity_matrix=industry_data["intermediate_inputs_productivity_matrix"].values,
             capital_inputs_depreciation_matrix=industry_data["capital_inputs_depreciation_matrix"].values,
-            tau_sif=readers.oecd_econ.read_tau_sif(self.country_name, self.year),
+            tau_sif=tax_data.employer_social_insurance_tax,
         )
 
         self.set_unit_costs(
             intermediate_inputs_productivity_matrix=industry_data["intermediate_inputs_productivity_matrix"].values,
             capital_inputs_depreciation_matrix=industry_data["capital_inputs_depreciation_matrix"].values,
-            tau_sif=readers.oecd_econ.read_tau_sif(self.country_name, self.year),
+            tau_sif=tax_data.employer_social_insurance_tax,
         )
 
         self.set_corporate_taxes_paid(
-            tau_firm=readers.oecd_econ.read_tau_firm(self.country_name, self.year),
+            tau_firm=tax_data.profit_tax,
         )
 
         self.set_firm_debt_installments(

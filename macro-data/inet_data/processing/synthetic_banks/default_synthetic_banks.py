@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
+from inet_data.processing import SyntheticBanks
 
-from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 from inet_data.readers.default_readers import DataReaders
 
 

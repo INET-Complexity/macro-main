@@ -235,10 +235,16 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
     def restrict(self) -> None:
         self.household_data = self.household_data[RESTRICT_COLS]
 
-    def compute_household_wealth(self) -> None:
+    def compute_household_wealth(self, independents: Optional[list[str]] = None) -> None:
         """
-        Computes the wealth of each household by setting various attributes related to wealth calculation.
+        Computes the household wealth based on the given independent variables.
+
+        Args:
+            independents (Optional[list[str]]): The list of independent variables. Defaults to ["Income", "Debt"].
         """
+
+        if independents is None:
+            independents = ["Income", "Debt"]
         self.set_household_other_real_assets_wealth()
         self.set_household_total_real_assets()
         self.set_household_deposits()
@@ -250,23 +256,30 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         self.set_household_debt()
         self.set_household_net_wealth()
         # TODO: move to the model package
-        self.set_wealth_distribution_function()
+        self.set_wealth_distribution_function(independents=independents)
 
     def compute_household_income(
         self,
         total_social_transfers: float,
+        independents: Optional[list[str]] = None,
     ) -> None:
         """
         Computes the household income based on the given total social transfers.
 
         Args:
             total_social_transfers (float): The total amount of social transfers.
+            independents (Optional[list[str]]): The list of independent variables. Defaults to ["Income", "Debt"].
 
         Returns:
             None
         """
+
+        if independents is None:
+            independents = ["Income", "Debt"]
+
         self.set_household_social_transfers(
             total_social_transfers=total_social_transfers,
+            independents=independents,
         )
         self.set_household_employee_income()
         self.set_household_income_from_financial_assets()
@@ -405,7 +418,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         """
         self.household_data["Net Wealth"] = self.household_data["Wealth"] - self.household_data["Debt"]
 
-    def set_wealth_distribution_function(self, independents: list[str] = ["Income", "Debt"]) -> None:
+    def set_wealth_distribution_function(self, independents: Optional[list[str]] = None) -> None:
         """
         Sets the wealth distribution function based on the given independent variables.
 
@@ -415,6 +428,9 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         Returns:
             None
         """
+
+        if independents is None:
+            independents = ["Income", "Debt"]
         self.household_data["Fraction Deposits / Total Financial Wealth"] = np.divide(
             self.household_data["Wealth in Deposits"].values.astype(float),
             self.household_data["Wealth in Financial Assets"].values.astype(float),
@@ -657,7 +673,10 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             - iot_hh_consumption
         )
 
-        cost_fct = lambda alpha: np.sum((consumption_difference(alpha) / iot_hh_consumption.sum()) ** 2)
+        # cost_fct = lambda alpha: np.sum((consumption_difference(alpha) / iot_hh_consumption.sum()) ** 2)
+        def cost_fct(alpha):
+            diff = consumption_difference(alpha)
+            return np.dot(diff, diff) / iot_hh_consumption.sum()
 
         initial_guess = np.zeros(n_quantiles)  # Initial guess for alphas
         bounds = [(0, 1 - consumption_variance)] * n_quantiles  # Each alpha[q] is between 0 and 1-consumption_variance

@@ -6,7 +6,11 @@ import numpy as np
 import pandas as pd
 
 from inet_data.configuration import DataConfiguration
-from inet_data.processing import DefaultSyntheticRestOfTheWorld, SyntheticCountry, SyntheticRestOfTheWorld
+from inet_data.processing.synthetic_country import SyntheticCountry
+from inet_data.processing.synthetic_rest_of_the_world.default_synthetic_rest_of_the_world import (
+    DefaultSyntheticRestOfTheWorld,
+)
+from inet_data.processing.synthetic_rest_of_the_world.synthetic_rest_of_the_world import SyntheticRestOfTheWorld
 from inet_data.readers import DataReaders, compile_industry_data, create_all_exogenous_data
 from inet_data.util import get_map_long_to_short
 
