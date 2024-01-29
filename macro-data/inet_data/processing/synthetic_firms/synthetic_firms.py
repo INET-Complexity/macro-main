@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import pandas as pd
-from inet_data.processing.synthetic_credit_market.synthetic_credit_market import SyntheticCreditMarket
 
 from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 
@@ -121,7 +120,7 @@ class SyntheticFirms(ABC):
         self,
         industry_data: dict[str, pd.DataFrame],
         synthetic_banks: SyntheticBanks,
-        synthetic_credit_market: SyntheticCreditMarket,
+        credit_market_data: pd.DataFrame,
         tax_data: TaxData,
     ) -> None:
         ...

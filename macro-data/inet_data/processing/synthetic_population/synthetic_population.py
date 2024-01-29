@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-from inet_data.processing.synthetic_credit_market.synthetic_credit_market import SyntheticCreditMarket
 
 RESTRICT_COLS = [
     "Type",
@@ -214,7 +213,7 @@ class SyntheticPopulation(ABC):
         self.consumption_weights = consumption_weights.copy()
 
     @abstractmethod
-    def set_debt_installments(self, credit_market_data: SyntheticCreditMarket) -> None:
+    def set_debt_installments(self, credit_market_data: pd.DataFrame) -> None:
         ...
 
     @abstractmethod

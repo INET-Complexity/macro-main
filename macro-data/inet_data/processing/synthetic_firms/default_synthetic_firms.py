@@ -5,7 +5,6 @@ import pandas as pd
 
 from inet_data.processing.country_data import TaxData
 from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
-from inet_data.processing.synthetic_credit_market.synthetic_credit_market import SyntheticCreditMarket
 from inet_data.processing.synthetic_firms.firm_tools import (
     initialise_basic_firm_fields,
     function_parameters_dependent_initialisation,
@@ -276,8 +275,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
     def set_corporate_taxes_paid(self, tau_firm: float) -> None:
         self.firm_data["Corporate Taxes Paid"] = tau_firm * np.maximum(0.0, self.firm_data["Profits"])
 
-    def set_firm_debt_installments(self, synthetic_credit_market: SyntheticCreditMarket) -> None:
-        credit_market_data = synthetic_credit_market.credit_market_data
+    def set_firm_debt_installments(self, credit_market_data: pd.DataFrame) -> None:
         credit_market_data_firm_loans = credit_market_data.loc[credit_market_data["loan_type"] == 2]
         debt_installments = np.zeros(len(self.firm_data))
         for firm_id in range(len(self.firm_data)):
@@ -292,7 +290,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
         self,
         industry_data: dict[str, pd.DataFrame],
         synthetic_banks: SyntheticBanks,
-        synthetic_credit_market: SyntheticCreditMarket,
+        credit_market_data: pd.DataFrame,
         tax_data: TaxData,
     ) -> None:
         taxes_less_subsidies_rates = industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values
@@ -305,7 +303,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
         self.set_interest_paid(
             interest_rate_on_firm_deposits=interest_rate_on_firm_deposits,
             overdraft_rate_on_firm_deposits=overdraft_rate_on_firm_deposits,
-            credit_market_data=synthetic_credit_market.credit_market_data,
+            credit_market_data=credit_market_data,
         )
 
         self.set_firm_profits(
@@ -325,5 +323,5 @@ class DefaultSyntheticFirms(SyntheticFirms):
         )
 
         self.set_firm_debt_installments(
-            synthetic_credit_market=synthetic_credit_market,
+            credit_market_data=credit_market_data,
         )

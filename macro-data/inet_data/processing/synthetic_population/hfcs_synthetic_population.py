@@ -8,7 +8,6 @@ from sklearn.experimental import enable_iterative_imputer  # noqa
 from sklearn.impute import IterativeImputer  # noqa
 from sklearn.linear_model import LinearRegression
 
-from inet_data.processing.synthetic_credit_market.synthetic_credit_market import SyntheticCreditMarket
 from inet_data.processing.synthetic_population.hfcs_household_tools import (
     set_household_types,
     set_household_housing_data,
@@ -383,18 +382,16 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             + self.household_data["Outstanding Balance of other Non-Mortgage Loans"]
         )
 
-    def set_debt_installments(self, credit_market: SyntheticCreditMarket) -> None:
+    def set_debt_installments(self, credit_market_data: pd.DataFrame) -> None:
         """
         Sets the debt installments for each household based on the credit market data.
 
         Args:
-            credit_market (SyntheticCreditMarket): The credit market data.
+            credit_market_data (DataFrame): The credit market data.
 
         Returns:
             None
         """
-        credit_market_data = credit_market.credit_market_data
-        # select consumption expansion loans and housing market loans
         credit_market_data_household_loans = credit_market_data.loc[credit_market_data["loan_type"].isin([4, 5])]
         debt_installments = np.zeros(len(self.household_data))
         for household_id in range(len(self.household_data)):

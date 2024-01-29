@@ -302,7 +302,11 @@ class SyntheticCountry:
         population.match_consumption_weights_by_income(
             weights_by_income=weights_by_income, iot_hh_consumption=iot_consumption, vat=vat
         )
-        banks.initialise_deposits_and_loans(synthetic_population=population, synthetic_firms=firms)
+        banks.initialise_deposits_and_loans(
+            synthetic_population=population,
+            firm_deposits=firms.firm_data["Deposits"].values,
+            firm_debt=firms.firm_data["Debt"].values,
+        )
 
         # bank tax rate set to same as corporate tax rate
 
@@ -323,12 +327,12 @@ class SyntheticCountry:
             mortgage_maturity=country_configuration.banks_configuration.mortgage_maturity,
             zero_firm_debt=country_configuration.firms_configuration.zero_initial_debt,
         )
-        population.set_debt_installments(credit_market)
+        population.set_debt_installments(credit_market.credit_market_data)
         firms.set_additional_initial_conditions(
             tax_data=tax_data,
             industry_data=country_industry_data,
             synthetic_banks=banks,
-            synthetic_credit_market=credit_market,
+            credit_market_data=credit_market.credit_market_data,
         )
         central_government.update_fields(
             synthetic_banks=banks,
