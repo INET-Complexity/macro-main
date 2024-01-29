@@ -3,6 +3,7 @@ import logging
 import numpy as np
 import pandas as pd
 
+from inet_data.configuration.dataconfiguration import FirmsDataConfiguration
 from inet_data.processing.country_data import TaxData
 from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 from inet_data.processing.synthetic_firms.firm_tools import (
@@ -60,11 +61,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
         scale: int,
         industry_data: dict[str, pd.DataFrame],
         n_employees_per_industry: np.ndarray,
-        zero_initial_deposits: bool,
-        zero_initial_debt: bool,
-        initial_inventory_to_input_fraction: float = 0,
-        intermediate_inputs_utilisation_rate: float = 1.0,
-        capital_inputs_utilisation_rate: float = 1.0,
+        firm_configuration: FirmsDataConfiguration,
     ) -> "DefaultSyntheticFirms":
         n_firms_per_industry = industry_data["industry_vectors"]["Number of Firms"].values
         n_firms = n_firms_per_industry.sum()
@@ -110,11 +107,11 @@ class DefaultSyntheticFirms(SyntheticFirms):
             capital_inputs_productivity_matrix,
             total_firm_deposits,
             total_firm_debt,
-            zero_initial_debt,
-            zero_initial_deposits,
-            capital_inputs_utilisation_rate,
-            initial_inventory_to_input_fraction,
-            intermediate_inputs_utilisation_rate,
+            assume_zero_initial_debt=firm_configuration.zero_initial_debt,
+            assume_zero_initial_deposits=firm_configuration.zero_initial_deposits,
+            capital_inputs_utilisation_rate=firm_configuration.capital_inputs_utilisation_rate,
+            initial_inventory_to_input_fraction=firm_configuration.initial_inventory_to_input_fraction,
+            intermediate_inputs_utilisation_rate=firm_configuration.intermediate_inputs_utilisation_rate,
         )
 
         firm_data["Employees ID"] = [[] for _ in range(n_firms)]

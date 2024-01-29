@@ -144,8 +144,7 @@ class SyntheticCountry:
             industries=industries,
             scale=country_configuration.scale,
             n_employees_per_industry=population.number_employees_by_industry,
-            zero_initial_debt=country_configuration.firms_configuration.zero_initial_debt,
-            zero_initial_deposits=country_configuration.firms_configuration.zero_initial_deposits,
+            firm_configuration=country_configuration.firms_configuration,
         )
 
         banks = DefaultSyntheticBanks.from_readers(
