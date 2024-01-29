@@ -192,8 +192,7 @@ class SyntheticPopulation(ABC):
         self,
         total_social_transfers: float,
         independents: Optional[list[str]] = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @property
     def number_employees_by_industry(self) -> np.ndarray:
@@ -213,16 +212,13 @@ class SyntheticPopulation(ABC):
         self.consumption_weights = consumption_weights.copy()
 
     @abstractmethod
-    def set_debt_installments(self, credit_market_data: pd.DataFrame) -> None:
-        ...
+    def set_debt_installments(self, credit_market_data: pd.DataFrame) -> None: ...
 
     @abstractmethod
-    def set_household_saving_rates(self, independents: Optional[list[str]] = None) -> None:
-        ...
+    def set_household_saving_rates(self, independents: Optional[list[str]] = None) -> None: ...
 
     @abstractmethod
-    def compute_household_wealth(self, independents: Optional[list[str]] = None) -> None:
-        ...
+    def compute_household_wealth(self, independents: Optional[list[str]] = None) -> None: ...
 
     def set_income(self) -> None:
         self.individual_data["Income"] = (
@@ -230,8 +226,7 @@ class SyntheticPopulation(ABC):
             + self.individual_data["Income from Unemployment Benefits"].fillna(0.0).values
         )
 
-    def restrict(self):
-        ...
+    def restrict(self): ...
 
     def normalise_household_consumption(
         self,
@@ -239,8 +234,7 @@ class SyntheticPopulation(ABC):
         vat: float,
         positive_saving_rates_only: bool = True,
         independents: Optional[list[str]] = None,
-    ):
-        ...
+    ): ...
 
     def match_consumption_weights_by_income(
         self,
@@ -248,5 +242,4 @@ class SyntheticPopulation(ABC):
         iot_hh_consumption: pd.Series,
         vat: float,
         consumption_variance: float = 0.1,
-    ) -> None:
-        ...
+    ) -> None: ...

@@ -122,5 +122,4 @@ class SyntheticFirms(ABC):
         synthetic_banks: SyntheticBanks,
         credit_market_data: pd.DataFrame,
         tax_data: TaxData,
-    ) -> None:
-        ...
+    ) -> None: ...
