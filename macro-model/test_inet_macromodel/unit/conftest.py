@@ -17,6 +17,7 @@ from configurations import (
     GovernmentEntitiesConfiguration,
     EconomyConfiguration,
     CentralBankConfiguration,
+    GoodsMarketConfiguration,
 )
 from inet_macromodel.exchange_rates import ExchangeRates
 from inet_macromodel.individuals import Individuals
@@ -226,8 +227,6 @@ def test_row(test_industries, test_config):
     return RestOfTheWorld.from_data(
         country_name="ROW",
         all_country_names=["FRA", "ROW"],
-        year=2014,
-        t_max=12,
         n_industries=len(test_industries),
         data=pd.DataFrame(
             {
@@ -249,8 +248,6 @@ def test_row(test_industries, test_config):
 def test_labour_market(test_config):
     return LabourMarket.from_data(
         country_name="FRA",
-        year=test_config["model"]["year"]["value"],
-        t_max=test_config["model"]["t_max"]["value"],
         n_industries=len(test_config["model"]["industries"]["value"]),
         initial_individual_activity=np.array([ActivityStatus.EMPLOYED, ActivityStatus.UNEMPLOYED]),
         initial_individual_employment_industry=np.array([0, 1]),
@@ -262,9 +259,6 @@ def test_labour_market(test_config):
 def test_credit_market(test_industries, test_config):
     return CreditMarket.from_data(
         country_name="ROW",
-        year=2014,
-        t_max=12,
-        n_industries=len(test_industries),
         data=pd.DataFrame(
             {
                 "loan_type": [],
@@ -281,9 +275,6 @@ def test_credit_market(test_industries, test_config):
 def test_housing_market(test_industries, test_config):
     return HousingMarket.from_data(
         country_name="ROW",
-        year=2014,
-        t_max=12,
-        n_industries=len(test_industries),
         scale=1,
         data=pd.DataFrame(
             {
@@ -326,21 +317,13 @@ def test_default_goods_market(
     test_config,
 ):
     goods_market = GoodsMarket.from_data(
-        year=test_config["model"]["year"]["value"],
-        t_max=test_config["model"]["t_max"]["value"],
         n_industries=len(test_config["model"]["industries"]["value"]),
         trade_proportions=pd.DataFrame(),
-        config=test_config["goods_market"]["goods_market"],
-    )
-    goods_market.functions["clearing"].initiate_agents(
-        n_industries=len(test_config["model"]["industries"]["value"]),
+        configuration=GoodsMarketConfiguration(),
         goods_market_participants={
             "FRA": [test_firms, test_households],
             "ROW": [test_row],
         },
-    )
-    goods_market.functions["clearing"].initiate_the_supply_chain(
-        initial_supply_chain=None,
     )
     return goods_market
 
@@ -353,22 +336,15 @@ def test_goods_market(
     test_config,
 ):
     goods_market = GoodsMarket.from_data(
-        year=test_config["model"]["year"]["value"],
-        t_max=test_config["model"]["t_max"]["value"],
         n_industries=len(test_config["model"]["industries"]["value"]),
-        config=test_config["goods_market"]["goods_market"],
+        configuration=GoodsMarketConfiguration(),
         trade_proportions=pd.DataFrame(),
-    )
-    goods_market.functions["clearing"].initiate_agents(
-        n_industries=len(test_config["model"]["industries"]["value"]),
         goods_market_participants={
             "FRA": [test_firms, test_households],
             "ROW": [test_row],
         },
     )
-    goods_market.functions["clearing"].initiate_the_supply_chain(
-        initial_supply_chain=None,
-    )
+
     return goods_market
 
 
@@ -419,8 +395,6 @@ def test_country(
 ):
     return Country(
         country_name="FRA",
-        year=2014,
-        t_max=12,
         scale=1,
         individuals=test_individuals,
         households=test_households,

@@ -1,3 +1,4 @@
+import h5py
 import logging
 
 import numpy as np
@@ -867,3 +868,6 @@ class Country:
 
     def update_population_structure(self) -> None:
         self.individuals.update_demography()
+
+    def save_to_h5(self, h5_file: h5py.File):
+        self.firms.save_to_h5(h5_file)

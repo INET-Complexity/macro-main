@@ -18,13 +18,9 @@ def create_test_transactor(
     return Agent(
         country_name="GER",
         all_country_names=["GER"],
-        year=2014,
-        t_max=12,
         n_industries=18,
         n_transactors_buy=n_transactors_buy,
         n_transactors_sell=n_transactors_sell,
-        functions={},
-        parameters={},
         ts=TimeSeries(),
         states={},
         transactor_settings={
