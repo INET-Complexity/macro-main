@@ -56,6 +56,7 @@ class SyntheticCountry:
         country_name (Country): The name of the country.
         country_configuration (CountryDataConfiguration): The configuration settings for the country.
         industries (list[str]): The list of industries in the country.
+        consumption_weights_by_income (pd.DataFrame): The consumption weights by income for the country.
     """
 
     population: SyntheticPopulation
@@ -77,7 +78,7 @@ class SyntheticCountry:
     country_name: Country
     country_configuration: CountryDataConfiguration
     industries: list[str]
-    weights_by_income: pd.DataFrame
+    consumption_weights_by_income: pd.DataFrame
 
     @classmethod
     def eu_synthetic_country(
@@ -176,7 +177,6 @@ class SyntheticCountry:
             country=country,
             country_configuration=country_configuration,
             country_industry_data=country_industry_data,
-            exogenous_data=exogenous_data,
             firms=firms,
             industries=industries,
             population=population,
@@ -206,7 +206,7 @@ class SyntheticCountry:
             country_name=country,
             country_configuration=country_configuration,
             industries=industries,
-            weights_by_income=weights_by_income,
+            consumption_weights_by_income=weights_by_income,
         )
 
     @classmethod
@@ -217,7 +217,6 @@ class SyntheticCountry:
         country: Country,
         country_configuration: CountryDataConfiguration,
         country_industry_data: dict[str, pd.DataFrame],
-        exogenous_data: ExogenousCountryData,
         firms: SyntheticFirms,
         industries: list[str],
         population: SyntheticPopulation,
@@ -422,14 +421,13 @@ class SyntheticCountry:
             country=self.country_name,
             country_configuration=self.country_configuration,
             country_industry_data=self.industry_data,
-            exogenous_data=self.exogenous_data,
             firms=self.firms,
             industries=self.industries,
             population=self.population,
-            central_bank=self.central_bank,
             tax_data=self.tax_data,
-            weights_by_income=self.weights_by_income,
             total_rent=total_rent,
+            central_bank=self.central_bank,
+            weights_by_income=self.consumption_weights_by_income,
         )
 
         self.credit_market = credit_market
