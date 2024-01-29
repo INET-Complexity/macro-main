@@ -169,7 +169,6 @@ class SyntheticCountry:
 
         (
             credit_market,
-            exogenous_data,
             housing_market,
         ) = cls.eu_post_agents_init(
             banks=banks,
@@ -226,7 +225,31 @@ class SyntheticCountry:
         total_rent: float,
         central_bank: SyntheticCentralBank,
         weights_by_income: pd.DataFrame,
-    ) -> tuple[SyntheticCreditMarket, ExogenousCountryData, SyntheticHousingMarket]:
+    ) -> tuple[SyntheticCreditMarket, SyntheticHousingMarket]:
+        """
+        This function takes care of matching the different agents together and initialising the Credit and Housing markets.
+        This function is separated because we may want to change the initialisation of firm parameters (in particular those which depend
+        on function parameters), in which case we need to redo the matching and initialisation of the markets.
+
+        Args:
+            banks (SyntheticBanks): The synthetic banks.
+            central_government (SyntheticCentralGovernment): The synthetic central government.
+            country (Country): The country object representing the EU country.
+            country_configuration (CountryDataConfiguration): The configuration data for the country.
+            country_industry_data (dict[str, pd.DataFrame]): The industry data for the country.
+            exogenous_data (ExogenousCountryData): The exogenous data for the country.
+            firms (SyntheticFirms): The synthetic firms.
+            industries (list[str]): The list of industries in the country.
+            population (SyntheticPopulation): The synthetic population.
+            tax_data (TaxData): The tax data for the country.
+            total_rent (float): The total rent in the country.
+            central_bank (SyntheticCentralBank): The synthetic central bank.
+            weights_by_income (pd.DataFrame): The weights by income for the country.
+
+        Returns:
+            tuple[SyntheticCreditMarket, SyntheticHousingMarket]: A tuple containing the synthetic credit market,
+            exogenous data, and synthetic housing market.
+        """
         income_taxes = tax_data.income_tax
         employee_social_contribution_taxes = tax_data.employee_social_insurance_tax
         match_individuals_with_firms_country(
@@ -268,7 +291,6 @@ class SyntheticCountry:
         )
         return (
             credit_market,
-            exogenous_data,
             housing_market,
         )
 
@@ -287,7 +309,28 @@ class SyntheticCountry:
         risk_premium: float,
         policy_rate: float,
         independents: Optional[list[str]] = None,
-    ):
+    ) -> SyntheticCreditMarket:
+        """
+        Initializes the European Union (EU) population's wealth and income, and sets up the credit market.
+
+        Args:
+            cls: The class object.
+            banks: The synthetic banks object.
+            central_government: The synthetic central government object.
+            country_configuration: The country data configuration object.
+            country_industry_data: The dictionary containing country industry data.
+            firms: The synthetic firms object.
+            population: The synthetic population object.
+            tax_data: The tax data object.
+            weights_by_income: The DataFrame containing weights by income.
+            vat: The value-added tax rate.
+            risk_premium: The risk premium for interest rates.
+            policy_rate: The policy rate for interest rates.
+            independents: Optional. The list of independent variables.
+
+        Returns:
+            The initialized synthetic credit market object.
+        """
         population.compute_household_wealth(independents=independents)
         population.compute_household_income(
             total_social_transfers=central_government.central_gov_data["Other Social Benefits"].values[0],
@@ -308,7 +351,6 @@ class SyntheticCountry:
         )
 
         # bank tax rate set to same as corporate tax rate
-
         tau_bank = tax_data.profit_tax
 
         banks.initialise_rates_profits_liabilities(
@@ -350,6 +392,18 @@ class SyntheticCountry:
         zero_initial_debt: bool,
         zero_initial_deposits: bool,
     ):
+        """
+        Resets the function parameters of the firms and initializes the credit market, exogenous data, and housing market.
+        These must be reinitialised because changing the firm function parameters will change their balance sheet, which in turn
+        will impact household finances, and thus the credit market, exogenous data, and housing market.
+
+        Args:
+            capital_inputs_utilisation_rate (float): The rate of capital inputs utilization.
+            initial_inventory_to_input_fraction (float): The fraction of initial inventory to input.
+            intermediate_inputs_utilisation_rate (float): The rate of intermediate inputs utilization.
+            zero_initial_debt (bool): Flag indicating whether to set initial debt to zero.
+            zero_initial_deposits (bool): Flag indicating whether to set initial deposits to zero.
+        """
         self.firms.reset_function_parameters(
             capital_inputs_utilisation_rate=capital_inputs_utilisation_rate,
             initial_inventory_to_input_fraction=initial_inventory_to_input_fraction,
@@ -362,7 +416,7 @@ class SyntheticCountry:
         owned_houses = housing_data["Is Owner-Occupied"]
         total_rent = housing_data.loc[owned_houses, "Rent"].sum()
 
-        credit_market, exogenous_data, housing_market = self.eu_post_agents_init(
+        credit_market, housing_market = self.eu_post_agents_init(
             banks=self.banks,
             central_government=self.central_government,
             country=self.country_name,
@@ -379,5 +433,4 @@ class SyntheticCountry:
         )
 
         self.credit_market = credit_market
-        self.exogenous_data = exogenous_data
         self.housing_market = housing_market
