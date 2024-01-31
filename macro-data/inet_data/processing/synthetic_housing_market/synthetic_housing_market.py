@@ -18,18 +18,15 @@ class SyntheticHousingMarket(ABC):
 
     Attributes:
         country_name (str): The name of the country.
-        year (int): The year of the housing market data.
         housing_market_data (pd.DataFrame): The housing market data.
     """
 
     def __init__(
         self,
         country_name: str,
-        year: int,
         housing_market_data: pd.DataFrame,
     ):
         self.country_name = country_name
-        self.year = year
 
         # Housing market data
         self.housing_market_data = housing_market_data

@@ -93,18 +93,18 @@ class DataReaders:
         simulation_year: int,
         scale_dict: dict[Country, int],
         industries: list[str],
-        create_exogenous_industry_data: bool = False,
         imputed_rent_year: int = 2014,
         exog_data_range: Tuple[int, int] = (2010, 2018),
         prune_date: Optional[date] = None,
         force_single_hfcs_survey: bool = False,
+        single_icio_survey: bool = False,
     ):
         raw_data_path = Path(raw_data_path)
         short_names = {
             country_name: country_name_short
             for country_name, country_name_short in zip(country_names, country_names_short)
         }
-        if not create_exogenous_industry_data:
+        if single_icio_survey:
             all_years = [simulation_year]
         else:
             all_years = range(exog_data_range[0], exog_data_range[1] + 1)

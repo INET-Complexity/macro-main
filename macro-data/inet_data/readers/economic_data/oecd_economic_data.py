@@ -343,6 +343,8 @@ class OECDEconData:
                     vals.append(np.nan)
                 else:
                     vals.append(val[0] / 100.0)
+
+        dates = pd.to_datetime(dates, format="%Y-%m")
         return pd.DataFrame(
             index=dates,
             data={"Unemployment Rate": vals},
@@ -402,6 +404,8 @@ class OECDEconData:
                     else:
                         val_nominal.append(np.nan)
 
+        dates = pd.to_datetime(dates, format="%Y-%m")
+
         return pd.DataFrame(
             index=dates,
             data={
@@ -437,6 +441,7 @@ class OECDEconData:
                         vacancy_rate.append(total_vacs[0] / pop_size[0])
                     else:
                         vacancy_rate.append(np.nan)
+        dates = pd.to_datetime(dates, format="%Y-%m")
         return pd.DataFrame(index=dates, data={"Vacancy Rate": vacancy_rate})
 
     def get_household_consumption_by_income_quantile(self, country: str, year: int) -> pd.DataFrame:

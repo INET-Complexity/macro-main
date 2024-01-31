@@ -3,6 +3,10 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
 
+from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
+
+from inet_data.processing.country_data import TaxData
+
 
 class SyntheticFirms(ABC):
     """
@@ -101,3 +105,21 @@ class SyntheticFirms(ABC):
             int: The total number of firms.
         """
         return self.number_of_firms_by_industry.sum()
+
+    def reset_function_parameters(
+        self,
+        capital_inputs_utilisation_rate: float,
+        initial_inventory_to_input_fraction: float,
+        intermediate_inputs_utilisation_rate: float,
+        zero_initial_debt: bool,
+        zero_initial_deposits: bool,
+    ):
+        pass
+
+    def set_additional_initial_conditions(
+        self,
+        industry_data: dict[str, pd.DataFrame],
+        synthetic_banks: SyntheticBanks,
+        credit_market_data: pd.DataFrame,
+        tax_data: TaxData,
+    ) -> None: ...

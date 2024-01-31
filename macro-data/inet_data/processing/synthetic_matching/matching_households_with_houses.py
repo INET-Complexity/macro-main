@@ -390,6 +390,6 @@ def match_renters_to_properties(
 
     earned_rent = housing_market_df.loc[rental_income].groupby("Corresponding Owner Household ID")["Rent"].sum()
 
-    synthetic_population.household_data.loc[
-        earned_rent.index.values, "Rental Income from Real Estate"
-    ] = earned_rent.values
+    synthetic_population.household_data.loc[earned_rent.index.values, "Rental Income from Real Estate"] = (
+        earned_rent.values
+    )

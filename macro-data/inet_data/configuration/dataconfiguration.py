@@ -12,10 +12,16 @@ class FirmsDataConfiguration(BaseModel):
     Attributes:
         zero_initial_deposits (bool): Whether to set initial deposits to zero.
         zero_initial_debt (bool): Whether to set initial debt to zero.
+        initial_inventory_to_input_fraction (float): Initial inventory to input fraction.
+        intermediate_inputs_utilisation_rate (float): Intermediate inputs utilisation rate.
+        capital_inputs_utilisation_rate (float): Capital inputs utilisation rate.
     """
 
-    zero_initial_deposits: bool
-    zero_initial_debt: bool
+    zero_initial_deposits: bool = True
+    zero_initial_debt: bool = True
+    initial_inventory_to_input_fraction: float = 0
+    intermediate_inputs_utilisation_rate: float = 1.0
+    capital_inputs_utilisation_rate: float = 1.0
 
 
 class InterestRates(BaseModel):
@@ -28,9 +34,9 @@ class InterestRates(BaseModel):
         household_overdraft_markup (float): Markup for household overdrafts.
     """
 
-    consumption_loans_markup: float
-    mortgage_markup: float
-    household_overdraft_markup: float
+    consumption_loans_markup: float = 0.01
+    mortgage_markup: float = 0.1
+    household_overdraft_markup: float = 0.01
 
 
 class BanksDataConfiguration(BaseModel):
@@ -44,10 +50,10 @@ class BanksDataConfiguration(BaseModel):
         interest_rates (InterestRates): The interest rates configuration.
     """
 
-    long_term_firm_loan_maturity: int
-    consumption_exp_loan_maturity: int
-    mortgage_maturity: int
-    interest_rates: InterestRates
+    long_term_firm_loan_maturity: int = 60
+    consumption_exp_loan_maturity: int = 12
+    mortgage_maturity: int = 120
+    interest_rates: InterestRates = InterestRates()
 
 
 class CountryDataConfiguration(BaseModel):
@@ -88,8 +94,8 @@ class DataConfiguration(BaseModel):
     year: int
     prune_date: date
     country_configs: dict[Country, CountryDataConfiguration]
-    purpose: str
-    author: str = "INET/Macrocosm"
+    purpose: str = ""
+    author: str = "INET"
 
     @property
     def countries(self) -> list[Country]:

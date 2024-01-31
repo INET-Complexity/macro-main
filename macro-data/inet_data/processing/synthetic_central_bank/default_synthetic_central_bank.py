@@ -20,7 +20,7 @@ class DefaultSyntheticCentralBank(SyntheticCentralBank):
 
     Methods:
         __init__(country_name, year, central_bank_data): Initializes a SyntheticDefaultCentralBanks instance.
-        init_from_readers(country_name, year, readers): Initializes a SyntheticDefaultCentralBanks instance from readers.
+        from_readers(country_name, year, readers): Initializes a SyntheticDefaultCentralBanks instance from readers.
     """
 
     def __init__(
@@ -38,7 +38,8 @@ class DefaultSyntheticCentralBank(SyntheticCentralBank):
     @classmethod
     def from_readers(cls, country_name: str, year: int, readers: DataReaders):
         """
-        Initializes a SyntheticCentralBank object using data from DataReaders, in particular the central bank policy rate.
+        Initializes a SyntheticCentralBank object using data from DataReaders,
+        in particular storing the central bank policy rate.
 
         Args:
             country_name (str): The name of the country.
