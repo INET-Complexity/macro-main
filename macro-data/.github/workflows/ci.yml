@@ -16,21 +16,7 @@ jobs:
         python-version: [ "3.11" ]
 
     steps:
-
-      - name: Install SSH Key
-        uses: webfactory/ssh-agent@v0.5.2
-        with:
-          ssh-private-key: ${{ secrets.PRIVATE_SSH }}
-
-      - name: Checkout inet-macro-model repository
-        uses: actions/checkout@v2
-
-      - name: Checkout inet-macro-data repository
-        uses: actions/checkout@v2
-        with:
-          repository: INET-Complexity/inet-macro-data
-          ssh-key: ${{ secrets.PRIVATE_SSH }}
-
+      - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v1
         with:
