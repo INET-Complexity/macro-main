@@ -173,9 +173,9 @@ class DefaultGoodsMarketClearer(GoodsMarketClearer):
             for country_name in self.goods_market_participants.keys():
                 for transactor in self.goods_market_participants[country_name]:
                     if transactor.transactor_buyer_states["Value Type"] != ValueType.NONE:
-                        transactor.transactor_buyer_states[
-                            "Remaining Excess Goods"
-                        ] = transactor.transactor_buyer_states["Remaining Goods"].copy()
+                        transactor.transactor_buyer_states["Remaining Excess Goods"] = (
+                            transactor.transactor_buyer_states["Remaining Goods"].copy()
+                        )
             while check_buyers_left(
                 goods_market_participants=self.goods_market_participants,
                 n_industries=self.n_industries,

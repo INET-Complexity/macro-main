@@ -3,9 +3,9 @@ from typing import Literal
 
 
 class Consumption(BaseModel):
-    name: Literal[
-        "ConstantGovernmentConsumptionSetter", "DefaultGovernmentConsumptionSetter"
-    ] = "DefaultGovernmentConsumptionSetter"
+    name: Literal["ConstantGovernmentConsumptionSetter", "DefaultGovernmentConsumptionSetter"] = (
+        "DefaultGovernmentConsumptionSetter"
+    )
     path_name: str = "consumption"
     parameters: dict = {}
 

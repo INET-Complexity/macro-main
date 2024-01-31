@@ -107,7 +107,7 @@ class Country:
             all_country_names=all_country_names,
             industries=industries,
             initial_consumption_by_industry=initial_consumption_by_industry,
-            value_added_tax=synthetic_country.vat,
+            value_added_tax=synthetic_country.tax_data.value_added_tax,
             scale=scale,
         )
 

@@ -108,9 +108,9 @@ class TargetCapitalInputs(BaseModel):
     Options: UnconstrainedTargetCapitalInputsSetter, FinancialTargetCapitalInputsSetter
     """
 
-    name: Literal[
-        "UnconstrainedTargetCapitalInputsSetter", "FinancialTargetCapitalInputsSetter"
-    ] = "UnconstrainedTargetCapitalInputsSetter"
+    name: Literal["UnconstrainedTargetCapitalInputsSetter", "FinancialTargetCapitalInputsSetter"] = (
+        "UnconstrainedTargetCapitalInputsSetter"
+    )
     path_name: str = "target_capital_inputs"
     parameters: dict[str, Any] = {"target_capital_inputs_fraction": 0.0}
 
@@ -132,9 +132,9 @@ class TargetIntermediateInputs(BaseModel):
     Options: UnconstrainedTargetIntermediateInputsSetter, FinancialTargetIntermediateInputsSetter
     """
 
-    name: Literal[
-        "UnconstrainedTargetIntermediateInputsSetter", "FinancialTargetIntermediateInputsSetter"
-    ] = "UnconstrainedTargetIntermediateInputsSetter"
+    name: Literal["UnconstrainedTargetIntermediateInputsSetter", "FinancialTargetIntermediateInputsSetter"] = (
+        "UnconstrainedTargetIntermediateInputsSetter"
+    )
     path_name: str = "target_intermediate_inputs"
     parameters: dict[str, Any] = {"target_intermediate_inputs_fraction": 0.0}
 

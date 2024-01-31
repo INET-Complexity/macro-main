@@ -299,17 +299,21 @@ class Households(Agent):
         return self.functions["social_transfers"].get_social_transfers(
             n_households=self.ts.current("n_households"),
             total_other_social_transfers=total_other_social_transfers,
-            current_independents=np.array([])
-            if len(inds) == 0
-            else np.stack(
-                [self.ts.current(ind.lower()) for ind in inds],
-                axis=1,
+            current_independents=(
+                np.array([])
+                if len(inds) == 0
+                else np.stack(
+                    [self.ts.current(ind.lower()) for ind in inds],
+                    axis=1,
+                )
             ),
-            initial_independents=np.array([])
-            if len(inds) == 0
-            else np.stack(
-                [self.ts.initial(ind.lower()) for ind in inds],
-                axis=1,
+            initial_independents=(
+                np.array([])
+                if len(inds) == 0
+                else np.stack(
+                    [self.ts.initial(ind.lower()) for ind in inds],
+                    axis=1,
+                )
             ),
             model=self.states["social_transfers_model"],
         )

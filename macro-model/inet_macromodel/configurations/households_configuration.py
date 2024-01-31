@@ -64,9 +64,9 @@ class SavingRatesFunction(BaseModel):
     """
 
     path_name: str = "saving_rates"
-    name: Literal[
-        "AverageSavingRatesSetter", "ConstantSavingRatesSetter", "DefaultSavingRatesSetter"
-    ] = "AverageSavingRatesSetter"
+    name: Literal["AverageSavingRatesSetter", "ConstantSavingRatesSetter", "DefaultSavingRatesSetter"] = (
+        "AverageSavingRatesSetter"
+    )
     parameters: dict[str, Any] = {
         "independents": ["Income", "Debt"],
     }
@@ -113,9 +113,9 @@ class WealthFunction(BaseModel):
 
 class SocialTransfersFunction(BaseModel):
     path_name: str = "social_transfers"
-    name: Literal[
-        "EqualSocialTransfersSetter", "ConstantSocialTransfersSetter", "DefaultSocialTransfersSetter"
-    ] = "EqualSocialTransfersSetter"
+    name: Literal["EqualSocialTransfersSetter", "ConstantSocialTransfersSetter", "DefaultSocialTransfersSetter"] = (
+        "EqualSocialTransfersSetter"
+    )
     parameters: dict[str, Any] = {
         "independents": ["Income", "Debt"],
     }

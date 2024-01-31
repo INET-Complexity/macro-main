@@ -122,9 +122,11 @@ def create_firms_timeseries(
             0.0 if not calculate_hill_exponent else data["Number of Employees"].values.astype(int).copy()
         ],
         total_hill_tail_estimate_output_by_employee=[
-            0.0
-            if not calculate_hill_exponent
-            else calculate_tail_exponent(data["Production"].values / data["Number of Employees"].values.copy())
+            (
+                0.0
+                if not calculate_hill_exponent
+                else calculate_tail_exponent(data["Production"].values / data["Number of Employees"].values.copy())
+            )
         ],
     )
 

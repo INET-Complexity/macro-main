@@ -38,9 +38,9 @@ class DefaultReservationWageSetter(ReservationWageSetter):
 
         # For unemployed individuals
         if self.unemployed_reservation_wage_timespan == 0:
-            reservation_wages[
-                current_individuals_activity == ActivityStatus.UNEMPLOYED
-            ] = current_unemployment_benefits_by_individual
+            reservation_wages[current_individuals_activity == ActivityStatus.UNEMPLOYED] = (
+                current_unemployment_benefits_by_individual
+            )
         else:
             reservation_wages[current_individuals_activity == ActivityStatus.UNEMPLOYED] = np.maximum(
                 current_unemployment_benefits_by_individual,

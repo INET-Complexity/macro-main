@@ -3,9 +3,9 @@ from typing import Literal
 
 
 class Clearing(BaseModel):
-    name: Literal[
-        "NoGoodsMarketClearer", "DefaultGoodsMarketClearer", "ProRataGoodsMarketClearer"
-    ] = "ProRataGoodsMarketClearer"
+    name: Literal["NoGoodsMarketClearer", "DefaultGoodsMarketClearer", "ProRataGoodsMarketClearer"] = (
+        "ProRataGoodsMarketClearer"
+    )
     path_name: str = "clearing"
     parameters: dict = {
         "trade_temperature": 0.0,
