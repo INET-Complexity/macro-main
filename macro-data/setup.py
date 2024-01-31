@@ -18,7 +18,7 @@ setup(
     url="https://github.com/INET-Complexity/inet-macro-data",
     long_description_content_type="text/markdown",
     long_description=long_description,
-    author="INET/Macrocosm",
+    author="INET",
     author_email="samuel.wiese@wolfson.ox.ac.uk",
     license="GPL 3 License",
     install_requires=requirements,

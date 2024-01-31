@@ -170,7 +170,7 @@ class SyntheticCountry:
         (
             credit_market,
             housing_market,
-        ) = cls.eu_post_agents_init(
+        ) = cls.post_agents_init(
             banks=banks,
             central_government=central_government,
             country=country,
@@ -209,7 +209,7 @@ class SyntheticCountry:
         )
 
     @classmethod
-    def eu_post_agents_init(
+    def post_agents_init(
         cls,
         banks: SyntheticBanks,
         central_government: SyntheticCentralGovernment,
@@ -272,19 +272,27 @@ class SyntheticCountry:
 
         policy_rate = central_bank.central_bank_data["Policy Rate"].values[0]
 
-        credit_market = cls.eu_population_wealth_post_init(
+        cls.initialise_pop_wealth_income(
+            banks=banks,
+            central_government=central_government,
+            country_industry_data=country_industry_data,
+            firms=firms,
+            population=population,
+            vat=tax_data.value_added_tax,
+            weights_by_income=weights_by_income,
+            independents=independents,
+        )
+
+        credit_market = cls.init_credit_market(
             banks=banks,
             central_government=central_government,
             country_configuration=country_configuration,
             country_industry_data=country_industry_data,
             firms=firms,
             population=population,
-            vat=tax_data.value_added_tax,
-            independents=independents,
             tax_data=tax_data,
             risk_premium=tax_data.risk_premium,
             policy_rate=policy_rate,
-            weights_by_income=weights_by_income,
         )
         return (
             credit_market,
@@ -292,7 +300,7 @@ class SyntheticCountry:
         )
 
     @classmethod
-    def eu_population_wealth_post_init(
+    def init_credit_market(
         cls,
         banks: SyntheticBanks,
         central_government: SyntheticCentralGovernment,
@@ -301,14 +309,11 @@ class SyntheticCountry:
         firms: SyntheticFirms,
         population: SyntheticPopulation,
         tax_data: TaxData,
-        weights_by_income: pd.DataFrame,
-        vat: float,
         risk_premium: float,
         policy_rate: float,
-        independents: Optional[list[str]] = None,
     ) -> SyntheticCreditMarket:
         """
-        Initializes the European Union (EU) population's wealth and income, and sets up the credit market.
+        Initializes the credit market.
 
         Args:
             cls: The class object.
@@ -319,35 +324,13 @@ class SyntheticCountry:
             firms: The synthetic firms object.
             population: The synthetic population object.
             tax_data: The tax data object.
-            weights_by_income: The DataFrame containing weights by income.
-            vat: The value-added tax rate.
             risk_premium: The risk premium for interest rates.
             policy_rate: The policy rate for interest rates.
-            independents: Optional. The list of independent variables.
 
         Returns:
             The initialized synthetic credit market object.
         """
-        population.compute_household_wealth(independents=independents)
-        population.compute_household_income(
-            total_social_transfers=central_government.central_gov_data["Other Social Benefits"].values[0],
-            independents=independents,
-        )
-        population.set_household_saving_rates(independents=independents)
-        iot_consumption = country_industry_data["industry_vectors"]["Household Consumption in LCU"]
-        population.normalise_household_consumption(
-            iot_hh_consumption=iot_consumption, vat=vat, independents=independents
-        )
-        population.match_consumption_weights_by_income(
-            weights_by_income=weights_by_income, iot_hh_consumption=iot_consumption, vat=vat
-        )
-        banks.initialise_deposits_and_loans(
-            synthetic_population=population,
-            firm_deposits=firms.firm_data["Deposits"].values,
-            firm_debt=firms.firm_data["Debt"].values,
-        )
 
-        # bank tax rate set to same as corporate tax rate
         tau_bank = tax_data.profit_tax
 
         banks.initialise_rates_profits_liabilities(
@@ -381,6 +364,38 @@ class SyntheticCountry:
         )
         return credit_market
 
+    @classmethod
+    def initialise_pop_wealth_income(
+        cls,
+        banks: SyntheticBanks,
+        central_government: SyntheticCentralGovernment,
+        country_industry_data: dict[str, pd.DataFrame],
+        firms: SyntheticFirms,
+        population: SyntheticPopulation,
+        vat: float,
+        weights_by_income: pd.DataFrame,
+        independents: Optional[list[str]] = None,
+    ):
+        population.compute_household_wealth(independents=independents)
+        population.compute_household_income(
+            total_social_transfers=central_government.central_gov_data["Other Social Benefits"].values[0],
+            independents=independents,
+        )
+        population.set_household_saving_rates(independents=independents)
+        iot_consumption = country_industry_data["industry_vectors"]["Household Consumption in LCU"]
+        population.normalise_household_consumption(
+            iot_hh_consumption=iot_consumption, vat=vat, independents=independents
+        )
+        population.match_consumption_weights_by_income(
+            weights_by_income=weights_by_income, iot_hh_consumption=iot_consumption, vat=vat
+        )
+        banks.initialise_deposits_and_loans(
+            synthetic_population=population,
+            firm_deposits=firms.firm_data["Deposits"].values,
+            firm_debt=firms.firm_data["Debt"].values,
+        )
+        # bank tax rate set to same as corporate tax rate
+
     def reset_firm_function_dependent(
         self,
         capital_inputs_utilisation_rate: float,
@@ -413,7 +428,7 @@ class SyntheticCountry:
         owned_houses = housing_data["Is Owner-Occupied"]
         total_rent = housing_data.loc[owned_houses, "Rent"].sum()
 
-        credit_market, housing_market = self.eu_post_agents_init(
+        credit_market, housing_market = self.post_agents_init(
             banks=self.banks,
             central_government=self.central_government,
             country=self.country_name,

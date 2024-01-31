@@ -95,7 +95,7 @@ class DataConfiguration(BaseModel):
     prune_date: date
     country_configs: dict[Country, CountryDataConfiguration]
     purpose: str = ""
-    author: str = "INET/Macrocosm"
+    author: str = "INET"
 
     @property
     def countries(self) -> list[Country]:
