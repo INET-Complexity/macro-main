@@ -235,7 +235,6 @@ class SyntheticCountry:
             country (Country): The country object representing the EU country.
             country_configuration (CountryDataConfiguration): The configuration data for the country.
             country_industry_data (dict[str, pd.DataFrame]): The industry data for the country.
-            exogenous_data (ExogenousCountryData): The exogenous data for the country.
             firms (SyntheticFirms): The synthetic firms.
             industries (list[str]): The list of industries in the country.
             population (SyntheticPopulation): The synthetic population.
