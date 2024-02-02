@@ -38,36 +38,27 @@ Assuming your working directory is structured as follows
 To run the data, simply run the following
 
 ```python
-from inet_data import run_data 
+from inet_data import DataConfiguration, DataWrapper 
+import yaml 
 
 #path to your yaml config file
 config_file_path = "./configs/default.yaml" 
-#path to your data directory
-data_dir_path = "./data"
 
-run_data(config_file_path, data_dir_path)
+raw_data_path = "./data/raw_data"
+
+with open(config_file_path, "r") as f:
+    config = DataConfiguration(**yaml.safe_load(f))
+    
+data = DataWrapper.from_config(config, raw_data_path=raw_data_path)
+
+#save the agents to a pickle 
+
+data.save("./agents.pkl")
 ```
 
-This will then download and process the data into the required directories. A default yaml configuration file is available in this repository.
+This assumes that you have the raw data downloaded with the correct directory structure, which must be the same
+as the structure of `./test_inet_data/unit/sample_raw_data`. The downloads need to be handled by a specific downloader 
+depending on the data structure chosen by the user.
 
-Note that to have more control over the direct data generation, you can modify the call to the creator, as follows
-
-```python
-from inet_data import Creator, create_code
-
-processed_data_code = create_code()
-Creator(
-    config_path=config_file_path,
-    raw_data_path=data_dir_path / "raw_data",
-    processed_data_path=data_dir_path
-    / "processed_data"
-    / processed_data_code
-    / "data.h5",
-    force_download=False,
-    create_exogenous_industry_data=True,
-    random_seed=0,
-).create(save_output=True)
-```
-
-
-This is useful in particular if you want to set a seed for the initialisation data.
+This will pickle the `DataWrapper` object, containing the synthetic countries and all the necessary data to
+run a simulation, so that it can be loaded by the `inet-macro-model` package. 

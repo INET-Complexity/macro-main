@@ -4,6 +4,7 @@ from typing import Optional
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
+from inet_data.processing.country_data import TaxData
 from inet_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 from inet_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
 from inet_data.processing.synthetic_population.synthetic_population import SyntheticPopulation
@@ -61,7 +62,7 @@ class SyntheticCentralGovernment(ABC):
 
     def update_fields(
         self,
-        readers: DataReaders,
+        tax_data: TaxData,
         synthetic_population: SyntheticPopulation,
         synthetic_firms: SyntheticFirms,
         synthetic_banks: SyntheticBanks,
@@ -75,7 +76,7 @@ class SyntheticCentralGovernment(ABC):
 
         total_employee_income = synthetic_population.individual_data["Employee Income"].sum()
 
-        firm_employer_si_tax = readers.oecd_econ.read_tau_sif(self.country_name, self.year) * total_employee_income
+        firm_employer_si_tax = tax_data.employer_social_insurance_tax * total_employee_income
 
         # NOTE different to what was previously done, where consumption was computed using industry_data
 
@@ -84,31 +85,24 @@ class SyntheticCentralGovernment(ABC):
 
         total_disposable_income = (hh_income * (1 - hh_saving_rate)).sum()
 
-        household_vat = readers.world_bank.get_tau_vat(self.country_name, self.year) * total_disposable_income
+        household_vat = tax_data.value_added_tax * total_disposable_income
 
-        export_tax = (
-            readers.world_bank.get_tau_exp(self.country_name, self.year)
-            * industry_data["industry_vectors"]["Exports in LCU"].sum()
-        )
+        export_tax = tax_data.export_tax * industry_data["industry_vectors"]["Exports in LCU"].sum()
 
-        employee_si_tax = readers.oecd_econ.read_tau_siw(self.country_name, self.year) * total_employee_income
+        employee_si_tax = tax_data.employee_social_insurance_tax * total_employee_income
 
-        employee_income_tax = (
-            readers.oecd_econ.read_tau_income(self.country_name, self.year)
-            * (1 - readers.oecd_econ.read_tau_siw(self.country_name, self.year))
-            * total_employee_income
-        )
+        employee_income_tax = tax_data.income_tax * (1 - tax_data.employee_social_insurance_tax) * total_employee_income
 
         total_rent_paid = synthetic_population.household_data["Rent Paid"].sum()
-        rental_income_tax = readers.oecd_econ.read_tau_income(self.country_name, self.year) * total_rent_paid
+        rental_income_tax = tax_data.income_tax * total_rent_paid
 
         financial_assets_income = synthetic_population.household_data["Income from Financial Assets"].sum()
-        financial_income_tax = readers.oecd_econ.read_tau_income(self.country_name, self.year) * financial_assets_income
+        financial_income_tax = tax_data.income_tax * financial_assets_income
 
         income_tax = employee_income_tax + rental_income_tax + financial_income_tax
 
         # TODO this looks wrong, it's just a taxrate
-        cf_tax = readers.eurostat.taxrate_on_capital_formation(self.country_name, self.year)
+        cf_tax = tax_data.capital_formation_tax
 
         self.set_revenue(
             total_social_housing_rent=total_social_housing_rent,

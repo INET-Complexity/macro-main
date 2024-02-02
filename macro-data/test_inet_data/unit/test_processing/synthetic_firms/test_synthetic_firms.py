@@ -3,6 +3,7 @@ import pathlib
 import numpy as np
 import pandas as pd
 
+from inet_data.configuration.dataconfiguration import FirmsDataConfiguration
 from inet_data.processing.synthetic_firms.default_synthetic_firms import (
     DefaultSyntheticFirms,
 )
@@ -36,6 +37,8 @@ class TestSyntheticFirms:
         n_employees_per_industry = np.ones(18).astype(int)
         n_employees_per_industry *= 10_000
 
+        firm_configuration = FirmsDataConfiguration()
+
         firms = DefaultSyntheticFirms.from_readers(
             readers=readers,
             country_name="FRA",
@@ -43,9 +46,8 @@ class TestSyntheticFirms:
             industries=industries,
             industry_data=industry_data["FRA"],
             n_employees_per_industry=n_employees_per_industry,
-            zero_initial_debt=False,
-            zero_initial_deposits=False,
             scale=10000,
+            firm_configuration=firm_configuration,
         )
 
         # firms.firm_data["Corresponding Bank ID"] = 0

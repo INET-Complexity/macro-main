@@ -1,5 +1,5 @@
 import yaml
-from inet_data.configuration import Configuration, split_country_configs
+from inet_data.configuration import DataConfiguration, split_country_configs
 import pytest
 from pydantic import ValidationError
 
@@ -9,7 +9,7 @@ def test_read_config(gen_data_config_path):
         config_dict = yaml.safe_load(f)
 
     config_dict["country_configs"] = split_country_configs(config_dict["country_configs"])
-    config_object = Configuration(**config_dict)
+    config_object = DataConfiguration(**config_dict)
 
     assert set(config_object.countries) == {"DEU", "FRA", "GBR"}
 
@@ -19,4 +19,4 @@ def test_read_config(gen_data_config_path):
 
     # check that creating the Configuration object with the modified config_dict raises a KeyError
     with pytest.raises(ValidationError):
-        Configuration(**config_dict)
+        DataConfiguration(**config_dict)
