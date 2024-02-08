@@ -1,3 +1,4 @@
+import h5py
 import numpy as np
 
 from pathlib import Path
@@ -137,3 +138,6 @@ class LabourMarket:
         self.ts.num_employed_individuals_by_sector.append(num_employed)
 
         return labour_costs
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("labour_market", group)

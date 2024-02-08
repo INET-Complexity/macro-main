@@ -1,20 +1,16 @@
 import numpy as np
-import pandas as pd
-
-from pathlib import Path
-
+import h5py
 from inet_data import SyntheticGovernmentEntities
+from typing import Any
 
 from configurations import GovernmentEntitiesConfiguration
 from inet_macromodel.agents.agent import Agent
-from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.goods_market.value_type import ValueType
-from inet_macromodel.util.function_mapping import get_functions, functions_from_model
 from inet_macromodel.government_entities.government_entities_ts import (
     create_government_entities_timeseries,
 )
-
-from typing import Any, Optional
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import functions_from_model
 
 
 class GovernmentEntities(Agent):
@@ -73,52 +69,6 @@ class GovernmentEntities(Agent):
             states=states,
         )
 
-    @classmethod
-    def from_data(
-        cls,
-        country_name: str,
-        all_country_names: list[str],
-        year: int,
-        t_max: int,
-        n_industries: int,
-        data: pd.DataFrame,
-        number_of_entities: int,
-        government_consumption_model: Optional[Any],
-        config: dict[str, Any],
-    ) -> "GovernmentEntities":
-        # Get corresponding functions and parameters
-        functions = get_functions(
-            config["functions"],
-            loc="inet_macromodel.government_entities",
-            func_dir=Path(__file__).parent / "func",
-        )
-        if "parameters" in config.keys():
-            parameters = config["parameters"].copy()
-        else:
-            parameters = {}
-
-        # Create the corresponding time series object
-        ts = create_government_entities_timeseries(
-            data=data,
-            n_government_entities=number_of_entities,
-        )
-
-        # Additional states
-        states = {"government_consumption_model": government_consumption_model}
-
-        return cls(
-            country_name,
-            all_country_names,
-            year,
-            t_max,
-            n_industries,
-            number_of_entities,
-            functions,
-            parameters,
-            ts,
-            states,
-        )
-
     def prepare_buying_goods(self) -> None:
         self.ts.desired_consumption_in_lcu.append(
             (
@@ -154,3 +104,6 @@ class GovernmentEntities(Agent):
         self.ts.consumption_in_usd.append(self.ts.current("nominal_amount_spent_in_usd").sum(axis=0))
         self.ts.consumption_in_lcu.append(self.exchange_rate_usd_to_lcu * self.ts.current("consumption_in_usd"))
         self.ts.total_consumption.append([self.ts.current("consumption_in_lcu").sum()])
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("government_entities", group)

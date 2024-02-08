@@ -120,7 +120,7 @@ def test_households(datawrapper):
         all_country_names=["FRA", "ROW"],
         industries=industries,
         initial_consumption_by_industry=initial_consumption_by_industry,
-        value_added_tax=country.vat,
+        value_added_tax=country.tax_data.value_added_tax,
         scale=scale,
     )
 

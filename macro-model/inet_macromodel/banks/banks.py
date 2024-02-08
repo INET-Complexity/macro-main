@@ -1,15 +1,14 @@
 import numpy as np
-
+import h5py
 from inet_data import SyntheticBanks
-
-from inet_macromodel.configurations import BankParameters, BanksConfiguration
-from inet_macromodel.agents.agent import Agent
-from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.util.function_mapping import get_functions, functions_from_model
-from inet_macromodel.banks.banks_ts import create_banks_timeseries
-from inet_macromodel.credit_market.credit_market import CreditMarket
-
 from typing import Any
+
+from inet_macromodel.agents.agent import Agent
+from inet_macromodel.banks.banks_ts import create_banks_timeseries
+from inet_macromodel.configurations import BankParameters, BanksConfiguration
+from inet_macromodel.credit_market.credit_market import CreditMarket
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import functions_from_model
 
 
 class Banks(Agent):
@@ -334,3 +333,6 @@ class Banks(Agent):
         insolvency_rate = self.states["is_insolvent"].mean()
         self.states["is_insolvent"] = np.full(self.ts.current("n_banks"), False)
         return insolvency_rate
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("banks", group)

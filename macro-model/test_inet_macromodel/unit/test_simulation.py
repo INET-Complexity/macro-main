@@ -1,3 +1,7 @@
+from pathlib import Path
+
+import tempfile
+
 from configurations import SimulationConfiguration, CountryConfiguration
 from simulation import Simulation
 
@@ -10,5 +14,9 @@ def test_simulation(datawrapper):
     assert set(simulation.countries.keys()) == {"FRA"}
 
     simulation.iterate()
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        simulation.save(save_dir=tmp, file_name="simulation.pkl")
 
     assert True

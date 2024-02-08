@@ -1,18 +1,17 @@
-import warnings
-import numpy as np
-import pandas as pd
-
 from pathlib import Path
 
+import h5py
+import numpy as np
+import pandas as pd
+import warnings
 from inet_data import SyntheticHousingMarket
+from typing import Any
 
 from configurations import HousingMarketConfiguration
-from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.util.get_histogram import get_histogram
-from inet_macromodel.util.function_mapping import get_functions, functions_from_model
 from inet_macromodel.housing_market.housing_market_ts import create_housing_market_timeseries
-
-from typing import Any
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import functions_from_model, get_functions
+from inet_macromodel.util.get_histogram import get_histogram
 
 
 class HousingMarket:
@@ -88,10 +87,6 @@ class HousingMarket:
             loc="inet_macromodel.housing_market",
             func_dir=Path(__file__).parent / "func",
         )
-        if "parameters" in config.keys():
-            parameters = config["parameters"].copy()
-        else:
-            parameters = {}
 
         # Recording the states of all homes
         states = data.copy()
@@ -250,3 +245,6 @@ class HousingMarket:
 
     def compute_total_property_value(self) -> float:
         return self.states["Value"].sum()
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("housing_market", group)

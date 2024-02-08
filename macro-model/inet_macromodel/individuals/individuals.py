@@ -1,8 +1,8 @@
-import warnings
-from typing import Any
-
 import numpy as np
+import warnings
+import h5py
 from inet_data import SyntheticPopulation
+from typing import Any
 
 from configurations import IndividualsConfiguration
 from inet_macromodel.agents.agent import Agent
@@ -125,3 +125,6 @@ class Individuals(Agent):
                 self.ts.current("n_individuals"),
             )
         )
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("individuals", group)

@@ -870,4 +870,21 @@ class Country:
         self.individuals.update_demography()
 
     def save_to_h5(self, h5_file: h5py.File):
-        self.firms.save_to_h5(h5_file)
+        group = h5_file.create_group(self.country_name)
+        self.firms.save_to_h5(group)
+        self.firms.save_industry_firms_df(group)
+
+        self.individuals.save_to_h5(group)
+        self.households.save_to_h5(group)
+        self.households.save_consumption_weights(group)
+        self.government_entities.save_to_h5(group)
+        self.central_government.save_to_h5(group)
+        self.banks.save_to_h5(group)
+        self.central_bank.save_to_h5(group)
+        self.economy.save_to_h5(group)
+
+        self.labour_market.save_to_h5(group)
+        self.credit_market.save_to_h5(group)
+        self.housing_market.save_to_h5(group)
+
+        self.exogenous.save_to_h5(group)

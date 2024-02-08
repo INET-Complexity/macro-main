@@ -1,3 +1,4 @@
+import h5py
 import pandas as pd
 
 from configurations import ExchangeRatesConfiguration
@@ -49,3 +50,7 @@ class ExchangeRates:
 
     def set_current_exchange_rates(self, current_year: int) -> None:
         self.ts.exchange_rates.append(self.get_current_exchange_rates_from_usd_to_lcu(current_year))
+
+    def save_to_h5(self, h5_file: h5py.File) -> None:
+        group = h5_file.create_group("EXCH_RATES")
+        self.ts.write_to_h5("EXCH_RATES", group)

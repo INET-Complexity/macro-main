@@ -45,11 +45,6 @@ jobs:
       - name: Install package
         run: python setup.py install
 
-      - name: List directory contents
-        run: |
-          pwd
-          ls -l
-
       - name: Lint with black
         run: |
           pip install black

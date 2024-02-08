@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import h5py
 import numpy as np
 import pandas as pd
 
@@ -76,11 +77,6 @@ class CreditMarket:
             loc="inet_macromodel.credit_market",
             func_dir=Path(__file__).parent / "func",
         )
-        if "parameters" in config.keys():
-            parameters = config["parameters"].copy()
-        else:
-            parameters = {}
-
         # Recording the loan_data of all loans
         loan_data = data.copy()
         loan_data["loan_type"] = np.array(map_to_enum(loan_data["loan_type"].values, LoanTypes))
@@ -385,3 +381,6 @@ class CreditMarket:
 
     def remove_loans_by_bank(self, bank_id: int) -> None:
         self.loan_data = self.loan_data.loc[self.loan_data["loan_bank_id"] != bank_id]
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("credit_market", group)

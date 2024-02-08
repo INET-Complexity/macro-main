@@ -1,3 +1,4 @@
+import h5py
 import numpy as np
 import pandas as pd
 
@@ -626,3 +627,16 @@ class Firms(Agent):
 
     def compute_total_deposits(self) -> float:
         return self.ts.current("deposits").sum()
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("firms", group)
+
+    def save_industry_firms_df(self, group: h5py.Group):
+        industry_firms_df = pd.DataFrame(
+            data=np.array(self.states["Industry"]),
+            index=pd.Index(range(self.ts.current("n_firms")), name="Firm ID"),
+            columns=pd.Index(["Industry"], name="Field"),
+        )
+
+        group.create_dataset("industry_firms", data=industry_firms_df.values, dtype="int32")
+        group["industry_firms"].attrs["columns"] = industry_firms_df.columns.to_list()

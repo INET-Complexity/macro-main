@@ -1,3 +1,4 @@
+import h5py
 import numpy as np
 import pandas as pd
 
@@ -187,3 +188,7 @@ class RestOfTheWorld(Agent):
         self.ts.exports_real.append(self.ts.current("real_amount_sold"))
         self.ts.imports_in_usd.append(self.ts.current("nominal_amount_spent_in_lcu")[0])
         self.ts.imports_in_lcu.append(self.exchange_rate_usd_to_lcu * self.ts.current("imports_in_usd"))
+
+    def save_to_h5(self, file: h5py.File) -> None:
+        group = file.create_group("ROW")
+        self.ts.write_to_h5("rest_of_the_world", group)

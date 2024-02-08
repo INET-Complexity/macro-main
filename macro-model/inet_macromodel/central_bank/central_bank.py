@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import h5py
 
 from pathlib import Path
 
@@ -65,44 +66,8 @@ class CentralBank(Agent):
             states,
         )
 
-    @classmethod
-    def from_data(
-        cls,
-        country_name: str,
-        all_country_names: list[str],
-        year: int,
-        t_max: int,
-        n_industries: int,
-        data: pd.DataFrame,
-        config: dict[str, Any],
-    ) -> "CentralBank":
-        # Get corresponding functions and parameters
-        functions = get_functions(
-            config["functions"],
-            loc="inet_macromodel.central_bank",
-            func_dir=Path(__file__).parent / "func",
-        )
-        if "parameters" in config.keys():
-            parameters = config["parameters"].copy()
-        else:
-            parameters = {}
-
-        # Create the corresponding time series object
-        ts = create_central_bank_timeseries(data)
-
-        # At the moment there are no additional states
-        states: dict[str, float | np.ndarray | list[np.ndarray]] = {}
-
-        return cls(
-            country_name,
-            all_country_names,
-            year,
-            t_max,
-            n_industries,
-            functions,
-            ts,
-            states,
-        )
-
     def compute_rate(self) -> float:
         return self.functions["policy_rate"].compute_rate(prev_rate=self.ts.current("policy_rate")[0])
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("central_Bank", group)

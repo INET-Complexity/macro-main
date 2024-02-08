@@ -69,6 +69,10 @@ class GoodsMarket:
     def record(self) -> None:
         self.functions["clearing"].record()
 
+    def save_to_h5(self, h5_file: pd.HDFStore) -> None:
+        group = h5_file.create_group("GM")
+        self.ts.write_to_h5("GM", group)
+
 
 def format_array(arr):
     return np.array2string(arr, formatter={"float_kind": lambda x: "{:.2e}".format(x)})

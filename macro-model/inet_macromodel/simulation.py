@@ -1,8 +1,9 @@
+import h5py
 import logging
-from dataclasses import dataclass
-
 import numpy as np
+from dataclasses import dataclass
 from inet_data import DataWrapper
+from pathlib import Path
 
 from configurations import SimulationConfiguration
 from country import Country
@@ -19,6 +20,7 @@ class Simulation:
     goods_market: GoodsMarket
     exchange_rates: ExchangeRates
     timestep: Timestep
+    configuration: SimulationConfiguration
 
     @classmethod
     def from_datawrapper(
@@ -87,7 +89,16 @@ class Simulation:
             goods_market=goods_market,
             exchange_rates=exchange_rates,
             timestep=timestep,
+            configuration=simulation_configuration,
         )
+
+    @property
+    def t_max(self):
+        return self.configuration.t_max
+
+    @property
+    def random_seed(self):
+        return self.configuration.seed
 
     def iterate(self):
         self.exchange_rates.set_current_exchange_rates(current_year=self.timestep.year)
@@ -136,3 +147,27 @@ class Simulation:
 
         # Next month
         self.timestep.step()
+
+    def run(self):
+        for _ in range(self.t_max):
+            self.iterate()
+
+    def save_random_seed(self, h5_file: h5py.File) -> None:
+        if self.random_seed:
+            h5_file.attrs["random_seed"] = self.random_seed
+        else:
+            h5_file.attrs["random_seed"] = "no_seed"
+
+    def save_configuration(self, h5_file: h5py.File) -> None:
+        conf_string = self.configuration.model_dump()
+        h5_file.attrs["configuration"] = str(conf_string)
+
+    def save(self, save_dir: Path, file_name: str):
+        with h5py.File(save_dir / file_name, "w") as f:
+            self.save_random_seed(f)
+            self.save_configuration(f)
+            self.exchange_rates.save_to_h5(f)
+            self.rest_of_the_world.save_to_h5(f)
+            self.goods_market.save_to_h5(f)
+            for country in self.countries.values():
+                country.save_to_h5(f)

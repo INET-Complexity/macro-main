@@ -1,21 +1,19 @@
+import h5py
 import numpy as np
 import pandas as pd
-
-from pathlib import Path
+from typing import Any, Optional
 
 from central_government import CentralGovernment
 from configurations import EconomyConfiguration
 from exogenous import Exogenous
 from individuals import Individuals
-from inet_macromodel.firms.firms import Firms
-from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.households.households import Households
-from inet_macromodel.util.function_mapping import get_functions, functions_from_model
 from inet_macromodel.economy.economy_ts import create_economy_timeseries
-from inet_macromodel.individuals.individual_properties import ActivityStatus
+from inet_macromodel.firms.firms import Firms
 from inet_macromodel.government_entities.government_entities import GovernmentEntities
-
-from typing import Any, Optional
+from inet_macromodel.households.households import Households
+from inet_macromodel.individuals.individual_properties import ActivityStatus
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import functions_from_model
 
 
 class Economy:
@@ -118,91 +116,6 @@ class Economy:
 
         n_industries = firms.n_industries
 
-        return cls(
-            country_name,
-            all_country_names,
-            n_industries,
-            functions,
-            ts,
-        )
-
-    @classmethod
-    def from_data(
-        cls,
-        country_name: str,
-        all_country_names: list[str],
-        n_industries: int,
-        initial_firm_prices: np.ndarray,
-        initial_firm_total_sales: float,
-        initial_firm_total_used_ii: float,
-        initial_total_taxes_on_products: float,
-        initial_change_in_firm_stock_inventories: float,
-        initial_total_operating_surplus_plus_wages: float,
-        initial_individual_activity: np.ndarray,
-        initial_cpi_inflation: float,
-        initial_ppi_inflation: float,
-        initial_nominal_house_price_index_growth: float,
-        initial_real_rent_paid: np.ndarray,
-        initial_imp_rent_paid: np.ndarray,
-        initial_hh_rental_income: np.ndarray,
-        initial_hh_consumption: float,
-        initial_gov_consumption: float,
-        initial_cg_rent_received: float,
-        initial_cg_taxes_rental_income: float,
-        initial_sectoral_growth: np.ndarray,
-        initial_imports: np.ndarray,
-        initial_imports_by_country: dict[str, np.ndarray],
-        initial_exports: np.ndarray,
-        initial_exports_by_country: dict[str, np.ndarray],
-        export_taxes: float,
-        config: dict[str, Any],
-    ) -> "Economy":
-        # Get corresponding functions
-        functions = get_functions(
-            config["functions"],
-            loc="inet_macromodel.economy",
-            func_dir=Path(__file__).parent / "func",
-        )
-
-        # Take fixed parameters
-        if "parameters" in config.keys():
-            parameters = config["parameters"].copy()
-        else:
-            parameters = {}
-        parameters["n_industries"] = n_industries
-
-        # Create the corresponding time series object
-        if not np.all(initial_firm_prices == initial_firm_prices[0]):
-            raise ValueError("Initial prices must be equal.")
-        ts = create_economy_timeseries(
-            country_name=country_name,
-            all_country_names=all_country_names,
-            n_industries=n_industries,
-            initial_firm_prices=initial_firm_prices[0],
-            initial_firm_total_sales=initial_firm_total_sales,
-            initial_firm_total_used_ii=initial_firm_total_used_ii,
-            initial_total_taxes_on_products=initial_total_taxes_on_products,
-            initial_change_in_firm_stock_inventories=initial_change_in_firm_stock_inventories,
-            initial_total_operating_surplus_plus_wages=initial_total_operating_surplus_plus_wages,
-            initial_individual_activity=initial_individual_activity,
-            initial_cpi_inflation=initial_cpi_inflation,
-            initial_ppi_inflation=initial_ppi_inflation,
-            initial_nominal_house_price_index_growth=initial_nominal_house_price_index_growth,
-            initial_real_rent_paid=initial_real_rent_paid,
-            initial_imp_rent_paid=initial_imp_rent_paid,
-            initial_hh_rental_income=initial_hh_rental_income,
-            initial_hh_consumption=initial_hh_consumption,
-            initial_gov_consumption=initial_gov_consumption,
-            initial_cg_rent_received=initial_cg_rent_received,
-            initial_cg_taxes_rental_income=initial_cg_taxes_rental_income,
-            initial_sectoral_growth=initial_sectoral_growth,
-            initial_sentiment=config["functions"]["sentiment"]["parameters"]["value"]["value"],
-            initial_imports=initial_imports,
-            initial_imports_by_country=initial_imports_by_country,
-            initial_exports=initial_exports,
-            initial_exports_by_country=initial_exports_by_country,
-            export_taxes=export_taxes,
-        )
         return cls(
             country_name,
             all_country_names,
@@ -543,3 +456,6 @@ class Economy:
             ]
         )
         self.ts.gdp_income.append([operating_surplus_plus_wages + taxes_on_products + rent_received + rent_imputed])
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("economy", group)

@@ -1,3 +1,4 @@
+import h5py
 import numpy as np
 import pandas as pd
 from inet_data import SyntheticCountry
@@ -150,6 +151,9 @@ class Exogenous:
             iot_industry_data=exogenous_data.iot_industry_data,
             exchange_rates_data=exchange_rates.historic_exchange_rate_data.loc[[country_name]],
         )
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("exogenous", group)
 
     # def compile_historic_data(self) -> pd.DataFrame:
     #     # Stuff
