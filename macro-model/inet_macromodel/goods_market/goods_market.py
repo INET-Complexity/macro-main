@@ -1,11 +1,10 @@
 import logging
-from typing import Any
-
 import numpy as np
 import pandas as pd
+from typing import Any
 
 from agents.agent import Agent
-from configurations import GoodsMarketConfiguration
+from inet_macromodel.configurations import GoodsMarketConfiguration
 from inet_macromodel.goods_market.goods_market_ts import create_goods_market_timeseries
 from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.util.function_mapping import functions_from_model

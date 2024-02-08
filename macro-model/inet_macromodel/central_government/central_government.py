@@ -1,10 +1,10 @@
-import numpy as np
 import h5py
+import numpy as np
 from inet_data import SyntheticCentralGovernment
 from inet_data.processing.tax_data import TaxData
 from typing import Any
 
-from configurations import CentralGovernmentConfiguration
+from inet_macromodel.configurations import CentralGovernmentConfiguration
 from inet_macromodel.agents.agent import Agent
 from inet_macromodel.central_government.central_government_ts import (
     create_central_government_timeseries,

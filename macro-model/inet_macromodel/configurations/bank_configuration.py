@@ -1,6 +1,5 @@
-from typing import Literal, Any
-
 from pydantic import BaseModel, Field
+from typing import Literal, Any
 
 
 class BankParameters(BaseModel):

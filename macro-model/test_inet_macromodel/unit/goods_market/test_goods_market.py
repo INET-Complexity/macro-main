@@ -1,10 +1,9 @@
 import numpy as np
+from typing import Tuple
 
 from inet_macromodel.agents.agent import Agent
-from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.goods_market.value_type import ValueType
-
-from typing import Tuple
+from inet_macromodel.timeseries import TimeSeries
 
 
 def create_test_transactor(

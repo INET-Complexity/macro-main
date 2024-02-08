@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Any, Optional, Union, Literal
+from typing import Any, Literal
 
 
 class HouseholdsParameters(BaseModel):

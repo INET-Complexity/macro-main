@@ -1,9 +1,9 @@
 import numpy as np
-
 from abc import abstractmethod, ABC
+
 from inet_macromodel.banks.banks import Banks
-from inet_macromodel.households.households import Households
 from inet_macromodel.credit_market.credit_market import CreditMarket
+from inet_macromodel.households.households import Households
 
 
 class HouseholdInsolvencyHandler(ABC):

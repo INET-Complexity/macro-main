@@ -1,11 +1,10 @@
-from tqdm import trange
 from abc import abstractmethod, ABC
+from tqdm import trange
+from typing import Tuple, Optional
 
 from inet_macromodel.goods_market.func.lib_default import *
 from inet_macromodel.goods_market.func.lib_pro_rata import *
 from inet_macromodel.goods_market.value_type import ValueType
-
-from typing import Tuple, Optional
 
 
 class GoodsMarketClearer(ABC):

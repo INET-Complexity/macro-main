@@ -1,18 +1,16 @@
 import h5py
 import numpy as np
 import pandas as pd
-
 from inet_data import SyntheticFirms
-
-from configurations import FirmsConfiguration
-from inet_macromodel.agents.agent import Agent
-from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.goods_market.value_type import ValueType
-from inet_macromodel.util.function_mapping import functions_from_model
-from inet_macromodel.firms.firm_ts import create_firms_timeseries
-from inet_macromodel.credit_market.credit_market import CreditMarket
-
 from typing import Any, Callable
+
+from inet_macromodel.configurations import FirmsConfiguration
+from inet_macromodel.agents.agent import Agent
+from inet_macromodel.credit_market.credit_market import CreditMarket
+from inet_macromodel.firms.firm_ts import create_firms_timeseries
+from inet_macromodel.goods_market.value_type import ValueType
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import functions_from_model
 
 
 class Firms(Agent):

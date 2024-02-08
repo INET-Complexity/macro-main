@@ -1,11 +1,11 @@
 import numpy as np
 import pandas as pd
-
 from abc import abstractmethod, ABC
+
 from inet_macromodel.banks.banks import Banks
+from inet_macromodel.credit_market.types_of_loans import LoanTypes
 from inet_macromodel.firms.firms import Firms
 from inet_macromodel.households.households import Households
-from inet_macromodel.credit_market.types_of_loans import LoanTypes
 
 
 class CreditMarketClearer(ABC):

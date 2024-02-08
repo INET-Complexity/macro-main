@@ -1,8 +1,7 @@
 import numpy as np
+from abc import abstractmethod, ABC
 
 from inet_macromodel.util.partition import partition_into_quintiles
-
-from abc import abstractmethod, ABC
 
 
 class HouseholdConsumption(ABC):

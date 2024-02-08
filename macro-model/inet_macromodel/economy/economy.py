@@ -3,15 +3,15 @@ import numpy as np
 import pandas as pd
 from typing import Any, Optional
 
-from central_government import CentralGovernment
-from configurations import EconomyConfiguration
-from exogenous import Exogenous
-from individuals import Individuals
+from inet_macromodel.central_government.central_government import CentralGovernment
+from inet_macromodel.configurations import EconomyConfiguration
 from inet_macromodel.economy.economy_ts import create_economy_timeseries
+from inet_macromodel.exogenous.exogenous import Exogenous
 from inet_macromodel.firms.firms import Firms
 from inet_macromodel.government_entities.government_entities import GovernmentEntities
 from inet_macromodel.households.households import Households
 from inet_macromodel.individuals.individual_properties import ActivityStatus
+from inet_macromodel.individuals.individuals import Individuals
 from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.util.function_mapping import functions_from_model
 

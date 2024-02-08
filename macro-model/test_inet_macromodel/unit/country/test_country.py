@@ -1,6 +1,6 @@
-from configurations import CountryConfiguration, ExchangeRatesConfiguration
-from country import Country
-from exchange_rates import ExchangeRates
+from inet_macromodel.configurations import CountryConfiguration, ExchangeRatesConfiguration
+from inet_macromodel.country import Country
+from inet_macromodel.exchange_rates import ExchangeRates
 
 
 class TestCountry:

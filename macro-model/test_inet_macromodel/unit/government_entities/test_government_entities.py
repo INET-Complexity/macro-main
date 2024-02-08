@@ -1,7 +1,3 @@
-from configurations import GovernmentEntitiesConfiguration
-from government_entities import GovernmentEntities
-
-
 class TestGovernmentEntities:
     def test__create(self, test_government_entities):
         assert test_government_entities.country_name == "FRA"

@@ -1,18 +1,16 @@
 import h5py
 import numpy as np
-
 from pathlib import Path
-
-from configurations import LabourMarketConfiguration
-from inet_macromodel.firms.firms import Firms
-from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.households.households import Households
-from inet_macromodel.util.function_mapping import get_functions, functions_from_model
-from inet_macromodel.individuals.individuals import Individuals
-from inet_macromodel.individuals.individual_properties import ActivityStatus
-from inet_macromodel.labour_market.labour_market_ts import create_labour_market_timeseries
-
 from typing import Any
+
+from inet_macromodel.configurations import LabourMarketConfiguration
+from inet_macromodel.firms.firms import Firms
+from inet_macromodel.households.households import Households
+from inet_macromodel.individuals.individual_properties import ActivityStatus
+from inet_macromodel.individuals.individuals import Individuals
+from inet_macromodel.labour_market.labour_market_ts import create_labour_market_timeseries
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import get_functions, functions_from_model
 
 
 class LabourMarket:

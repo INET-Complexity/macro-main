@@ -1,11 +1,11 @@
+import h5py
 import numpy as np
 import pandas as pd
 import warnings
-import h5py
 from inet_data import SyntheticPopulation
 from typing import Any, Optional
 
-from configurations import HouseholdsConfiguration
+from inet_macromodel.configurations import HouseholdsConfiguration
 from inet_macromodel.agents.agent import Agent
 from inet_macromodel.banks.banks import Banks
 from inet_macromodel.credit_market.credit_market import CreditMarket

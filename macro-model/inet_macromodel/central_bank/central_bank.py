@@ -1,18 +1,13 @@
-import numpy as np
-import pandas as pd
 import h5py
-
-from pathlib import Path
-
+import numpy as np
 from inet_data import SyntheticCentralBank
-
-from configurations import CentralBankConfiguration
-from inet_macromodel.agents.agent import Agent
-from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.util.function_mapping import get_functions, functions_from_model
-from inet_macromodel.central_bank.central_bank_ts import create_central_bank_timeseries
-
 from typing import Any
+
+from inet_macromodel.configurations import CentralBankConfiguration
+from inet_macromodel.agents.agent import Agent
+from inet_macromodel.central_bank.central_bank_ts import create_central_bank_timeseries
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import functions_from_model
 
 
 class CentralBank(Agent):

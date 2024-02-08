@@ -3,19 +3,16 @@ from __future__ import annotations
 import h5py
 import numpy as np
 import pandas as pd
-
-from pathlib import Path
-
 from inet_data import SyntheticCreditMarket
-
-from configurations import CreditMarketConfiguration
-from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.util.property_mapping import map_to_enum
-from inet_macromodel.util.function_mapping import get_functions, functions_from_model
-from inet_macromodel.credit_market.types_of_loans import LoanTypes
-from inet_macromodel.credit_market.credit_market_ts import create_credit_market_timeseries
-
+from pathlib import Path
 from typing import Any, TYPE_CHECKING
+
+from inet_macromodel.configurations import CreditMarketConfiguration
+from inet_macromodel.credit_market.credit_market_ts import create_credit_market_timeseries
+from inet_macromodel.credit_market.types_of_loans import LoanTypes
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import get_functions, functions_from_model
+from inet_macromodel.util.property_mapping import map_to_enum
 
 if TYPE_CHECKING:
     from inet_macromodel.firms.firms import Firms

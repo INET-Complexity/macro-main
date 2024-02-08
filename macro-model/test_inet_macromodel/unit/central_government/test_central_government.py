@@ -1,8 +1,6 @@
 import numpy as np
 import pytest
 
-from central_government import CentralGovernment
-from configurations import CentralGovernmentConfiguration
 from inet_macromodel.individuals.individual_properties import ActivityStatus
 
 

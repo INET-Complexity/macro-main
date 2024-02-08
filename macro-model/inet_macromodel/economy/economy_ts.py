@@ -1,7 +1,7 @@
 import numpy as np
 
-from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.individuals.individual_properties import ActivityStatus
+from inet_macromodel.timeseries import TimeSeries
 
 
 def create_economy_timeseries(

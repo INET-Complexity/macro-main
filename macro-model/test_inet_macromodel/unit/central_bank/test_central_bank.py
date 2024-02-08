@@ -1,7 +1,3 @@
-from central_bank import CentralBank
-from configurations import CentralBankConfiguration
-
-
 class TestCentralBank:
     def test__init(self, test_central_bank, datawrapper):
         synthetic_central_bank = datawrapper.synthetic_countries["FRA"].central_bank

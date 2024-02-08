@@ -1,6 +1,5 @@
-from typing import Any, Literal
-
 from pydantic import BaseModel
+from typing import Any, Literal
 
 
 class DemographyFunction(BaseModel):

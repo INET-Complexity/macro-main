@@ -1,19 +1,16 @@
 import h5py
 import numpy as np
 import pandas as pd
-
-from pathlib import Path
-
 from inet_data import SyntheticRestOfTheWorld
-
-from configurations import RestOfTheWorldConfiguration
-from inet_macromodel.agents.agent import Agent
-from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.goods_market.value_type import ValueType
-from inet_macromodel.util.function_mapping import get_functions, functions_from_model
-from inet_macromodel.rest_of_the_world.rest_of_the_world_ts import create_rest_of_the_world_timeseries
-
+from pathlib import Path
 from typing import Any, Optional
+
+from inet_macromodel.configurations import RestOfTheWorldConfiguration
+from inet_macromodel.agents.agent import Agent
+from inet_macromodel.goods_market.value_type import ValueType
+from inet_macromodel.rest_of_the_world.rest_of_the_world_ts import create_rest_of_the_world_timeseries
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import get_functions, functions_from_model
 
 
 class RestOfTheWorld(Agent):

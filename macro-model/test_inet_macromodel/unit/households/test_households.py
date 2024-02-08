@@ -1,9 +1,3 @@
-import numpy as np
-
-from configurations import HouseholdsConfiguration
-from households import Households
-
-
 class TestHouseholds:
     def test__create(self, test_households):
         assert test_households.country_name == "FRA"

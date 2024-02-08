@@ -1,8 +1,5 @@
 import numpy as np
 
-from configurations import FirmsConfiguration
-from firms import Firms
-
 
 class TestFirms:
     def test__create(self, test_firms):

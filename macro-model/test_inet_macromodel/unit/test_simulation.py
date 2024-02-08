@@ -1,9 +1,8 @@
+import tempfile
 from pathlib import Path
 
-import tempfile
-
-from configurations import SimulationConfiguration, CountryConfiguration
-from simulation import Simulation
+from inet_macromodel.configurations import SimulationConfiguration, CountryConfiguration
+from inet_macromodel.simulation import Simulation
 
 
 def test_simulation(datawrapper):

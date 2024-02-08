@@ -1,8 +1,7 @@
 import numpy as np
+from typing import Any, Optional
 
 from inet_macromodel.timeseries import TimeSeries
-
-from typing import Any, Optional
 
 
 class Agent:

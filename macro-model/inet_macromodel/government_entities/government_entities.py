@@ -1,9 +1,9 @@
-import numpy as np
 import h5py
+import numpy as np
 from inet_data import SyntheticGovernmentEntities
 from typing import Any
 
-from configurations import GovernmentEntitiesConfiguration
+from inet_macromodel.configurations import GovernmentEntitiesConfiguration
 from inet_macromodel.agents.agent import Agent
 from inet_macromodel.goods_market.value_type import ValueType
 from inet_macromodel.government_entities.government_entities_ts import (

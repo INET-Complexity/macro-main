@@ -1,10 +1,11 @@
+import argparse
+import numpy as np
+import os
 import sys
 import time
-import argparse
-import os
 import warnings
-import numpy as np
 from matplotlib import pyplot as plt
+
 
 # =========================================
 # ========== Auxiliary Functions ==========

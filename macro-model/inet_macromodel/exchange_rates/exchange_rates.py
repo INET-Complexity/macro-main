@@ -1,7 +1,7 @@
 import h5py
 import pandas as pd
 
-from configurations import ExchangeRatesConfiguration
+from inet_macromodel.configurations import ExchangeRatesConfiguration
 from inet_macromodel.exchange_rates.exchange_rates_ts import create_exchange_rates_timeseries
 
 

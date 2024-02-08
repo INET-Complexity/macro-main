@@ -1,13 +1,12 @@
-from pathlib import Path
-
 import h5py
 import numpy as np
 import pandas as pd
 import warnings
 from inet_data import SyntheticHousingMarket
+from pathlib import Path
 from typing import Any
 
-from configurations import HousingMarketConfiguration
+from inet_macromodel.configurations import HousingMarketConfiguration
 from inet_macromodel.housing_market.housing_market_ts import create_housing_market_timeseries
 from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.util.function_mapping import functions_from_model, get_functions

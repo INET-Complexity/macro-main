@@ -1,7 +1,3 @@
-from inet_macromodel.banks import Banks
-from inet_macromodel.configurations import BanksConfiguration
-
-
 class TestBanks:
     def test__banks_init(self, test_banks):
         assert set(test_banks.states.keys()) == {

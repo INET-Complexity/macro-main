@@ -1,28 +1,25 @@
 import h5py
 import logging
-
 import numpy as np
 from inet_data import SyntheticCountry
-from inet_macromodel.rest_of_the_world import RestOfTheWorld
 
 from inet_macromodel.agents.agent import Agent
-
-from inet_macromodel.configurations import CountryConfiguration
-from inet_macromodel.exchange_rates import ExchangeRates
-from inet_macromodel.individuals.individual_properties import ActivityStatus
 from inet_macromodel.banks.banks import Banks
 from inet_macromodel.central_bank.central_bank import CentralBank
 from inet_macromodel.central_government.central_government import CentralGovernment
+from inet_macromodel.configurations import CountryConfiguration
 from inet_macromodel.credit_market.credit_market import CreditMarket
-from inet_macromodel.housing_market.housing_market import HousingMarket
 from inet_macromodel.economy.economy import Economy
+from inet_macromodel.exchange_rates import ExchangeRates
 from inet_macromodel.exogenous.exogenous import Exogenous
 from inet_macromodel.firms.firms import Firms
 from inet_macromodel.government_entities.government_entities import GovernmentEntities
 from inet_macromodel.households.households import Households
+from inet_macromodel.housing_market.housing_market import HousingMarket
+from inet_macromodel.individuals.individual_properties import ActivityStatus
 from inet_macromodel.individuals.individuals import Individuals
 from inet_macromodel.labour_market.labour_market import LabourMarket
-
+from inet_macromodel.rest_of_the_world import RestOfTheWorld
 from inet_macromodel.util.get_histogram import get_histogram
 
 

@@ -1,10 +1,10 @@
+import h5py
 import numpy as np
 import warnings
-import h5py
 from inet_data import SyntheticPopulation
 from typing import Any
 
-from configurations import IndividualsConfiguration
+from inet_macromodel.configurations import IndividualsConfiguration
 from inet_macromodel.agents.agent import Agent
 from inet_macromodel.individuals.individual_properties import (
     ActivityStatus,

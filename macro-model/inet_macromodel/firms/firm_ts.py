@@ -1,12 +1,11 @@
+from collections import Counter
+
 import numpy as np
 import pandas as pd
 
-from collections import Counter
-
+from external.tail_estimation_simplified import calculate_tail_exponent
 from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.util.get_histogram import get_histogram
-
-from external.tail_estimation_simplified import calculate_tail_exponent
 
 
 def create_firms_timeseries(

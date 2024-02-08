@@ -1,5 +1,5 @@
-from configurations import RestOfTheWorldConfiguration
-from rest_of_the_world import RestOfTheWorld
+from inet_macromodel.configurations import RestOfTheWorldConfiguration
+from inet_macromodel.rest_of_the_world import RestOfTheWorld
 
 
 class TestRestOfTheWorld:

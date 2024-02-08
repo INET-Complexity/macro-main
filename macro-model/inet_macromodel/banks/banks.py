@@ -1,5 +1,5 @@
-import numpy as np
 import h5py
+import numpy as np
 from inet_data import SyntheticBanks
 from typing import Any
 

@@ -1,11 +1,10 @@
 import logging
 import numpy as np
 import pandas as pd
+from typing import Tuple, Optional
 
 from inet_macromodel.agents.agent import Agent
 from inet_macromodel.goods_market.value_type import ValueType
-
-from typing import Tuple, Optional
 
 
 def get_trade_proportions(

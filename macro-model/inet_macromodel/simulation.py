@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from inet_data import DataWrapper
 from pathlib import Path
 
-from configurations import SimulationConfiguration
+from inet_macromodel.configurations import SimulationConfiguration
 from country import Country
 from exchange_rates import ExchangeRates
 from goods_market import GoodsMarket

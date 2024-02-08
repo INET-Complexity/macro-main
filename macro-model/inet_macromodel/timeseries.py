@@ -1,7 +1,7 @@
 import h5py
+import logging
 import numpy as np
 import pandas as pd
-import logging
 
 
 class TimeSeries:

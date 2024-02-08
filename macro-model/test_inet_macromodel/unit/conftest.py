@@ -1,13 +1,14 @@
-import yaml
-import pytest
 import numpy as np
 import pandas as pd
-
+import pytest
+import yaml
+from inet_data import DataWrapper
 from pathlib import Path
 
-from inet_data import DataWrapper
-
-from configurations import (
+from inet_macromodel.banks import Banks
+from inet_macromodel.central_bank import CentralBank
+from inet_macromodel.central_government import CentralGovernment
+from inet_macromodel.configurations import (
     IndividualsConfiguration,
     FirmsConfiguration,
     CentralGovernmentConfiguration,
@@ -19,24 +20,20 @@ from configurations import (
     CentralBankConfiguration,
     GoodsMarketConfiguration,
 )
-from inet_macromodel.exchange_rates import ExchangeRates
-from inet_macromodel.individuals import Individuals
-from inet_macromodel.households import Households
-from inet_macromodel.firms import Firms
-from inet_macromodel.central_government import CentralGovernment
-from inet_macromodel.government_entities import GovernmentEntities
-from inet_macromodel.banks import Banks
-from inet_macromodel.central_bank import CentralBank
-from inet_macromodel.economy import Economy
-from inet_macromodel.labour_market.labour_market import LabourMarket
-from inet_macromodel.credit_market.credit_market import CreditMarket
-from inet_macromodel.housing_market.housing_market import HousingMarket
-from inet_macromodel.goods_market.goods_market import GoodsMarket
-from inet_macromodel.rest_of_the_world import RestOfTheWorld
 from inet_macromodel.country import Country
+from inet_macromodel.credit_market.credit_market import CreditMarket
+from inet_macromodel.economy import Economy
+from inet_macromodel.exchange_rates import ExchangeRates
 from inet_macromodel.exogenous import Exogenous
-
+from inet_macromodel.firms import Firms
+from inet_macromodel.goods_market.goods_market import GoodsMarket
+from inet_macromodel.government_entities import GovernmentEntities
+from inet_macromodel.households import Households
+from inet_macromodel.housing_market.housing_market import HousingMarket
+from inet_macromodel.individuals import Individuals
 from inet_macromodel.individuals.individual_properties import ActivityStatus
+from inet_macromodel.labour_market.labour_market import LabourMarket
+from inet_macromodel.rest_of_the_world import RestOfTheWorld
 
 
 @pytest.fixture(scope="module", name="test_config")
