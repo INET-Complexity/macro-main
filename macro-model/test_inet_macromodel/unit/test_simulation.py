@@ -13,7 +13,8 @@ def test_simulation(datawrapper):
 
     assert set(simulation.countries.keys()) == {"FRA"}
 
-    simulation.iterate()
+    for _ in range(5):
+        simulation.iterate()
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)

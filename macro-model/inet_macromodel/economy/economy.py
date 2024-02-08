@@ -86,7 +86,7 @@ class Economy:
             country_name=country_name,
             all_country_names=all_country_names,
             n_industries=firms.n_industries,
-            initial_firm_prices=initial_firm_prices,
+            initial_firm_prices=initial_firm_prices.mean(),
             initial_firm_total_sales=initial_firm_total_sales,
             initial_firm_total_used_ii=initial_firm_total_used_ii,
             initial_total_taxes_on_products=initial_total_taxes_on_products,
@@ -309,7 +309,7 @@ class Economy:
             if (
                 firm_real_amount_bought.sum() + household_real_amount_bought.sum() + government_real_amount_bought.sum()
             ) == 0.0:
-                return self.ts.current("ppi")[0]
+                return self.ts.current("good_prices")
             else:
                 return (
                     firm_nominal_amount_spent.sum()

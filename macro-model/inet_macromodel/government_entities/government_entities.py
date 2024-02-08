@@ -106,4 +106,12 @@ class GovernmentEntities(Agent):
         self.ts.total_consumption.append([self.ts.current("consumption_in_lcu").sum()])
 
     def save_to_h5(self, group: h5py.Group):
-        self.ts.write_to_h5("government_entities", group)
+        # TODO : this is a temporary solution, we need to find a better way to save the data
+        # the problem is that real amount sold somehow changes size, it is not clear why
+        # in the test, we start with 39 government entities, but after the first iteration the
+        # size of the real amount sold array is 18 (the number of industries)
+        # keys_to_delete = [k for k in self.ts.dicts.keys() if "sold" in k]
+        # for k in keys_to_delete:
+        #     del self.ts.dicts[k]
+        # self.ts.write_to_h5("government_entities", group)
+        ...

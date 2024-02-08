@@ -233,4 +233,4 @@ class CentralGovernment(Agent):
         return np.array([self.ts.current("debt")[0] + self.ts.current("deficit")[0]])
 
     def save_to_h5(self, group: h5py.Group):
-        self.ts.write_to_h5("households", group)
+        self.ts.write_to_h5("central_government", group)
