@@ -2,7 +2,7 @@ import h5py
 import pandas as pd
 from inet_data import SyntheticCountry
 
-from exchange_rates.exchange_rates import ExchangeRates
+from inet_macromodel.exchange_rates.exchange_rates import ExchangeRates
 from inet_macromodel.exogenous.exogenous_ts import create_exogenous_timeseries
 
 
