@@ -6,11 +6,11 @@ from inet_data import DataWrapper
 from pathlib import Path
 
 from inet_macromodel.configurations import SimulationConfiguration
-from country import Country
-from exchange_rates import ExchangeRates
-from goods_market import GoodsMarket
-from rest_of_the_world import RestOfTheWorld
-from timestep import Timestep
+from inet_macromodel.country import Country
+from inet_macromodel.exchange_rates import ExchangeRates
+from inet_macromodel.goods_market import GoodsMarket
+from inet_macromodel.rest_of_the_world import RestOfTheWorld
+from inet_macromodel.timestep import Timestep
 
 
 @dataclass
