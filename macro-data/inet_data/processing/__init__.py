@@ -28,3 +28,5 @@ from .synthetic_rest_of_the_world.default_synthetic_rest_of_the_world import Def
 from .synthetic_rest_of_the_world.synthetic_rest_of_the_world import SyntheticRestOfTheWorld
 
 from .synthetic_country import SyntheticCountry
+
+from .country_data.tax_data import TaxData
