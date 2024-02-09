@@ -1,6 +1,5 @@
-from abc import abstractmethod, ABC
-
 import numpy as np
+from abc import abstractmethod, ABC
 
 
 class DesiredLabourSetter(ABC):

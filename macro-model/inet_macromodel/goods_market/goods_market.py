@@ -1,66 +1,53 @@
-from pathlib import Path
 import logging
-
 import numpy as np
 import pandas as pd
-
-from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.util.function_mapping import get_functions
-from inet_macromodel.goods_market.goods_market_ts import create_goods_market_timeseries
-
 from typing import Any
+
+from inet_macromodel.agents.agent import Agent
+from inet_macromodel.configurations import GoodsMarketConfiguration
+from inet_macromodel.goods_market.goods_market_ts import create_goods_market_timeseries
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import functions_from_model
 
 
 class GoodsMarket:
     def __init__(
         self,
-        year: int,
-        t_max: int,
         n_industries: int,
         functions: dict[str, Any],
-        parameters: dict[str, Any],
         trade_proportions: pd.DataFrame,
         ts: TimeSeries,
     ):
-        self.year = year
-        self.t_max = t_max
         self.n_industries = n_industries
         self.functions = functions
-        self.parameters = parameters
         self.trade_proportions = trade_proportions.fillna(0.0)
         self.ts = ts
 
     @classmethod
     def from_data(
         cls,
-        year: int,
-        t_max: int,
         n_industries: int,
         trade_proportions: pd.DataFrame,
-        config: dict[str, Any],
+        configuration: GoodsMarketConfiguration,
+        goods_market_participants: dict[str, list[Agent]],
     ) -> "GoodsMarket":
         # Get corresponding functions
-        functions = get_functions(
-            config["functions"],
-            loc="inet_macromodel.goods_market",
-            func_dir=Path(__file__).parent / "func",
-        )
+        functions = functions_from_model(configuration.functions, loc="inet_macromodel.goods_market")
 
-        # Get corresponding parameters
-        if "parameters" in config.keys():
-            parameters = config["parameters"].copy()
-        else:
-            parameters = {}
+        functions["clearing"].initiate_agents(
+            n_industries=n_industries,
+            goods_market_participants=goods_market_participants,
+        )
+        functions["clearing"].initiate_the_supply_chain(
+            initial_supply_chain=None,
+        )
 
         # Create the corresponding time series object
         ts = create_goods_market_timeseries(n_industries)
 
         return cls(
-            year,
-            t_max,
             n_industries,
             functions,
-            parameters,
             trade_proportions,
             ts,
         )
@@ -80,6 +67,10 @@ class GoodsMarket:
 
     def record(self) -> None:
         self.functions["clearing"].record()
+
+    def save_to_h5(self, h5_file: pd.HDFStore) -> None:
+        group = h5_file.create_group("GM")
+        self.ts.write_to_h5("GM", group)
 
 
 def format_array(arr):

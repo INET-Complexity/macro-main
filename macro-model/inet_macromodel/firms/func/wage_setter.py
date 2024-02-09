@@ -1,6 +1,5 @@
-from abc import abstractmethod, ABC
-
 import numpy as np
+from abc import abstractmethod, ABC
 
 
 class FirmWageSetter(ABC):
@@ -42,16 +41,18 @@ class DefaultFirmWageSetter(FirmWageSetter):
                 / self.markup_time_span
                 * sum(
                     [
-                        max(
-                            0,
-                            (
-                                historic_desired_labour_inputs[-t][firm_ind]
-                                - historic_realised_labour_inputs[-t][firm_ind]
+                        (
+                            max(
+                                0,
+                                (
+                                    historic_desired_labour_inputs[-t][firm_ind]
+                                    - historic_realised_labour_inputs[-t][firm_ind]
+                                )
+                                / historic_desired_labour_inputs[-t][firm_ind],
                             )
-                            / historic_desired_labour_inputs[-t][firm_ind],
+                            if historic_desired_labour_inputs[-t][firm_ind] > 0
+                            else 0.0
                         )
-                        if historic_desired_labour_inputs[-t][firm_ind] > 0
-                        else 0.0
                         for t in range(
                             1,
                             min(

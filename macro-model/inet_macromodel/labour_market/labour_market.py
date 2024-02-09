@@ -1,43 +1,64 @@
+import h5py
 import numpy as np
-
 from pathlib import Path
-
-from inet_macromodel.firms.firms import Firms
-from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.households.households import Households
-from inet_macromodel.util.function_mapping import get_functions
-from inet_macromodel.individuals.individuals import Individuals
-from inet_macromodel.individuals.individual_properties import ActivityStatus
-from inet_macromodel.labour_market.labour_market_ts import create_labour_market_timeseries
-
 from typing import Any
+
+from inet_macromodel.configurations import LabourMarketConfiguration
+from inet_macromodel.firms.firms import Firms
+from inet_macromodel.households.households import Households
+from inet_macromodel.individuals.individual_properties import ActivityStatus
+from inet_macromodel.individuals.individuals import Individuals
+from inet_macromodel.labour_market.labour_market_ts import create_labour_market_timeseries
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import get_functions, functions_from_model
 
 
 class LabourMarket:
     def __init__(
         self,
         country_name: str,
-        year: int,
-        t_max: int,
         n_industries: int,
         functions: dict[str, Any],
-        parameters: dict[str, Any],
         ts: TimeSeries,
     ):
         self.country_name = country_name
-        self.year = year
-        self.t_max = t_max
         self.n_industries = n_industries
         self.functions = functions
-        self.parameters = parameters
         self.ts = ts
+
+    @classmethod
+    def from_agents(
+        cls,
+        individuals: Individuals,
+        labour_market_configuration: LabourMarketConfiguration,
+        country_name: str,
+        n_industries: int,
+    ):
+        # initial_individual_activity=individuals.states["Activity Status"],
+        #                 initial_individual_employment_industry=individuals.states["Employment Industry"],
+        #             )
+
+        initial_individual_activity = individuals.states["Activity Status"]
+        initial_individual_employment_industry = individuals.states["Employment Industry"]
+
+        functions = functions_from_model(labour_market_configuration.functions, loc="inet_macromodel.labour_market")
+        ts = create_labour_market_timeseries(
+            initial_individual_activity=initial_individual_activity,
+            initial_individual_employment_industry=initial_individual_employment_industry,
+            n_industries=n_industries,
+        )
+
+        return cls(
+            country_name,
+            n_industries,
+            functions,
+            ts,
+        )
 
     @classmethod
     def from_data(
         cls,
         country_name: str,
-        year: int,
-        t_max: int,
         n_industries: int,
         initial_individual_activity: np.ndarray,
         initial_individual_employment_industry: np.ndarray,
@@ -65,11 +86,8 @@ class LabourMarket:
 
         return cls(
             country_name,
-            year,
-            t_max,
             n_industries,
             functions,
-            parameters,
             ts,
         )
 
@@ -118,3 +136,6 @@ class LabourMarket:
         self.ts.num_employed_individuals_by_sector.append(num_employed)
 
         return labour_costs
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("labour_market", group)

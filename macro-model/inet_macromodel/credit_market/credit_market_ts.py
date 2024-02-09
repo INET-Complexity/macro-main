@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.credit_market.types_of_loans import LoanTypes
+from inet_macromodel.timeseries import TimeSeries
 
 
 def create_credit_market_timeseries(loan_data: pd.DataFrame) -> TimeSeries:

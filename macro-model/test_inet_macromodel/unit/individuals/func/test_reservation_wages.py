@@ -1,7 +1,7 @@
 import numpy as np
 
-from inet_macromodel.individuals.individual_properties import ActivityStatus
 from inet_macromodel.individuals.func.reservation_wages import DefaultReservationWageSetter
+from inet_macromodel.individuals.individual_properties import ActivityStatus
 
 
 class TestReservationWageSetter:

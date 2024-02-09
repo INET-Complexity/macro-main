@@ -1,23 +1,21 @@
-import warnings
+import h5py
 import numpy as np
 import pandas as pd
+import warnings
+from inet_data import SyntheticPopulation
+from typing import Any, Optional
 
-from pathlib import Path
-from mergedeep import merge
-
-from inet_macromodel.util.get_histogram import get_histogram
-from inet_macromodel.util.property_mapping import map_to_enum
-from inet_macromodel.util.function_mapping import get_functions
-
-from inet_macromodel.banks.banks import Banks
+from inet_macromodel.configurations import HouseholdsConfiguration
 from inet_macromodel.agents.agent import Agent
-from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.goods_market.value_type import ValueType
+from inet_macromodel.banks.banks import Banks
 from inet_macromodel.credit_market.credit_market import CreditMarket
+from inet_macromodel.goods_market.value_type import ValueType
 from inet_macromodel.households.household_properties import HouseholdType
 from inet_macromodel.households.households_ts import create_households_timeseries
-
-from typing import Any, Optional
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import functions_from_model
+from inet_macromodel.util.get_histogram import get_histogram
+from inet_macromodel.util.property_mapping import map_to_enum
 
 
 class Households(Agent):
@@ -25,25 +23,21 @@ class Households(Agent):
         self,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
-        number_of_entities: int,
         functions: dict[str, Any],
-        parameters: dict[str, Any],
         ts: TimeSeries,
         states: dict[str, float | np.ndarray | list[np.ndarray]],
+        consumption_weights: np.ndarray,
+        consumption_weights_by_income: np.ndarray,
+        use_consumption_weights_by_income: bool,
     ):
+        n_entities = ts.current("n_households")
         super().__init__(
             country_name,
             all_country_names,
-            year,
-            t_max,
             n_industries,
-            number_of_entities,
-            number_of_entities,
-            functions,
-            parameters,
+            n_entities,
+            n_entities,
             ts,
             states,
             transactor_settings={
@@ -54,68 +48,65 @@ class Households(Agent):
             },
         )
 
+        self.functions = functions
+
         # Set initial values
         self.ts["saving_rates_histogram"] = get_histogram(self.get_saving_rates_by_household(), None)
 
+        self.consumption_weights = consumption_weights
+        self.consumption_weights_by_income = consumption_weights_by_income
+
+        self.use_consumption_weights_by_income = use_consumption_weights_by_income
+
     @classmethod
-    def from_data(
+    def from_pickled_agent(
         cls,
+        synthetic_population: SyntheticPopulation,
+        configuration: HouseholdsConfiguration,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
-        n_industries: int,
-        scale: int,
-        data: pd.DataFrame,
-        initial_industry_consumption: np.ndarray,
-        individual_ages: np.ndarray,
-        corr_individuals: pd.DataFrame,
-        corr_renters: pd.DataFrame,
-        corr_additionally_owned_properties: pd.DataFrame,
-        consumption_weights: pd.DataFrame,
-        consumption_weights_by_income: pd.DataFrame,
-        coefficient_fa_income: pd.DataFrame,
+        industries: list[str],
+        initial_consumption_by_industry: np.ndarray,
         value_added_tax: float,
-        saving_rates_model: Optional[Any],
-        social_transfers_model: Optional[Any],
-        wealth_distribution_model: Optional[Any],
-        config: dict[str, Any],
-        init_config: dict[str, Any],
+        scale: int,
     ) -> "Households":
-        assert corr_additionally_owned_properties is not None
+        individual_ages = synthetic_population.individual_data["Age"].values
 
-        # Parameters
-        parameters = {}
-        merge(parameters, config, init_config)
+        corr_individuals = synthetic_population.household_data["Corresponding Individuals ID"]
+        corr_individuals = corr_individuals.rename_axis("Household ID")
 
-        # Get corresponding functions and parameters
-        functions = get_functions(
-            parameters["functions"],
-            loc="inet_macromodel.households",
-            func_dir=Path(__file__).parent / "func",
+        corr_renters = synthetic_population.household_data["Corresponding Renters"]
+        corr_renters = corr_renters.rename_axis("Household ID")
+
+        corr_owned_houses = synthetic_population.household_data["Corresponding Additionally Owned Houses ID"]
+        corr_owned_houses = corr_owned_houses.rename_axis("Household ID")
+
+        functions = functions_from_model(model=configuration.functions, loc="inet_macromodel.households")
+
+        hh_data = (
+            synthetic_population.household_data.drop(
+                columns=[
+                    "Corresponding Individuals ID",
+                    "Corresponding Renters",
+                    "Corresponding Additionally Owned Houses ID",
+                ]
+            )
+            .astype(float)
+            .rename_axis("Household ID")
         )
 
-        # Add consumption weights and saving rates by group
-        parameters["consumption_weights_data"] = consumption_weights.values
-        parameters["consumption_weights_by_income_data"] = consumption_weights_by_income.values
+        consumption_weights = synthetic_population.consumption_weights
+
+        consumption_weights_by_income = synthetic_population.consumption_weights_by_income.T
 
         # Additional states
         states: dict[str, float | np.ndarray | list[np.ndarray] | Any] = {
-            "saving_rates_model": saving_rates_model,
-            "social_transfers_model": social_transfers_model,
-            "wealth_distribution_model": wealth_distribution_model,
-            "average_saving_rate": data["Saving Rate"].values.mean(),
-            "coefficient_fa_income": coefficient_fa_income.values[0][0],
+            "saving_rates_model": synthetic_population.saving_rates_model,
+            "social_transfers_model": synthetic_population.social_transfers_model,
+            "wealth_distribution_model": synthetic_population.wealth_distribution_model,
+            "average_saving_rate": synthetic_population.household_data["Saving Rate"].mean(),
+            "coefficient_fa_income": synthetic_population.coefficient_fa_income,
         }
-
-        # Create the corresponding time series object
-        ts = create_households_timeseries(
-            data=data,
-            initial_industry_consumption=initial_industry_consumption,
-            n_industries=n_industries,
-            scale=scale,
-            vat=value_added_tax,
-        )
 
         # Additional states
         for state_name in [
@@ -125,15 +116,22 @@ class Households(Agent):
             "Corresponding Property Owner",
             "Tenure Status of the Main Residence",
         ]:
-            if state_name not in data.columns:
+            if state_name not in hh_data.columns:
                 raise ValueError(f"Missing {state_name} from the data for initialising households.")
             if state_name == "Type":
-                states[state_name] = data[state_name].values.flatten()
+                states[state_name] = hh_data[state_name].values.flatten()
             else:
                 with warnings.catch_warnings():
                     warnings.simplefilter(action="ignore", category=RuntimeWarning)
-                    states[state_name] = data[state_name].values.astype(int).flatten()
+                    states[state_name] = hh_data[state_name].values.astype(int).flatten()
                     states[state_name][states[state_name] < 0] = -1
+
+        ts = create_households_timeseries(
+            data=hh_data,
+            initial_consumption_by_industry=initial_consumption_by_industry,
+            scale=scale,
+            vat=value_added_tax,
+        )
 
         # Update the household type
         states["Type"] = map_to_enum(states["Type"], HouseholdType)
@@ -150,27 +148,22 @@ class Households(Agent):
         )
 
         # Corresponding renters
-        states["corr_renters"] = [corr_renters.values[i][0] for i in range(len(corr_renters.values))]
+        states["corr_renters"] = [[int(x) for x in sublist if not pd.isna(x)] for sublist in corr_renters]
 
-        # Corresponding additionally owned property
-        """
-        states["corr_additionally_owned_properties"] = [
-            list(corr_additionally_owned_properties.values[i][0])
-            for i in range(len(corr_additionally_owned_properties.values))
-        ]
-        """
+        use_consumption_weights_by_income = configuration.use_consumption_weights_by_income
+
+        # TODO: corresponding additionally owned houses is not used
 
         return cls(
             country_name,
             all_country_names,
-            year,
-            t_max,
-            n_industries,
-            ts.current("n_households"),
+            len(industries),
             functions,
-            parameters,
             ts,
             states,
+            consumption_weights,
+            consumption_weights_by_income,
+            use_consumption_weights_by_income,
         )
 
     @staticmethod
@@ -180,23 +173,26 @@ class Households(Agent):
     def compute_social_transfer_income(
         self,
         total_other_social_transfers: float,
-        central_government_init: dict[str, Any],
     ) -> np.ndarray:
-        inds = central_government_init["functions"]["household_social_transfers"]["parameters"]["independents"]["value"]
+        inds = ["Income", "Debt"]
         return self.functions["social_transfers"].get_social_transfers(
             n_households=self.ts.current("n_households"),
             total_other_social_transfers=total_other_social_transfers,
-            current_independents=np.array([])
-            if len(inds) == 0
-            else np.stack(
-                [self.ts.current(ind.lower()) for ind in inds],
-                axis=1,
+            current_independents=(
+                np.array([])
+                if len(inds) == 0
+                else np.stack(
+                    [self.ts.current(ind.lower()) for ind in inds],
+                    axis=1,
+                )
             ),
-            initial_independents=np.array([])
-            if len(inds) == 0
-            else np.stack(
-                [self.ts.initial(ind.lower()) for ind in inds],
-                axis=1,
+            initial_independents=(
+                np.array([])
+                if len(inds) == 0
+                else np.stack(
+                    [self.ts.initial(ind.lower()) for ind in inds],
+                    axis=1,
+                )
             ),
             model=self.states["social_transfers_model"],
         )
@@ -233,17 +229,19 @@ class Households(Agent):
             + self.ts.current("income_financial_assets")
         )
 
-    def get_saving_rates_by_household(self) -> np.ndarray:
-        inds = self.parameters["functions"]["saving_rates"]["parameters"]["independents"]["value"]
+    def get_saving_rates_by_household(self, independents: Optional[list[str]] = None) -> np.ndarray:
+        if independents is None:
+            independents = ["Income", "Debt"]
+
         return self.functions["saving_rates"].get_saving_rates(
             n_households=self.ts.current("n_households"),
             average_saving_rate=self.states["average_saving_rate"],
             current_independents=np.stack(
-                [self.ts.current(ind.lower()) for ind in inds],
+                [self.ts.current(ind.lower()) for ind in independents],
                 axis=1,
             ),
             initial_independents=np.stack(
-                [self.ts.initial(ind.lower()) for ind in inds],
+                [self.ts.initial(ind.lower()) for ind in independents],
                 axis=1,
             ),
             model=self.states["saving_rates_model"],
@@ -262,11 +260,9 @@ class Households(Agent):
             household_benefits=self.states["Number of Adults"] * per_capita_unemployment_benefits
             + self.ts.current("income_social_transfers"),
             historic_consumption=self.ts.historic("consumption"),
-            consumption_weights=self.parameters["consumption_weights_data"],
-            consumption_weights_by_income=self.parameters["consumption_weights_by_income_data"],
-            take_consumption_weights_by_income_quantile=self.parameters["parameters"][
-                "take_consumption_weights_by_income_quantile"
-            ],
+            consumption_weights=self.consumption_weights,
+            consumption_weights_by_income=self.consumption_weights_by_income,
+            take_consumption_weights_by_income_quantile=self.use_consumption_weights_by_income,
             tau_vat=tau_vat,
         )
 
@@ -474,11 +470,9 @@ class Households(Agent):
             target_consumption_ce=self.ts.current("target_consumption_ce"),
             target_consumption_expansion_loans=self.ts.current("target_consumption_expansion_loans"),
             received_consumption_expansion_loans=self.ts.current("received_consumption_expansion_loans"),
-            consumption_weights=self.parameters["consumption_weights_data"],
-            consumption_weights_by_income=self.parameters["consumption_weights_by_income_data"],
-            take_consumption_weights_by_income_quantile=self.parameters["parameters"][
-                "take_consumption_weights_by_income_quantile"
-            ],
+            consumption_weights=self.consumption_weights,
+            consumption_weights_by_income=self.consumption_weights_by_income,
+            take_consumption_weights_by_income_quantile=self.use_consumption_weights_by_income,
         )
 
     def prepare_buying_goods(self) -> None:
@@ -667,3 +661,10 @@ class Households(Agent):
             banks=banks,
             credit_market=credit_market,
         )
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("households", group)
+
+    def save_consumption_weights(self, group: h5py.Group):
+        group.create_dataset("household_consumption_weights_by_income", data=self.consumption_weights.T)
+        group["household_consumption_weights_by_income"].attrs["columns"] = list(range(self.n_industries))

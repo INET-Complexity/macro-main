@@ -19,3 +19,5 @@ PyDrive2==1.17.0
 humanize==4.8.0
 skops==0.8.0
 mergedeep==1.3.4
+inet-macro-data
+pydantic==2.6.0

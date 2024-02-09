@@ -1,13 +1,13 @@
+import h5py
 import numpy as np
-import pandas as pd
-
-from pathlib import Path
-from inet_macromodel.agents.agent import Agent
-from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.util.function_mapping import get_functions
-from inet_macromodel.central_bank.central_bank_ts import create_central_bank_timeseries
-
+from inet_data import SyntheticCentralBank
 from typing import Any
+
+from inet_macromodel.configurations import CentralBankConfiguration
+from inet_macromodel.agents.agent import Agent
+from inet_macromodel.central_bank.central_bank_ts import create_central_bank_timeseries
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import functions_from_model
 
 
 class CentralBank(Agent):
@@ -15,67 +15,54 @@ class CentralBank(Agent):
         self,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
         functions: dict[str, Any],
-        parameters: dict[str, Any],
         ts: TimeSeries,
         states: dict[str, float | np.ndarray | list[np.ndarray]],
     ):
         super().__init__(
             country_name,
             all_country_names,
-            year,
-            t_max,
             n_industries,
             0,
             0,
-            functions,
-            parameters,
             ts,
             states,
         )
 
+        self.functions = functions
+
     @classmethod
-    def from_data(
+    def from_pickled_agent(
         cls,
+        synthetic_central_bank: SyntheticCentralBank,
+        configuration: CentralBankConfiguration,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
-        data: pd.DataFrame,
-        config: dict[str, Any],
     ) -> "CentralBank":
         # Get corresponding functions and parameters
-        functions = get_functions(
-            config["functions"],
-            loc="inet_macromodel.central_bank",
-            func_dir=Path(__file__).parent / "func",
-        )
-        if "parameters" in config.keys():
-            parameters = config["parameters"].copy()
-        else:
-            parameters = {}
+        functions = functions_from_model(model=configuration.functions, loc="inet_macromodel.central_bank")
+
+        data = synthetic_central_bank.central_bank_data.astype(float).rename_axis("Central Bank ID")
 
         # Create the corresponding time series object
         ts = create_central_bank_timeseries(data)
 
-        # At the moment there are no additional states
+        # No additional states initially
         states: dict[str, float | np.ndarray | list[np.ndarray]] = {}
 
         return cls(
             country_name,
             all_country_names,
-            year,
-            t_max,
             n_industries,
             functions,
-            parameters,
             ts,
             states,
         )
 
     def compute_rate(self) -> float:
         return self.functions["policy_rate"].compute_rate(prev_rate=self.ts.current("policy_rate")[0])
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("central_Bank", group)

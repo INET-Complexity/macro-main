@@ -1,17 +1,18 @@
 from __future__ import annotations
 
+import h5py
 import numpy as np
 import pandas as pd
-
+from inet_data import SyntheticCreditMarket
 from pathlib import Path
-
-from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.util.property_mapping import map_to_enum
-from inet_macromodel.util.function_mapping import get_functions
-from inet_macromodel.credit_market.types_of_loans import LoanTypes
-from inet_macromodel.credit_market.credit_market_ts import create_credit_market_timeseries
-
 from typing import Any, TYPE_CHECKING
+
+from inet_macromodel.configurations import CreditMarketConfiguration
+from inet_macromodel.credit_market.credit_market_ts import create_credit_market_timeseries
+from inet_macromodel.credit_market.types_of_loans import LoanTypes
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import get_functions, functions_from_model
+from inet_macromodel.util.property_mapping import map_to_enum
 
 if TYPE_CHECKING:
     from inet_macromodel.firms.firms import Firms
@@ -23,30 +24,47 @@ class CreditMarket:
     def __init__(
         self,
         country_name: str,
-        year: int,
-        t_max: int,
-        n_industries: int,
         functions: dict[str, Any],
-        parameters: dict[str, Any],
         ts: TimeSeries,
         loan_data: pd.DataFrame,
     ):
         self.country_name = country_name
-        self.year = year
-        self.t_max = t_max
-        self.n_industries = n_industries
         self.functions = functions
-        self.parameters = parameters
         self.ts = ts
         self.loan_data = loan_data
+
+    @classmethod
+    def from_pickled_market(
+        cls,
+        synthetic_credit_market: SyntheticCreditMarket,
+        credit_market_configuration: CreditMarketConfiguration,
+        country_name: str,
+    ) -> "CreditMarket":
+        functions = functions_from_model(
+            credit_market_configuration.functions,
+            loc="inet_macromodel.credit_market",
+        )
+
+        loan_data = synthetic_credit_market.credit_market_data.astype(float)
+        loan_data.rename_axis("Loans", inplace=True)
+
+        loan_data["loan_type"] = np.array(map_to_enum(loan_data["loan_type"].values, LoanTypes))
+        loan_data["loan_bank_id"] = loan_data["loan_bank_id"].astype(int)
+        loan_data["loan_recipient_id"] = loan_data["loan_recipient_id"].astype(int)
+
+        ts = create_credit_market_timeseries(loan_data)
+
+        return cls(
+            country_name,
+            functions,
+            ts,
+            loan_data,
+        )
 
     @classmethod
     def from_data(
         cls,
         country_name: str,
-        year: int,
-        t_max: int,
-        n_industries: int,
         data: pd.DataFrame,
         config: dict[str, Any],
     ) -> "CreditMarket":
@@ -56,11 +74,6 @@ class CreditMarket:
             loc="inet_macromodel.credit_market",
             func_dir=Path(__file__).parent / "func",
         )
-        if "parameters" in config.keys():
-            parameters = config["parameters"].copy()
-        else:
-            parameters = {}
-
         # Recording the loan_data of all loans
         loan_data = data.copy()
         loan_data["loan_type"] = np.array(map_to_enum(loan_data["loan_type"].values, LoanTypes))
@@ -72,11 +85,7 @@ class CreditMarket:
 
         return cls(
             country_name,
-            year,
-            t_max,
-            n_industries,
             functions,
-            parameters,
             ts,
             loan_data,
         )
@@ -369,3 +378,6 @@ class CreditMarket:
 
     def remove_loans_by_bank(self, bank_id: int) -> None:
         self.loan_data = self.loan_data.loc[self.loan_data["loan_bank_id"] != bank_id]
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("credit_market", group)

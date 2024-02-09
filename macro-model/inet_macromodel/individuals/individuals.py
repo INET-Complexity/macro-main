@@ -1,20 +1,20 @@
-import warnings
+import h5py
 import numpy as np
-import pandas as pd
+import warnings
+from inet_data import SyntheticPopulation
+from typing import Any
 
-from pathlib import Path
+from inet_macromodel.configurations import IndividualsConfiguration
 from inet_macromodel.agents.agent import Agent
-from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.util.property_mapping import map_to_enum
-from inet_macromodel.util.function_mapping import get_functions
-from inet_macromodel.individuals.individuals_ts import create_individuals_timeseries
 from inet_macromodel.individuals.individual_properties import (
     ActivityStatus,
     Gender,
     Education,
 )
-
-from typing import Any
+from inet_macromodel.individuals.individuals_ts import create_individuals_timeseries
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import functions_from_model
+from inet_macromodel.util.property_mapping import map_to_enum
 
 
 class Individuals(Agent):
@@ -22,53 +22,36 @@ class Individuals(Agent):
         self,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
-        n_transactors: int,
         functions: dict[str, Any],
-        parameters: dict[str, Any],
         ts: TimeSeries,
         states: dict[str, float | np.ndarray | list[np.ndarray]],
     ):
         super().__init__(
             country_name,
             all_country_names,
-            year,
-            t_max,
             n_industries,
             0,
             0,
-            functions,
-            parameters,
             ts,
             states,
         )
+        self.functions: dict[str, Any] = functions
 
     @classmethod
-    def from_data(
+    def from_pickled_agent(
         cls,
+        synthetic_population: SyntheticPopulation,
+        configuration: IndividualsConfiguration,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
         scale: int,
-        data: pd.DataFrame,
-        config: dict[str, Any],
     ) -> "Individuals":
-        # Get corresponding functions and parameters
-        functions = get_functions(
-            config["functions"],
-            loc="inet_macromodel.individuals",
-            func_dir=Path(__file__).parent / "func",
-        )
-        if "parameters" in config.keys():
-            parameters = config["parameters"].copy()
-        else:
-            parameters = {}
+        data = (synthetic_population.individual_data.astype(float)).rename_axis("Individual ID")
 
-        # Create the corresponding time series object
+        functions = functions_from_model(model=configuration.functions, loc="inet_macromodel.individuals")
+
         ts = create_individuals_timeseries(data, scale)
 
         # Additional states
@@ -105,18 +88,7 @@ class Individuals(Agent):
             states["Corresponding Firm ID"] = states["Corresponding Firm ID"].astype(int)
             states["Corresponding Firm ID"][states["Corresponding Firm ID"] < 0] = -1
 
-        return cls(
-            country_name,
-            all_country_names,
-            year,
-            t_max,
-            n_industries,
-            ts.current("n_individuals"),
-            functions,
-            parameters,
-            ts,
-            states,
-        )
+        return cls(country_name, all_country_names, n_industries, functions, ts, states)
 
     def compute_labour_inputs(self) -> np.ndarray:
         return self.functions["labour_inputs"].update_labour_inputs(
@@ -153,3 +125,6 @@ class Individuals(Agent):
                 self.ts.current("n_individuals"),
             )
         )
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("individuals", group)

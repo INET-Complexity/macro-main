@@ -1,6 +1,5 @@
-import numpy as np
 import logging
-
+import numpy as np
 from abc import abstractmethod, ABC
 
 from inet_macromodel.forecaster.forecaster import (

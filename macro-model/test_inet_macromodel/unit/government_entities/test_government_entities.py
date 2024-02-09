@@ -1,4 +1,7 @@
 class TestGovernmentEntities:
+    def test__create(self, test_government_entities):
+        assert test_government_entities.country_name == "FRA"
+
     def test__government_entities_states(self, test_government_entities):
         assert test_government_entities is not None
 

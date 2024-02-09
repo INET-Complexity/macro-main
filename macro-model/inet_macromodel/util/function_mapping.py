@@ -1,5 +1,5 @@
 from pathlib import Path
-
+from pydantic import BaseModel
 from typing import Any
 
 
@@ -10,7 +10,7 @@ def get_functions(
 ) -> dict[str, Any]:
     functions = {}
     func_dirs = list(func_dir.glob("*"))
-    func_names = [fd.name[:-3] for fd in func_dirs if fd.name not in ["__init__.py", "__pycache__"]]
+    func_names = [fd.stem for fd in func_dirs if fd.name not in ["__init__.py", "__pycache__"]]
     for function_desc in func_names:
         if "lib" in function_desc:
             continue
@@ -34,3 +34,18 @@ def get_functions(
             functions[function_desc] = cls(**func_parameters)
 
     return functions
+
+
+def functions_from_model(model: BaseModel, loc: str):
+    loaded_classes = {}
+    for field_name, field_value in model:
+        path_name = field_value.path_name
+        name = field_value.name
+        parameters = field_value.parameters
+
+        module = __import__(f"{loc}.func.{path_name}", fromlist=[name])
+        cls = getattr(module, name)
+
+        loaded_classes[path_name] = cls(**parameters)
+
+    return loaded_classes

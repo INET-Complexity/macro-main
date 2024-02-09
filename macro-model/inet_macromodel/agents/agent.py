@@ -1,8 +1,7 @@
 import numpy as np
+from typing import Any, Optional
 
 from inet_macromodel.timeseries import TimeSeries
-
-from typing import Any, Optional
 
 
 class Agent:
@@ -10,28 +9,20 @@ class Agent:
         self,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
         n_transactors_sell: int,
         n_transactors_buy: int,
-        functions: dict[str, Any],
-        parameters: dict[str, Any],
         ts: TimeSeries,
         states: dict[str, Any],
         transactor_settings: Optional[dict[str, Any]] = None,
     ):
         self.country_name = country_name
         self.all_country_names = all_country_names
-        self.year = year
-        self.t_max = t_max
         self.n_industries = n_industries
         self.n_transactors_sell = n_transactors_sell
         self.n_transactors_buy = n_transactors_buy
-        self.functions = functions
-        self.parameters = parameters
         self.states = states
-        self.transactor_settings = transactor_settings
+        self.transactor_settings = transactor_settings if transactor_settings else {}
 
         self.transactor_buyer_states = {}
         self.transactor_seller_states = {}

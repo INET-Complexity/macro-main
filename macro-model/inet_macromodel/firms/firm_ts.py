@@ -1,12 +1,11 @@
+from collections import Counter
+
 import numpy as np
 import pandas as pd
 
-from collections import Counter
-
+from external.tail_estimation_simplified import calculate_tail_exponent
 from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.util.get_histogram import get_histogram
-
-from external.tail_estimation_simplified import calculate_tail_exponent
 
 
 def create_firms_timeseries(
@@ -82,6 +81,7 @@ def create_firms_timeseries(
         #
         real_amount_bought_as_intermediate_inputs=np.full((len(data), n_industries), np.nan),
         real_amount_bought_as_capital_goods=np.full((len(data), n_industries), np.nan),
+        real_amount_bought_as_capital_inputs=np.full((len(data), n_industries), np.nan),
         total_sales=data["Price"].values * data["Production"].values - data["Taxes paid on Production"].values,
         #
         target_short_term_credit=np.zeros(len(data)),
@@ -121,9 +121,11 @@ def create_firms_timeseries(
             0.0 if not calculate_hill_exponent else data["Number of Employees"].values.astype(int).copy()
         ],
         total_hill_tail_estimate_output_by_employee=[
-            0.0
-            if not calculate_hill_exponent
-            else calculate_tail_exponent(data["Production"].values / data["Number of Employees"].values.copy())
+            (
+                0.0
+                if not calculate_hill_exponent
+                else calculate_tail_exponent(data["Production"].values / data["Number of Employees"].values.copy())
+            )
         ],
     )
 

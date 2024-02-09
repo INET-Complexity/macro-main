@@ -1,16 +1,14 @@
+import h5py
 import numpy as np
-import pandas as pd
-
-from pathlib import Path
-from mergedeep import merge
+from inet_data import SyntheticBanks
+from typing import Any
 
 from inet_macromodel.agents.agent import Agent
-from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.util.function_mapping import get_functions
 from inet_macromodel.banks.banks_ts import create_banks_timeseries
+from inet_macromodel.configurations import BankParameters, BanksConfiguration
 from inet_macromodel.credit_market.credit_market import CreditMarket
-
-from typing import Any
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import functions_from_model
 
 
 class Banks(Agent):
@@ -18,81 +16,121 @@ class Banks(Agent):
         self,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
         functions: dict[str, Any],
-        parameters: dict[str, Any],
+        parameters: BankParameters,
+        policy_rate_markup: float,
         ts: TimeSeries,
         states: dict[str, float | np.ndarray | list[np.ndarray]],
     ):
         super().__init__(
             country_name,
             all_country_names,
-            year,
-            t_max,
             n_industries,
             0,
             0,
-            functions,
-            parameters,
             ts,
             states,
         )
 
+        self.parameters: BankParameters = parameters
+        self.functions: dict[str, Any] = functions
+        self.policy_rate_markup: float = policy_rate_markup
+
     @classmethod
-    def from_data(
+    def from_pickled_agent(
         cls,
-        country_name: str,
-        all_country_names: list[str],
-        year: int,
-        t_max: int,
-        n_industries: int,
-        scale: int,
-        data: pd.DataFrame,
-        corr_firms: pd.DataFrame,
-        corr_households: pd.DataFrame,
+        synthetic_banks: SyntheticBanks,
+        configuration: BanksConfiguration,
         policy_rate_markup: float,
         long_term_ir: float,
-        config: dict[str, Any],
-        init_config: dict[str, Any],
-    ) -> "Banks":
-        parameters = {}
-        merge(parameters, config["parameters"], init_config["parameters"])
+        n_industries: int,
+        scale: int,
+        country_name: str,
+        all_country_names: list[str],
+    ):
+        corr_firms_id = synthetic_banks.bank_data["Corresponding Firms ID"]
+        corr_households_id = synthetic_banks.bank_data["Corresponding Households ID"]
+        parameters = configuration.parameters
+        functions = functions_from_model(model=configuration.functions, loc="inet_macromodel.banks")
 
-        # Get corresponding functions and parameters
-        functions = get_functions(
-            config["functions"],
-            loc="inet_macromodel.banks",
-            func_dir=Path(__file__).parent / "func",
-        )
-        parameters["policy_rate_markup"] = policy_rate_markup
-
-        # Create the corresponding time series object
+        data = synthetic_banks.bank_data.drop(columns=["Corresponding Firms ID", "Corresponding Households ID"])
         ts = create_banks_timeseries(
             bank_data=data,
             long_term_ir=long_term_ir,
             scale=scale,
         )
 
-        # Additional states
         states: dict[str, float | np.ndarray | list[np.ndarray]] = {
-            "corr_firms": [corr_firms.values[i][0] for i in range(len(corr_firms.values))],
-            "corr_households": [corr_households.values[i][0] for i in range(len(corr_households.values))],
+            "corr_firms": [corr_firms_id.values[i][0] for i in range(corr_firms_id.shape[0])],
+            "corr_households": [corr_households_id.values[i][0] for i in range(corr_households_id.shape[0])],
             "is_insolvent": np.full(ts.current("n_banks"), False),
         }
 
         return cls(
             country_name,
             all_country_names,
-            year,
-            t_max,
             n_industries,
             functions,
             parameters,
+            policy_rate_markup,
             ts,
             states,
         )
+
+    # @classmethod
+    # def from_data(
+    #     cls,
+    #     country_name: str,
+    #     all_country_names: list[str],
+    #     year: int,
+    #     t_max: int,
+    #     n_industries: int,
+    #     scale: int,
+    #     data: pd.DataFrame,
+    #     corr_firms: pd.DataFrame,
+    #     corr_households: pd.DataFrame,
+    #     policy_rate_markup: float,
+    #     long_term_ir: float,
+    #     config: dict[str, Any],
+    #     init_config: dict[str, Any],
+    # ) -> "Banks":
+    #     parameters = {}
+    #     merge(parameters, config["parameters"], init_config["parameters"])
+    #
+    #     # Get corresponding functions and parameters
+    #     functions = get_functions(
+    #         config["functions"],
+    #         loc="inet_macromodel.banks",
+    #         func_dir=Path(__file__).parent / "func",
+    #     )
+    #     parameters["policy_rate_markup"] = policy_rate_markup
+    #
+    #     # Create the corresponding time series object
+    #     ts = create_banks_timeseries(
+    #         bank_data=data,
+    #         long_term_ir=long_term_ir,
+    #         scale=scale,
+    #     )
+    #
+    #     # Additional states
+    #     states: dict[str, float | np.ndarray | list[np.ndarray]] = {
+    #         "corr_firms": [corr_firms.values[i][0] for i in range(len(corr_firms.values))],
+    #         "corr_households": [corr_households.values[i][0] for i in range(len(corr_households.values))],
+    #         "is_insolvent": np.full(ts.current("n_banks"), False),
+    #     }
+    #
+    #     return cls(
+    #         country_name,
+    #         all_country_names,
+    #         year,
+    #         t_max,
+    #         n_industries,
+    #         functions,
+    #         parameters,
+    #         ts,
+    #         states,
+    #     )
 
     def set_interest_rates(self, central_bank_policy_rate: float) -> None:
         # On loans
@@ -100,19 +138,19 @@ class Banks(Agent):
             "interest_rates"
         ].get_interest_rate_on_firm_short_term_loans_function(
             central_bank_policy_rate=central_bank_policy_rate,
-            bank_markup_interest_rate_loans=np.full(self.ts.current("n_banks"), self.parameters["policy_rate_markup"]),
+            bank_markup_interest_rate_loans=np.full(self.ts.current("n_banks"), self.policy_rate_markup),
         )
         self.states["interest_rate_on_firm_long_term_loans_function"] = self.functions[
             "interest_rates"
         ].get_interest_rate_on_firm_long_term_loans_function(
             central_bank_policy_rate=central_bank_policy_rate,
-            bank_markup_interest_rate_loans=np.full(self.ts.current("n_banks"), self.parameters["policy_rate_markup"]),
+            bank_markup_interest_rate_loans=np.full(self.ts.current("n_banks"), self.policy_rate_markup),
         )
         self.states["interest_rate_on_household_payday_loans_function"] = self.functions[
             "interest_rates"
         ].get_interest_rate_on_household_payday_loans_function(
             central_bank_policy_rate=central_bank_policy_rate,
-            bank_markup_interest_rate_loans=np.full(self.ts.current("n_banks"), self.parameters["policy_rate_markup"]),
+            bank_markup_interest_rate_loans=np.full(self.ts.current("n_banks"), self.policy_rate_markup),
         )
         self.states["interest_rate_on_household_consumption_expansion_loans_function"] = self.functions[
             "interest_rates"
@@ -120,7 +158,7 @@ class Banks(Agent):
             central_bank_policy_rate=central_bank_policy_rate,
             bank_markup_interest_rate_loans=np.full(
                 self.ts.current("n_banks"),
-                self.parameters["initial_markup_interest_rate_household_consumption_loans"]["value"],
+                self.parameters.initial_markup_interest_rate_household_consumption_loans,
             ),
         )
         self.states["interest_rate_on_mortgages_function"] = self.functions[
@@ -128,7 +166,7 @@ class Banks(Agent):
         ].get_interest_rate_on_mortgages_function(
             central_bank_policy_rate=central_bank_policy_rate,
             bank_markup_interest_rate_loans=np.full(
-                self.ts.current("n_banks"), self.parameters["initial_markup_mortgage_interest_rate"]["value"]
+                self.ts.current("n_banks"), self.parameters.initial_markup_mortgage_interest_rate
             ),
         )
 
@@ -145,9 +183,7 @@ class Banks(Agent):
         self.ts.overdraft_rate_on_firm_deposits.append(
             self.functions["interest_rates"].compute_overdraft_rate_on_firm_deposits(
                 central_bank_policy_rate=central_bank_policy_rate,
-                bank_markup_interest_rate_overdraft_firm=np.full(
-                    self.ts.current("n_banks"), self.parameters["policy_rate_markup"]
-                ),
+                bank_markup_interest_rate_overdraft_firm=np.full(self.ts.current("n_banks"), self.policy_rate_markup),
             )
         )
         self.ts.average_overdraft_rate_on_firm_deposits.append(
@@ -167,7 +203,7 @@ class Banks(Agent):
                 central_bank_policy_rate=central_bank_policy_rate,
                 bank_markup_interest_rate_overdraft_household=np.full(
                     self.ts.current("n_banks"),
-                    self.parameters["initial_markup_interest_rate_overdraft_households"]["value"],
+                    self.parameters.initial_markup_interest_rate_overdraft_households,
                 ),
             )
         )
@@ -297,3 +333,6 @@ class Banks(Agent):
         insolvency_rate = self.states["is_insolvent"].mean()
         self.states["is_insolvent"] = np.full(self.ts.current("n_banks"), False)
         return insolvency_rate
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("banks", group)

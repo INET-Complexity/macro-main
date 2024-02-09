@@ -1,13 +1,11 @@
 import numpy as np
+from abc import abstractmethod, ABC
+from typing import Callable
 
 from inet_macromodel.firms.firms import Firms
 from inet_macromodel.households.households import Households
-from inet_macromodel.individuals.individuals import Individuals
 from inet_macromodel.individuals.individual_properties import ActivityStatus
-
-from abc import abstractmethod, ABC
-
-from typing import Callable
+from inet_macromodel.individuals.individuals import Individuals
 
 
 class LabourMarketClearer(ABC):

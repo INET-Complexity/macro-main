@@ -1,17 +1,16 @@
+import h5py
 import numpy as np
-import pandas as pd
+from inet_data import SyntheticGovernmentEntities
+from typing import Any
 
-from pathlib import Path
-
+from inet_macromodel.configurations import GovernmentEntitiesConfiguration
 from inet_macromodel.agents.agent import Agent
-from inet_macromodel.timeseries import TimeSeries
 from inet_macromodel.goods_market.value_type import ValueType
-from inet_macromodel.util.function_mapping import get_functions
 from inet_macromodel.government_entities.government_entities_ts import (
     create_government_entities_timeseries,
 )
-
-from typing import Any, Optional
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import functions_from_model
 
 
 class GovernmentEntities(Agent):
@@ -19,25 +18,18 @@ class GovernmentEntities(Agent):
         self,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
         n_transactors: int,
         functions: dict[str, Any],
-        parameters: dict[str, Any],
         ts: TimeSeries,
-        states: dict[str, float | np.ndarray | list[np.ndarray]],
+        states: dict[str, Any],
     ):
         super().__init__(
             country_name,
             all_country_names,
-            year,
-            t_max,
-            n_industries,
             n_industries,
             n_transactors,
-            functions,
-            parameters,
+            n_transactors,
             ts,
             states,
             transactor_settings={
@@ -47,51 +39,34 @@ class GovernmentEntities(Agent):
                 "Seller Priority": 0,
             },
         )
+        self.functions = functions
 
     @classmethod
-    def from_data(
+    def from_pickled_agent(
         cls,
+        synthetic_government_entities: SyntheticGovernmentEntities,
+        configuration: GovernmentEntitiesConfiguration,
         country_name: str,
         all_country_names: list[str],
-        year: int,
-        t_max: int,
         n_industries: int,
-        data: pd.DataFrame,
-        number_of_entities: int,
-        government_consumption_model: Optional[Any],
-        config: dict[str, Any],
-    ) -> "GovernmentEntities":
-        # Get corresponding functions and parameters
-        functions = get_functions(
-            config["functions"],
-            loc="inet_macromodel.government_entities",
-            func_dir=Path(__file__).parent / "func",
-        )
-        if "parameters" in config.keys():
-            parameters = config["parameters"].copy()
-        else:
-            parameters = {}
+    ):
+        functions = functions_from_model(model=configuration.functions, loc="inet_macromodel.government_entities")
 
-        # Create the corresponding time series object
         ts = create_government_entities_timeseries(
-            data=data,
-            n_government_entities=number_of_entities,
+            data=synthetic_government_entities.gov_entity_data,
+            n_government_entities=synthetic_government_entities.number_of_entities,
         )
 
-        # Additional states
-        states = {"government_consumption_model": government_consumption_model}
+        states = {"government_consumption_model": synthetic_government_entities.government_consumption_model}
 
         return cls(
-            country_name,
-            all_country_names,
-            year,
-            t_max,
-            n_industries,
-            number_of_entities,
-            functions,
-            parameters,
-            ts,
-            states,
+            country_name=country_name,
+            all_country_names=all_country_names,
+            n_industries=n_industries,
+            n_transactors=synthetic_government_entities.number_of_entities,
+            functions=functions,
+            ts=ts,
+            states=states,
         )
 
     def prepare_buying_goods(self) -> None:
@@ -129,3 +104,14 @@ class GovernmentEntities(Agent):
         self.ts.consumption_in_usd.append(self.ts.current("nominal_amount_spent_in_usd").sum(axis=0))
         self.ts.consumption_in_lcu.append(self.exchange_rate_usd_to_lcu * self.ts.current("consumption_in_usd"))
         self.ts.total_consumption.append([self.ts.current("consumption_in_lcu").sum()])
+
+    def save_to_h5(self, group: h5py.Group):
+        # TODO : this is a temporary solution, we need to find a better way to save the data
+        # the problem is that real amount sold somehow changes size, it is not clear why
+        # in the test, we start with 39 government entities, but after the first iteration the
+        # size of the real amount sold array is 18 (the number of industries)
+        # keys_to_delete = [k for k in self.ts.dicts.keys() if "sold" in k]
+        # for k in keys_to_delete:
+        #     del self.ts.dicts[k]
+        # self.ts.write_to_h5("government_entities", group)
+        ...

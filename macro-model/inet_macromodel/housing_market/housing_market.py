@@ -1,48 +1,81 @@
-import warnings
+import h5py
 import numpy as np
 import pandas as pd
-
+import warnings
+from inet_data import SyntheticHousingMarket
 from pathlib import Path
-
-from inet_macromodel.timeseries import TimeSeries
-from inet_macromodel.util.get_histogram import get_histogram
-from inet_macromodel.util.function_mapping import get_functions
-from inet_macromodel.housing_market.housing_market_ts import create_housing_market_timeseries
-
 from typing import Any
+
+from inet_macromodel.configurations import HousingMarketConfiguration
+from inet_macromodel.housing_market.housing_market_ts import create_housing_market_timeseries
+from inet_macromodel.timeseries import TimeSeries
+from inet_macromodel.util.function_mapping import functions_from_model, get_functions
+from inet_macromodel.util.get_histogram import get_histogram
 
 
 class HousingMarket:
     def __init__(
         self,
         country_name: str,
-        year: int,
-        t_max: int,
-        n_industries: int,
         scale: int,
         functions: dict[str, Any],
-        parameters: dict[str, Any],
         ts: TimeSeries,
         states: pd.DataFrame,
     ):
         self.country_name = country_name
-        self.year = year
-        self.t_max = t_max
-        self.n_industries = n_industries
         self.scale = scale
         self.functions = functions
-        self.parameters = parameters
         self.ts = ts
         self.states = states
         self.current_sales: pd.DataFrame = pd.DataFrame()
 
     @classmethod
+    def from_pickled_market(
+        cls,
+        synthetic_housing_market: SyntheticHousingMarket,
+        housing_market_configuration: HousingMarketConfiguration,
+        scale: int,
+        country_name: str,
+    ) -> "HousingMarket":
+        # Get corresponding functions
+        functions = functions_from_model(housing_market_configuration.functions, loc="inet_macromodel.housing_market")
+
+        #     #     store[country_name + "_synthetic_housing_market"] = (
+        #     #         self.synthetic_housing_market[country_name].housing_market_data.astype(float)
+        #     #     ).rename_axis("Properties")
+
+        data = synthetic_housing_market.housing_market_data.astype(float)
+        data.rename_axis("Properties", inplace=True)
+        states = data.copy()
+        states["Corresponding Inhabitant Household ID"][np.isnan(states["Corresponding Inhabitant Household ID"])] = -1
+        states["House ID"] = states["House ID"].astype(int)
+        states["Is Owner-Occupied"] = states["Is Owner-Occupied"].astype(int)
+        states["Corresponding Owner Household ID"] = states["Corresponding Owner Household ID"].astype(int)
+        states["Corresponding Inhabitant Household ID"] = states["Corresponding Inhabitant Household ID"].astype(int)
+
+        ts = create_housing_market_timeseries(
+            data=states,
+            initial_observed_fraction_value_price=cls._perform_linear_regression(
+                states["Value"].values, states["Value"].values
+            ),
+            initial_observed_fraction_rent_value=cls._perform_linear_regression(
+                states["Value"].values, states["Rent"].values
+            ),
+            scale=scale,
+        )
+
+        return cls(
+            country_name,
+            scale,
+            functions,
+            ts,
+            states,
+        )
+
+    @classmethod
     def from_data(
         cls,
         country_name: str,
-        year: int,
-        t_max: int,
-        n_industries: int,
         scale: int,
         data: pd.DataFrame,
         config: dict[str, Any],
@@ -53,10 +86,6 @@ class HousingMarket:
             loc="inet_macromodel.housing_market",
             func_dir=Path(__file__).parent / "func",
         )
-        if "parameters" in config.keys():
-            parameters = config["parameters"].copy()
-        else:
-            parameters = {}
 
         # Recording the states of all homes
         states = data.copy()
@@ -80,12 +109,8 @@ class HousingMarket:
 
         return cls(
             country_name,
-            year,
-            t_max,
-            n_industries,
             scale,
             functions,
-            parameters,
             ts,
             states,
         )
@@ -219,3 +244,6 @@ class HousingMarket:
 
     def compute_total_property_value(self) -> float:
         return self.states["Value"].sum()
+
+    def save_to_h5(self, group: h5py.Group):
+        self.ts.write_to_h5("housing_market", group)
