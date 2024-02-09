@@ -1,7 +1,7 @@
 import h5py
 import numpy as np
 from inet_data import SyntheticCentralGovernment
-from inet_data.processing.tax_data import TaxData
+from inet_data.processing import TaxData
 from typing import Any
 
 from inet_macromodel.configurations import CentralGovernmentConfiguration
