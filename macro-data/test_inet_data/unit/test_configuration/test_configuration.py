@@ -1,5 +1,5 @@
 import yaml
-from inet_data.configuration import DataConfiguration, split_country_configs
+from macro_data.configuration import DataConfiguration, split_country_configs
 import pytest
 from pydantic import ValidationError
 

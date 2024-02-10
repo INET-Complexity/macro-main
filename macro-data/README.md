@@ -38,20 +38,20 @@ Assuming your working directory is structured as follows
 To run the data, simply run the following
 
 ```python
-from inet_data import DataConfiguration, DataWrapper 
-import yaml 
+from macro_data import DataConfiguration, DataWrapper
+import yaml
 
-#path to your yaml config file
-config_file_path = "./configs/default.yaml" 
+# path to your yaml config file
+config_file_path = "./configs/default.yaml"
 
 raw_data_path = "./data/raw_data"
 
 with open(config_file_path, "r") as f:
     config = DataConfiguration(**yaml.safe_load(f))
-    
+
 data = DataWrapper.from_config(config, raw_data_path=raw_data_path)
 
-#save the agents to a pickle 
+# save the agents to a pickle 
 
 data.save("./agents.pkl")
 ```

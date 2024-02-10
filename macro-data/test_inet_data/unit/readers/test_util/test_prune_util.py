@@ -1,4 +1,4 @@
-from inet_data.readers.util.prune_util import prune_index
+from macro_data.readers.util.prune_util import prune_index
 import pandas as pd
 
 

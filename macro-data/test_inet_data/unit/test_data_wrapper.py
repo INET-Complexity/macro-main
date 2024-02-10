@@ -1,10 +1,10 @@
 import yaml
 
-from inet_data import DataWrapper
+from macro_data import DataWrapper
 from pathlib import Path
 import tempfile
 
-from inet_data.configuration import DataConfiguration
+from macro_data.configuration import DataConfiguration
 
 TEST_PATH = Path(__file__).parent.parent.resolve()
 

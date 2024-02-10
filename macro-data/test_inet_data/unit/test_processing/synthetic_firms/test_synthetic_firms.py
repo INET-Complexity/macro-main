@@ -3,8 +3,8 @@ import pathlib
 import numpy as np
 import pandas as pd
 
-from inet_data.configuration.dataconfiguration import FirmsDataConfiguration
-from inet_data.processing.synthetic_firms.default_synthetic_firms import (
+from macro_data.configuration.dataconfiguration import FirmsDataConfiguration
+from macro_data.processing.synthetic_firms.default_synthetic_firms import (
     DefaultSyntheticFirms,
 )
 

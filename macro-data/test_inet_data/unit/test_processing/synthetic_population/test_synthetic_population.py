@@ -3,7 +3,7 @@ import pathlib
 import numpy as np
 import pandas as pd
 
-from inet_data.processing.synthetic_population.hfcs_synthetic_population import (
+from macro_data.processing.synthetic_population.hfcs_synthetic_population import (
     SyntheticHFCSPopulation,
     sample_households,
 )

@@ -3,7 +3,7 @@ import pathlib
 import numpy as np
 import pandas as pd
 
-from inet_data.processing.synthetic_rest_of_the_world.default_synthetic_rest_of_the_world import (
+from macro_data.processing.synthetic_rest_of_the_world.default_synthetic_rest_of_the_world import (
     DefaultSyntheticRestOfTheWorld,
 )
 
