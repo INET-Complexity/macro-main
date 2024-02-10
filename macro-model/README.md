@@ -38,8 +38,8 @@ after the data has been created and processed into the `processed_data` director
 ```python
 import yaml
 from pathlib import Path
-from inet_macromodel import Runner
-from inet_macromodel import check_existing_processed_data
+from macromodel import Runner
+from macromodel import check_existing_processed_data
 import logging
 
 # define format for logs 
@@ -52,7 +52,7 @@ logging.basicConfig(
 
 
 def run_model(
-    config_filename: Path | str, data_dir: Path | str, output_dir: Path | str
+        config_filename: Path | str, data_dir: Path | str, output_dir: Path | str
 ) -> None:
     # if type of data_path is str, convert it to Path
     if type(data_dir) == str:
@@ -75,9 +75,9 @@ def run_model(
     Runner(
         config_path=config_filename,
         processed_data_path=data_dir
-        / "processed_data"
-        / processed_data_code
-        / "data.h5",
+                            / "processed_data"
+                            / processed_data_code
+                            / "data.h5",
         output_path=output_dir,
     ).run(random_seed=0)
 
