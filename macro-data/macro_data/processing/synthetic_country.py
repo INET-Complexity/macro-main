@@ -20,13 +20,19 @@ from macro_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
 from macro_data.processing.synthetic_government_entities.default_synthetic_government_entities import (
     DefaultSyntheticGovernmentEntities,
 )
-from macro_data.processing.synthetic_government_entities.synthetic_government_entities import SyntheticGovernmentEntities
-from macro_data.processing.synthetic_housing_market.default_synthetic_housing_market import DefaultSyntheticHousingMarket
+from macro_data.processing.synthetic_government_entities.synthetic_government_entities import (
+    SyntheticGovernmentEntities,
+)
+from macro_data.processing.synthetic_housing_market.default_synthetic_housing_market import (
+    DefaultSyntheticHousingMarket,
+)
 from macro_data.processing.synthetic_housing_market.synthetic_housing_market import SyntheticHousingMarket
 from macro_data.processing.synthetic_matching.matching_firms_with_banks import match_firms_with_banks
 from macro_data.processing.synthetic_matching.matching_households_with_banks import match_households_with_banks
 from macro_data.processing.synthetic_matching.matching_households_with_houses import set_housing_df
-from macro_data.processing.synthetic_matching.matching_individuals_with_firms import match_individuals_with_firms_country
+from macro_data.processing.synthetic_matching.matching_individuals_with_firms import (
+    match_individuals_with_firms_country,
+)
 from macro_data.processing.synthetic_population.hfcs_synthetic_population import SyntheticHFCSPopulation
 from macro_data.processing.synthetic_population.synthetic_population import SyntheticPopulation
 from macro_data.readers import DataReaders
