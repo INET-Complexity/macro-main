@@ -12,9 +12,9 @@ with open(join(this_dir, "requirements.txt")) as f:
     requirements = f.read().split("\n")
 
 setup(
-    name="inet-macro-data",
+    name="macro-data",
     version="1.0.0",
-    description="INET's MacroModel - Data",
+    description="MacroModel - Data",
     url="https://github.com/INET-Complexity/inet-macro-data",
     long_description_content_type="text/markdown",
     long_description=long_description,

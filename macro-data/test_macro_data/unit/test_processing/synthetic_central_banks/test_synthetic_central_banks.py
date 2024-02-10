@@ -1,0 +1,26 @@
+import pathlib
+
+import numpy as np
+import pandas as pd
+
+from macro_data.processing.synthetic_central_bank.default_synthetic_central_bank import (
+    DefaultSyntheticCentralBank,
+)
+
+PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
+
+
+class TestSyntheticCentralBanks:
+    def test__create(self, readers):
+        central_banks = DefaultSyntheticCentralBank.from_readers(
+            country_name="FRA",
+            year=2014,
+            readers=readers,
+        )
+
+        # Check if we have all the necessary fields
+        for central_bank_field in ["Policy Rate"]:
+            assert central_bank_field in central_banks.central_bank_data.columns
+
+        # Check if there are any missing values
+        assert not np.any(pd.isna(central_banks.central_bank_data))
