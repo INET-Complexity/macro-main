@@ -81,7 +81,7 @@ class Households(Agent):
         corr_owned_houses = synthetic_population.household_data["Corresponding Additionally Owned Houses ID"]
         corr_owned_houses = corr_owned_houses.rename_axis("Household ID")
 
-        functions = functions_from_model(model=configuration.functions, loc="inet_macromodel.households")
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.households")
 
         hh_data = (
             synthetic_population.household_data.drop(

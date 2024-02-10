@@ -112,7 +112,7 @@ class Economy:
             export_taxes=export_taxes,
         )
 
-        functions = functions_from_model(economy_configuration.functions, loc="inet_macromodel.economy")
+        functions = functions_from_model(economy_configuration.functions, loc="macromodel.economy")
 
         n_industries = firms.n_industries
 

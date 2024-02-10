@@ -32,7 +32,7 @@ class GoodsMarket:
         goods_market_participants: dict[str, list[Agent]],
     ) -> "GoodsMarket":
         # Get corresponding functions
-        functions = functions_from_model(configuration.functions, loc="inet_macromodel.goods_market")
+        functions = functions_from_model(configuration.functions, loc="macromodel.goods_market")
 
         functions["clearing"].initiate_agents(
             n_industries=n_industries,

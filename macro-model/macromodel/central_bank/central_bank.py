@@ -42,7 +42,7 @@ class CentralBank(Agent):
         n_industries: int,
     ) -> "CentralBank":
         # Get corresponding functions and parameters
-        functions = functions_from_model(model=configuration.functions, loc="inet_macromodel.central_bank")
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.central_bank")
 
         data = synthetic_central_bank.central_bank_data.astype(float).rename_axis("Central Bank ID")
 

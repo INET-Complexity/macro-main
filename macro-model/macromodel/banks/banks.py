@@ -52,7 +52,7 @@ class Banks(Agent):
         corr_firms_id = synthetic_banks.bank_data["Corresponding Firms ID"]
         corr_households_id = synthetic_banks.bank_data["Corresponding Households ID"]
         parameters = configuration.parameters
-        functions = functions_from_model(model=configuration.functions, loc="inet_macromodel.banks")
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.banks")
 
         data = synthetic_banks.bank_data.drop(columns=["Corresponding Firms ID", "Corresponding Households ID"])
         ts = create_banks_timeseries(
@@ -101,7 +101,7 @@ class Banks(Agent):
     #     # Get corresponding functions and parameters
     #     functions = get_functions(
     #         config["functions"],
-    #         loc="inet_macromodel.banks",
+    #         loc="macromodel.banks",
     #         func_dir=Path(__file__).parent / "func",
     #     )
     #     parameters["policy_rate_markup"] = policy_rate_markup

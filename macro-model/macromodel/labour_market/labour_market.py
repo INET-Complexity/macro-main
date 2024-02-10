@@ -41,7 +41,7 @@ class LabourMarket:
         initial_individual_activity = individuals.states["Activity Status"]
         initial_individual_employment_industry = individuals.states["Employment Industry"]
 
-        functions = functions_from_model(labour_market_configuration.functions, loc="inet_macromodel.labour_market")
+        functions = functions_from_model(labour_market_configuration.functions, loc="macromodel.labour_market")
         ts = create_labour_market_timeseries(
             initial_individual_activity=initial_individual_activity,
             initial_individual_employment_industry=initial_individual_employment_industry,
@@ -73,7 +73,7 @@ class LabourMarket:
         # Get corresponding functions
         functions = get_functions(
             config["functions"],
-            loc="inet_macromodel.labour_market",
+            loc="macromodel.labour_market",
             func_dir=Path(__file__).parent / "func",
         )
 

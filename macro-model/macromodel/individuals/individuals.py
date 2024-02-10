@@ -50,7 +50,7 @@ class Individuals(Agent):
     ) -> "Individuals":
         data = (synthetic_population.individual_data.astype(float)).rename_axis("Individual ID")
 
-        functions = functions_from_model(model=configuration.functions, loc="inet_macromodel.individuals")
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.individuals")
 
         ts = create_individuals_timeseries(data, scale)
 

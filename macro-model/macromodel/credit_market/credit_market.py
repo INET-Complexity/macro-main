@@ -42,7 +42,7 @@ class CreditMarket:
     ) -> "CreditMarket":
         functions = functions_from_model(
             credit_market_configuration.functions,
-            loc="inet_macromodel.credit_market",
+            loc="macromodel.credit_market",
         )
 
         loan_data = synthetic_credit_market.credit_market_data.astype(float)
@@ -71,7 +71,7 @@ class CreditMarket:
         # Get corresponding functions and parameters
         functions = get_functions(
             config["functions"],
-            loc="inet_macromodel.credit_market",
+            loc="macromodel.credit_market",
             func_dir=Path(__file__).parent / "func",
         )
         # Recording the loan_data of all loans

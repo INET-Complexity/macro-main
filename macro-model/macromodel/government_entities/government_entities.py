@@ -50,7 +50,7 @@ class GovernmentEntities(Agent):
         all_country_names: list[str],
         n_industries: int,
     ):
-        functions = functions_from_model(model=configuration.functions, loc="inet_macromodel.government_entities")
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.government_entities")
 
         ts = create_government_entities_timeseries(
             data=synthetic_government_entities.gov_entity_data,

@@ -38,7 +38,7 @@ class HousingMarket:
         country_name: str,
     ) -> "HousingMarket":
         # Get corresponding functions
-        functions = functions_from_model(housing_market_configuration.functions, loc="inet_macromodel.housing_market")
+        functions = functions_from_model(housing_market_configuration.functions, loc="macromodel.housing_market")
 
         #     #     store[country_name + "_synthetic_housing_market"] = (
         #     #         self.synthetic_housing_market[country_name].housing_market_data.astype(float)
@@ -83,7 +83,7 @@ class HousingMarket:
         # Get corresponding functions and parameters
         functions = get_functions(
             config["functions"],
-            loc="inet_macromodel.housing_market",
+            loc="macromodel.housing_market",
             func_dir=Path(__file__).parent / "func",
         )
 

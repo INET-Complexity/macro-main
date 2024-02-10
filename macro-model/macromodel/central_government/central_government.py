@@ -47,7 +47,7 @@ class CentralGovernment(Agent):
         number_of_unemployed_individuals: int,
         taxes_net_subsidies: np.ndarray,
     ):
-        functions = functions_from_model(model=configuration.functions, loc="inet_macromodel.central_government")
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.central_government")
 
         states = {
             "Value-added Tax": tax_data.value_added_tax,

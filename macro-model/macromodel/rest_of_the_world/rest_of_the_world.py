@@ -51,7 +51,7 @@ class RestOfTheWorld(Agent):
         configuration: RestOfTheWorldConfiguration,
         average_ppi_inflation: float,
     ) -> "RestOfTheWorld":
-        functions = functions_from_model(model=configuration.functions, loc="inet_macromodel.rest_of_the_world")
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.rest_of_the_world")
 
         data = synthetic_row.row_data.astype(float)
         data.rename_axis("Industry", inplace=True)
@@ -97,7 +97,7 @@ class RestOfTheWorld(Agent):
         # Get corresponding functions and parameters
         functions = get_functions(
             config["functions"],
-            loc="inet_macromodel.rest_of_the_world",
+            loc="macromodel.rest_of_the_world",
             func_dir=Path(__file__).parent / "func",
         )
         if "parameters" in config.keys():
