@@ -88,8 +88,7 @@ class DataReaders:
     def from_raw_data(
         cls,
         raw_data_path: Path | str,
-        country_names: list[str],
-        country_names_short: list[str],
+        country_names: list[Country],
         simulation_year: int,
         scale_dict: dict[Country, int],
         industries: list[str],
@@ -98,12 +97,15 @@ class DataReaders:
         prune_date: Optional[date] = None,
         force_single_hfcs_survey: bool = False,
         single_icio_survey: bool = False,
+        proxy_country_dict: dict[Country, Country] = None,
     ):
+
+        if proxy_country_dict is None:
+            proxy_country_dict = {country: country for country in country_names}
+
         raw_data_path = Path(raw_data_path)
-        short_names = {
-            country_name: country_name_short
-            for country_name, country_name_short in zip(country_names, country_names_short)
-        }
+        short_names = {country_name: country_name.to_two_letter_code() for country_name in country_names}
+
         if single_icio_survey:
             all_years = [simulation_year]
         else:
@@ -113,17 +115,22 @@ class DataReaders:
         goods_criticality = GoodsCriticalityReader.from_csv(path=datapaths.goods_criticality_path)
         exchange_rates = WorldBankRatesReader.from_csv(path=datapaths.exchange_rates_path)
         eurostat = EuroStatReader(path=datapaths.eurostat_path, country_code_path=datapaths.country_codes_path)
+
+        proxified = [country if country.is_eu_country else proxy_country_dict[country] for country in country_names]
+
         hfcs = {
             country_name: HFCSReader.from_csv(
-                country_name=country_name,
-                country_name_short=short_names[country_name],
+                country_name=proxy_country,
+                country_name_short=short_names[proxy_country],
                 hfcs_data_path=datapaths.hfcs_path,
                 year=simulation_year,
                 exchange_rates=exchange_rates,
                 num_surveys=1 if force_single_hfcs_survey else 5,
             )
-            for country_name in country_names
+            for country_name, proxy_country in zip(country_names, proxified)
         }
+
+        eu_only = [country for country in country_names if country.is_eu_country]
 
         icio = {
             year: ICIOReader.agg_from_csv(
@@ -134,7 +141,7 @@ class DataReaders:
                 considered_countries=country_names,
                 industries=industries,
                 exchange_rates=exchange_rates,
-                imputed_rent_fraction=eurostat.get_imputed_rent_fraction(country_names, imputed_rent_year),
+                imputed_rent_fraction=eurostat.get_imputed_rent_fraction(eu_only, imputed_rent_year),
             )
             for year in all_years
         }

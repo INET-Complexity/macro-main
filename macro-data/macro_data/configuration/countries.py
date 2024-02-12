@@ -12,6 +12,36 @@ with open(THIS_FILE_PATH / "3_codes.yaml", "r") as f:
 with open(THIS_FILE_PATH / "country_names.yaml", "r") as f:
     country_names = yaml.safe_load(f)
 
+EU_COUNTRIES = [
+    "AUT",
+    "BEL",
+    "CZE",
+    "DNK",
+    "FIN",
+    "FRA",
+    "DEU",
+    "GRC",
+    "HUN",
+    "IRL",
+    "ITA",
+    "LUX",
+    "NLD",
+    "POL",
+    "PRT",
+    "SVK",
+    "ESP",
+    "SWE",
+    "EST",
+    "LVA",
+    "SVN",
+    "LTU",
+    "HRV",
+    "CYP",
+    "MLT",
+    "ROU",
+    "BGR",
+]
+
 
 class Country(StrEnum):
     """
@@ -24,8 +54,16 @@ class Country(StrEnum):
     UNITED_KINGDOM = "GBR"
     AUSTRIA = "AUT"
 
+    UNITED_STATES = "USA"
+    CANADA = "CAN"
+    JAPAN = "JPN"
+
     def __str__(self):
         return country_names[self.value]
 
     def to_two_letter_code(self):
         return country_codes[self.value]
+
+    @property
+    def is_eu_country(self):
+        return self.value in EU_COUNTRIES

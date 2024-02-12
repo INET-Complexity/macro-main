@@ -46,8 +46,7 @@ def readers(data_path):
     france = Country("FRA")
     readers = DataReaders.from_raw_data(
         raw_data_path=data_path,
-        country_names=["FRA"],
-        country_names_short=["FR"],
+        country_names=[Country("FRA")],
         simulation_year=2014,
         # need to put in Afghanistan because that is used in tests...
         scale_dict={france: 100000, "AFG": 100000},

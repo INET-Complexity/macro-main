@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Optional, Any
 
 from pydantic import BaseModel
 
@@ -67,6 +68,8 @@ class CountryDataConfiguration(BaseModel):
         single_firm_per_industry (bool): Single firm per industry flag.
         single_government_entity (bool): Single government entity flag.
         scale (int): scale of the country (number of agents represented by a synthetic agent).
+        eu_proxy_country (Country): EU proxy country (optional, if the country is not in the EU, part of the data will
+                                    be generated using the EU proxy country).
     """
 
     firms_configuration: FirmsDataConfiguration
@@ -75,6 +78,7 @@ class CountryDataConfiguration(BaseModel):
     single_firm_per_industry: bool
     single_government_entity: bool
     scale: int
+    eu_proxy_country: Optional[Country] = None
 
 
 class DataConfiguration(BaseModel):
@@ -96,6 +100,18 @@ class DataConfiguration(BaseModel):
     country_configs: dict[Country, CountryDataConfiguration]
     purpose: str = ""
     author: str = "INET"
+
+    def model_post_init(self, __context: Any) -> None:
+        """
+        Post-initialization method.
+
+        Args:
+            __context (Any): The context.
+        """
+        # for each country config, raise an error if country is not in eu and eu proxy country is not set
+        for country, country_config in self.country_configs.items():
+            if country_config.eu_proxy_country is None and not country.is_eu_country:
+                raise ValueError(f"{country} is not in EU: please set an EU proxy country.")
 
     @property
     def countries(self) -> list[Country]:
