@@ -216,12 +216,13 @@ class DataReaders:
             return None
 
     def get_benefits_inflation_data(
-        self, country_name: str, year_min: int, year_max: int, exogenous_data: dict[str, Any]
+        self, country_name: Country, year_min: int, year_max: int, exogenous_data: dict[str, Any]
     ) -> pd.DataFrame:
         years = range(year_min, year_max)
-        unemp = [self.get_total_unemployment_benefits(country_name, year) for year in years]
+        unemp = [self.get_total_unemployment_benefits_lcu(country_name, year) for year in years]
         other = [
-            self.get_total_benefits(country_name, year) - self.get_total_unemployment_benefits(country_name, year)
+            self.get_total_benefits_lcu(country_name, year)
+            - self.get_total_unemployment_benefits_lcu(country_name, year)
             for year in years
         ]
 
@@ -246,15 +247,22 @@ class DataReaders:
         data = pd.merge_asof(data, unemployment_rate, left_index=True, right_index=True)
         return data
 
-    def get_total_benefits(self, country_name, year):
-        return self.oecd_econ.all_benefits_gdp_pct(country_name, year) * self.world_bank.get_current_monthly_gdp(
-            country_name, year
+    def get_total_benefits_lcu(self, country_name: Country, year: int) -> float:
+        return (
+            self.oecd_econ.all_benefits_gdp_pct(country_name, year)
+            * self.world_bank.get_current_monthly_gdp(country_name, year)
+            * self.exchange_rates.from_usd_to_lcu(country_name, year)
         )
 
-    def get_total_unemployment_benefits(self, country_name, year):
-        return self.oecd_econ.unemployment_benefits_gdp_pct(
-            country_name, year
-        ) * self.world_bank.get_current_monthly_gdp(country_name, year)
+    def get_total_unemployment_benefits_lcu(self, country_name: Country, year: int) -> float:
+        return (
+            self.oecd_econ.unemployment_benefits_gdp_pct(country_name, year)
+            * self.world_bank.get_current_monthly_gdp(country_name, year)
+            * self.exchange_rates.from_usd_to_lcu(country_name, year)
+        )
+
+    def get_govt_debt_lcu(self, country: Country, year: int) -> float:
+        return self.oecd_econ.general_gov_debt(country, year) * self.exchange_rates.from_usd_to_lcu(country, year)
 
 
 def prune_icio_dict(icio_dict: dict[int, Any], prune_date: date):

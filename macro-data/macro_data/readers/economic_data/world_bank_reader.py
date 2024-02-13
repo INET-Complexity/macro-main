@@ -62,6 +62,7 @@ class WorldBankReader:
             "ppi": "ppi",
             "cpi": "cpi",
             "historic_gdp": "API_NY.GDP.MKTP.CN_DS2_en_csv_v2_5358562",
+            "population": "API_SP.POP.TOTL_DS2_en_csv_v2_79",
         }
 
     def get_unemployment_rate(self, country: Country, year: int) -> float:
@@ -78,6 +79,10 @@ class WorldBankReader:
         df = self.data["unemployment"]
         df = df.loc[df["Country Code"] == country, str(year)]
         return df.values[0] / 100.0
+
+    def get_population(self, country: Country, year: int) -> float:
+        df = self.data["population"].set_index("Country Code")
+        return df.loc[country, str(year)]
 
     def get_participation_rate(self, country: Country, year: int) -> float:
         """

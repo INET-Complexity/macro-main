@@ -46,7 +46,7 @@ def create_all_exogenous_data(
 
     # get the set intersection of country_names and the keys of exogenous_industry_data
     exog_countries = list(set(country_names).intersection(exogenous_industry_data.keys()))
-    # TODO this is a hack; sectoral growth and firm deposits and debt need to be readjusted
+    # TODO this is a hack; sectoral growth needs to be readjusted
     exogenous_data = {
         country_name: {
             "log_inflation": readers.world_bank.get_log_inflation(country_name),
@@ -55,7 +55,7 @@ def create_all_exogenous_data(
             "house_price_index": readers.oecd_econ.get_house_price_index(country_name),
             "vacancy_rate": readers.oecd_econ.get_vacancy_rate(country_name),
             "total_firm_deposits_and_debt": readers.eurostat.get_total_industry_debt_and_deposits(
-                proxy_countries[country_name]
+                country_name, proxy_countries[country_name]
             ),
             "iot_industry_data": exogenous_industry_data[country_name],
         }

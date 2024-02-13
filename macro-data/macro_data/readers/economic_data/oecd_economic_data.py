@@ -83,6 +83,7 @@ class OECDEconData:
             "active_population_size": "STLABOUR",
             "total_job_vacancies": "LAB_REG_VAC",
             "experimental_consumption_statistics": "EGDNA_PUBLIC",
+            "gross_gov_debt_usd_ppp": "oecd_govt_debt_usd_ppp",
         }
 
     def employees_by_industry(self, year: int, country: Country) -> pd.Series:
@@ -125,6 +126,11 @@ class OECDEconData:
         """
 
         # Load data
+
+        # TODO: OECD data doesn't have US data for this, so we use Canada as a proxy
+        if country == "USA":
+            country = Country("CAN")
+
         df = self.data["business_demography"]
         df = df.loc[
             (df["IND"] == "ENTR_BD_EMPL")
@@ -198,8 +204,11 @@ class OECDEconData:
                 continue
 
             counts = np.array(counts)
-            freq = counts / np.sum(counts)
-            ind_zetas[ind] = curve_fit(self.zeta_dist, size_means, freq, p0=[0.1])[0][0]
+            if np.sum(counts) == 0:
+                ind_zetas[ind] = np.mean(list(ind_zetas.values()))
+            else:
+                freq = counts / np.sum(counts)
+                ind_zetas[ind] = curve_fit(self.zeta_dist, size_means, freq, p0=[0.1])[0][0]
 
         isic_zetas = {self.find_sector_code(k): v for k, v in ind_zetas.items()}
         final_zetas = {}
@@ -263,21 +272,17 @@ class OECDEconData:
 
     def get_bank_demographics(self, country: Country, year: int, code: str) -> float:
         df = self.data["bank_demography"]
-        res = df.loc[
-            (df["COU"] == country) & (df["YEA"] == year) & (df["ITEM"] == code),
-            "Value",
-        ].values
-        if len(res) == 0:
-            return self.get_bank_demographics(country, year - 1, code)
-        elif len(res) == 1:
-            return res[0]
+
+        sel = df.loc[(df["COU"] == country) & (df["ITEM"] == code)]
+
+        if len(sel) == 0:
+            sel = df.loc[df["ITEM"] == code, "Value"]
+            return int(sel.mean())
         else:
-            raise ValueError(
-                "Multiple values when fetching bank demography inet_data",
-                country,
-                year,
-                code,
-            )
+            if year in sel["YEA"].values:
+                return sel.loc[sel["YEA"] == year, "Value"].iloc[0]
+            else:
+                return sel["Value"].iloc[-1]
 
     def read_tierone_reserves(self, country: Country, year: int):
         # noinspection PyTypeChecker
@@ -453,6 +458,12 @@ class OECDEconData:
         data /= data.sum(axis=0)
         data.index = pd.Index(range(len(data)), name="Industry")
         return data
+
+    def get_govt_debt_usd_ppp(self, country: Country, year: int) -> float:
+        df = self.data["gross_gov_debt_usd_ppp"]
+        df = df[df["Financial instrument"] == "Total"]
+        df = df[df["REF_AREA"] == country]
+        return df.set_index("TIME_PERIOD").loc[year, "OBS_VALUE"] * 1e6
 
     def prune(self, prune_date: date):
         for key, value in self.data.items():

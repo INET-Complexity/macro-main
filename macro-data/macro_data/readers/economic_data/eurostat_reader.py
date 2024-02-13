@@ -126,7 +126,7 @@ class EuroStatReader:
         """
         return [self.c_map.loc[self.c_map["Alpha-2 code"] == c, "Alpha-3 code"].values[0] for c in codes]
 
-    def find_value(self, df, country: Country, year: str) -> float:
+    def find_value(self, df: pd.DataFrame, country: Country, year: str) -> float:
         """
         Find the value in the given DataFrame for the specified country and year.
 
@@ -141,13 +141,17 @@ class EuroStatReader:
         Raises:
             ValueError: If multiple data points are found for the given country and year.
         """
-        res = df.loc[(df["geo"] == country) & (df["TIME_PERIOD"] == int(year)), "OBS_VALUE"].values
-        if len(res) == 0:
-            return self.find_value(df, country, str(int(year) + 1))
-        elif len(res) == 1:
-            return res[0]
+
+        country_data = df.loc[df["geo"] == country]
+
+        if country_data.empty:
+            return df.loc[df["TIME_PERIOD"] == int(year), "OBS_VALUE"].mean()
+        if int(year) in country_data["TIME_PERIOD"].values:
+            return country_data.loc[country_data["TIME_PERIOD"] == int(year), "OBS_VALUE"].values[0]
         else:
-            raise ValueError("Multiple inet_data points found in", df, country, year)
+            values = country_data["OBS_VALUE"].values
+            # return last value
+            return values[-1]
 
     def nonfin_firm_debt_ratios(self, country: Country, year: int) -> float:
         """
@@ -402,24 +406,32 @@ class EuroStatReader:
 
         return growth_df
 
-    def get_total_industry_debt_and_deposits(self, country: Country) -> pd.DataFrame:
-        dates, total_deposits, total_debt = [], [], []
-        for year in range(1970, 2024):
-            dep = self.get_total_nonfin_firm_deposits(country, year)
-            debt = self.get_total_nonfin_firm_debt(country, year)
-            for month in range(1, 13):
-                dates.append(str(year) + "-" + str(month))
-                total_deposits.append(dep)
-                total_debt.append(debt)
+    def get_total_industry_debt_and_deposits(
+        self, country: Country, proxy_country: Optional[Country] = None
+    ) -> pd.DataFrame:
+        try:
+            dates, total_deposits, total_debt = [], [], []
+            for year in range(1970, 2024):
+                dep = self.get_total_nonfin_firm_deposits(country, year)
+                debt = self.get_total_nonfin_firm_debt(country, year)
+                for month in range(1, 13):
+                    dates.append(str(year) + "-" + str(month))
+                    total_deposits.append(dep)
+                    total_debt.append(debt)
 
-        dates = pd.to_datetime(dates, format="%Y-%m")
-        return pd.DataFrame(
-            index=dates,
-            data={
-                "Total Deposits": total_deposits,
-                "Total Debt": total_debt,
-            },
-        )
+            dates = pd.to_datetime(dates, format="%Y-%m")
+            return pd.DataFrame(
+                index=dates,
+                data={
+                    "Total Deposits": total_deposits,
+                    "Total Debt": total_debt,
+                },
+            )
+        except IndexError:
+            if proxy_country is not None:
+                return self.get_total_industry_debt_and_deposits(proxy_country)
+            else:
+                raise ValueError("No data available for the given country. Please provide a proxy country.")
 
     def get_imputed_rent_fraction_of_country(self, country: Country, year: int) -> float:
         df = self.data["real_estate_services"].set_index("freq,unit,stk_flow,induse,prod_na,geo\TIME_PERIOD")
