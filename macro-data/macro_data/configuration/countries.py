@@ -58,6 +58,8 @@ class Country(StrEnum):
     CANADA = "CAN"
     JAPAN = "JPN"
 
+    REST_OF_WORLD = "ROW"
+
     def __str__(self):
         return country_names[self.value]
 

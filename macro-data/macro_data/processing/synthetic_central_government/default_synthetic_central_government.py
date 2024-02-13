@@ -3,6 +3,7 @@ from typing import Optional
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
+from macro_data.configuration.countries import Country
 from macro_data.processing.synthetic_central_government.synthetic_central_government import (
     SyntheticCentralGovernment,
 )
@@ -41,7 +42,7 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
     def from_readers(
         cls,
         readers: DataReaders,
-        country_name: str,
+        country_name: Country,
         year: int,
         year_range: int = 10,
         regression_window: int = 48,

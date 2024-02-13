@@ -202,7 +202,7 @@ class DataReaders:
             goods_criticality=goods_criticality,
         )
 
-    def get_exogenous_data(self, country_name: str) -> Optional[dict[str, Any]]:
+    def get_exogenous_data(self, country_name: Country) -> Optional[dict[str, Any]]:
         try:
             return {
                 "log_inflation": self.world_bank.get_log_inflation(country_name),

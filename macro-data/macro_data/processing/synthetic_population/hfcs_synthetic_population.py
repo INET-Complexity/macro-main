@@ -8,6 +8,7 @@ from sklearn.experimental import enable_iterative_imputer  # noqa
 from sklearn.impute import IterativeImputer  # noqa
 from sklearn.linear_model import LinearRegression
 
+from macro_data.configuration.countries import Country
 from macro_data.processing.synthetic_population.hfcs_household_tools import (
     set_household_types,
     set_household_housing_data,
@@ -129,7 +130,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
     def from_readers(
         cls,
         readers: DataReaders,
-        country_name: str,
+        country_name: Country,
         country_name_short: str,
         scale: int,
         year: int,

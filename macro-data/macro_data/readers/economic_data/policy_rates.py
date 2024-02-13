@@ -25,7 +25,7 @@ class PolicyRatesReader:
         countries = [{"country": c} for c in temp_df["Reference area"].values]
 
         for y in years:
-            yearly_rates = temp_df[[date for date in temp_df.columns if y in date]].mean(axis=1)
+            yearly_rates = temp_df[[date_value for date_value in temp_df.columns if y in date_value]].mean(axis=1)
             for i, country in enumerate(countries):
                 country[y] = yearly_rates[i]
 
@@ -82,5 +82,5 @@ class PolicyRatesReader:
             prune_date (date): The date to prune the data.
         """
         # WB exchange rates
-        mask = prune_index(self.df.columns, prune_date, "Policy rates")
+        mask = prune_index(self.df.columns, prune_date)
         self.df = self.df.loc[:, mask]

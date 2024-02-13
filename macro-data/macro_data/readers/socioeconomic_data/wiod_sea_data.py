@@ -147,9 +147,8 @@ class WIODSEAReader:
         Prune the exchange rate data based on a given date.
 
         Args:
-            prune_date (int | datetime | str): The date to prune the exchange rate data.
-            date_format (str, optional): The format of the prune_date if it is a string. Defaults to "%Y-%m-%d".
+            prune_date (datetime): The date to prune the exchange rate data.
         """
         # WIOD_SEA
-        mask = prune_index(self.exchange_rates.df.columns, prune_date, "WIOD_SEA")
+        mask = prune_index(self.exchange_rates.df.columns, prune_date)
         self.exchange_rates.df = self.exchange_rates.df.loc[:, mask]

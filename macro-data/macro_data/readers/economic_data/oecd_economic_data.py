@@ -85,8 +85,7 @@ class OECDEconData:
             "experimental_consumption_statistics": "EGDNA_PUBLIC",
         }
 
-    def employees_by_industry(self, year: int, country: str | Country) -> pd.Series:
-        # noinspection PyTypeChecker
+    def employees_by_industry(self, year: int, country: Country) -> pd.Series:
         df = self.data["employment_by_industry"]
         df = df.loc[(df["Time"] == year) & (df["SEX"] == "TT") & (df["LOCATION"] == country)].copy()
         # this scary looking line is just a regular expression
@@ -103,7 +102,7 @@ class OECDEconData:
 
     def read_business_demography(
         self,
-        country: str | Country,
+        country: Country,
         output: pd.Series,
         year: int,
     ) -> np.ndarray:
@@ -127,8 +126,6 @@ class OECDEconData:
 
         # Load data
         df = self.data["business_demography"]
-        if country == "DEU" and year < 2012:  # no data before 2012
-            year = 2012
         df = df.loc[
             (df["IND"] == "ENTR_BD_EMPL")
             & (df["TIME"] == year)
@@ -200,6 +197,7 @@ class OECDEconData:
             except IndexError:
                 continue
 
+            counts = np.array(counts)
             freq = counts / np.sum(counts)
             ind_zetas[ind] = curve_fit(self.zeta_dist, size_means, freq, p0=[0.1])[0][0]
 
@@ -214,30 +212,30 @@ class OECDEconData:
 
         return final_zetas
 
-    def read_tau_sif(self, country: str, year: int) -> float:
+    def read_tau_sif(self, country: Country, year: int) -> float:
         df = self.data["employers_contribution_social_insurance"]
         df = df.loc[(df["COU"] == country) & (df["YEA"] == year)]
         return df.loc[df["RATE_THRESH"] == "01_MR", "Value"].iloc[0] / 100.0
 
-    def read_tau_siw(self, country: str, year: int) -> float:
+    def read_tau_siw(self, country: Country, year: int) -> float:
         df = self.data["employees_contribution_social_insurance"]
         df = df.loc[(df["COU"] == country) & (df["YEA"] == year)]
         return df.loc[df["RATE_THRESH"] == "01_MR", "Value"].iloc[0] / 100.0
 
-    def read_tau_firm(self, country: str, year: int) -> float:
+    def read_tau_firm(self, country: Country, year: int) -> float:
         df = self.data["corporate_income_tax_rate"]
         df = df.loc[(df["COU"] == country) & (df["YEA"] == year)]
         df.set_index("CORP_TAX", inplace=True)
         return df.loc["COMB_CIT_RATE", "Value"] / 100.0
 
-    def read_tau_income(self, country: str, year: int) -> float:
+    def read_tau_income(self, country: Country, year: int) -> float:
         df = self.data["average_personal_income_tax_by_family_type"]
         df = df.loc[df["COU"] == country]
         df = df.loc[df["Year"] == year]
         df = df.loc[df["ALL_IN"] == "ALL_IN_RATE_SING_NO_CH"]
         return df["Value"].values[0] / 100.0
 
-    def read_short_term_interest_rates(self, country: str, year: int) -> float:
+    def read_short_term_interest_rates(self, country: Country, year: int) -> float:
         df = self.data["short_term_interest_rates"]
         df = df.loc[df["LOCATION"] == country]
         df = df.loc[df["FREQUENCY"] == "Q"]
@@ -250,7 +248,7 @@ class OECDEconData:
         else:
             raise ValueError("Multiple values found for short-term interest rates.")
 
-    def read_long_term_interest_rates(self, country: str, year: int) -> float:
+    def read_long_term_interest_rates(self, country: Country, year: int) -> float:
         df = self.data["long_term_interest_rates"]
         df = df.loc[df["LOCATION"] == country]
         df = df.loc[df["FREQUENCY"] == "Q"]
@@ -263,7 +261,7 @@ class OECDEconData:
         else:
             raise ValueError("Multiple values found for long-term interest rates.")
 
-    def get_bank_demographics(self, country: str, year: int, code: str) -> float:
+    def get_bank_demographics(self, country: Country, year: int, code: str) -> float:
         df = self.data["bank_demography"]
         res = df.loc[
             (df["COU"] == country) & (df["YEA"] == year) & (df["ITEM"] == code),
@@ -281,39 +279,39 @@ class OECDEconData:
                 code,
             )
 
-    def read_tierone_reserves(self, country: str, year: int):
+    def read_tierone_reserves(self, country: Country, year: int):
         # noinspection PyTypeChecker
         reserves = self.get_bank_demographics(country, year, "BC32TE")
         rwa = self.get_bank_demographics(country, year, "BC36TE")
         return reserves / rwa
 
-    def read_number_of_banks(self, country: str, year: int) -> int:
+    def read_number_of_banks(self, country: Country, year: int) -> int:
         return int(self.get_bank_demographics(country, year, "SI37TE"))
 
-    def read_number_of_bank_branches(self, country: str, year: int) -> int:
+    def read_number_of_bank_branches(self, country: Country, year: int) -> int:
         return int(self.get_bank_demographics(country, year, "SI38TE"))
 
-    def read_number_of_bank_employees(self, country: str, year: int) -> int:
+    def read_number_of_bank_employees(self, country: Country, year: int) -> int:
         return int(self.get_bank_demographics(country, year, "SI39TE"))
 
     # current domestic
-    def read_bank_distributed_profit(self, country: str, year: int):
+    def read_bank_distributed_profit(self, country: Country, year: int):
         return self.get_bank_demographics(country, year, "IN12TE") * 1000000
 
     # current domestic
-    def read_bank_retained_profit(self, country: str, year: int):
+    def read_bank_retained_profit(self, country: Country, year: int):
         return self.get_bank_demographics(country, year, "IN13TD") * 1000000
 
     # current domestic
-    def read_bank_total_assets(self, country: str, year: int):
+    def read_bank_total_assets(self, country: Country, year: int):
         return self.get_bank_demographics(country, year, "BT25TE") * 1000000
 
-    def unemployment_benefits_gdp_pct(self, country: str, year: int) -> float:
+    def unemployment_benefits_gdp_pct(self, country: Country, year: int) -> float:
         df = self.data["total_unemployment_benefits_perc_gdp"]
         value = df.loc[(df["LOCATION"] == country) & (df["TIME"] == year), "Value"].iloc[0]
         return value / 100.0
 
-    def all_benefits_gdp_pct(self, country: str, year: int) -> float:
+    def all_benefits_gdp_pct(self, country: Country, year: int) -> float:
         all_benefits = self.data["total_social_benefits_perc_gdp"]
         value = all_benefits.loc[
             (all_benefits["COUNTRY"] == country) & (all_benefits["YEAR"] == year),
@@ -322,12 +320,12 @@ class OECDEconData:
         return value / 100.0
 
     # current domestic
-    def general_gov_debt(self, country: str, year: int) -> float:
+    def general_gov_debt(self, country: Country, year: int) -> float:
         df = self.data["general_gov_debt"]
         value = df.loc[(df["LOCATION"] == country) & (df["TIME"] == year), "Value"].iloc[0]
         return value * 1e6
 
-    def get_unemployment_rate(self, country: str) -> pd.DataFrame:
+    def get_unemployment_rate(self, country: Country) -> pd.DataFrame:
         data = self.data["unemployment_rates"].loc[
             (self.data["unemployment_rates"]["LOCATION"] == country)
             & (self.data["unemployment_rates"]["SUBJECT"] == "TOT")
@@ -350,7 +348,7 @@ class OECDEconData:
             data={"Unemployment Rate": vals},
         )
 
-    def get_consumption_rates_by_income(self, country: str) -> pd.DataFrame:
+    def get_consumption_rates_by_income(self, country: Country) -> pd.DataFrame:
         df = self.data["consumption_by_income_quintiles"]
         df["country_year"] = [df["country_year"][i][0:3] for i in range(len(df))]
         df = df.loc[df["country_year"] == country]
@@ -361,7 +359,7 @@ class OECDEconData:
 
         return df
 
-    def get_house_price_index(self, country: str) -> pd.DataFrame:
+    def get_house_price_index(self, country: Country) -> pd.DataFrame:
         df = self.data["housing_index"]
         dates, val_real, val_nominal = [], [], []
         corr_months = {1: [1, 2, 3], 2: [4, 5, 6], 3: [7, 8, 9], 4: [10, 11, 12]}
@@ -414,7 +412,7 @@ class OECDEconData:
             },
         )
 
-    def get_vacancy_rate(self, country: str) -> pd.DataFrame:
+    def get_vacancy_rate(self, country: Country) -> pd.DataFrame:
         active_population_size = self.data["active_population_size"]
         total_job_vacancies = self.data["total_job_vacancies"]
         dates, vacancy_rate = [], []
@@ -444,7 +442,7 @@ class OECDEconData:
         dates = pd.to_datetime(dates, format="%Y-%m")
         return pd.DataFrame(index=dates, data={"Vacancy Rate": vacancy_rate})
 
-    def get_household_consumption_by_income_quantile(self, country: str, year: int) -> pd.DataFrame:
+    def get_household_consumption_by_income_quantile(self, country: Country, year: int) -> pd.DataFrame:
         assert year
         data = self.data["consumption_by_income_quintiles"]
         if country != "FRA":

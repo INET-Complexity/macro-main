@@ -12,7 +12,6 @@ from macro_data.processing.synthetic_rest_of_the_world.default_synthetic_rest_of
 )
 from macro_data.processing.synthetic_rest_of_the_world.synthetic_rest_of_the_world import SyntheticRestOfTheWorld
 from macro_data.readers import DataReaders, compile_industry_data, create_all_exogenous_data
-from macro_data.util import get_map_long_to_short
 
 
 @dataclass

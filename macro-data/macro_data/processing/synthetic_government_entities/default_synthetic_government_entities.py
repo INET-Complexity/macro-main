@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
+from macro_data.configuration.countries import Country
 from macro_data.processing.synthetic_government_entities.synthetic_government_entities import (
     SyntheticGovernmentEntities,
 )
@@ -37,7 +38,7 @@ class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
 
     def __init__(
         self,
-        country_name: str,
+        country_name: Country,
         year: int,
         number_of_entities: int,
         gov_entity_data: pd.DataFrame,
@@ -55,7 +56,7 @@ class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
     def from_readers(
         cls,
         readers: DataReaders,
-        country_name: str,
+        country_name: Country,
         year: int,
         exogenous_country_data: Optional[dict[str, pd.DataFrame]],
         industry_data: dict[str, pd.DataFrame],

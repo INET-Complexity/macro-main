@@ -380,7 +380,7 @@ class ICIOReader:
     def get_intermediate_inputs_matrix(self, country_name: str) -> pd.DataFrame:
         total_output = self.get_monthly_total_output(country_name)
         total_monthly_intermediate_inputs = self.get_monthly_intermediate_inputs_use(country_name)
-        return total_output[None, :] / total_monthly_intermediate_inputs
+        return total_output[None, :] / total_monthly_intermediate_inputs  # noqa
 
     def get_capital_inputs_matrix(
         self,

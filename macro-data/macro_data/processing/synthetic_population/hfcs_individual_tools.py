@@ -3,13 +3,14 @@ import logging
 import numpy as np
 import pandas as pd
 
+from macro_data.configuration.countries import Country
 from macro_data.readers.default_readers import DataReaders
 from macro_data.util.clean_data import remove_outliers
 from macro_data.util.imputation import apply_iterative_imputer
 
 
 def process_individual_data(
-    country_name: str,
+    country_name: Country,
     individual_data: pd.DataFrame,
     industries: list[str],
     readers: DataReaders,
@@ -21,7 +22,7 @@ def process_individual_data(
     Process individual data by performing various data cleaning and transformation steps.
 
     Args:
-        country_name (str): The name of the country.
+        country_name (Country): The name of the country.
         individual_data (pd.DataFrame): The individual data to be processed.
         industries (list[str]): The list of industries.
         readers (DataReaders): The data readers object.
