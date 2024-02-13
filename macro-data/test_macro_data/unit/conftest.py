@@ -79,7 +79,7 @@ def readers(data_path):
 @pytest.fixture(scope="module", name="industry_data")
 def industry_data(readers):
     return compile_industry_data(
-        year=2014, readers=readers, country_names=["FRA"], single_firm_per_industry={"FRA": True}
+        year=2014, readers=readers, country_names=[Country("FRA")], single_firm_per_industry={"FRA": True}
     )
 
 
@@ -92,6 +92,6 @@ def exogenous_industry_data(readers):
 
 @pytest.fixture(scope="module", name="all_exogenous_data")
 def all_exogenous_data(readers):
-    country_names = ["FRA"]
+    country_names = [Country("FRA")]
     all_exogenous_data = create_all_exogenous_data(readers, country_names)
     return all_exogenous_data
