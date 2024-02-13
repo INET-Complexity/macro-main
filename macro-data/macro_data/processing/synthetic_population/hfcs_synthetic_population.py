@@ -139,6 +139,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         total_unemployment_benefits: float,
         rent_as_fraction_of_unemployment_rate: float = 0.25,
         n_quantiles: int = 5,
+        population_ratio: float = 1.0,
     ) -> "SyntheticHFCSPopulation":
         """
         Creates a synthetic population from data readers.
@@ -155,12 +156,14 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             total_unemployment_benefits (float): The total unemployment benefits.
             rent_as_fraction_of_unemployment_rate (float): The rent as a fraction of the unemployment rate.
             n_quantiles (int, optional): The number of quantiles. Defaults to 5.
+            population_ratio (float, optional): The population ratio. Defaults to 1.0. This is used in case
+                                                 the HFCS population is used as a proxy for another country.
 
         Returns:
             cls: The synthetic population object.
         """
 
-        n_households = int(readers.eurostat.number_of_households(country_name, year) / scale)
+        n_households = int(readers.eurostat.number_of_households(country_name, year) * population_ratio / scale)
         hfcs_individuals_data = readers.hfcs[country_name].individuals_df
         hfcs_households_data = readers.hfcs[country_name].households_df
 

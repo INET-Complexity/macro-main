@@ -143,7 +143,23 @@ class DataWrapper:
                 goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
             )
             for country in country_names
+            if country.is_eu_country
         }
+
+        for country in country_names:
+            if not country.is_eu_country:
+                synthetic_countries[country] = SyntheticCountry.proxied_synthetic_country(
+                    country=country,
+                    proxy_country=configuration.country_configs[country].eu_proxy_country,
+                    year=year,
+                    country_configuration=configuration.country_configs[country],
+                    industries=industries,
+                    readers=readers,
+                    exogenous_country_data=exogenous_data[country],
+                    country_industry_data=industry_data[country],
+                    year_range=year_range,
+                    goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
+                )
 
         synthetic_row = DefaultSyntheticRestOfTheWorld.from_readers(
             readers=readers,

@@ -215,6 +215,141 @@ class SyntheticCountry:
         )
 
     @classmethod
+    def proxied_synthetic_country(
+        cls,
+        country: Country,
+        proxy_country: Country,
+        year: int,
+        country_configuration: CountryDataConfiguration,
+        industries: list[str],
+        readers: DataReaders,
+        exogenous_country_data: dict[str, pd.DataFrame],
+        country_industry_data: dict[str, pd.DataFrame],
+        year_range: int,
+        goods_criticality_matrix: pd.DataFrame,
+    ) -> "SyntheticCountry":
+        """
+        Create a synthetic country object for a country using a European Union country as a proxy for population.
+
+        Args:
+            country: The country for which the synthetic country object is created.
+            proxy_country: The proxy country to use for the synthetic country object.
+            year: The year for which the synthetic country object is created.
+            country_configuration: The configuration settings for the country.
+            industries: The list of industries in the country.
+            readers: The data readers used to read data for the synthetic country object.
+            exogenous_country_data: The exogenous data for the country.
+            country_industry_data: The industry data for the country.
+            year_range: The range of years for which data is considered (determines the amount of data used to decide benefits setting).
+            goods_criticality_matrix: The goods criticality matrix.
+
+        Returns:
+            The synthetic country object.
+        """
+        central_government = DefaultSyntheticCGovernment.from_readers(readers, country, year, year_range=year_range)
+
+        total_unemployment_benefits = central_government.central_gov_data["Total Unemployment Benefits"].values[0]
+
+        government_entities = DefaultSyntheticGovernmentEntities.from_readers(
+            readers=readers,
+            country_name=country,
+            year=year,
+            exogenous_country_data=exogenous_country_data,
+            industry_data=country_industry_data,
+            single_government_entity=country_configuration.single_government_entity,
+        )
+
+        central_bank = DefaultSyntheticCentralBank.from_readers(country, year, readers)
+
+        population_ratio = readers.world_bank.get_population(
+            country=country, year=year
+        ) / readers.world_bank.get_population(country=proxy_country, year=year)
+
+        population: SyntheticHFCSPopulation = SyntheticHFCSPopulation.from_readers(
+            readers=readers,
+            country_name=proxy_country,
+            year=year,
+            industry_data=country_industry_data,
+            industries=industries,
+            scale=country_configuration.scale,
+            total_unemployment_benefits=total_unemployment_benefits,
+            country_name_short=proxy_country.to_two_letter_code(),
+            population_ratio=population_ratio,
+        )
+
+        firms = DefaultSyntheticFirms.from_readers(
+            readers=readers,
+            country_name=country,
+            year=year,
+            industry_data=country_industry_data,
+            industries=industries,
+            scale=country_configuration.scale,
+            n_employees_per_industry=population.number_employees_by_industry,
+            firm_configuration=country_configuration.firms_configuration,
+        )
+
+        banks = DefaultSyntheticBanks.from_readers(
+            readers=readers,
+            country_name=country,
+            year=year,
+            scale=country_configuration.scale,
+            single_bank=country_configuration.single_bank,
+        )
+
+        exogenous_data = ExogenousCountryData(**exogenous_country_data)
+
+        tax_data = TaxData.from_readers(readers, country, year)
+
+        total_imputed_rent = readers.icio[year].imputed_rents[country]
+
+        dividend_payout_ratio = readers.eurostat.dividend_payout_ratio(country=country, year=year)
+        long_term_interest_rate = readers.oecd_econ.read_long_term_interest_rates(country=country, year=year)
+        policy_rate_markup = readers.eurostat.firm_risk_premium(country=country, year=year)
+
+        weights_by_income = readers.oecd_econ.get_household_consumption_by_income_quantile(country=country, year=year)
+
+        (
+            credit_market,
+            housing_market,
+        ) = cls.post_agents_init(
+            banks=banks,
+            central_government=central_government,
+            country=country,
+            country_configuration=country_configuration,
+            country_industry_data=country_industry_data,
+            firms=firms,
+            industries=industries,
+            population=population,
+            tax_data=tax_data,
+            total_rent=total_imputed_rent,
+            central_bank=central_bank,
+            weights_by_income=weights_by_income,
+        )
+
+        return cls(
+            population=population,
+            firms=firms,
+            credit_market=credit_market,
+            banks=banks,
+            central_bank=central_bank,
+            central_government=central_government,
+            government_entities=government_entities,
+            housing_market=housing_market,
+            dividend_payout_ratio=dividend_payout_ratio,
+            long_term_interest_rate=long_term_interest_rate,
+            policy_rate_markup=policy_rate_markup,
+            industry_data=country_industry_data,
+            goods_criticality_matrix=goods_criticality_matrix,
+            tax_data=tax_data,
+            exogenous_data=exogenous_data,
+            scale=country_configuration.scale,
+            country_name=country,
+            country_configuration=country_configuration,
+            industries=industries,
+            consumption_weights_by_income=weights_by_income,
+        )
+
+    @classmethod
     def post_agents_init(
         cls,
         banks: SyntheticBanks,
