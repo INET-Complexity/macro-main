@@ -128,7 +128,7 @@ class OECDEconData:
         # Load data
 
         # TODO: OECD data doesn't have US data for this, so we use Canada as a proxy
-        if country == "USA":
+        if country in {"USA", "MEX"}:
             country = Country("CAN")
 
         df = self.data["business_demography"]
@@ -313,16 +313,22 @@ class OECDEconData:
 
     def unemployment_benefits_gdp_pct(self, country: Country, year: int) -> float:
         df = self.data["total_unemployment_benefits_perc_gdp"]
-        value = df.loc[(df["LOCATION"] == country) & (df["TIME"] == year), "Value"].iloc[0]
-        return value / 100.0
+        if country in df["LOCATION"].values:
+            value = df.loc[(df["LOCATION"] == country) & (df["TIME"] == year), "Value"].iloc[0]
+            return value / 100.0
+        else:
+            return df.loc[df["TIME"] == year, "Value"].mean() / 100.0
 
     def all_benefits_gdp_pct(self, country: Country, year: int) -> float:
         all_benefits = self.data["total_social_benefits_perc_gdp"]
-        value = all_benefits.loc[
-            (all_benefits["COUNTRY"] == country) & (all_benefits["YEAR"] == year),
-            "Value",
-        ].iloc[0]
-        return value / 100.0
+        if country in all_benefits["COUNTRY"].values:
+            value = all_benefits.loc[
+                (all_benefits["COUNTRY"] == country) & (all_benefits["YEAR"] == year),
+                "Value",
+            ].iloc[0]
+            return value / 100.0
+        else:
+            return all_benefits.loc[all_benefits["YEAR"] == year, "Value"].mean() / 100.0
 
     # current domestic
     def general_gov_debt(self, country: Country, year: int) -> float:

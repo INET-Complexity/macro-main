@@ -57,6 +57,7 @@ class Country(StrEnum):
     UNITED_STATES = "USA"
     CANADA = "CAN"
     JAPAN = "JPN"
+    MEXICO = "MEX"
 
     REST_OF_WORLD = "ROW"
 
