@@ -668,3 +668,6 @@ class Households(Agent):
     def save_consumption_weights(self, group: h5py.Group):
         group.create_dataset("household_consumption_weights_by_income", data=self.consumption_weights.T)
         group["household_consumption_weights_by_income"].attrs["columns"] = list(range(self.n_industries))
+
+    def total_consumption(self) -> np.ndarray:
+        return self.ts.get_aggregate("total_consumption")

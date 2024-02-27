@@ -638,3 +638,27 @@ class Firms(Agent):
 
         group.create_dataset("industry_firms", data=industry_firms_df.values, dtype="int32")
         group["industry_firms"].attrs["columns"] = industry_firms_df.columns.to_list()
+
+    def total_sales(self):
+        return self.ts.get_aggregate("total_sales")
+
+    def total_input_costs(self):
+        return self.ts.get_aggregate("used_intermediate_inputs_costs")
+
+    def total_operating_surplus(self):
+        return self.ts.get_aggregate("gross_operating_surplus_mixed_income")
+
+    def total_wages(self):
+        return self.ts.get_aggregate("total_wage")
+
+    def total_inventory_change(self):
+        return self.ts.get_aggregate("total_inventory_change")
+
+    def total_capital_bought(self):
+        return self.ts.get_aggregate("total_capital_inputs_bought_costs")
+
+    def total_production(self):
+        return self.ts.get_aggregate("production")
+
+    def total_profits(self):
+        return self.ts.get_aggregate("profits")

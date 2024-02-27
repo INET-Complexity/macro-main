@@ -19,6 +19,9 @@ def test_simulation(datawrapper):
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         simulation.save(save_dir=tmp, file_name="simulation.pkl")
+        simulation.shallow_hdf_save(save_dir=tmp, file_name="simulation.h5")
+        dicts = simulation.shallow_df_dict()
+        assert "FRA" in dicts
 
     assert True
 

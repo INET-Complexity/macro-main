@@ -177,7 +177,9 @@ class Simulation:
         conf_string = self.configuration.model_dump()
         h5_file.attrs["configuration"] = str(conf_string)
 
-    def save(self, save_dir: Path, file_name: str):
+    def save(self, save_dir: Path | str, file_name: str):
+        if isinstance(save_dir, str):
+            save_dir = Path(save_dir)
         with h5py.File(save_dir / file_name, "w") as f:
             self.save_random_seed(f)
             self.save_configuration(f)
@@ -186,6 +188,17 @@ class Simulation:
             self.goods_market.save_to_h5(f)
             for country in self.countries.values():
                 country.save_to_h5(f)
+
+    def shallow_df_dict(self):
+        df_dict = {country: self.countries[country].shallow_output() for country in self.countries}
+        return df_dict
+
+    def shallow_hdf_save(self, save_dir: Path | str, file_name: str):
+        if isinstance(save_dir, str):
+            save_dir = Path(save_dir)
+        for country in self.countries.values():
+            df = country.shallow_output()
+            df.to_hdf(save_dir / file_name, key=str(country), mode="a")
 
 
 def check_compatibility(

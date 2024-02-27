@@ -107,3 +107,6 @@ class GovernmentEntities(Agent):
 
     def save_to_h5(self, group: h5py.Group):
         self.ts.write_to_h5("government_entities", group)
+
+    def total_consumption(self):
+        return self.ts.get_aggregate("total_consumption")
