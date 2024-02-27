@@ -234,3 +234,6 @@ class CentralGovernment(Agent):
 
     def save_to_h5(self, group: h5py.Group):
         self.ts.write_to_h5("central_government", group)
+
+    def total_taxes(self):
+        return self.ts.get_aggregate("taxes_on_products")

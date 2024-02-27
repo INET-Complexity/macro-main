@@ -1,6 +1,7 @@
 import h5py
 import logging
 import numpy as np
+import pandas as pd
 from macro_data import SyntheticCountry
 
 from macromodel.agents.agent import Agent
@@ -885,3 +886,24 @@ class Country:
         self.housing_market.save_to_h5(group)
 
         self.exogenous.save_to_h5(group)
+
+    def shallow_output(self) -> pd.DataFrame:
+        data_dict = {
+            "Sales": self.firms.total_sales(),
+            "Production": self.firms.total_production(),
+            "Input Costs": self.firms.total_input_costs(),
+            "Operating Surplus": self.firms.total_operating_surplus(),
+            "Wages": self.firms.total_wages(),
+            "Inventory Changes": self.firms.total_inventory_change(),
+            "Profits": self.firms.total_profits(),
+            "Capital Bought": self.firms.total_capital_bought(),
+            "Household Consumption": self.households.total_consumption(),
+            "Government Consumption": self.government_entities.total_consumption(),
+            "Taxes on Products": self.central_government.total_taxes(),
+            "Imports": self.economy.total_imports(),
+            "Exports": self.economy.total_exports(),
+            "PPI": self.economy.total_ppi_inflation(),
+            "CPI": self.economy.total_cpi_inflation(),
+            "CFPI": self.economy.total_cfpi_inflation(),
+        }
+        return pd.DataFrame(data_dict)

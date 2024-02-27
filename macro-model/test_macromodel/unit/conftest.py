@@ -409,6 +409,6 @@ def test_country(
 
 
 @pytest.fixture(scope="module", name="datawrapper")
-def read_data():
+def read_data() -> DataWrapper:
     pickle_path = Path(__file__).parent.parent / "pickled_data" / "agents.pkl"
     return DataWrapper.init_from_pickle(pickle_path)

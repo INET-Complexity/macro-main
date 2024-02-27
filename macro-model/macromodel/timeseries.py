@@ -89,3 +89,6 @@ class TimeSeries:
             keys=range(ts_data.shape[1]),
             names=["Agent ID", "Industry"],
         )
+
+    def get_aggregate(self, name: str):
+        return np.array(self.historic(name)).sum(axis=1)

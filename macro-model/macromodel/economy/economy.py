@@ -459,3 +459,18 @@ class Economy:
 
     def save_to_h5(self, group: h5py.Group):
         self.ts.write_to_h5("economy", group)
+
+    def total_imports(self):
+        return self.ts.get_aggregate("imports")
+
+    def total_exports(self):
+        return self.ts.get_aggregate("exports")
+
+    def total_cpi_inflation(self):
+        return self.ts.get_aggregate("cpi")
+
+    def total_ppi_inflation(self):
+        return self.ts.get_aggregate("ppi")
+
+    def total_cfpi_inflation(self):
+        return self.ts.get_aggregate("cfpi")
