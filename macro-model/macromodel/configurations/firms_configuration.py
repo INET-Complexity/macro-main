@@ -194,3 +194,13 @@ class FirmsConfiguration(BaseModel):
     parameters: FirmsParameters = FirmsParameters()
     functions: FirmsFunctions = FirmsFunctions()
     calculate_hill_exponent: bool = True
+
+    @property
+    def reset_params(self):
+        inventory_frac = self.functions.target_production.parameters["existing_inventory_fraction"]
+        values = {
+            "capital_inputs_utilisation_rate": self.parameters.capital_inputs_utilisation_rate,
+            "intermediate_inputs_utilisation_rate": self.parameters.intermediate_inputs_utilisation_rate,
+            "initial_inventory_to_input_fraction": inventory_frac,
+        }
+        return values

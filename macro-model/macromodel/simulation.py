@@ -5,7 +5,9 @@ from dataclasses import dataclass
 from macro_data import DataWrapper
 from pathlib import Path
 
-from macromodel.configurations import SimulationConfiguration
+from macro_data.configuration import CountryDataConfiguration
+
+from macromodel.configurations import SimulationConfiguration, CountryConfiguration
 from macromodel.country import Country
 from macromodel.exchange_rates import ExchangeRates
 from macromodel.goods_market import GoodsMarket
@@ -28,6 +30,19 @@ class Simulation:
         datawrapper: DataWrapper,
         simulation_configuration: SimulationConfiguration,
     ):
+        data_configuration = datawrapper.configuration
+        for country, country_sim_conf in simulation_configuration.country_configurations.items():
+            if country not in data_configuration.country_configs:
+                raise ValueError(
+                    f"Country {country} not found in the data configuration. " "Please use a valid data configuration."
+                )
+            if not check_compatibility(data_configuration.country_configs[country], country_sim_conf):  # type: ignore
+                datawrapper.synthetic_countries[country].reset_firm_function_dependent(
+                    **country_sim_conf.firms_configuration.reset_params,
+                    zero_initial_debt=False,
+                    zero_initial_deposits=False,
+                )
+
         countries_without_row = list(set(datawrapper.all_country_names) - {"ROW"})
         countries_with_row = datawrapper.all_country_names
 
@@ -171,3 +186,31 @@ class Simulation:
             self.goods_market.save_to_h5(f)
             for country in self.countries.values():
                 country.save_to_h5(f)
+
+
+def check_compatibility(
+    country_data_configuration: CountryDataConfiguration, country_sim_configuration: CountryConfiguration
+) -> bool:
+    """
+    Check the compatibility of the datawrapper and the simulation configuration for a given country.
+
+    Args:
+        country_data_configuration (CountryDataConfiguration): The data configuration.
+        country_sim_configuration (SimulationConfiguration): The simulation configuration.
+
+    Returns:
+        bool: True if the datawrapper and the simulation configuration are compatible, False otherwise.
+    """
+    firm_data_conf = country_data_configuration.firms_configuration
+
+    firm_sim_reset_params = country_sim_configuration.firms.reset_params
+
+    test_cases = [
+        firm_data_conf.initial_inventory_to_input_fraction
+        == firm_sim_reset_params["initial_inventory_to_input_fraction"],
+        firm_data_conf.capital_inputs_utilisation_rate == firm_sim_reset_params["capital_inputs_utilisation_rate"],
+        firm_data_conf.intermediate_inputs_utilisation_rate
+        == firm_sim_reset_params["intermediate_inputs_utilisation_rate"],
+    ]
+
+    return all(test_cases)
