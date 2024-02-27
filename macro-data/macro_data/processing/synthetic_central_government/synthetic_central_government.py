@@ -8,7 +8,6 @@ from macro_data.processing.country_data import TaxData
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 from macro_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
 from macro_data.processing.synthetic_population.synthetic_population import SyntheticPopulation
-from macro_data.readers.default_readers import DataReaders
 
 
 class SyntheticCentralGovernment(ABC):

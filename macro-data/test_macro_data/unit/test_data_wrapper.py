@@ -5,6 +5,7 @@ from pathlib import Path
 import tempfile
 
 from macro_data.configuration import DataConfiguration
+from macro_data.configuration.countries import Country
 
 TEST_PATH = Path(__file__).parent.parent.resolve()
 
@@ -42,3 +43,38 @@ class TestCreator:
         )
 
         assert True
+
+    def test__create_us_can(self, data_config_path):
+        with open(data_config_path, "r") as f:
+            config_dict = yaml.safe_load(f)
+        # not necessary to do the country splitting here
+        # since the fixture used only has one country key
+        configuration = DataConfiguration(**config_dict)
+
+        united_states = Country("USA")
+        canada = Country("CAN")
+        france = Country("FRA")
+
+        configuration.country_configs[france].single_firm_per_industry = True
+        configuration.country_configs[france].single_bank = True
+        configuration.country_configs[france].single_government_entity = True
+
+        # we add the US and Canada to the configuration
+        # by setting their configurations to be the same as France
+        # and by setting their EU proxy country to be France
+
+        configuration.country_configs[united_states] = configuration.country_configs[france]
+
+        configuration.country_configs[canada] = configuration.country_configs[france]
+
+        configuration.country_configs[united_states].eu_proxy_country = france
+        configuration.country_configs[canada].eu_proxy_country = france
+
+        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
+        creator = DataWrapper.from_config(
+            configuration=configuration,
+            raw_data_path=raw_data_path,
+            single_hfcs_survey=True,
+        )
+
+        assert creator.synthetic_countries.keys() == {"FRA", "USA", "CAN"}

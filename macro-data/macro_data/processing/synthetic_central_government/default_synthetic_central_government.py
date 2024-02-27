@@ -3,6 +3,7 @@ from typing import Optional
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
+from macro_data.configuration.countries import Country
 from macro_data.processing.synthetic_central_government.synthetic_central_government import (
     SyntheticCentralGovernment,
 )
@@ -41,7 +42,7 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
     def from_readers(
         cls,
         readers: DataReaders,
-        country_name: str,
+        country_name: Country,
         year: int,
         year_range: int = 10,
         regression_window: int = 48,
@@ -88,7 +89,7 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
                     * benefits_inflation_data["Unemployment Benefits"].iloc[-1]
                 )
             else:
-                current_unemployment_benefits = readers.get_total_unemployment_benefits(country_name, year)
+                current_unemployment_benefits = readers.get_total_unemployment_benefits_lcu(country_name, year)
 
             if other_benefits_model:
                 current_other_benefits = (
@@ -96,15 +97,20 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
                     * benefits_inflation_data["Other Total Benefits"].iloc[-1]
                 )
             else:
-                current_other_benefits = readers.get_total_benefits(country_name, year) - current_unemployment_benefits
+                current_other_benefits = (
+                    readers.get_total_benefits_lcu(country_name, year) - current_unemployment_benefits
+                )
         else:
             # if exogenous data is not available, set the benefits models to None
             unemployment_benefits_model = None
             other_benefits_model = None
-            current_unemployment_benefits = readers.get_total_unemployment_benefits(country_name, year)
-            current_other_benefits = readers.get_total_benefits(country_name, year) - current_unemployment_benefits
+            current_unemployment_benefits = readers.get_total_unemployment_benefits_lcu(country_name, year)
+            current_other_benefits = readers.get_total_benefits_lcu(country_name, year) - current_unemployment_benefits
 
-        debt = readers.oecd_econ.general_gov_debt(country_name, year)
+        # TODO: debt in USD or in local currency?
+        # debt = readers.oecd_econ.general_gov_debt(country_name, year)
+
+        debt = readers.oecd_econ.get_govt_debt_usd_ppp(country_name, year)
 
         central_gov_data = pd.DataFrame(
             data={

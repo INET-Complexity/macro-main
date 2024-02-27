@@ -11,8 +11,6 @@ class DataFilterWarning(Warning):
 def prune_index(
     index: pd.Index,
     prune_date: date,
-    dataset_name: Optional[str] = None,
-    date_format: str = "%Y-%m-%d",
 ) -> list[str]:
     """
     Filters columns/index so datetime values are greater than or equal to the prune_date.

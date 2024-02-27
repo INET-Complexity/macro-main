@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+from macro_data.configuration.countries import Country
 from macro_data.readers.default_readers import DataReaders
 from macro_data.readers.economic_data.exchange_rates import WorldBankRatesReader
 from macro_data.readers.economic_data.oecd_economic_data import OECDEconData
@@ -11,7 +12,7 @@ from macro_data.readers.socioeconomic_data.wiod_sea_data import WIODSEAReader
 def compile_industry_data(
     year: int,
     readers: DataReaders,
-    country_names: list[str],
+    country_names: list[Country],
     single_firm_per_industry: dict[str, bool],
 ) -> dict[str, dict[str, pd.DataFrame]]:
     industry_data = {}
@@ -74,7 +75,7 @@ def compile_industry_data(
 
 
 def get_industry_vectors(
-    country_name: str,
+    country_name: Country,
     current_icio_reader: ICIOReader,
     exchange_rate: float,
     sea_reader: WIODSEAReader,

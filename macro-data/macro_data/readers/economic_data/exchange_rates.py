@@ -66,8 +66,7 @@ class WorldBankRatesReader:
 
         Args:
             prune_date (datetime): The date to prune the data.
-            prune_date_format (str): The format of the prune_date string (default: "%Y-%m-%d").
         """
         # WB exchange rates
-        mask = prune_index(self.df.columns, prune_date, "WB exchange rates")
+        mask = prune_index(self.df.columns, prune_date)
         self.df = self.df.loc[:, mask]

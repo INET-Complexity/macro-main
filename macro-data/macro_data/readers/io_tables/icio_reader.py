@@ -117,16 +117,24 @@ class ICIOReader:
         agg_df = cls.aggregate_io(considered_countries, df, aggregation)
 
         # Isolate-out imputed rents
+
+        avg_imputed_rent_fraction = sum(imputed_rent_fraction.values()) / len(imputed_rent_fraction)
+
         imputed_rents = {}
-        for country_name in imputed_rent_fraction.keys():
-            imputed_rents[country_name] = (
-                (
-                    imputed_rent_fraction[country_name]
-                    * agg_df.at[(country_name, "L"), (country_name, "Household Consumption")]
+        for country_name in considered_countries:
+            if country_name in imputed_rent_fraction.keys():
+                imputed_rents[country_name] = (
+                    (
+                        imputed_rent_fraction[country_name]
+                        * agg_df.at[(country_name, "L"), (country_name, "Household Consumption")]
+                    )
+                    / 12.0
+                    * exchange_rates.from_usd_to_lcu(country_name, year)
                 )
-                / 12.0
-                * exchange_rates.from_usd_to_lcu(country_name, year)
-            )
+            else:
+                imputed_rents[country_name] = (
+                    avg_imputed_rent_fraction * agg_df.at[(country_name, "L"), (country_name, "Household Consumption")]
+                )
             agg_df.at[(country_name, "L"), (country_name, "Household Consumption")] -= imputed_rents[country_name]
 
         return cls(
@@ -380,7 +388,7 @@ class ICIOReader:
     def get_intermediate_inputs_matrix(self, country_name: str) -> pd.DataFrame:
         total_output = self.get_monthly_total_output(country_name)
         total_monthly_intermediate_inputs = self.get_monthly_intermediate_inputs_use(country_name)
-        return total_output[None, :] / total_monthly_intermediate_inputs
+        return total_output[None, :] / total_monthly_intermediate_inputs  # noqa
 
     def get_capital_inputs_matrix(
         self,

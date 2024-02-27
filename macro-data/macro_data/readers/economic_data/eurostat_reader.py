@@ -6,6 +6,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+from macro_data.configuration.countries import Country
 from macro_data.readers.util.prune_util import DataFilterWarning, prune_index
 
 
@@ -125,7 +126,7 @@ class EuroStatReader:
         """
         return [self.c_map.loc[self.c_map["Alpha-2 code"] == c, "Alpha-3 code"].values[0] for c in codes]
 
-    def find_value(self, df, country: str, year: str) -> float:
+    def find_value(self, df: pd.DataFrame, country: Country, year: str) -> float:
         """
         Find the value in the given DataFrame for the specified country and year.
 
@@ -140,15 +141,19 @@ class EuroStatReader:
         Raises:
             ValueError: If multiple data points are found for the given country and year.
         """
-        res = df.loc[(df["geo"] == country) & (df["TIME_PERIOD"] == int(year)), "OBS_VALUE"].values
-        if len(res) == 0:
-            return self.find_value(df, country, str(int(year) + 1))
-        elif len(res) == 1:
-            return res[0]
-        else:
-            raise ValueError("Multiple inet_data points found in", df, country, year)
 
-    def nonfin_firm_debt_ratios(self, country: str, year: int) -> float:
+        country_data = df.loc[df["geo"] == country]
+
+        if country_data.empty:
+            return df.loc[df["TIME_PERIOD"] == int(year), "OBS_VALUE"].mean()
+        if int(year) in country_data["TIME_PERIOD"].values:
+            return country_data.loc[country_data["TIME_PERIOD"] == int(year), "OBS_VALUE"].values[0]
+        else:
+            values = country_data["OBS_VALUE"].values
+            # return last value
+            return values[-1]
+
+    def nonfin_firm_debt_ratios(self, country: Country, year: int) -> float:
         """
         Calculate the non-financial firm debt ratio for a specific country and year.
 
@@ -164,7 +169,7 @@ class EuroStatReader:
         return self.find_value(df, country, str(year)) / 100.0
 
     # historic domestic
-    def get_total_nonfin_firm_debt(self, country: str, year: int) -> float:
+    def get_total_nonfin_firm_debt(self, country: Country, year: int) -> float:
         df = self.data["financial_balance_sheets"]
         country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[
@@ -181,7 +186,7 @@ class EuroStatReader:
         else:
             return np.nan
 
-    def get_total_fin_firm_debt(self, country: str, year: int) -> float:
+    def get_total_fin_firm_debt(self, country: Country, year: int) -> float:
         df = self.data["financial_balance_sheets"]
         country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[
@@ -189,11 +194,11 @@ class EuroStatReader:
         ]
         return float(df[str(year)].values[0]) * 1e6
 
-    def nonfin_firm_deposit_ratios(self, country: str, year: int) -> float:
+    def nonfin_firm_deposit_ratios(self, country: Country, year: int) -> float:
         df = self.data["firm_deposits_ratio"]
         return self.find_value(df, country, str(year)) / 100.0
 
-    def get_quarterly_gdp(self, country: str, year: int, quarter: int) -> float:
+    def get_quarterly_gdp(self, country: Country, year: int, quarter: int) -> float:
         df = self.data["gdp"]
         return (
             df.loc[
@@ -203,7 +208,7 @@ class EuroStatReader:
             * 1e6
         )
 
-    def get_monthly_gdp(self, country: str, year: int, month: int) -> float:
+    def get_monthly_gdp(self, country: Country, year: int, month: int) -> float:
         start_quarter = (month - 1) // 3 + 1
         start = self.get_quarterly_gdp(country, year, start_quarter)
 
@@ -215,7 +220,7 @@ class EuroStatReader:
         return start + (end - start) * ((month - 1) % 3) / 3
 
     # historic domestic
-    def get_total_nonfin_firm_deposits(self, country: str, year: int) -> float:
+    def get_total_nonfin_firm_deposits(self, country: Country, year: int) -> float:
         df = self.data["financial_balance_sheets"]
         country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S11,ASS,F2," + country_name_short]
@@ -231,7 +236,7 @@ class EuroStatReader:
             return np.nan
 
     # historic domestic
-    def get_total_bank_equity(self, country: str, year: int) -> float:
+    def get_total_bank_equity(self, country: Country, year: int) -> float:
         df = self.data["financial_balance_sheets"]
         country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[
@@ -239,23 +244,23 @@ class EuroStatReader:
         ]
         return float(df[str(year)].values[0]) * 1e6
 
-    def cb_debt_ratios(self, country: str, year: int) -> float:
+    def cb_debt_ratios(self, country: Country, year: int) -> float:
         df = self.data["central_bank_debt_ratio"]
         return self.find_value(df, country, str(year)) / 100.0
 
-    def cb_equity_ratios(self, country: str, year: int) -> float:
+    def cb_equity_ratios(self, country: Country, year: int) -> float:
         df = self.data["central_bank_equity_ratio"]
         return self.find_value(df, country, str(year)) / 100.0
 
-    def general_gov_debt_ratios(self, country: str, year: int) -> float:
+    def general_gov_debt_ratios(self, country: Country, year: int) -> float:
         df = self.data["general_gov_debt_ratio"]
         return self.find_value(df, country, str(year)) / 100
 
-    def central_gov_debt_ratios(self, country: str, year: int) -> float:
+    def central_gov_debt_ratios(self, country: Country, year: int) -> float:
         df = self.data["central_gov_debt_ratio"]
         return self.find_value(df, country, str(year)) / 100
 
-    def shortterm_interest_rates(self, country: str, year: int, months: int) -> float:
+    def shortterm_interest_rates(self, country: Country | str, year: int, months: int) -> float:
         assert months in [0, 1, 3, 6, 12]
         df = self.data["shortterm_interest_rates"]
 
@@ -272,14 +277,14 @@ class EuroStatReader:
             / 100
         )
 
-    def longterm_central_gov_bond_rates(self, country: str, year: int) -> float:
+    def longterm_central_gov_bond_rates(self, country: Country, year: int) -> float:
         df = self.data["longterm_central_gov_bond_rates"]
         return self.find_value(df, country, str(year)) / 100
 
     # in domestic
     # numerator only available in current prices
     # denominator only available in historic prices
-    def dividend_payout_ratio(self, country: str, year: int) -> float:
+    def dividend_payout_ratio(self, country: Country, year: int) -> float:
         """
         Calculate the dividend payout ratio for a given country and year.
 
@@ -305,7 +310,7 @@ class EuroStatReader:
 
         return (hh_prop + hh_surplus) / firm_surplus
 
-    def firm_risk_premium(self, country: str, year: int) -> float:
+    def firm_risk_premium(self, country: Country, year: int) -> float:
         """
         Calculate the firm risk premium for a given country and year.
 
@@ -337,11 +342,11 @@ class EuroStatReader:
 
         return (1 + annual_premium) ** (1.0 / 12) - 1.0
 
-    def number_of_households(self, country: str, year: int) -> float:
+    def number_of_households(self, country: Country, year: int) -> float:
         df = self.data["number_of_households"].set_index("geo")
         return int(df.loc[country, str(year)] * 1000)
 
-    def taxrate_on_capital_formation(self, country: str, year: int) -> float:
+    def taxrate_on_capital_formation(self, country: Country, year: int) -> float:
         capform_df = self.data["capital_formation"]
 
         df = self.data["iot_tables"]
@@ -352,7 +357,7 @@ class EuroStatReader:
 
         return taxes / capform
 
-    def get_perc_sectoral_growth(self, country: str) -> pd.DataFrame:
+    def get_perc_sectoral_growth(self, country: Country) -> pd.DataFrame:
         """
         Retrieves the percentage sectoral growth data for a specific country.
 
@@ -401,26 +406,34 @@ class EuroStatReader:
 
         return growth_df
 
-    def get_total_industry_debt_and_deposits(self, country_name: str) -> pd.DataFrame:
-        dates, total_deposits, total_debt = [], [], []
-        for year in range(1970, 2024):
-            dep = self.get_total_nonfin_firm_deposits(country_name, year)
-            debt = self.get_total_nonfin_firm_debt(country_name, year)
-            for month in range(1, 13):
-                dates.append(str(year) + "-" + str(month))
-                total_deposits.append(dep)
-                total_debt.append(debt)
+    def get_total_industry_debt_and_deposits(
+        self, country: Country, proxy_country: Optional[Country] = None
+    ) -> pd.DataFrame:
+        try:
+            dates, total_deposits, total_debt = [], [], []
+            for year in range(1970, 2024):
+                dep = self.get_total_nonfin_firm_deposits(country, year)
+                debt = self.get_total_nonfin_firm_debt(country, year)
+                for month in range(1, 13):
+                    dates.append(str(year) + "-" + str(month))
+                    total_deposits.append(dep)
+                    total_debt.append(debt)
 
-        dates = pd.to_datetime(dates, format="%Y-%m")
-        return pd.DataFrame(
-            index=dates,
-            data={
-                "Total Deposits": total_deposits,
-                "Total Debt": total_debt,
-            },
-        )
+            dates = pd.to_datetime(dates, format="%Y-%m")
+            return pd.DataFrame(
+                index=dates,
+                data={
+                    "Total Deposits": total_deposits,
+                    "Total Debt": total_debt,
+                },
+            )
+        except IndexError:
+            if proxy_country is not None:
+                return self.get_total_industry_debt_and_deposits(proxy_country)
+            else:
+                raise ValueError("No data available for the given country. Please provide a proxy country.")
 
-    def get_imputed_rent_fraction_of_country(self, country: str, year: int) -> float:
+    def get_imputed_rent_fraction_of_country(self, country: Country, year: int) -> float:
         df = self.data["real_estate_services"].set_index("freq,unit,stk_flow,induse,prod_na,geo\TIME_PERIOD")
         country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         return float(df.at["A,MIO_NAC,TOTAL,P3_S14,CPA_L68A," + country_name_short, str(year)]) / (
@@ -430,11 +443,11 @@ class EuroStatReader:
 
     def get_imputed_rent_fraction(
         self,
-        country_names: list[str],
+        country_names: list[Country],
         year: int,
     ) -> dict[str, float]:
         fractions = {c: self.get_imputed_rent_fraction_of_country(c, year) for c in country_names}
-        fractions["ROW"] = np.mean(list(fractions.values()))  # c'est la vie
+        fractions[Country("ROW")] = np.mean(list(fractions.values()))
         return fractions
 
     def prune(self, prune_date: date):
@@ -450,19 +463,19 @@ class EuroStatReader:
                     )
                 self.data[key] = value.loc[mask, :]
             else:
-                mask = prune_index(value.columns, prune_date, f"Eurostat {key}")
+                mask = prune_index(value.columns, prune_date)
                 self.data[key] = value.loc[:, mask]
         return self
 
 
-def convert_date(date: str | int):
-    if isinstance(date, int):
-        return pd.to_datetime(date, format="%Y")
+def convert_date(date_value: str | int):
+    if isinstance(date_value, int):
+        return pd.to_datetime(date_value, format="%Y")
     # Check if the date is in quarterly format like '2012-Q1'
-    if "Q" in date:
-        year, quarter = date.split("-Q")
+    if "Q" in date_value:
+        year, quarter = date_value.split("-Q")
         month = (int(quarter) - 1) * 3 + 1  # Convert quarter to month
         return pd.to_datetime(f"{year}-{month:02d}-01")  # Format: YYYY-MM-DD
     else:
         # For other formats, directly use to_datetime
-        return pd.to_datetime(date, errors="coerce", yearfirst=True)
+        return pd.to_datetime(date_value, errors="coerce", yearfirst=True)

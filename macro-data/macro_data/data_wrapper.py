@@ -12,7 +12,6 @@ from macro_data.processing.synthetic_rest_of_the_world.default_synthetic_rest_of
 )
 from macro_data.processing.synthetic_rest_of_the_world.synthetic_rest_of_the_world import SyntheticRestOfTheWorld
 from macro_data.readers import DataReaders, compile_industry_data, create_all_exogenous_data
-from macro_data.util import get_map_long_to_short
 
 
 @dataclass
@@ -86,10 +85,19 @@ class DataWrapper:
         if isinstance(raw_data_path, str):
             raw_data_path = Path(raw_data_path)
 
+        for country, country_config in configuration.country_configs.items():
+            if country_config.eu_proxy_country is None and not country.is_eu_country:
+                raise ValueError(f"{country} is not in EU: please set an EU proxy country.")
+
+        proxy_country_dict = {
+            country: configuration.country_configs[country].eu_proxy_country
+            for country in configuration.countries
+            if not country.is_eu_country
+        }
+
         np.random.seed(random_seed)
 
         country_names = configuration.countries
-        country_names_short = list(map(get_map_long_to_short(raw_data_path).get, country_names))
         industries = configuration.industries
         year = configuration.year
 
@@ -99,13 +107,13 @@ class DataWrapper:
         readers = DataReaders.from_raw_data(
             raw_data_path=raw_data_path,
             country_names=country_names,
-            country_names_short=country_names_short,
             industries=industries,
             simulation_year=year,
             scale_dict=scale_dict,
             prune_date=prune_date,
             force_single_hfcs_survey=single_hfcs_survey,
             single_icio_survey=single_icio_survey,
+            proxy_country_dict=proxy_country_dict,
         )
 
         single_firm_dict = {
@@ -118,7 +126,7 @@ class DataWrapper:
 
         year_range = 1 if single_hfcs_survey else 10
 
-        exogenous_data = create_all_exogenous_data(readers, country_names)
+        exogenous_data = create_all_exogenous_data(readers, country_names, proxy_countries=proxy_country_dict)
 
         # currently only EU countries implemented
 
@@ -135,7 +143,23 @@ class DataWrapper:
                 goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
             )
             for country in country_names
+            if country.is_eu_country
         }
+
+        for country in country_names:
+            if not country.is_eu_country:
+                synthetic_countries[country] = SyntheticCountry.proxied_synthetic_country(
+                    country=country,
+                    proxy_country=configuration.country_configs[country].eu_proxy_country,
+                    year=year,
+                    country_configuration=configuration.country_configs[country],
+                    industries=industries,
+                    readers=readers,
+                    exogenous_country_data=exogenous_data[country],
+                    country_industry_data=industry_data[country],
+                    year_range=year_range,
+                    goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
+                )
 
         synthetic_row = DefaultSyntheticRestOfTheWorld.from_readers(
             readers=readers,

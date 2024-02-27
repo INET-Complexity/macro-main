@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from macro_data.configuration.countries import Country
 from macro_data.readers import DataReaders
 
 
@@ -15,7 +16,7 @@ class TaxData:
     risk_premium: float
 
     @classmethod
-    def from_readers(cls, readers: DataReaders, country: str, year: int):
+    def from_readers(cls, readers: DataReaders, country: Country, year: int):
         return cls(
             value_added_tax=readers.world_bank.get_tau_vat(country, year),
             export_tax=readers.world_bank.get_tau_exp(country, year),

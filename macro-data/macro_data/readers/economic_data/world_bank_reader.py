@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from macro_data.configuration.countries import Country
 from macro_data.readers.util.prune_util import DataFilterWarning, prune_index
 
 
@@ -15,14 +16,14 @@ class WorldBankReader:
 
     Methods:
         __init__(self, path: Path): Initializes a WorldBankReader instance.
-        get_unemployment_rate(self, country: str, year: int) -> float: Retrieves the unemployment rate for a specific country and year.
-        get_participation_rate(self, country: str, year: int) -> float: Retrieves the participation rate for a specific country and year.
-        get_tau_vat(self, country: str, year: int) -> float: Retrieves the VAT tax rate for a specific country and year.
-        get_tau_exp(self, country: str, year: int) -> float: Retrieves the export tax rate for a specific country and year.
-        get_gini_coef(self, country: str, year: int) -> float: Retrieves the Gini coefficient for a specific country and year.
-        get_historic_gdp(self, country: str, year: int) -> float: Retrieves the historic GDP for a specific country and year.
-        get_current_monthly_gdp(self, country: str, year: int) -> float: Retrieves the current monthly GDP for a specific country and year.
-        get_log_inflation(self, country: str, start_year: int = 1970, end_year: int = 2024) -> pd.DataFrame: Retrieves the log inflation data for a specific country within a given time range.
+        get_unemployment_rate(self, country (Country), year: int) -> float: Retrieves the unemployment rate for a specific country and year.
+        get_participation_rate(self, country (Country), year: int) -> float: Retrieves the participation rate for a specific country and year.
+        get_tau_vat(self, country (Country), year: int) -> float: Retrieves the VAT tax rate for a specific country and year.
+        get_tau_exp(self, country (Country), year: int) -> float: Retrieves the export tax rate for a specific country and year.
+        get_gini_coef(self, country (Country), year: int) -> float: Retrieves the Gini coefficient for a specific country and year.
+        get_historic_gdp(self, country (Country), year: int) -> float: Retrieves the historic GDP for a specific country and year.
+        get_current_monthly_gdp(self, country (Country), year: int) -> float: Retrieves the current monthly GDP for a specific country and year.
+        get_log_inflation(self, country (Country), start_year: int = 1970, end_year: int = 2024) -> pd.DataFrame: Retrieves the log inflation data for a specific country within a given time range.
         prune(self, prune_date: int | str | pd.Timestamp, date_format: str = "%Y-%m-%d") -> None: Prunes the data based on a given prune date.
     """
 
@@ -61,14 +62,15 @@ class WorldBankReader:
             "ppi": "ppi",
             "cpi": "cpi",
             "historic_gdp": "API_NY.GDP.MKTP.CN_DS2_en_csv_v2_5358562",
+            "population": "API_SP.POP.TOTL_DS2_en_csv_v2_79",
         }
 
-    def get_unemployment_rate(self, country: str, year: int) -> float:
+    def get_unemployment_rate(self, country: Country, year: int) -> float:
         """
         Retrieves the unemployment rate for a specific country and year.
 
         Parameters:
-            country (str): The country code for the desired country.
+            country (Country): The country code for the desired country.
             year (int): The year for the data.
 
         Returns:
@@ -78,12 +80,16 @@ class WorldBankReader:
         df = df.loc[df["Country Code"] == country, str(year)]
         return df.values[0] / 100.0
 
-    def get_participation_rate(self, country: str, year: int) -> float:
+    def get_population(self, country: Country, year: int) -> float:
+        df = self.data["population"].set_index("Country Code")
+        return df.loc[country, str(year)]
+
+    def get_participation_rate(self, country: Country, year: int) -> float:
         """
         Retrieves the participation rate for a specific country and year.
 
         Parameters:
-            country (str): The country code for the desired country.
+            country (Country): The country code for the desired country.
             year (int): The year for the data.
 
         Returns:
@@ -93,12 +99,12 @@ class WorldBankReader:
         df = df.loc[df["Country Code"] == country, str(year)]
         return df.values[0] / 100.0
 
-    def get_tau_vat(self, country: str, year: int) -> float:
+    def get_tau_vat(self, country: Country, year: int) -> float:
         """
         Retrieves the VAT tax rate for a specific country and year.
 
         Parameters:
-            country (str): The country code for the desired country.
+            country (Country): The country code for the desired country.
             year (int): The year for the data.
 
         Returns:
@@ -108,12 +114,12 @@ class WorldBankReader:
         df = df.loc[df["Country Code"] == country][str(year)]
         return df.values[0] / 100.0
 
-    def get_tau_exp(self, country: str, year: int) -> float:
+    def get_tau_exp(self, country: Country, year: int) -> float:
         """
         Retrieves the export tax rate for a specific country and year.
 
         Parameters:
-            country (str): The country code for the desired country.
+            country (Country): The country code for the desired country.
             year (int): The year for the data.
 
         Returns:
@@ -123,12 +129,12 @@ class WorldBankReader:
         df = df.loc[df["Country Code"] == country][str(year)]
         return df.values[0] / 100.0
 
-    def get_gini_coef(self, country: str, year: int) -> float:
+    def get_gini_coef(self, country: Country, year: int) -> float:
         """
         Retrieves the Gini coefficient for a specific country and year.
 
         Parameters:
-            country (str): The country code for the desired country.
+            country (Country): The country code for the desired country.
             year (int): The year for the data.
 
         Returns:
@@ -137,12 +143,12 @@ class WorldBankReader:
         df = self.data["gini_coefs"]
         return df.loc[df["Country Code"] == country][str(year)].values[0] / 100
 
-    def get_historic_gdp(self, country: str, year: int) -> float:
+    def get_historic_gdp(self, country: Country, year: int) -> float:
         """
         Retrieves the historic GDP for a specific country and year.
 
         Parameters:
-            country (str): The country code for the desired country.
+            country (Country): The country code for the desired country.
             year (int): The year for the data.
 
         Returns:
@@ -152,12 +158,12 @@ class WorldBankReader:
         df = df.loc[df["Country Code"] == country].iloc[:, 4:]
         return df.loc[:, str(year)].values[0]
 
-    def get_current_monthly_gdp(self, country: str, year: int) -> float:
+    def get_current_monthly_gdp(self, country: Country, year: int) -> float:
         """
         Retrieves the current monthly GDP for a specific country and year.
 
         Parameters:
-            country (str): The country code for the desired country.
+            country (Country): The country code for the desired country.
             year (int): The year for the data.
 
         Returns:
@@ -165,12 +171,12 @@ class WorldBankReader:
         """
         return self.get_historic_gdp(country, year) / 12.0
 
-    def get_log_inflation(self, country: str, start_year: int = 1970, end_year: int = 2024) -> pd.DataFrame:
+    def get_log_inflation(self, country: Country, start_year: int = 1970, end_year: int = 2024) -> pd.DataFrame:
         """
         Retrieves the log inflation data for a specific country within a given time range.
 
         Parameters:
-            country (str): The country code for the desired country.
+            country (Country): The country code for the desired country.
             start_year (int): The starting year for the data (default: 1970).
             end_year (int): The ending year for the data (default: 2024).
 
@@ -241,5 +247,5 @@ class WorldBankReader:
                         break
 
             if years_as_columns is True:
-                mask = prune_index(value.columns, prune_date, "World Bank")
+                mask = prune_index(value.columns, prune_date)
                 self.data[key] = value.loc[:, mask]

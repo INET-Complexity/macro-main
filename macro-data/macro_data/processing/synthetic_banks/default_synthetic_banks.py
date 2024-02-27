@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+
+from macro_data.configuration.countries import Country
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 
 from macro_data.readers.default_readers import DataReaders
@@ -22,7 +24,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
 
     @classmethod
     def from_readers(
-        cls, single_bank: bool, country_name: str, year: int, readers: DataReaders, scale: int
+        cls, single_bank: bool, country_name: Country, year: int, readers: DataReaders, scale: int
     ) -> "DefaultSyntheticBanks":
         """
         Initialize a SyntheticBanks object from data readers.
@@ -37,7 +39,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
         Args:
             cls (class): The class object.
             single_bank (bool): Flag indicating whether to create a single bank or multiple banks.
-            country_name (str): The name of the country.
+            country_name (Country): The name of the country.
             year (int): The year.
             readers (DataReaders): The data readers object.
             scale (int): The scaling factor.

@@ -59,6 +59,8 @@ country_configs:
           0.01
 
   GBR:
+    eu_proxy_country:
+      FRA
     scale:
       10000
     single_bank:

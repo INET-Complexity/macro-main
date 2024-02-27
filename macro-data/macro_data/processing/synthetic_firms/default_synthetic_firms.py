@@ -3,6 +3,7 @@ import logging
 import numpy as np
 import pandas as pd
 
+from macro_data.configuration.countries import Country
 from macro_data.configuration.dataconfiguration import FirmsDataConfiguration
 from macro_data.processing.country_data import TaxData
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
@@ -55,7 +56,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
     def from_readers(
         cls,
         readers: DataReaders,
-        country_name: str,
+        country_name: Country,
         year: int,
         industries: list[str],
         scale: int,
