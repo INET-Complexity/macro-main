@@ -196,9 +196,9 @@ class Simulation:
     def shallow_hdf_save(self, save_dir: Path | str, file_name: str):
         if isinstance(save_dir, str):
             save_dir = Path(save_dir)
-        for country in self.countries.values():
+        for country_name, country in self.countries.items():
             df = country.shallow_output()
-            df.to_hdf(save_dir / file_name, key=str(country), mode="a")
+            df.to_hdf(save_dir / file_name, key=country_name, mode="a")
 
 
 def check_compatibility(
