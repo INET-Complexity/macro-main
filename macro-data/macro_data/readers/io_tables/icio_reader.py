@@ -271,10 +271,12 @@ class ICIOReader:
     def column_allc(self, country_name: str, symbol: str) -> pd.Series:
         considered_countries_row = self.considered_countries + ["ROW"]
         all_cols = [self.iot.loc[col, (country_name, symbol)].loc[self.industries] for col in considered_countries_row]
-        return reduce(lambda a, b: a + b, all_cols)
+        return reduce(lambda a, b: a + b, all_cols).fillna(0)
 
     def get_monthly_total_output(self, country_name: str) -> np.ndarray:
-        return (self.iot[("TOTAL", "Output")].xs(country_name, axis=0, level=0).loc[self.industries]).values / 12.0
+        return (self.iot[("TOTAL", "Output")].xs(country_name, axis=0, level=0).loc[self.industries]).fillna(
+            0
+        ).values / 12.0
 
     def get_monthly_intermediate_inputs_use(self, country_name: str) -> np.ndarray:
         return (

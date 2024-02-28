@@ -119,9 +119,9 @@ class DataReaders:
         proxified = [country if country.is_eu_country else proxy_country_dict[country] for country in country_names]
 
         hfcs = {
-            country_name: HFCSReader.from_csv(
+            proxy_country: HFCSReader.from_csv(
                 country_name=proxy_country,
-                country_name_short=short_names[proxy_country],
+                country_name_short=proxy_country.to_two_letter_code(),
                 hfcs_data_path=datapaths.hfcs_path,
                 year=simulation_year,
                 exchange_rates=exchange_rates,
