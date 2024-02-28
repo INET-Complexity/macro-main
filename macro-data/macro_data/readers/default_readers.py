@@ -131,9 +131,9 @@ class DataReaders:
         }
 
         eu_only = [country for country in country_names if country.is_eu_country]
-        proxy_eu = [proxy_country_dict[country] for country in country_names]
+        proxy_eu = list(proxy_country_dict.values())
 
-        eu_only = eu_only + proxy_eu
+        eu_only = list(set(eu_only).union(set(proxy_eu)))
 
         icio = {
             year: ICIOReader.agg_from_csv(
