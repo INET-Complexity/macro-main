@@ -1,94 +1,79 @@
 [![Build and test package](https://github.com/INET-Complexity/inet-macro-model/actions/workflows/ci.yml/badge.svg)](https://github.com/INET-Complexity/inet-macro-model/actions/workflows/ci.yml)
 
-# INET's MacroModel - Model
+# MacroModel - Model
 
 ## Install the package 
-In a python environment with Python >=3.10, run
+
+To install this package, you need first to have the macro data package installed. You can find this package in [this repository](https://github.com/macro-cosm/macrocosm-macro-data). 
+
+In a python environment with Python >=3.11, run
 
 ```
-pip install https://github.com/INET-Complexity/inet-macro-model.git
+pip install https://github.com/macro-cosm/macrocosm-macro-data.git
 ```
+and then install the macro model package. 
+
+```
+pip install https://github.com/macro-cosm/macrocosm-macro-model.git
+```
+
 
 If this doesn't work, it may be because git is not set up properly locally.
 
-Try instead cloning the repository,
+Try instead cloning the repositories,
 ```
-git clone https://github.com/INET-Complexity/inet-macro-model.git
+git clone https://github.com/macro-cosm/macrocosm-macro-data.git
 ```
 and then installing the package from the local repository,
 ```
-pip install ./inet-macro-model
+pip install ./macrocosm-macro-data
 ```
+and proceding in the same way for the model package.
 
 ## Run model 
 
 Before running the model, make sure to create the data using the [inet-macro-data](https://github.com/INET-Complexity/inet-macro-data) package. __You should not run the model in a folder where you have cloned this repository. The goal of this is to work as a package.__
-Assuming your working directory is structured as follows,
 
-```
-.
-├── configs
-│   └── default.yaml
-└── data
-    ├── processed_data
-    └── raw_data
-```
-after the data has been created and processed into the `processed_data` directory, you can run the model and write logs to a file `logs.log` as follows
+
+The starting point is to have generated a `data.pkl` file using the macro-data package. Refer to the readme of the macro-data package for more information on how to generate this file.
+
+The model can be run using the following code (in this example we are running the model for France, Canada and the USA, and this requires also the data for these countries to be present in the `data.pkl` file):
 
 ```python
-import yaml
-from pathlib import Path
-from macromodel import Runner
-from macromodel import check_existing_processed_data
-import logging
+from macro_data import DataWrapper
+from macromodel.configurations import CountryConfiguration, SimulationConfiguration
+from macromodel.simulation import Simulation
 
-# define format for logs 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s | %(levelname)s | %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    filename="logs.log",
+from pathlib import Path
+
+# load the data
+
+data = DataWrapper.init_from_pickle("./data.pkl")
+
+# configurations for France, Canda and USA
+country_configurations = {
+    "FRA": CountryConfiguration(),
+    "CAN": CountryConfiguration(),
+    "USA": CountryConfiguration(),
+}
+
+configuration = SimulationConfiguration(
+    country_configurations=country_configurations, t_max=20
 )
 
 
-def run_model(
-        config_filename: Path | str, data_dir: Path | str, output_dir: Path | str
-) -> None:
-    # if type of data_path is str, convert it to Path
-    if type(data_dir) == str:
-        data_dir = Path(data_dir)
-    # if type of config_path is str, convert it to Path
-    if type(config_filename) == str:
-        config_filename = Path(config_filename)
-    # if type of output_dir is str, convert it to Path
-    if type(output_dir) == str:
-        output_dir = Path(output_dir)
+# instantiate the model
+model = Simulation.from_datawrapper(
+    datawrapper=data, simulation_configuration=configuration
+)
 
-    config = yaml.safe_load(open(config_filename, "r"))
-    processed_data_code = check_existing_processed_data(
-        config=config,
-        data_path=data_dir,
-    )
-    if processed_data_code is None:
-        raise ValueError("No processed data found")
-
-    Runner(
-        config_path=config_filename,
-        processed_data_path=data_dir
-                            / "processed_data"
-                            / processed_data_code
-                            / "data.h5",
-        output_path=output_dir,
-    ).run(random_seed=0)
-
-
-if __name__ == "__main__":
-    run_model(
-        config_filename="./configs/default.yaml",
-        data_dir="./data",
-        output_dir="./output",
-    )
+# run the model
+model.run()
+model.save(save_dir=Path("./output/"), file_name="can_usa_fra_run.h5")
 ```
 
 
-This will save the run data into an `output` directory, writing into `./output/data.h5`. If you want to have less verbose logs, you can change the logging level to `logging.INFO` or `logging.WARNING`.
+This will save the run data into an `output` directory, writing into `./output/can_usa_fra_run.h5`. If you want to have less verbose logs, you can use a logger to change the logging level to `logging.INFO` or `logging.WARNING`.
+
+
+This simulation runs the model using default country configurations. You can modify them directly from the `CountryConfiguration`  object. 
