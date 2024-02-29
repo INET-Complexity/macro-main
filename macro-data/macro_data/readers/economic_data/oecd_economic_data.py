@@ -129,14 +129,16 @@ class OECDEconData:
 
         # TODO: OECD data doesn't have US data for this, so we use Canada as a proxy
         if country in {"USA", "MEX"}:
-            country = Country("CAN")
+            data_country = Country("CAN")
+        else:
+            data_country = country
 
         df = self.data["business_demography"]
         df = df.loc[
             (df["IND"] == "ENTR_BD_EMPL")
             & (df["TIME"] == year)
             & (df["Size Class"] == "Total")
-            & (df["LOCATION"] == country)
+            & (df["LOCATION"] == data_country)
         ].copy()
 
         output.index = range(len(output))
@@ -144,7 +146,7 @@ class OECDEconData:
         df.dropna(subset="ISIC", inplace=True)
         isic_table = df.set_index(["ISIC", "LOCATION"])["Value"].sort_index().unstack()
         isic_table = isic_table.reindex(range(len(output))).fillna(0)
-        isic_table = isic_table[country]
+        isic_table = isic_table[data_country]
 
         # basic linear regression to fill missing values in
         # number of businesses
