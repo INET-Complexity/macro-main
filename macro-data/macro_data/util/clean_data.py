@@ -31,7 +31,7 @@ def remove_outliers(
     covariance_matrix = np.cov(data_r.values.T)
     mean = data_r.values.mean(axis=0)
     model = multivariate_normal(cov=covariance_matrix, mean=mean, allow_singular=True)
-    p = model.pdf(data[cols].astype(float)).reshape(-1)
+    p = model.logpdf(data[cols].astype(float)).reshape(-1)
     outliers = p <= np.quantile(p, quantile)
 
     # Remove them
