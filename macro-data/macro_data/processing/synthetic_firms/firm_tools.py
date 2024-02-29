@@ -260,7 +260,7 @@ def initialise_basic_firm_fields(
     )
     labour_compensation = industry_data["industry_vectors"]["Labour Compensation in LCU"].values
     firm_data = add_wages(firm_data, n_employees_per_industry, n_firms, n_industries, labour_compensation, tau_sif)
-    output = industry_data["industry_vectors"]["Output"].values
+    output = industry_data["industry_vectors"]["Output in LCU"].values
     firm_data = add_production(firm_data, n_employees_per_industry, n_industries, output)
     firm_data["Price in USD"] = 1.0
     firm_data["Price"] = firm_data["Price in USD"] * exchange_rate
