@@ -19,7 +19,7 @@ class TaxData:
     def from_readers(cls, readers: DataReaders, country: Country, year: int):
         return cls(
             value_added_tax=readers.world_bank.get_tau_vat(country, year),
-            export_tax=readers.world_bank.get_tau_exp(country, year),
+            export_tax=readers.get_export_taxes(country, year),
             employer_social_insurance_tax=readers.oecd_econ.read_tau_sif(country, year),
             employee_social_insurance_tax=readers.oecd_econ.read_tau_siw(country, year),
             profit_tax=readers.oecd_econ.read_tau_firm(country, year),

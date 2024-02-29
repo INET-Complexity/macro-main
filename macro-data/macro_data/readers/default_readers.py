@@ -267,6 +267,13 @@ class DataReaders:
     def get_govt_debt_lcu(self, country: Country, year: int) -> float:
         return self.oecd_econ.general_gov_debt(country, year) * self.exchange_rates.from_usd_to_lcu(country, year)
 
+    def get_export_taxes(self, country: Country, year: int) -> float:
+        return (
+            self.world_bank.get_lcu_exports(country, year)
+            * self.exchange_rates.from_usd_to_lcu(country, year)
+            / self.icio[year].get_exports(country).sum()
+        )
+
 
 def prune_icio_dict(icio_dict: dict[int, Any], prune_date: date):
     # make sure prune date is the year in int format
