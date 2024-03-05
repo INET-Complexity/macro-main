@@ -642,8 +642,11 @@ class Firms(Agent):
     def total_sales(self):
         return self.ts.get_aggregate("total_sales")
 
-    def total_input_costs(self):
+    def total_used_input_costs(self):
         return self.ts.get_aggregate("used_intermediate_inputs_costs")
+
+    def total_bought_input_costs(self):
+        return self.ts.get_aggregate("total_intermediate_inputs_bought_costs")
 
     def total_operating_surplus(self):
         return self.ts.get_aggregate("gross_operating_surplus_mixed_income")

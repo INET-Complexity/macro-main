@@ -891,7 +891,8 @@ class Country:
         data_dict = {
             "Sales": self.firms.total_sales(),
             "Production": self.firms.total_production(),
-            "Input Costs": self.firms.total_input_costs(),
+            "Used Input Costs": self.firms.total_used_input_costs(),
+            "Bought Input Costs": self.firms.total_bought_input_costs(),
             "Operating Surplus": self.firms.total_operating_surplus(),
             "Wages": self.firms.total_wages(),
             "Inventory Changes": self.firms.total_inventory_change(),
