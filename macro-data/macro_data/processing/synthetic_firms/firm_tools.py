@@ -194,6 +194,8 @@ def add_production(
     """
     Allocate production values to firms based on the total industry output and proportionally to the number of employees.
 
+    Production is in real terms, so we use the production value in USD and set the price to 1USD.
+
     Parameters:
         firm_data (pd.DataFrame): The DataFrame containing firm data.
         n_employees_per_industry (list | np.ndarray): The number of employees per industry.
@@ -260,7 +262,7 @@ def initialise_basic_firm_fields(
     )
     labour_compensation = industry_data["industry_vectors"]["Labour Compensation in LCU"].values
     firm_data = add_wages(firm_data, n_employees_per_industry, n_firms, n_industries, labour_compensation, tau_sif)
-    output = industry_data["industry_vectors"]["Output in LCU"].values
+    output = industry_data["industry_vectors"]["Output in USD"].values
     firm_data = add_production(firm_data, n_employees_per_industry, n_industries, output)
     firm_data["Price in USD"] = 1.0
     firm_data["Price"] = firm_data["Price in USD"] * exchange_rate

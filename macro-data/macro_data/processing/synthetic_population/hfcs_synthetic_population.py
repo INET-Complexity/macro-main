@@ -56,6 +56,36 @@ RESTRICT_COLS = [
     "Number of Properties other than Household Main Residence",
 ]
 
+CONVERT_HH_COLS = [
+    "Rent Paid",
+    "Amount spent on Consumption of Goods and Services",
+    "Rental Income from Real Estate",
+    "Income from Financial Assets",
+    "Income from Pensions",
+    "Regular Social Transfers",
+    "Income",
+    "Value of the Main Residence",
+    "Value of other Properties",
+    "Value of Household Vehicles",
+    "Value of Household Valuables",
+    "Value of Self-Employment Businesses",
+    "Wealth in Deposits",
+    "Mutual Funds",
+    "Bonds",
+    "Value of Private Businesses",
+    "Shares",
+    "Money owed to Households",
+    "Other Assets",
+    "Voluntary Pension",
+    "Outstanding Balance of HMR Mortgages",
+    "Outstanding Balance of Mortgages on other Properties",
+    "Outstanding Balance of Credit Line",
+    "Outstanding Balance of Credit Card Debt",
+    "Outstanding Balance of other Non-Mortgage Loans",
+]
+
+CONVERT_IND_COLS = ["Employee Income", "Income from Unemployment Benefits", "Income"]
+
 
 class SyntheticHFCSPopulation(SyntheticPopulation):
     """
@@ -140,6 +170,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         rent_as_fraction_of_unemployment_rate: float = 0.25,
         n_quantiles: int = 5,
         population_ratio: float = 1.0,
+        exch_rate: float = 1.0,
     ) -> "SyntheticHFCSPopulation":
         """
         Creates a synthetic population from data readers.
@@ -158,6 +189,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             n_quantiles (int, optional): The number of quantiles. Defaults to 5.
             population_ratio (float, optional): The population ratio. Defaults to 1.0. This is used in case
                                                  the HFCS population is used as a proxy for another country.
+            exch_rate (float, optional): The exchange rate. Defaults to 1.0.
 
         Returns:
             cls: The synthetic population object.
@@ -182,6 +214,11 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
                 "Consumption of Consumer Goods/Services as a Share of Income",
             ],
         )
+
+        if exch_rate != 1.0:
+            household_data.loc[:, CONVERT_HH_COLS] *= exch_rate
+            individual_data.loc[:, CONVERT_IND_COLS] *= exch_rate
+
         household_data = household_data.loc[household_data["Corresponding Individuals ID"].notna()]
 
         household_data = set_household_types(household_data, individual_data)

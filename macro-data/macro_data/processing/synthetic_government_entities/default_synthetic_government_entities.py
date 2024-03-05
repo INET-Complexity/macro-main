@@ -83,7 +83,7 @@ class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
         total_number_of_firms = int(
             readers.oecd_econ.read_business_demography(
                 country=country_name,
-                output=pd.Series(industry_data["industry_vectors"]["Output in LCU"].values),
+                output=pd.Series(industry_data["industry_vectors"]["Output in USD"].values),
                 year=year,
             ).sum()
         )

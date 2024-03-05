@@ -85,7 +85,7 @@ def get_industry_vectors(
 ) -> pd.DataFrame:
     industry_vectors = pd.DataFrame(
         data={
-            "Output in LCU": current_icio_reader.get_monthly_total_output(country_name) * exchange_rate,
+            "Output in USD": current_icio_reader.get_monthly_total_output(country_name),
             "Intermediate Inputs Supply in LCU": current_icio_reader.get_monthly_intermediate_inputs_use(
                 country_name
             ).sum(axis=0)
@@ -142,7 +142,7 @@ def get_industry_vectors(
     else:
         n_firms_by_industry = econ_reader.read_business_demography(
             country=country_name,
-            output=pd.Series(industry_vectors["Output in LCU"].values),
+            output=pd.Series(industry_vectors["Output in USD"].values),
             year=sea_reader.year,
         )
         n_firms_by_industry[n_firms_by_industry == 0] = 1
@@ -245,7 +245,6 @@ def get_country_industry_data(
     industry_data = pd.DataFrame(
         data={
             "Output in USD": icio_readers[year].get_monthly_total_output(country_name),
-            "Output in LCU": exchange_rate * icio_readers[year].get_monthly_total_output(country_name),
             "Intermediate Inputs Supply": icio_readers[year]
             .get_monthly_intermediate_inputs_use(country_name)
             .sum(axis=0),
