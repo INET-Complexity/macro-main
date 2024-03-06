@@ -245,6 +245,7 @@ def get_country_industry_data(
     industry_data = pd.DataFrame(
         data={
             "Output in USD": icio_readers[year].get_monthly_total_output(country_name),
+            "Output in LCU": icio_readers[year].get_monthly_total_output(country_name) * exchange_rate,
             "Intermediate Inputs Supply": icio_readers[year]
             .get_monthly_intermediate_inputs_use(country_name)
             .sum(axis=0),
