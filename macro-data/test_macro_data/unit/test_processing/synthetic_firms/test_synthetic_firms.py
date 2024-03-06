@@ -102,20 +102,6 @@ class TestSyntheticFirms:
             "Equity",
         ]
         assert set(init_fields).issubset(firms.firm_data.columns)
-        # Check if there are any missing values
-        firm_data = firms.firm_data
-        firms_output_usd = firm_data.groupby("Industry").apply(lambda x: (x["Production"] * x["Price in USD"]).sum())
-        firms_output_lcu = firm_data.groupby("Industry").apply(lambda x: (x["Production"] * x["Price"]).sum())
-
-        output_in_usd = industry_data["FRA"]["industry_vectors"]["Output in USD"]
-
-        output_in_lcu = industry_data["FRA"]["industry_vectors"][
-            "Output in USD"
-        ] * readers.exchange_rates.from_usd_to_lcu("FRA", 2014)
-
-        assert np.allclose(firms_output_usd.values, output_in_usd.values)
-        assert np.allclose(firms_output_lcu.values, output_in_lcu.values)
-
         assert not np.any(pd.isna(firms.firm_data))
 
     @pytest.mark.parametrize("country", ["FRA", "USA", "CAN"])
@@ -157,7 +143,6 @@ class TestSyntheticFirms:
             firm_configuration=firm_configuration,
         )
 
-        # Check if there are any missing values
         firm_data = firms.firm_data
         firms_output_usd = firm_data.groupby("Industry").apply(lambda x: (x["Production"] * x["Price in USD"]).sum())
         firms_output_lcu = firm_data.groupby("Industry").apply(lambda x: (x["Production"] * x["Price"]).sum())
