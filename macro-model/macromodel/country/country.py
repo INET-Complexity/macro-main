@@ -25,6 +25,22 @@ from macromodel.util.get_histogram import get_histogram
 
 
 class Country:
+    country_name: str
+    scale: int
+    individuals: Individuals
+    households: Households
+    firms: Firms
+    central_government: CentralGovernment
+    government_entities: GovernmentEntities
+    banks: Banks
+    central_bank: CentralBank
+    economy: Economy
+    labour_market: LabourMarket
+    credit_market: CreditMarket
+    housing_market: HousingMarket
+    exchange_rate_usd_to_lcu: float
+    exogenous: Exogenous
+
     def __init__(
         self,
         country_name: str,
@@ -891,6 +907,7 @@ class Country:
         data_dict = {
             "Sales": self.firms.total_sales(),
             "Production": self.firms.total_production(),
+            "Taxes Paid on Production": self.firms.total_taxes_paid_on_production(),
             "Used Input Costs": self.firms.total_used_input_costs(),
             "Bought Input Costs": self.firms.total_bought_input_costs(),
             "Operating Surplus": self.firms.total_operating_surplus(),
@@ -906,5 +923,7 @@ class Country:
             "PPI": self.economy.total_ppi_inflation(),
             "CPI": self.economy.total_cpi_inflation(),
             "CFPI": self.economy.total_cfpi_inflation(),
+            "Gross Output": self.firms.total_sales() + self.firms.total_taxes_paid_on_production(),
+            "Unemployment Rate": self.economy.unemployment_rate(),
         }
         return pd.DataFrame(data_dict)

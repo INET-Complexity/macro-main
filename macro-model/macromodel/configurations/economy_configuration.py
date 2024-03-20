@@ -7,7 +7,7 @@ class Growth(BaseModel):
     The function used for setting how growth is centrally forecasted.
     """
 
-    name: Literal["GrowthForecastingConstant"] = "GrowthForecastingConstant"
+    name: Literal["GrowthForecastingConstant", "GrowthForecastingAutoReg"] = "GrowthForecastingConstant"
     parameters: dict = {"value": 0.0}
     path_name: str = "growth"
 
@@ -17,7 +17,7 @@ class HPI(BaseModel):
     The function used for setting how the house price index is centrally forecasted.
     """
 
-    name: Literal["HPIForecastingConstant"] = "HPIForecastingConstant"
+    name: Literal["HPIForecastingConstant", "HPIForecastingAutoReg"] = "HPIForecastingConstant"
     parameters: dict = {"value": 0.0}
     path_name: str = "house_price_index"
 
@@ -27,7 +27,7 @@ class Inflation(BaseModel):
     The function used for setting how inflation is centrally forecasted.
     """
 
-    name: Literal["InflationForecastingConstant"] = "InflationForecastingConstant"
+    name: Literal["InflationForecastingConstant", "InflationForecastingAutoReg"] = "InflationForecastingConstant"
     parameters: dict = {"value": 0.0}
     path_name: str = "inflation"
 

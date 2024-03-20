@@ -665,3 +665,6 @@ class Firms(Agent):
 
     def total_profits(self):
         return self.ts.get_aggregate("profits")
+
+    def total_taxes_paid_on_production(self):
+        return self.ts.get_aggregate("taxes_paid_on_production")

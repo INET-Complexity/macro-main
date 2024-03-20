@@ -474,3 +474,6 @@ class Economy:
 
     def total_cfpi_inflation(self):
         return self.ts.get_aggregate("cfpi")
+
+    def unemployment_rate(self):
+        return self.ts.get_aggregate("unemployment_rate")

@@ -1,6 +1,8 @@
 import tempfile
 from pathlib import Path
 
+import pytest
+
 from macromodel.configurations import SimulationConfiguration, CountryConfiguration
 from macromodel.simulation import Simulation, check_compatibility
 from macro_data.configuration.countries import Country as CountryName
@@ -22,6 +24,20 @@ def test_simulation(datawrapper):
         simulation.shallow_hdf_save(save_dir=tmp, file_name="simulation.h5")
         dicts = simulation.shallow_df_dict()
         assert "FRA" in dicts
+
+    france = simulation.countries[CountryName("FRA")]
+
+    shallow_output = france.shallow_output()
+
+    gross_output = shallow_output["Gross Output"]
+
+    france_datawrapper = datawrapper.synthetic_countries[CountryName("FRA")]
+    france_datawrapper_firms = france_datawrapper.firms
+
+    firm_data = france_datawrapper_firms.firm_data
+    firms_output_lcu = firm_data.groupby("Industry").apply(lambda x: (x["Production"] * x["Price"]).sum())
+
+    assert gross_output.loc[0] == pytest.approx(firms_output_lcu.sum(), rel=1e-4)
 
     assert True
 
