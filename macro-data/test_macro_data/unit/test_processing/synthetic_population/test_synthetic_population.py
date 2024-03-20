@@ -16,7 +16,7 @@ class TestSyntheticPopulation:
     def test__init(self, readers, configuration, industry_data):
         industries = configuration.industries
 
-        france = Country("France")
+        france = Country("FRA")
 
         population = SyntheticHFCSPopulation.from_readers(
             readers=readers,

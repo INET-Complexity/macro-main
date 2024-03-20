@@ -171,6 +171,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         n_quantiles: int = 5,
         population_ratio: float = 1.0,
         exch_rate: float = 1.0,
+        proxied_country=None,
     ) -> "SyntheticHFCSPopulation":
         """
         Creates a synthetic population from data readers.
@@ -190,6 +191,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             population_ratio (float, optional): The population ratio. Defaults to 1.0. This is used in case
                                                  the HFCS population is used as a proxy for another country.
             exch_rate (float, optional): The exchange rate. Defaults to 1.0.
+            proxied_country (str, optional): The name of the proxied country. Defaults to None.
 
         Returns:
             cls: The synthetic population object.
@@ -201,8 +203,20 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
         household_data, individual_data = sample_households(hfcs_households_data, hfcs_individuals_data, n_households)
 
+        if proxied_country is None:
+            unemployment_rate = readers.world_bank.get_unemployment_rate(country_name, year)
+            participation_rate = readers.world_bank.get_participation_rate(country_name, year)
+        else:
+            unemployment_rate = readers.world_bank.get_unemployment_rate(proxied_country, year)
+            participation_rate = readers.world_bank.get_participation_rate(proxied_country, year)
+
         individual_data = process_individual_data(
-            country_name, individual_data, industries, readers, scale, total_unemployment_benefits, year
+            individual_data,
+            industries,
+            scale,
+            total_unemployment_benefits,
+            unemployment_rate,
+            participation_rate,
         )
         n_unemployed = np.sum(individual_data["Activity Status"] == 2)
 

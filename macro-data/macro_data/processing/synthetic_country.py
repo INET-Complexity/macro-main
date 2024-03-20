@@ -279,6 +279,7 @@ class SyntheticCountry:
             country_name_short=proxy_country.to_two_letter_code(),
             population_ratio=population_ratio,
             exch_rate=exch_rate_proxy_to_lcu,
+            proxied_country=country,
         )
 
         firms = DefaultSyntheticFirms.from_readers(

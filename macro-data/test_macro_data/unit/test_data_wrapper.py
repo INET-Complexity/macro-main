@@ -103,6 +103,16 @@ class TestCreator:
 
             assert govt_consumption_reader.sum() == pytest.approx(govt_consumption_usd, rel=5e-2)
 
+            employee_social_contribution_taxes = country.tax_data.employee_social_insurance_tax
+            income_tax = country.tax_data.income_tax
+
+            employee_income = country.population.individual_data["Employee Income"].sum()
+            wages = country.firms.firm_data["Total Wages"].sum()
+
+            assert wages * (
+                1 - employee_social_contribution_taxes - income_tax * (1 - employee_social_contribution_taxes)
+            ) == pytest.approx(employee_income, rel=5e-2)
+
     def test_create_can_only(self, data_config_path):
         with open(data_config_path, "r") as f:
             config_dict = yaml.safe_load(f)
