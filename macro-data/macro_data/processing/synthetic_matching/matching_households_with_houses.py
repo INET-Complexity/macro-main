@@ -327,9 +327,8 @@ def match_renters_to_properties(
     rent_paid_sorted = rent_paid[sorted_indices_paid]
 
     # Step 2: Split the sorted arrays into chunks
-    chunk_size = max(1, int(len(rent_rec_sorted) / max_matching_size))
+    chunk_size = max(1, int(len(rent_rec_sorted) / max_matching_size), int(len(rent_paid_sorted) / max_matching_size))
     rent_rec_split = np.array_split(rent_rec_sorted, chunk_size)
-    chunk_size = max(1, int(len(rent_paid_sorted) / max_matching_size))
     rent_paid_split = np.array_split(rent_paid_sorted, chunk_size)
 
     # Initialize the variables
