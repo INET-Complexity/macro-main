@@ -15,6 +15,15 @@ def test_simulation(datawrapper):
 
     assert set(simulation.countries.keys()) == {"FRA"}
 
+    households = simulation.countries["FRA"].households
+    individuals = simulation.countries["FRA"].individuals
+
+    n_individuals = individuals.n_individuals
+    households_lengths = [len(corr_ind) for corr_ind in households.states["corr_individuals"]]
+    assert n_individuals == sum(households_lengths)
+    # no empty households
+    assert all(households_lengths)
+
     for _ in range(5):
         simulation.iterate()
 
