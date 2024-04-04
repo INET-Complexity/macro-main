@@ -11,6 +11,7 @@ from macro_data.configuration.countries import Country
 from macro_data.readers.criticality_data.goods_criticality_reader import (
     GoodsCriticalityReader,
 )
+from macro_data.readers.economic_data.ecb_reader import ECBReader
 from macro_data.readers.economic_data.eurostat_reader import EuroStatReader
 from macro_data.readers.economic_data.exchange_rates import WorldBankRatesReader
 from macro_data.readers.economic_data.imf_reader import IMFReader
@@ -42,6 +43,7 @@ class DataPaths:
     imf_path: Path
     ons_path: Path
     world_bank_path: Path
+    ecb_path: Path
 
     @classmethod
     def default_paths(cls, raw_data_path: Path, icio_years: Iterable[int]):
@@ -67,6 +69,7 @@ class DataPaths:
             imf_path=raw_data_path / "imf",
             ons_path=raw_data_path / "ons",
             world_bank_path=raw_data_path / "world_bank",
+            ecb_path=raw_data_path / "ecb",
         )
 
 
@@ -83,6 +86,7 @@ class DataReaders:
     imf_reader: IMFReader
     exchange_rates: WorldBankRatesReader
     goods_criticality: GoodsCriticalityReader
+    ecb_reader: ECBReader
 
     @classmethod
     def from_raw_data(
@@ -181,6 +185,8 @@ class DataReaders:
 
         world_bank = WorldBankReader(path=datapaths.world_bank_path)
 
+        ecb_reader = ECBReader(path=datapaths.ecb_path)
+
         if prune_date:
             exchange_rates.prune(prune_date)
             eurostat.prune(prune_date)
@@ -203,6 +209,7 @@ class DataReaders:
             imf_reader=imf_reader,
             exchange_rates=exchange_rates,
             goods_criticality=goods_criticality,
+            ecb_reader=ecb_reader,
         )
 
     def get_exogenous_data(self, country_name: Country) -> Optional[dict[str, Any]]:
