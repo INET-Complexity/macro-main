@@ -291,6 +291,7 @@ class SyntheticCountry:
             scale=country_configuration.scale,
             n_employees_per_industry=population.number_employees_by_industry,
             firm_configuration=country_configuration.firms_configuration,
+            exchange_rate_from_eur=exch_rate_proxy_to_lcu,
         )
 
         banks = DefaultSyntheticBanks.from_readers(
@@ -299,6 +300,7 @@ class SyntheticCountry:
             year=year,
             scale=country_configuration.scale,
             single_bank=country_configuration.single_bank,
+            exchange_rate_from_eur=exch_rate_proxy_to_lcu,
         )
 
         exogenous_data = ExogenousCountryData(**exogenous_country_data)
@@ -413,7 +415,6 @@ class SyntheticCountry:
             total_imputed_rent=total_rent,
         )
         housing_market = DefaultSyntheticHousingMarket(housing_market_data=housing_data, country_name=country)
-        population.compute_household_wealth()
         independents = None
         # here this only changes if we change the independents of the function (e.g. income, debt)
         # not worth it to change it now

@@ -63,6 +63,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
         industry_data: dict[str, pd.DataFrame],
         n_employees_per_industry: np.ndarray,
         firm_configuration: FirmsDataConfiguration,
+        exchange_rate_from_eur: float = 1.0,
     ) -> "DefaultSyntheticFirms":
         n_firms_per_industry = industry_data["industry_vectors"]["Number of Firms"].values
         n_firms = n_firms_per_industry.sum()
@@ -87,8 +88,10 @@ class DefaultSyntheticFirms(SyntheticFirms):
             tau_sif,
         )
 
-        total_firm_deposits = readers.eurostat.get_total_nonfin_firm_deposits(country_name, year)
-        total_firm_debt = readers.eurostat.get_total_nonfin_firm_debt(country_name, year)
+        total_firm_deposits = (
+            readers.eurostat.get_total_nonfin_firm_deposits(country_name, year) * exchange_rate_from_eur
+        )
+        total_firm_debt = readers.eurostat.get_total_nonfin_firm_debt(country_name, year) * exchange_rate_from_eur
 
         capital_inputs_productivity_matrix = industry_data["capital_inputs_productivity_matrix"].values
         intermediate_inputs_productivity_matrix = industry_data["intermediate_inputs_productivity_matrix"].values

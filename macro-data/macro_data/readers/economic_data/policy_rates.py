@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from macro_data.configuration.countries import Country
 from macro_data.readers.util.prune_util import prune_index
 
 
@@ -33,6 +34,8 @@ class PolicyRatesReader:
         self.df["code"] = self.country_code_switch(temp_df["REF_AREA"].values)
 
     def cb_policy_rate(self, country: str, year: int) -> float:
+        if isinstance(country, Country):
+            country = country.value
         if country in self.get_eu_country_code():
             country = "XM"
         annual_policy_rate = self.df.loc[self.df["code"] == country, str(year)].values[0] / 100.0

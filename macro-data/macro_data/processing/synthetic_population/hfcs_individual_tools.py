@@ -37,6 +37,7 @@ def process_individual_data(
     individual_data = remove_outliers(
         data=individual_data,
         cols=["Employee Income", "Gender", "Age", "Education", "Labour Status"],
+        use_logpdf=False,
     )
     individual_data = fill_missing_gender(individual_data)
     individual_data = fill_individual_age(individual_data)

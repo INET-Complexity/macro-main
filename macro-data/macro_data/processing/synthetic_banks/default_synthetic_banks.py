@@ -24,7 +24,13 @@ class DefaultSyntheticBanks(SyntheticBanks):
 
     @classmethod
     def from_readers(
-        cls, single_bank: bool, country_name: Country, year: int, readers: DataReaders, scale: int
+        cls,
+        single_bank: bool,
+        country_name: Country,
+        year: int,
+        readers: DataReaders,
+        scale: int,
+        exchange_rate_from_eur: float = 1.0,
     ) -> "DefaultSyntheticBanks":
         """
         Initialize a SyntheticBanks object from data readers.
@@ -53,7 +59,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
             bank_branches = readers.oecd_econ.read_number_of_bank_branches(country=country_name, year=year)
             number_of_banks = max(1, int(bank_branches / scale))
 
-        bank_equity = readers.eurostat.get_total_bank_equity(country=country_name, year=year)
+        bank_equity = readers.eurostat.get_total_bank_equity(country=country_name, year=year) * exchange_rate_from_eur
         bank_data = pd.DataFrame({"Equity": np.ones(number_of_banks) * bank_equity / number_of_banks})
         return cls(country_name, year, number_of_banks, bank_data)
 

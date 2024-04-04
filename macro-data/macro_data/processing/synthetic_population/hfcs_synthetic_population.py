@@ -227,6 +227,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
                 "Income",
                 "Consumption of Consumer Goods/Services as a Share of Income",
             ],
+            use_logpdf=False,
         )
 
         if exch_rate != 1.0:

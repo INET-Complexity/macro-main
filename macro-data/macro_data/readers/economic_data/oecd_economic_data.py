@@ -315,7 +315,7 @@ class OECDEconData:
 
     def unemployment_benefits_gdp_pct(self, country: Country, year: int) -> float:
         df = self.data["total_unemployment_benefits_perc_gdp"]
-        if country in df["LOCATION"].values:
+        if country.value in df["LOCATION"].values:
             value = df.loc[(df["LOCATION"] == country) & (df["TIME"] == year), "Value"].iloc[0]
             return value / 100.0
         else:
@@ -323,7 +323,7 @@ class OECDEconData:
 
     def all_benefits_gdp_pct(self, country: Country, year: int) -> float:
         all_benefits = self.data["total_social_benefits_perc_gdp"]
-        if country in all_benefits["COUNTRY"].values:
+        if country.value in all_benefits["COUNTRY"].values:
             value = all_benefits.loc[
                 (all_benefits["COUNTRY"] == country) & (all_benefits["YEAR"] == year),
                 "Value",
