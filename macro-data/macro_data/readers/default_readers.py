@@ -20,6 +20,7 @@ from macro_data.readers.economic_data.ons_reader import ONSReader
 from macro_data.readers.economic_data.policy_rates import PolicyRatesReader
 from macro_data.readers.economic_data.world_bank_reader import WorldBankReader
 from macro_data.readers.io_tables.icio_reader import ICIOReader
+from macro_data.readers.population_data.compustat_banks_reader import CompustatBanksReader
 from macro_data.readers.population_data.compustat_firms_reader import CompustatFirmsReader
 from macro_data.readers.population_data.hfcs_reader import HFCSReader
 from macro_data.readers.socioeconomic_data.wiod_sea_data import WIODSEAReader
@@ -47,6 +48,7 @@ class DataPaths:
     ecb_path: Path
     compustat_firms_annual_path: Path
     compustat_firms_quarterly_path: Path
+    compustat_banks_path: Path
 
     @classmethod
     def default_paths(cls, raw_data_path: Path, icio_years: Iterable[int]):
@@ -72,6 +74,7 @@ class DataPaths:
             ecb_path=raw_data_path / "ecb",
             compustat_firms_annual_path=raw_data_path / "compustat" / "firms_annual.csv",
             compustat_firms_quarterly_path=raw_data_path / "compustat" / "firms_quarterly.csv",
+            compustat_banks_path=raw_data_path / "compustat" / "banks.csv",
         )
 
 
@@ -90,6 +93,7 @@ class DataReaders:
     goods_criticality: GoodsCriticalityReader
     ecb_reader: ECBReader
     compustat_firms: CompustatFirmsReader
+    compustat_banks: CompustatBanksReader
 
     @classmethod
     def from_raw_data(
@@ -200,6 +204,10 @@ class DataReaders:
             raw_quarterly_path=datapaths.compustat_firms_quarterly_path,
         )
 
+        compustat_banks = CompustatBanksReader.from_raw_data(
+            year=simulation_year, quarter=1, raw_quarterly_path=datapaths.compustat_banks_path, countries=all_countries
+        )
+
         if prune_date:
             exchange_rates.prune(prune_date)
             eurostat.prune(prune_date)
@@ -224,6 +232,7 @@ class DataReaders:
             goods_criticality=goods_criticality,
             ecb_reader=ecb_reader,
             compustat_firms=compustat_firms,
+            compustat_banks=compustat_banks,
         )
 
     def get_exogenous_data(self, country_name: Country) -> Optional[dict[str, Any]]:
