@@ -84,7 +84,9 @@ class SyntheticCentralGovernment(ABC):
 
         total_disposable_income = (hh_income * (1 - hh_saving_rate)).sum()
 
-        household_vat = tax_data.value_added_tax * total_disposable_income
+        household_vat = (
+            tax_data.value_added_tax * industry_data["industry_vectors"]["Household Consumption in LCU"].sum()
+        )
 
         export_tax = tax_data.export_tax * industry_data["industry_vectors"]["Exports in LCU"].sum()
 

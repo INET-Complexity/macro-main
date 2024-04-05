@@ -129,14 +129,16 @@ class OECDEconData:
 
         # TODO: OECD data doesn't have US data for this, so we use Canada as a proxy
         if country in {"USA", "MEX"}:
-            country = Country("CAN")
+            data_country = Country("CAN")
+        else:
+            data_country = country
 
         df = self.data["business_demography"]
         df = df.loc[
             (df["IND"] == "ENTR_BD_EMPL")
             & (df["TIME"] == year)
             & (df["Size Class"] == "Total")
-            & (df["LOCATION"] == country)
+            & (df["LOCATION"] == data_country)
         ].copy()
 
         output.index = range(len(output))
@@ -144,7 +146,7 @@ class OECDEconData:
         df.dropna(subset="ISIC", inplace=True)
         isic_table = df.set_index(["ISIC", "LOCATION"])["Value"].sort_index().unstack()
         isic_table = isic_table.reindex(range(len(output))).fillna(0)
-        isic_table = isic_table[country]
+        isic_table = isic_table[data_country]
 
         # basic linear regression to fill missing values in
         # number of businesses
@@ -313,7 +315,7 @@ class OECDEconData:
 
     def unemployment_benefits_gdp_pct(self, country: Country, year: int) -> float:
         df = self.data["total_unemployment_benefits_perc_gdp"]
-        if country in df["LOCATION"].values:
+        if country.value in df["LOCATION"].values:
             value = df.loc[(df["LOCATION"] == country) & (df["TIME"] == year), "Value"].iloc[0]
             return value / 100.0
         else:
@@ -321,7 +323,7 @@ class OECDEconData:
 
     def all_benefits_gdp_pct(self, country: Country, year: int) -> float:
         all_benefits = self.data["total_social_benefits_perc_gdp"]
-        if country in all_benefits["COUNTRY"].values:
+        if country.value in all_benefits["COUNTRY"].values:
             value = all_benefits.loc[
                 (all_benefits["COUNTRY"] == country) & (all_benefits["YEAR"] == year),
                 "Value",

@@ -2,7 +2,9 @@ import pathlib
 
 import numpy as np
 import pandas as pd
+import pytest
 
+from macro_data.configuration.countries import Country
 from macro_data.configuration.dataconfiguration import FirmsDataConfiguration
 from macro_data.processing.synthetic_firms.default_synthetic_firms import (
     DefaultSyntheticFirms,
@@ -41,7 +43,7 @@ class TestSyntheticFirms:
 
         firms = DefaultSyntheticFirms.from_readers(
             readers=readers,
-            country_name="FRA",
+            country_name=Country("FRA"),
             year=2014,
             industries=industries,
             industry_data=industry_data["FRA"],
@@ -100,5 +102,56 @@ class TestSyntheticFirms:
             "Equity",
         ]
         assert set(init_fields).issubset(firms.firm_data.columns)
-        # Check if there are any missing values
         assert not np.any(pd.isna(firms.firm_data))
+
+    @pytest.mark.parametrize("country", ["FRA", "USA", "CAN"])
+    def test__create_multic(self, multic_readers, multic_industry_data, country):
+        industries = [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F",
+            "G",
+            "H",
+            "I",
+            "J",
+            "K",
+            "L",
+            "M",
+            "N",
+            "O",
+            "P",
+            "Q",
+            "R_S",
+        ]
+
+        n_employees_per_industry = np.ones(18).astype(int)
+        n_employees_per_industry *= 10_000
+
+        firm_configuration = FirmsDataConfiguration()
+
+        firms = DefaultSyntheticFirms.from_readers(
+            readers=multic_readers,
+            country_name=Country(country),
+            year=2014,
+            industries=industries,
+            industry_data=multic_industry_data[country],
+            n_employees_per_industry=n_employees_per_industry,
+            scale=10000,
+            firm_configuration=firm_configuration,
+        )
+
+        firm_data = firms.firm_data
+        firms_output_usd = firm_data.groupby("Industry").apply(lambda x: (x["Production"] * x["Price in USD"]).sum())
+        firms_output_lcu = firm_data.groupby("Industry").apply(lambda x: (x["Production"] * x["Price"]).sum())
+
+        output_in_usd = multic_industry_data[country]["industry_vectors"]["Output in USD"]
+
+        output_in_lcu = multic_industry_data[country]["industry_vectors"][
+            "Output in USD"
+        ] * multic_readers.exchange_rates.from_usd_to_lcu(country, 2014)
+
+        assert np.allclose(firms_output_usd.values, output_in_usd.values)
+        assert np.allclose(firms_output_lcu.values, output_in_lcu.values)

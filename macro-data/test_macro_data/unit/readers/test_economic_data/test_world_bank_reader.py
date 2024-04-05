@@ -12,7 +12,7 @@ class TestWorldBankReader:
         assert readers.world_bank.get_tau_vat("GBR", 2014) == pytest.approx(13.2e-2, abs=0.01)
 
     def test__get_tau_exp(self, readers):
-        assert readers.world_bank.get_tau_exp("GBR", 2014) == pytest.approx(0, abs=0.01)
+        assert readers.world_bank.get_lcu_exports("GBR", 2014) == pytest.approx(0, abs=0.01)
 
     def test__get_historic_gdp(self, readers):
         assert readers.world_bank.get_historic_gdp("GBR", 2014) == pytest.approx(1.863e12, abs=1e10)

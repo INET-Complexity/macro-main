@@ -114,7 +114,7 @@ class WorldBankReader:
         df = df.loc[df["Country Code"] == country][str(year)]
         return df.values[0] / 100.0
 
-    def get_tau_exp(self, country: Country, year: int) -> float:
+    def get_lcu_exports(self, country: Country, year: int) -> float:
         """
         Retrieves the export tax rate for a specific country and year.
 
@@ -125,7 +125,7 @@ class WorldBankReader:
         Returns:
             float: The export tax rate for the specified country and year.
         """
-        df = self.data["tau_exp"]
+        df = self.data["tau_exp"].fillna(0)
         df = df.loc[df["Country Code"] == country][str(year)]
         return df.values[0] / 100.0
 

@@ -1,8 +1,9 @@
 import pathlib
 
 import numpy as np
-import pandas as pd
+import pytest
 
+from macro_data.configuration.countries import Country
 from macro_data.processing.synthetic_population.hfcs_synthetic_population import (
     SyntheticHFCSPopulation,
     sample_households,
@@ -15,14 +16,16 @@ class TestSyntheticPopulation:
     def test__init(self, readers, configuration, industry_data):
         industries = configuration.industries
 
+        france = Country("FRA")
+
         population = SyntheticHFCSPopulation.from_readers(
             readers=readers,
-            country_name="FRA",
+            country_name=france,
             year=2014,
             scale=10000,
-            country_name_short="FR",
+            country_name_short=france.to_two_letter_code(),
             industries=industries,
-            industry_data=industry_data["FRA"],
+            industry_data=industry_data[france],
             rent_as_fraction_of_unemployment_rate=0.5,
             total_unemployment_benefits=1000.0,
         )
@@ -86,6 +89,35 @@ class TestSyntheticPopulation:
 
         # Check individual age
         assert np.all(population.individual_data["Age"] >= 0)
+
+
+@pytest.mark.parametrize("country", [Country("CAN"), Country("USA")])
+def test__household_consumption(multic_readers, multic_industry_data, configuration, country):
+    industries = configuration.industries
+
+    proxy_country = Country("FRA")
+    year = 2014
+    population_ratio = multic_readers.world_bank.get_population(
+        country=country, year=year
+    ) / multic_readers.world_bank.get_population(country=proxy_country, year=year)
+
+    exch_rate_proxy_to_lcu = multic_readers.exchange_rates.from_eur_to_lcu(country, year)
+
+    population = SyntheticHFCSPopulation.from_readers(
+        readers=multic_readers,
+        country_name=proxy_country,
+        year=2014,
+        scale=10000,
+        country_name_short=proxy_country.to_two_letter_code(),
+        industries=industries,
+        industry_data=multic_industry_data[country],
+        rent_as_fraction_of_unemployment_rate=0.5,
+        total_unemployment_benefits=1000.0,
+        population_ratio=population_ratio,
+        exch_rate=exch_rate_proxy_to_lcu,
+    )
+
+    assert True
 
 
 def test__household_sampling(readers):

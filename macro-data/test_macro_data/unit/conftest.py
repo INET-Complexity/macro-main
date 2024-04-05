@@ -76,10 +76,56 @@ def readers(data_path):
     return readers
 
 
+@pytest.fixture(scope="module", name="multic_readers")
+def gen_multic_readers(data_path):
+    france = Country("FRA")
+    multic_readers = DataReaders.from_raw_data(
+        raw_data_path=data_path,
+        country_names=[Country("FRA"), Country("USA"), Country("CAN")],
+        simulation_year=2014,
+        # need to put in Afghanistan because that is used in tests...
+        scale_dict={france: 100000, "AFG": 100000},
+        industries=[
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F",
+            "G",
+            "H",
+            "I",
+            "J",
+            "K",
+            "L",
+            "M",
+            "N",
+            "O",
+            "P",
+            "Q",
+            "R_S",
+        ],
+        force_single_hfcs_survey=True,
+        single_icio_survey=True,
+        proxy_country_dict={Country("CAN"): Country("FRA"), Country("USA"): Country("FRA")},
+    )
+    return multic_readers
+
+
 @pytest.fixture(scope="module", name="industry_data")
 def industry_data(readers):
     return compile_industry_data(
         year=2014, readers=readers, country_names=[Country("FRA")], single_firm_per_industry={"FRA": True}
+    )
+
+
+@pytest.fixture(scope="module", name="multic_industry_data")
+def multic_industry_data(multic_readers):
+    return compile_industry_data(
+        year=2014,
+        readers=multic_readers,
+        country_names=[Country("FRA"), Country("USA"), Country("CAN")],
+        single_firm_per_industry={"FRA": True, "USA": True, "CAN": True},
     )
 
 

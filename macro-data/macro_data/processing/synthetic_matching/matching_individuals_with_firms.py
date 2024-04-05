@@ -53,7 +53,7 @@ def preprocess(
     # Rescale income
     firm_ids = np.flatnonzero(synthetic_firms.firm_data["Industry"] == industry_index)
     total_employee_income = synthetic_population.individual_data.loc[ind_employees, "Employee Income"].sum()
-    labour_taxes = 1 - employee_social_contribution_taxes - income_taxes * (1 - employee_social_contribution_taxes)
+    labour_taxrate = 1 - employee_social_contribution_taxes - income_taxes * (1 - employee_social_contribution_taxes)
     if total_employee_income == 0.0:
         synthetic_population.individual_data.loc[ind_employees, "Employee Income"] = 0.0
     else:
@@ -65,14 +65,14 @@ def preprocess(
         # distribute the total amount paid by firms to employees,
         # taking into account labour tax
         synthetic_population.individual_data.loc[ind_employees, "Employee Income"] *= (
-            labour_taxes * total_paid_by_firms / total_employee_income
+            labour_taxrate * total_paid_by_firms / total_employee_income
         )
 
     # Create positions
     wages_offered = np.concatenate(
         [
             [
-                labour_taxes
+                labour_taxrate
                 * synthetic_firms.firm_data.at[firm_id, "Total Wages"]
                 / synthetic_firms.firm_data.at[firm_id, "Number of Employees"]
             ]

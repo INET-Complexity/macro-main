@@ -110,7 +110,9 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
         # TODO: debt in USD or in local currency?
         # debt = readers.oecd_econ.general_gov_debt(country_name, year)
 
-        debt = readers.oecd_econ.get_govt_debt_usd_ppp(country_name, year)
+        debt = readers.oecd_econ.get_govt_debt_usd_ppp(country_name, year) * readers.exchange_rates.from_usd_to_lcu(
+            country_name, year
+        )
 
         central_gov_data = pd.DataFrame(
             data={

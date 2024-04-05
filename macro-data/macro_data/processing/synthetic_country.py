@@ -110,7 +110,8 @@ class SyntheticCountry:
             readers: The data readers used to read data for the synthetic country object.
             exogenous_country_data: The exogenous data for the country.
             country_industry_data: The industry data for the country.
-            year_range: The range of years for which data is considered (determines the amount of data used to decide benefits setting).
+            year_range: The range of years for which data is considered (determines the amount of data used to
+                        decide benefits setting).
             goods_criticality_matrix: The goods criticality matrix.
 
         Returns:
@@ -265,6 +266,8 @@ class SyntheticCountry:
             country=country, year=year
         ) / readers.world_bank.get_population(country=proxy_country, year=year)
 
+        exch_rate_proxy_to_lcu = readers.exchange_rates.from_eur_to_lcu(country, year)
+
         population: SyntheticHFCSPopulation = SyntheticHFCSPopulation.from_readers(
             readers=readers,
             country_name=proxy_country,
@@ -275,6 +278,8 @@ class SyntheticCountry:
             total_unemployment_benefits=total_unemployment_benefits,
             country_name_short=proxy_country.to_two_letter_code(),
             population_ratio=population_ratio,
+            exch_rate=exch_rate_proxy_to_lcu,
+            proxied_country=country,
         )
 
         firms = DefaultSyntheticFirms.from_readers(
@@ -286,6 +291,7 @@ class SyntheticCountry:
             scale=country_configuration.scale,
             n_employees_per_industry=population.number_employees_by_industry,
             firm_configuration=country_configuration.firms_configuration,
+            exchange_rate_from_eur=exch_rate_proxy_to_lcu,
         )
 
         banks = DefaultSyntheticBanks.from_readers(
@@ -294,6 +300,7 @@ class SyntheticCountry:
             year=year,
             scale=country_configuration.scale,
             single_bank=country_configuration.single_bank,
+            exchange_rate_from_eur=exch_rate_proxy_to_lcu,
         )
 
         exogenous_data = ExogenousCountryData(**exogenous_country_data)
@@ -366,9 +373,11 @@ class SyntheticCountry:
         weights_by_income: pd.DataFrame,
     ) -> tuple[SyntheticCreditMarket, SyntheticHousingMarket]:
         """
-        This function takes care of matching the different agents together and initialising the Credit and Housing markets.
-        This function is separated because we may want to change the initialisation of firm parameters (in particular those which depend
-        on function parameters), in which case we need to redo the matching and initialisation of the markets.
+        This function takes care of matching the different agents together and initialising the Credit
+        and Housing markets.
+        This function is separated because we may want to change the initialisation of firm parameters
+        in particular those which depend on function parameters), in which case we need to redo the matching
+        and initialisation of the markets.
 
         Args:
             banks (SyntheticBanks): The synthetic banks.
@@ -406,7 +415,6 @@ class SyntheticCountry:
             total_imputed_rent=total_rent,
         )
         housing_market = DefaultSyntheticHousingMarket(housing_market_data=housing_data, country_name=country)
-        population.compute_household_wealth()
         independents = None
         # here this only changes if we change the independents of the function (e.g. income, debt)
         # not worth it to change it now
@@ -551,9 +559,9 @@ class SyntheticCountry:
         will impact household finances, and thus the credit market, exogenous data, and housing market.
 
         Args:
-            capital_inputs_utilisation_rate (float): The rate of capital inputs utilization.
+            capital_inputs_utilisation_rate (float): The rate of capital inputs utilisation.
             initial_inventory_to_input_fraction (float): The fraction of initial inventory to input.
-            intermediate_inputs_utilisation_rate (float): The rate of intermediate inputs utilization.
+            intermediate_inputs_utilisation_rate (float): The rate of intermediate inputs utilisation.
             zero_initial_debt (bool): Flag indicating whether to set initial debt to zero.
             zero_initial_deposits (bool): Flag indicating whether to set initial deposits to zero.
         """

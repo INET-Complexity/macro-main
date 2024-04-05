@@ -222,12 +222,23 @@ class DataReaders:
         self, country_name: Country, year_min: int, year_max: int, exogenous_data: dict[str, Any]
     ) -> pd.DataFrame:
         years = range(year_min, year_max)
-        unemp = [self.get_total_unemployment_benefits_lcu(country_name, year) for year in years]
-        other = [
-            self.get_total_benefits_lcu(country_name, year)
-            - self.get_total_unemployment_benefits_lcu(country_name, year)
+        # unemp = [self.get_total_unemployment_benefits_lcu(country_name, year) for year in years]
+        unemp = [
+            self.oecd_econ.unemployment_benefits_gdp_pct(country_name, year)
+            * self.world_bank.get_current_monthly_gdp(country_name, year)
             for year in years
         ]
+        other = [
+            self.oecd_econ.all_benefits_gdp_pct(country_name, year)
+            * self.world_bank.get_current_monthly_gdp(country_name, year)
+            - unemp[i]
+            for i, year in enumerate(years)
+        ]
+        # other = [
+        #     self.get_total_benefits_lcu(country_name, year)
+        #     - self.get_total_unemployment_benefits_lcu(country_name, year)
+        #     for year in years
+        # ]
 
         benefits_data = pd.DataFrame(
             data={"Unemployment Benefits": unemp, "Other Total Benefits": other},
@@ -266,6 +277,13 @@ class DataReaders:
 
     def get_govt_debt_lcu(self, country: Country, year: int) -> float:
         return self.oecd_econ.general_gov_debt(country, year) * self.exchange_rates.from_usd_to_lcu(country, year)
+
+    def get_export_taxes(self, country: Country, year: int) -> float:
+        return (
+            self.world_bank.get_lcu_exports(country, year)
+            * self.exchange_rates.from_usd_to_lcu(country, year)
+            / self.icio[year].get_exports(country).sum()
+        )
 
 
 def prune_icio_dict(icio_dict: dict[int, Any], prune_date: date):

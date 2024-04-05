@@ -10,13 +10,12 @@ from macro_data.util.imputation import apply_iterative_imputer
 
 
 def process_individual_data(
-    country_name: Country,
     individual_data: pd.DataFrame,
     industries: list[str],
-    readers: DataReaders,
     scale: int,
     total_unemployment_benefits: float,
-    year: int,
+    unemployment_rate: float,
+    participation_rate: float,
 ) -> pd.DataFrame:
     """
     Process individual data by performing various data cleaning and transformation steps.
@@ -29,6 +28,8 @@ def process_individual_data(
         scale (int): The scale factor.
         total_unemployment_benefits (float): The total unemployment benefits.
         year (int): The year.
+        unemployment_rate (float): The unemployment rate.
+        participation_rate (float): The participation rate.
 
     Returns:
         pd.DataFrame: The processed individual data.
@@ -36,6 +37,7 @@ def process_individual_data(
     individual_data = remove_outliers(
         data=individual_data,
         cols=["Employee Income", "Gender", "Age", "Education", "Labour Status"],
+        use_logpdf=False,
     )
     individual_data = fill_missing_gender(individual_data)
     individual_data = fill_individual_age(individual_data)
@@ -43,14 +45,8 @@ def process_individual_data(
     individual_data = fill_individual_labour_status(individual_data)
     individual_data = set_individual_activity_status(
         individual_data=individual_data,
-        unemployment_rate=readers.world_bank.get_unemployment_rate(
-            country=country_name,
-            year=year,
-        ),
-        participation_rate=readers.world_bank.get_participation_rate(
-            country=country_name,
-            year=year,
-        ),
+        unemployment_rate=unemployment_rate,
+        participation_rate=participation_rate,
     )
     individual_data = fill_individual_nace(individual_data, industries)
     n_unemployed = np.sum(individual_data["Activity Status"] == 2)
