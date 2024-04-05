@@ -82,7 +82,7 @@ class TestCreator:
 
         for country_name in [france, united_states, canada]:
             exch_rate = multic_readers.exchange_rates.from_usd_to_lcu(country_name, 2014)
-            usd_consumption = multic_readers.icio[2014].get_monthly_hh_consumption(country_name)
+            usd_consumption = multic_readers.icio[2014].get_hh_consumption(country_name)
 
             total_consumption = usd_consumption.sum()
 
@@ -99,7 +99,7 @@ class TestCreator:
 
             assert total_disposable_income / (1 + vat) == pytest.approx(total_consumption * exch_rate, rel=5e-2)
 
-            govt_consumption_reader = multic_readers.icio[2014].get_monthly_govt_consumption(country_name)
+            govt_consumption_reader = multic_readers.icio[2014].get_govt_consumption(country_name)
 
             assert govt_consumption_reader.sum() == pytest.approx(govt_consumption_usd, rel=5e-2)
 

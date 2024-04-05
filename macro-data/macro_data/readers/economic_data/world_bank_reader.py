@@ -158,18 +158,19 @@ class WorldBankReader:
         df = df.loc[df["Country Code"] == country].iloc[:, 4:]
         return df.loc[:, str(year)].values[0]
 
-    def get_current_monthly_gdp(self, country: Country, year: int) -> float:
+    def get_current_scaled_gdp(self, country: Country, year: int, rescale_factor: float = 4.0) -> float:
         """
         Retrieves the current monthly GDP for a specific country and year.
 
         Parameters:
             country (Country): The country code for the desired country.
             year (int): The year for the data.
+            rescale_factor (float): The factor to rescale the GDP by (default: 4.0 for 4 quarters).
 
         Returns:
             float: The current monthly GDP for the specified country and year.
         """
-        return self.get_historic_gdp(country, year) / 12.0
+        return self.get_historic_gdp(country, year) / rescale_factor
 
     def get_log_inflation(self, country: Country, start_year: int = 1970, end_year: int = 2024) -> pd.DataFrame:
         """

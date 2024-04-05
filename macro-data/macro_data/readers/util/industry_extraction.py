@@ -85,45 +85,37 @@ def get_industry_vectors(
 ) -> pd.DataFrame:
     industry_vectors = pd.DataFrame(
         data={
-            "Output in USD": current_icio_reader.get_monthly_total_output(country_name),
-            "Intermediate Inputs Supply in LCU": current_icio_reader.get_monthly_intermediate_inputs_use(
-                country_name
-            ).sum(axis=0)
-            * exchange_rate,
-            "Intermediate Inputs Use in LCU": current_icio_reader.get_monthly_intermediate_inputs_use(country_name).sum(
-                axis=1
+            "Output in USD": current_icio_reader.get_total_output(country_name),
+            "Intermediate Inputs Supply in LCU": current_icio_reader.get_intermediate_inputs_use(country_name).sum(
+                axis=0
             )
             * exchange_rate,
-            "Intermediate Inputs Domestic Use in LCU": current_icio_reader.get_monthly_intermediate_inputs_domestic(
+            "Intermediate Inputs Use in LCU": current_icio_reader.get_intermediate_inputs_use(country_name).sum(axis=1)
+            * exchange_rate,
+            "Intermediate Inputs Domestic Use in LCU": current_icio_reader.get_intermediate_inputs_domestic(
                 country_name
             ).sum(axis=1)
             * exchange_rate,
-            "Capital Inputs Domestic in LCU": current_icio_reader.get_monthly_capital_inputs_domestic(country_name)
+            "Capital Inputs Domestic in LCU": current_icio_reader.get_capital_inputs_domestic(country_name)
             * exchange_rate,
-            "Capital Inputs in LCU": current_icio_reader.get_monthly_capital_inputs(country_name) * exchange_rate,
-            "Value Added in USD": current_icio_reader.get_monthly_value_added(country_name),
-            "Value Added in LCU": exchange_rate * current_icio_reader.get_monthly_value_added(country_name),
-            "Taxes Less Subsidies in USD": current_icio_reader.get_monthly_taxes_less_subsidies(country_name),
+            "Capital Inputs in LCU": current_icio_reader.get_capital_inputs(country_name) * exchange_rate,
+            "Value Added in USD": current_icio_reader.get_value_added(country_name),
+            "Value Added in LCU": exchange_rate * current_icio_reader.get_value_added(country_name),
+            "Taxes Less Subsidies in USD": current_icio_reader.get_taxes_less_subsidies(country_name),
             "Taxes Less Subsidies in LCU": exchange_rate
-            * current_icio_reader.get_monthly_taxes_less_subsidies(country_name=country_name),
+            * current_icio_reader.get_taxes_less_subsidies(country_name=country_name),
             "Taxes Less Subsidies Rates": current_icio_reader.get_taxes_less_subsidies_rates(country_name),
-            "Household Consumption in USD": current_icio_reader.get_monthly_hh_consumption(country_name),
-            "Household Consumption in LCU": exchange_rate
-            * current_icio_reader.get_monthly_hh_consumption(country_name),
-            "Domestic Household Consumption in USD": current_icio_reader.get_monthly_hh_consumption_domestic(
-                country_name
-            ),
+            "Household Consumption in USD": current_icio_reader.get_hh_consumption(country_name),
+            "Household Consumption in LCU": exchange_rate * current_icio_reader.get_hh_consumption(country_name),
+            "Domestic Household Consumption in USD": current_icio_reader.get_hh_consumption_domestic(country_name),
             "Domestic Household Consumption in LCU": exchange_rate
-            * current_icio_reader.get_monthly_hh_consumption_domestic(country_name),
+            * current_icio_reader.get_hh_consumption_domestic(country_name),
             "Household Consumption Weights": current_icio_reader.get_hh_consumption_weights(country_name),
-            "Government Consumption in USD": current_icio_reader.get_monthly_govt_consumption(country_name),
-            "Government Consumption in LCU": exchange_rate
-            * current_icio_reader.get_monthly_govt_consumption(country_name),
-            "Domestic Government Consumption in USD": current_icio_reader.get_monthly_govt_consumption_domestic(
-                country_name
-            ),
+            "Government Consumption in USD": current_icio_reader.get_govt_consumption(country_name),
+            "Government Consumption in LCU": exchange_rate * current_icio_reader.get_govt_consumption(country_name),
+            "Domestic Government Consumption in USD": current_icio_reader.get_govt_consumption_domestic(country_name),
             "Domestic Government Consumption in LCU": exchange_rate
-            * current_icio_reader.get_monthly_govt_consumption_domestic(country_name),
+            * current_icio_reader.get_govt_consumption_domestic(country_name),
             "Government Consumption Weights": current_icio_reader.govt_consumption_weights(country_name),
             "Labour Compensation in USD": sea_reader.get_values_in_usd(country_name, "Labour Compensation") / 12.0,
             "Labour Compensation in LCU": sea_reader.get_values_in_lcu(country_name, "Labour Compensation") / 12.0,
@@ -244,36 +236,29 @@ def get_country_industry_data(
     # Industry vectors
     industry_data = pd.DataFrame(
         data={
-            "Output in USD": icio_readers[year].get_monthly_total_output(country_name),
-            "Output in LCU": icio_readers[year].get_monthly_total_output(country_name) * exchange_rate,
-            "Intermediate Inputs Supply": icio_readers[year]
-            .get_monthly_intermediate_inputs_use(country_name)
-            .sum(axis=0),
-            "Intermediate Inputs Use": icio_readers[year].get_monthly_intermediate_inputs_use(country_name).sum(axis=1),
+            "Output in USD": icio_readers[year].get_total_output(country_name),
+            "Output in LCU": icio_readers[year].get_total_output(country_name) * exchange_rate,
+            "Intermediate Inputs Supply": icio_readers[year].get_intermediate_inputs_use(country_name).sum(axis=0),
+            "Intermediate Inputs Use": icio_readers[year].get_intermediate_inputs_use(country_name).sum(axis=1),
             "Intermediate Inputs Domestic Use": icio_readers[year]
-            .get_monthly_intermediate_inputs_domestic(country_name)
+            .get_intermediate_inputs_domestic(country_name)
             .sum(axis=1),
-            "Capital Inputs Domestic": icio_readers[year].get_monthly_capital_inputs_domestic(country_name),
-            "Capital Inputs": icio_readers[year].get_monthly_capital_inputs(country_name),
-            "Value Added in USD": icio_readers[year].get_monthly_value_added(country_name),
-            "Value Added in LCU": exchange_rate * icio_readers[year].get_monthly_value_added(country_name),
+            "Capital Inputs Domestic": icio_readers[year].get_capital_inputs_domestic(country_name),
+            "Capital Inputs": icio_readers[year].get_capital_inputs(country_name),
+            "Value Added in USD": icio_readers[year].get_value_added(country_name),
+            "Value Added in LCU": exchange_rate * icio_readers[year].get_value_added(country_name),
             "Taxes Less Subsidies Rates": icio_readers[year].get_taxes_less_subsidies_rates(country_name),
-            "Household Consumption in USD": icio_readers[year].get_monthly_hh_consumption(country_name),
-            "Household Consumption in LCU": exchange_rate * icio_readers[year].get_monthly_hh_consumption(country_name),
-            "Domestic Household Consumption in USD": icio_readers[year].get_monthly_hh_consumption_domestic(
-                country_name
-            ),
+            "Household Consumption in USD": icio_readers[year].get_hh_consumption(country_name),
+            "Household Consumption in LCU": exchange_rate * icio_readers[year].get_hh_consumption(country_name),
+            "Domestic Household Consumption in USD": icio_readers[year].get_hh_consumption_domestic(country_name),
             "Domestic Household Consumption in LCU": exchange_rate
-            * icio_readers[year].get_monthly_hh_consumption_domestic(country_name),
+            * icio_readers[year].get_hh_consumption_domestic(country_name),
             "Household Consumption Weights": icio_readers[year].get_hh_consumption_weights(country_name),
-            "Government Consumption in USD": icio_readers[year].get_monthly_govt_consumption(country_name),
-            "Government Consumption in LCU": exchange_rate
-            * icio_readers[year].get_monthly_govt_consumption(country_name),
-            "Domestic Government Consumption in USD": icio_readers[year].get_monthly_govt_consumption_domestic(
-                country_name
-            ),
+            "Government Consumption in USD": icio_readers[year].get_govt_consumption(country_name),
+            "Government Consumption in LCU": exchange_rate * icio_readers[year].get_govt_consumption(country_name),
+            "Domestic Government Consumption in USD": icio_readers[year].get_govt_consumption_domestic(country_name),
             "Domestic Government Consumption in LCU": exchange_rate
-            * icio_readers[year].get_monthly_govt_consumption_domestic(country_name),
+            * icio_readers[year].get_govt_consumption_domestic(country_name),
             "Government Consumption Weights": icio_readers[year].govt_consumption_weights(country_name),
             "Exports in USD": icio_readers[year].get_exports(country_name),
             "Exports in LCU": exchange_rate * icio_readers[year].get_exports(country_name),

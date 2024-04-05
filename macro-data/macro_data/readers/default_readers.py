@@ -255,12 +255,12 @@ class DataReaders:
         # unemp = [self.get_total_unemployment_benefits_lcu(country_name, year) for year in years]
         unemp = [
             self.oecd_econ.unemployment_benefits_gdp_pct(country_name, year)
-            * self.world_bank.get_current_monthly_gdp(country_name, year)
+            * self.world_bank.get_current_scaled_gdp(country_name, year)
             for year in years
         ]
         other = [
             self.oecd_econ.all_benefits_gdp_pct(country_name, year)
-            * self.world_bank.get_current_monthly_gdp(country_name, year)
+            * self.world_bank.get_current_scaled_gdp(country_name, year)
             - unemp[i]
             for i, year in enumerate(years)
         ]
@@ -294,14 +294,14 @@ class DataReaders:
     def get_total_benefits_lcu(self, country_name: Country, year: int) -> float:
         return (
             self.oecd_econ.all_benefits_gdp_pct(country_name, year)
-            * self.world_bank.get_current_monthly_gdp(country_name, year)
+            * self.world_bank.get_current_scaled_gdp(country_name, year)
             * self.exchange_rates.from_usd_to_lcu(country_name, year)
         )
 
     def get_total_unemployment_benefits_lcu(self, country_name: Country, year: int) -> float:
         return (
             self.oecd_econ.unemployment_benefits_gdp_pct(country_name, year)
-            * self.world_bank.get_current_monthly_gdp(country_name, year)
+            * self.world_bank.get_current_scaled_gdp(country_name, year)
             * self.exchange_rates.from_usd_to_lcu(country_name, year)
         )
 
@@ -335,7 +335,7 @@ def add_investment_matrix_to_icio(
     country_names: list[str],
 ) -> None:
     for country_name in country_names:
-        gfcf = icio_reader.get_monthly_capital_inputs(country_name)
+        gfcf = icio_reader.get_capital_inputs(country_name)
         cap = sea_reader.get_values_in_usd(country_name, "Capital Compensation") / 12.0
         investment_matrix = np.array([gfcf for _ in range(len(cap))]).T
         investment_matrix = investment_matrix * cap[None, :]  # proportionally fitting CAP
@@ -379,7 +379,7 @@ def match_iot_with_sea(
             sea_reader.df.index.get_level_values(0) == country_name,
             "Capital Compensation",
         ] = 12 * icio_reader.investment_matrices[country_name].values.sum(axis=0)
-        new_va = 12 * icio_reader.get_monthly_value_added(country_name)
+        new_va = 12 * icio_reader.get_value_added(country_name)
         va_factor = new_va / get_sea(country_name, "Value Added", sea_reader)
         sea_reader.df.loc[
             sea_reader.df.index.get_level_values(0) == country_name,

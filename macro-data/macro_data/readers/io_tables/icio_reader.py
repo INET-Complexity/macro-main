@@ -82,6 +82,7 @@ class ICIOReader:
         industries: list[str],
         imputed_rents: dict[str, float],
         year: int,
+        yearly_factor: float = 4.0,
     ):
         self.iot = iot
         self.considered_countries = considered_countries
@@ -89,6 +90,7 @@ class ICIOReader:
         self.imputed_rents = imputed_rents
         self.year = year
         self.investment_matrices = {}
+        self.yearly_factor = yearly_factor
 
         # Normalisation
         self.normalise_iot()
@@ -104,6 +106,7 @@ class ICIOReader:
         year: int,
         exchange_rates: WorldBankRatesReader,
         imputed_rent_fraction: dict[str, float],
+        yearly_factor: float = 4.0,
     ) -> "ICIOReader":
         # This is quite slow, so adding the option of loading it
         if os.path.isfile(pivot_path):
@@ -128,7 +131,7 @@ class ICIOReader:
                         imputed_rent_fraction[country_name]
                         * agg_df.at[(country_name, "L"), (country_name, "Household Consumption")]
                     )
-                    / 12.0
+                    / yearly_factor
                     * exchange_rates.from_usd_to_lcu(country_name, year)
                 )
             else:
@@ -143,6 +146,7 @@ class ICIOReader:
             industries=industries,
             imputed_rents=imputed_rents,
             year=year,
+            yearly_factor=yearly_factor,
         )
 
     @staticmethod
@@ -273,12 +277,12 @@ class ICIOReader:
         all_cols = [self.iot.loc[col, (country_name, symbol)].loc[self.industries] for col in considered_countries_row]
         return reduce(lambda a, b: a + b, all_cols).fillna(0)
 
-    def get_monthly_total_output(self, country_name: str) -> np.ndarray:
+    def get_total_output(self, country_name: str) -> np.ndarray:
         return (self.iot[("TOTAL", "Output")].xs(country_name, axis=0, level=0).loc[self.industries]).fillna(
             0
-        ).values / 12.0
+        ).values / self.yearly_factor
 
-    def get_monthly_intermediate_inputs_use(self, country_name: str) -> np.ndarray:
+    def get_intermediate_inputs_use(self, country_name: str) -> np.ndarray:
         return (
             reduce(
                 lambda a, b: a + b,
@@ -287,10 +291,10 @@ class ICIOReader:
                     for c_prime in self.considered_countries + ["ROW"]
                 ],
             )
-            / 12.0
+            / self.yearly_factor
         )
 
-    def get_monthly_intermediate_inputs_supply(self, country_name: str) -> np.ndarray:
+    def get_intermediate_inputs_supply(self, country_name: str) -> np.ndarray:
         return (
             reduce(
                 lambda a, b: a + b,
@@ -299,15 +303,15 @@ class ICIOReader:
                     for c_prime in self.considered_countries + ["ROW"]
                 ],
             )
-            / 12.0
+            / self.yearly_factor
         )
 
-    def get_monthly_intermediate_inputs_domestic(self, country_name: str) -> np.ndarray:
+    def get_intermediate_inputs_domestic(self, country_name: str) -> np.ndarray:
         c_iot = self.iot.xs(country_name, axis=1, level=0)
-        return c_iot.loc[country_name, c_iot.columns.isin(self.industries)] / 12.0
+        return c_iot.loc[country_name, c_iot.columns.isin(self.industries)] / self.yearly_factor
 
-    def get_monthly_capital_inputs(self, country_name: str) -> np.ndarray:
-        return self.column_allc(country_name, "Fixed Capital Formation").values / 12.0
+    def get_capital_inputs(self, country_name: str) -> np.ndarray:
+        return self.column_allc(country_name, "Fixed Capital Formation").values / self.yearly_factor
 
     def get_gfcf_column(self, country_name: str) -> np.ndarray:
         return (
@@ -315,41 +319,44 @@ class ICIOReader:
                 self.iot.index.get_level_values(1).isin(self.industries),
                 (country_name, "Fixed Capital Formation"),
             ].values
-            / 12.0
+            / self.yearly_factor
         )
 
-    def get_monthly_capital_inputs_domestic(self, country_name: str) -> np.ndarray:
-        return self.iot.loc[country_name, country_name]["Fixed Capital Formation"].values / 12.0
+    def get_capital_inputs_domestic(self, country_name: str) -> np.ndarray:
+        return self.iot.loc[country_name, country_name]["Fixed Capital Formation"].values / self.yearly_factor
 
-    def get_monthly_value_added(self, country_name: str) -> np.ndarray:
-        return self.iot.xs(country_name, axis=1, level=0).loc[("TOTAL", "Value Added"), self.industries].values / 12.0
+    def get_value_added(self, country_name: str) -> np.ndarray:
+        return (
+            self.iot.xs(country_name, axis=1, level=0).loc[("TOTAL", "Value Added"), self.industries].values
+            / self.yearly_factor
+        )
 
-    def get_monthly_taxes_less_subsidies(self, country_name: str) -> np.ndarray:
+    def get_taxes_less_subsidies(self, country_name: str) -> np.ndarray:
         return (
             self.iot.xs(country_name, axis=1, level=0).loc[("TOTAL", "Taxes Less Subsidies"), self.industries].values
-        ) / 12.0
+        ) / self.yearly_factor
 
     def get_taxes_less_subsidies_rates(self, country_name: str) -> np.ndarray:
-        return self.get_monthly_taxes_less_subsidies(country_name) / self.get_monthly_total_output(country_name)
+        return self.get_taxes_less_subsidies(country_name) / self.get_total_output(country_name)
 
-    def get_monthly_hh_consumption(self, country_name: str) -> np.ndarray:
-        return self.column_allc(country_name, "Household Consumption").values / 12.0
+    def get_hh_consumption(self, country_name: str) -> np.ndarray:
+        return self.column_allc(country_name, "Household Consumption").values / self.yearly_factor
 
-    def get_monthly_hh_consumption_domestic(self, country_name: str) -> np.ndarray:
-        return self.iot.loc[country_name, (country_name, "Household Consumption")].values / 12.0
+    def get_hh_consumption_domestic(self, country_name: str) -> np.ndarray:
+        return self.iot.loc[country_name, (country_name, "Household Consumption")].values / self.yearly_factor
 
     def get_hh_consumption_weights(self, country_name: str) -> np.ndarray:
-        hh_cons = self.get_monthly_hh_consumption(country_name)
+        hh_cons = self.get_hh_consumption(country_name)
         return hh_cons / hh_cons.sum()
 
-    def get_monthly_govt_consumption(self, country_name: str) -> np.ndarray:
-        return self.column_allc(country_name, "Government Consumption").values / 12.0
+    def get_govt_consumption(self, country_name: str) -> np.ndarray:
+        return self.column_allc(country_name, "Government Consumption").values / self.yearly_factor
 
-    def get_monthly_govt_consumption_domestic(self, country_name: str) -> np.ndarray:
-        return self.iot.loc[country_name, (country_name, "Government Consumption")].values / 12.0
+    def get_govt_consumption_domestic(self, country_name: str) -> np.ndarray:
+        return self.iot.loc[country_name, (country_name, "Government Consumption")].values / self.yearly_factor
 
     def govt_consumption_weights(self, country_name: str) -> np.ndarray:
-        gov_cons = self.get_monthly_govt_consumption(country_name)
+        gov_cons = self.get_govt_consumption(country_name)
         return gov_cons / gov_cons.sum()
 
     def get_imports(self, country_name: str) -> pd.Series:
@@ -358,7 +365,7 @@ class ICIOReader:
             lambda a, b: a + b,
             (self.iot.loc[c2, country_name].sum(axis=1) for c2 in considered_countries_row if c2 != country_name),
         )
-        return imports.loc[self.industries] / 12.0
+        return imports.loc[self.industries] / self.yearly_factor
 
     def get_exports(self, country_name: str) -> pd.Series:
         considered_countries_row = self.considered_countries + ["ROW"]
@@ -366,10 +373,10 @@ class ICIOReader:
             lambda a, b: a + b,
             (self.iot.loc[country_name, c2].sum(axis=1) for c2 in considered_countries_row if c2 != country_name),
         )
-        return exports.loc[self.industries] / 12.0
+        return exports.loc[self.industries] / self.yearly_factor
 
     def get_trade(self, start_country: str, end_country: str) -> pd.Series:
-        return self.iot.loc[start_country, end_country].sum(axis=1).loc[self.industries] / 12.0
+        return self.iot.loc[start_country, end_country].sum(axis=1).loc[self.industries] / self.yearly_factor
 
     def get_trade_proportions(self) -> pd.DataFrame:
         trade_proportions = {"start_country": [], "end_country": [], "industry": [], "value": []}
@@ -388,8 +395,8 @@ class ICIOReader:
         return pd.DataFrame(trade_proportions).set_index(["start_country", "end_country", "industry"])
 
     def get_intermediate_inputs_matrix(self, country_name: str) -> pd.DataFrame:
-        total_output = self.get_monthly_total_output(country_name)
-        total_monthly_intermediate_inputs = self.get_monthly_intermediate_inputs_use(country_name)
+        total_output = self.get_total_output(country_name)
+        total_monthly_intermediate_inputs = self.get_intermediate_inputs_use(country_name)
         return total_output[None, :] / total_monthly_intermediate_inputs  # noqa
 
     def get_capital_inputs_matrix(
@@ -399,7 +406,7 @@ class ICIOReader:
     ) -> pd.DataFrame:
         norm_investment_matrix = self.investment_matrices[country_name].copy()
         norm_investment_matrix /= norm_investment_matrix.sum(axis=0)
-        cap_inputs_matrix = (self.get_monthly_total_output(country_name) / capital_stock) / norm_investment_matrix
+        cap_inputs_matrix = (self.get_total_output(country_name) / capital_stock) / norm_investment_matrix
         return cap_inputs_matrix.xs(country_name, axis=0, level=0).xs(country_name, axis=1, level=0).fillna(np.inf)
 
     def get_capital_inputs_depreciation(
@@ -407,8 +414,8 @@ class ICIOReader:
         country_name: str,
         capital_compensation: np.ndarray,
     ) -> pd.DataFrame:
-        total_output = self.get_monthly_total_output(country_name)
-        gfcf = self.get_monthly_capital_inputs(country_name)
+        total_output = self.get_total_output(country_name)
+        gfcf = self.get_capital_inputs(country_name)
         investment_matrix = np.array([gfcf for _ in range(len(capital_compensation))]).T
         norm_investment_matrix = investment_matrix / investment_matrix.sum(axis=0)
         norm_investment_matrix *= (capital_compensation / total_output)[None, :]
@@ -418,5 +425,5 @@ class ICIOReader:
                 index=pd.Index(self.industries, name="Industries"),
                 columns=pd.Index(self.industries, name="Industries"),
             )
-            / 12.0
+            / self.yearly_factor
         )

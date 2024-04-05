@@ -124,6 +124,7 @@ class SyntheticPopulation(ABC):
         saving_rates_model: LinearRegression,
         social_transfers_model: LinearRegression,
         wealth_distribution_model: LinearRegression,
+        yearly_factor: float = 4.0,
     ):
         self.country_name = country_name
         self.country_name_short = country_name_short
@@ -145,6 +146,7 @@ class SyntheticPopulation(ABC):
         self.saving_rates_model = saving_rates_model
         self.social_transfers_model = social_transfers_model
         self.wealth_distribution_model = wealth_distribution_model
+        self.yearly_factor = yearly_factor
 
     def set_individual_labour_inputs(
         self,

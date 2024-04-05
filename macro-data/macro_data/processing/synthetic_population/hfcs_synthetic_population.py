@@ -171,7 +171,8 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         n_quantiles: int = 5,
         population_ratio: float = 1.0,
         exch_rate: float = 1.0,
-        proxied_country=None,
+        proxied_country: str | Country = None,
+        yearly_factor: float = 4.0,
     ) -> "SyntheticHFCSPopulation":
         """
         Creates a synthetic population from data readers.
@@ -192,6 +193,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
                                                  the HFCS population is used as a proxy for another country.
             exch_rate (float, optional): The exchange rate. Defaults to 1.0.
             proxied_country (str, optional): The name of the proxied country. Defaults to None.
+            yearly_factor (float, optional): The yearly factor. Defaults to 4.0 for 4 quarters.
 
         Returns:
             cls: The synthetic population object.
@@ -556,7 +558,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         fa_mask = np.logical_not(np.isnan(self.household_data["Income from Financial Assets"].values.astype(float)))
         self.household_data["Income from Financial Assets"] *= self.scale
         self.coefficient_fa_income = (
-            self.household_data["Income from Financial Assets"].values.astype(float)[fa_mask].sum() / 12.0
+            self.household_data["Income from Financial Assets"].values.astype(float)[fa_mask].sum() / self.yearly_factor
         ) / (self.household_data["Wealth in Other Financial Assets"].values.astype(float)[fa_mask]).sum()
         self.household_data["Income from Financial Assets"] = (
             self.coefficient_fa_income * self.household_data["Wealth in Other Financial Assets"].values

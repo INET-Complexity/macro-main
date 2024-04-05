@@ -24,7 +24,7 @@ class TestICIOReader:
 
     @pytest.mark.parametrize("country", ["FRA"])
     def test__output(self, readers, country):
-        assert np.all(readers.icio[2014].get_monthly_total_output(country)) > 0
+        assert np.all(readers.icio[2014].get_total_output(country)) > 0
 
     @pytest.mark.parametrize(
         "country, symbol",
