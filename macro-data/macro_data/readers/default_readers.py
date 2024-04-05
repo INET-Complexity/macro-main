@@ -20,6 +20,7 @@ from macro_data.readers.economic_data.ons_reader import ONSReader
 from macro_data.readers.economic_data.policy_rates import PolicyRatesReader
 from macro_data.readers.economic_data.world_bank_reader import WorldBankReader
 from macro_data.readers.io_tables.icio_reader import ICIOReader
+from macro_data.readers.population_data.compustat_firms_reader import CompustatFirmsReader
 from macro_data.readers.population_data.hfcs_reader import HFCSReader
 from macro_data.readers.socioeconomic_data.wiod_sea_data import WIODSEAReader
 from macro_data.readers.util.prune_util import DataFilterWarning
@@ -44,6 +45,8 @@ class DataPaths:
     ons_path: Path
     world_bank_path: Path
     ecb_path: Path
+    compustat_firms_annual_path: Path
+    compustat_firms_quarterly_path: Path
 
     @classmethod
     def default_paths(cls, raw_data_path: Path, icio_years: Iterable[int]):
@@ -52,12 +55,9 @@ class DataPaths:
             exchange_rates_path=raw_data_path / "exchange_rates" / "exchange_rates.csv",
             eurostat_path=raw_data_path / "eurostat",
             hfcs_path=raw_data_path / "hfcs",
-            icio_paths={
-                year: raw_data_path / "icio" / str(year) / ("ICIO2021_" + str(year) + ".csv") for year in icio_years
-            },
+            icio_paths={year: raw_data_path / "icio" / str(year) / f"ICIO2021_{year}.csv" for year in icio_years},
             icio_pivot_paths={
-                year: raw_data_path / "icio" / str(year) / ("ICIO2021_" + str(year) + "_pivot.csv")
-                for year in icio_years
+                year: raw_data_path / "icio" / str(year) / f"ICIO2021_{year}_pivot.csv" for year in icio_years
             },
             icio_agg_path=raw_data_path / "icio" / "mappings.json",
             wiod_sea_path=raw_data_path / "wiod_sea" / "wiod_sea.csv",
@@ -70,6 +70,8 @@ class DataPaths:
             ons_path=raw_data_path / "ons",
             world_bank_path=raw_data_path / "world_bank",
             ecb_path=raw_data_path / "ecb",
+            compustat_firms_annual_path=raw_data_path / "compustat" / "firms_annual.csv",
+            compustat_firms_quarterly_path=raw_data_path / "compustat" / "firms_quarterly.csv",
         )
 
 
@@ -87,6 +89,7 @@ class DataReaders:
     exchange_rates: WorldBankRatesReader
     goods_criticality: GoodsCriticalityReader
     ecb_reader: ECBReader
+    compustat_firms: CompustatFirmsReader
 
     @classmethod
     def from_raw_data(
@@ -187,6 +190,16 @@ class DataReaders:
 
         ecb_reader = ECBReader(path=datapaths.ecb_path)
 
+        all_countries = list(set(country_names).union(set(proxy_country_dict.values())))
+
+        compustat_firms = CompustatFirmsReader.from_raw_data(
+            year=simulation_year,
+            quarter=1,
+            countries=all_countries,
+            raw_annual_path=datapaths.compustat_firms_annual_path,
+            raw_quarterly_path=datapaths.compustat_firms_quarterly_path,
+        )
+
         if prune_date:
             exchange_rates.prune(prune_date)
             eurostat.prune(prune_date)
@@ -210,6 +223,7 @@ class DataReaders:
             exchange_rates=exchange_rates,
             goods_criticality=goods_criticality,
             ecb_reader=ecb_reader,
+            compustat_firms=compustat_firms,
         )
 
     def get_exogenous_data(self, country_name: Country) -> Optional[dict[str, Any]]:
