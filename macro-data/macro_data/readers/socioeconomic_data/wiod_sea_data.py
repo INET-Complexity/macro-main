@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from macro_data.readers.economic_data.exchange_rates import WorldBankRatesReader
+from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
 from macro_data.readers.util.prune_util import prune_index
 
 
@@ -17,13 +17,13 @@ class WIODSEAReader:
         df (pd.DataFrame): The DataFrame containing the socioeconomic data.
         year (int): The year of the data.
         industries (list[str]): The list of industries to include in the analysis.
-        exchange_rates (WorldBankRatesReader): An instance of the WorldBankRatesReader class for exchange rate data.
+        exchange_rates (ExchangeRatesReader): An instance of the WorldBankRatesReader class for exchange rate data.
 
     Attributes:
         df (pd.DataFrame): The DataFrame containing the socioeconomic data.
         year (int): The year of the data.
         industries (list[str]): The list of industries to include in the analysis.
-        exchange_rates (WorldBankRatesReader): An instance of the WorldBankRatesReader class for exchange rate data.
+        exchange_rates (ExchangeRatesReader): An instance of the WorldBankRatesReader class for exchange rate data.
     """
 
     def __init__(
@@ -31,7 +31,7 @@ class WIODSEAReader:
         df: pd.DataFrame,
         year: int,
         industries: list[str],
-        exchange_rates: WorldBankRatesReader,
+        exchange_rates: ExchangeRatesReader,
     ):
         self.df = df
         self.year = year
@@ -48,7 +48,7 @@ class WIODSEAReader:
         year: int,
         country_names: list[str],
         industries: list,
-        exchange_rates: WorldBankRatesReader,
+        exchange_rates: ExchangeRatesReader,
     ) -> "WIODSEAReader":
         """
         Aggregate socioeconomic data from a CSV file. Aggregation is done using a JSON file that maps sectors to aggregated sectors.
@@ -59,7 +59,7 @@ class WIODSEAReader:
             year (int): The year of the data.
             country_names (list[str]): The list of country names to include in the aggregation.
             industries (list): The list of industries to include in the aggregation.
-            exchange_rates (WorldBankRatesReader): The exchange rates reader.
+            exchange_rates (ExchangeRatesReader): The exchange rates reader.
 
         Returns:
             WIOD_SEA_Data: An instance of the WIOD_SEA_Data class containing the aggregated data.

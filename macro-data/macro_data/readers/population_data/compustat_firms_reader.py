@@ -11,7 +11,7 @@ from sklearn.experimental import enable_iterative_imputer  # noqa
 from sklearn.impute import IterativeImputer  # noqa
 
 from macro_data.configuration.countries import Country
-from macro_data.readers.economic_data.exchange_rates import WorldBankRatesReader
+from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
 
 var_mapping = {
     "curcdq": "Currency Code",

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from macro_data.readers.economic_data.exchange_rates import WorldBankRatesReader
+from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
 
 var_mapping = {
     "ID": "ID",
@@ -102,7 +102,7 @@ class HFCSReader:
         country_name_short: str,
         year: int,
         hfcs_data_path: Path,
-        exchange_rates: WorldBankRatesReader,
+        exchange_rates: ExchangeRatesReader,
         num_surveys: int = 5,
     ) -> "HFCSReader":
         # Take default paths
@@ -180,7 +180,7 @@ class HFCSReader:
         country_name: str,
         country_name_short: str,
         year: int,
-        exchange_rates: WorldBankRatesReader,
+        exchange_rates: ExchangeRatesReader,
     ) -> pd.DataFrame:
         # Load inet_data
         df = pd.read_csv(path, encoding="unicode_escape", low_memory=False)

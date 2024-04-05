@@ -13,7 +13,7 @@ from macro_data.readers.criticality_data.goods_criticality_reader import (
 )
 from macro_data.readers.economic_data.ecb_reader import ECBReader
 from macro_data.readers.economic_data.eurostat_reader import EuroStatReader
-from macro_data.readers.economic_data.exchange_rates import WorldBankRatesReader
+from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
 from macro_data.readers.economic_data.imf_reader import IMFReader
 from macro_data.readers.economic_data.oecd_economic_data import OECDEconData
 from macro_data.readers.economic_data.ons_reader import ONSReader
@@ -89,7 +89,7 @@ class DataReaders:
     ons: ONSReader
     policy_rates: PolicyRatesReader
     imf_reader: IMFReader
-    exchange_rates: WorldBankRatesReader
+    exchange_rates: ExchangeRatesReader
     goods_criticality: GoodsCriticalityReader
     ecb_reader: ECBReader
     compustat_firms: CompustatFirmsReader
@@ -124,7 +124,7 @@ class DataReaders:
         datapaths = DataPaths.default_paths(raw_data_path, all_years)
 
         goods_criticality = GoodsCriticalityReader.from_csv(path=datapaths.goods_criticality_path)
-        exchange_rates = WorldBankRatesReader.from_csv(path=datapaths.exchange_rates_path)
+        exchange_rates = ExchangeRatesReader.from_csv(path=datapaths.exchange_rates_path)
         eurostat = EuroStatReader(path=datapaths.eurostat_path, country_code_path=datapaths.country_codes_path)
 
         proxified = [country if country.is_eu_country else proxy_country_dict[country] for country in country_names]
@@ -330,13 +330,11 @@ def prune_icio_dict(icio_dict: dict[int, Any], prune_date: date):
 
 
 def add_investment_matrix_to_icio(
-    icio_reader: ICIOReader,
-    sea_reader: WIODSEAReader,
-    country_names: list[str],
+    icio_reader: ICIOReader, sea_reader: WIODSEAReader, country_names: list[str], yearly_factor: float = 4.0
 ) -> None:
     for country_name in country_names:
         gfcf = icio_reader.get_capital_inputs(country_name)
-        cap = sea_reader.get_values_in_usd(country_name, "Capital Compensation") / 12.0
+        cap = sea_reader.get_values_in_usd(country_name, "Capital Compensation") / yearly_factor
         investment_matrix = np.array([gfcf for _ in range(len(cap))]).T
         investment_matrix = investment_matrix * cap[None, :]  # proportionally fitting CAP
         investment_matrix *= gfcf.sum() / investment_matrix.sum()  # match GFCF exactly
@@ -373,13 +371,14 @@ def match_iot_with_sea(
     icio_reader: ICIOReader,
     sea_reader: WIODSEAReader,
     country_names: list[str],
+    yearly_factor: float = 4.0,
 ) -> None:
     for country_name in country_names:
         sea_reader.df.loc[
             sea_reader.df.index.get_level_values(0) == country_name,
             "Capital Compensation",
-        ] = 12 * icio_reader.investment_matrices[country_name].values.sum(axis=0)
-        new_va = 12 * icio_reader.get_value_added(country_name)
+        ] = yearly_factor * icio_reader.investment_matrices[country_name].values.sum(axis=0)
+        new_va = yearly_factor * icio_reader.get_value_added(country_name)
         va_factor = new_va / get_sea(country_name, "Value Added", sea_reader)
         sea_reader.df.loc[
             sea_reader.df.index.get_level_values(0) == country_name,

@@ -3,7 +3,7 @@ import pandas as pd
 
 from macro_data.configuration.countries import Country
 from macro_data.readers.default_readers import DataReaders
-from macro_data.readers.economic_data.exchange_rates import WorldBankRatesReader
+from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
 from macro_data.readers.economic_data.oecd_economic_data import OECDEconData
 from macro_data.readers.io_tables.icio_reader import ICIOReader
 from macro_data.readers.socioeconomic_data.wiod_sea_data import WIODSEAReader
@@ -14,6 +14,7 @@ def compile_industry_data(
     readers: DataReaders,
     country_names: list[Country],
     single_firm_per_industry: dict[str, bool],
+    yearly_factor: float = 4.0,
 ) -> dict[str, dict[str, pd.DataFrame]]:
     industry_data = {}
     current_icio_reader = readers.icio[year]
@@ -46,6 +47,7 @@ def compile_industry_data(
             econ_reader,
             single_firm_per_industry[country_name],
             trade_partners=country_names + ["ROW"],
+            yearly_factor=yearly_factor,
         )
 
         # Record all
@@ -82,6 +84,7 @@ def get_industry_vectors(
     econ_reader: OECDEconData,
     single_firm_per_industry: bool,
     trade_partners: list[str],
+    yearly_factor: float = 4.0,
 ) -> pd.DataFrame:
     industry_vectors = pd.DataFrame(
         data={
@@ -117,8 +120,10 @@ def get_industry_vectors(
             "Domestic Government Consumption in LCU": exchange_rate
             * current_icio_reader.get_govt_consumption_domestic(country_name),
             "Government Consumption Weights": current_icio_reader.govt_consumption_weights(country_name),
-            "Labour Compensation in USD": sea_reader.get_values_in_usd(country_name, "Labour Compensation") / 12.0,
-            "Labour Compensation in LCU": sea_reader.get_values_in_lcu(country_name, "Labour Compensation") / 12.0,
+            "Labour Compensation in USD": sea_reader.get_values_in_usd(country_name, "Labour Compensation")
+            / yearly_factor,
+            "Labour Compensation in LCU": sea_reader.get_values_in_lcu(country_name, "Labour Compensation")
+            / yearly_factor,
             "Capital Stock": sea_reader.get_values_in_usd(country_name, "Capital Stock"),
             "Average Initial Price": np.full(len(current_icio_reader.industries), exchange_rate),
             "Exports in USD": current_icio_reader.get_exports(country_name),
@@ -199,7 +204,7 @@ def compile_exogenous_industry_data(
 
 
 def get_row_industry_data(
-    country_names: list[str], exchange_rates: WorldBankRatesReader, icio_readers: dict[int, ICIOReader], year: int
+    country_names: list[str], exchange_rates: ExchangeRatesReader, icio_readers: dict[int, ICIOReader], year: int
 ) -> pd.DataFrame:
     exchange_rate_row = exchange_rates.from_usd_to_lcu("ROW", year)
     row_industry_data = pd.DataFrame(
@@ -227,7 +232,7 @@ def get_row_industry_data(
 def get_country_industry_data(
     country_name: str,
     country_names: list[str],
-    exchange_rates: WorldBankRatesReader,
+    exchange_rates: ExchangeRatesReader,
     icio_readers: dict[int, ICIOReader],
     year: int,
 ) -> pd.DataFrame:

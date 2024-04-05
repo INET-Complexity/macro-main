@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from macro_data.readers.economic_data.exchange_rates import WorldBankRatesReader
+from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
 from macro_data.readers.io_tables.util import aggregate_df
 
 
@@ -104,7 +104,7 @@ class ICIOReader:
         aggregation_path: Path,
         industries: list[str],
         year: int,
-        exchange_rates: WorldBankRatesReader,
+        exchange_rates: ExchangeRatesReader,
         imputed_rent_fraction: dict[str, float],
         yearly_factor: float = 4.0,
     ) -> "ICIOReader":

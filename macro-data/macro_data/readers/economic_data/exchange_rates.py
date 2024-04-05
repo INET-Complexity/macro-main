@@ -6,7 +6,7 @@ import pandas as pd
 from macro_data.readers.util.prune_util import prune_index
 
 
-class WorldBankRatesReader:
+class ExchangeRatesReader:
     """
     A class for reading and manipulating World Bank exchange rate data.
 
@@ -14,7 +14,7 @@ class WorldBankRatesReader:
         df (pd.DataFrame): The DataFrame containing the exchange rate data.
 
     Methods:
-        from_csv(path: Path | str) -> "WorldBankRatesReader":
+        from_csv(path: Path | str) -> "ExchangeRatesReader":
             Creates a WorldBankRatesReader instance from a CSV file.
 
         exchange_rates_dict(year: int) -> dict[str, float]:
@@ -40,7 +40,7 @@ class WorldBankRatesReader:
         self.df = df
 
     @classmethod
-    def from_csv(cls, path: Path | str) -> "WorldBankRatesReader":
+    def from_csv(cls, path: Path | str) -> "ExchangeRatesReader":
         df = pd.read_csv(path, index_col=0)
         df.columns.name = "Year"
         return cls(df)

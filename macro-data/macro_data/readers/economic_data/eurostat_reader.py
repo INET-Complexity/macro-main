@@ -133,7 +133,7 @@ class EuroStatReader:
         return codes.map(lambda x: self.remap_2_to_3.get(x, x))
 
     @staticmethod
-    def find_value(df: pd.DataFrame, country: Country, year: str) -> float:
+    def find_value(df: pd.DataFrame, country: Country, year: str, return_last_value: bool = True) -> Optional[float]:
         """
         Find the value in the given DataFrame for the specified country and year.
 
@@ -141,6 +141,7 @@ class EuroStatReader:
             df (pd.DataFrame): The DataFrame containing the data.
             country (str): The name of the country.
             year (str): The year.
+            return_last_value (bool): Whether to return the last value if the data is not found.
 
         Returns:
             float: The value found in the DataFrame.
@@ -155,10 +156,12 @@ class EuroStatReader:
             return df.loc[df["TIME_PERIOD"] == int(year), "OBS_VALUE"].mean()
         if int(year) in country_data["TIME_PERIOD"].values:
             return country_data.loc[country_data["TIME_PERIOD"] == int(year), "OBS_VALUE"].values[0]
-        else:
+        elif return_last_value:
             values = country_data["OBS_VALUE"].values
             # return last value
             return values[-1]
+        else:
+            return None
 
     def nonfin_firm_debt_ratios(self, country: Country, year: int) -> float:
         """
@@ -176,7 +179,9 @@ class EuroStatReader:
         return self.find_value(df, country, str(year)) / 100.0
 
     # historic domestic
-    def get_total_nonfin_firm_debt(self, country: Country, year: int) -> float:
+    def get_total_nonfin_firm_debt(self, country: Country | str, year: int) -> float:
+        if isinstance(country, str):
+            country = Country(country)
         df = self.data["financial_balance_sheets"]
         country_name_short = country.to_two_letter_code()
         df = df.loc[
@@ -193,13 +198,48 @@ class EuroStatReader:
         else:
             return np.nan
 
-    def get_total_fin_firm_debt(self, country: Country, year: int) -> float:
+    def get_total_fin_firm_debt(self, country: Country | str, year: int) -> float:
+        if isinstance(country, str):
+            country = Country(country)
         df = self.data["financial_balance_sheets"]
         country_name_short = country.to_two_letter_code()
         df = df.loc[
             df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S12,LIAB,F4," + country_name_short
         ]
         return float(df[str(year)].values[0]) * 1e6
+
+    def get_total_household_deposits(self, country: str, year: int, proxy_country: str = "FRA") -> float:
+        df = self.data["financial_balance_sheets"]
+        country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
+        df = df.loc[
+            df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,CO,S1314,ASS,F2," + country_name_short
+        ]
+        val = df[str(year)].values
+        if len(val) == 0 or val[0] == ": ":
+            if proxy_country in self.total_output:
+                return (
+                    self.total_output[country]
+                    / self.total_output[proxy_country]
+                    * self.get_total_household_deposits(proxy_country, year)
+                )
+            else:
+                return self.get_total_household_deposits(proxy_country, year)
+        return float(val[0]) * 1e6
+
+    def get_total_household_fixed_assets(self, country: str, year: int, proxy_country: str = "GBR") -> float:
+        df = self.data["non_financial_balance_sheets"]
+        country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
+        df = df.loc[df[r"freq,unit,nace_r2,asset10,geo\TIME_PERIOD"] == "A,CRC_MNAC,TOTAL,N111N," + country_name_short]
+        val = df[str(year)].values
+        if len(val) == 0:
+            return (
+                self.total_output[country]
+                / self.total_output[proxy_country]
+                * self.get_total_household_fixed_assets(proxy_country, year)
+            )
+        if " " in val[0]:
+            return float(val[0][:-2]) * 1e6
+        return float(val[0]) * 1e6
 
     def nonfin_firm_deposit_ratios(self, country: Country, year: int) -> float:
         df = self.data["firm_deposits_ratio"]
@@ -227,7 +267,9 @@ class EuroStatReader:
         return start + (end - start) * ((month - 1) % 3) / 3
 
     # historic domestic
-    def get_total_nonfin_firm_deposits(self, country: Country, year: int) -> float:
+    def get_total_nonfin_firm_deposits(self, country: Country | str, year: int) -> float:
+        if isinstance(country, str):
+            country = Country(country)
         df = self.data["financial_balance_sheets"]
         country_name_short = country.to_two_letter_code()
         df = df.loc[df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S11,ASS,F2," + country_name_short]
@@ -243,13 +285,24 @@ class EuroStatReader:
             return np.nan
 
     # historic domestic
-    def get_total_bank_equity(self, country: Country, year: int) -> float:
+    def get_total_bank_equity(self, country: str, year: int, proxy_country: str = "FRA") -> float:
         df = self.data["financial_balance_sheets"]
-        country_name_short = country.to_two_letter_code()
+        country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[
             df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S122_S123,ASS,F5," + country_name_short
         ]
-        return float(df[str(year)].values[0]) * 1e6
+        if str(year) in df.columns:
+            val = df[str(year)].values
+            if len(val) > 0 and val[0] != ": d" and val[0] != ": de" and val[0] != ": ":
+                return float(val[0]) * 1e6
+        if proxy_country in self.total_output:
+            return (
+                self.total_output[country]
+                / self.total_output[proxy_country]
+                * self.get_total_bank_equity(proxy_country, year)
+            )
+        else:
+            return self.get_total_bank_equity(proxy_country, year)
 
     def cb_debt_ratios(self, country: Country, year: int) -> float:
         df = self.data["central_bank_debt_ratio"]
@@ -291,7 +344,9 @@ class EuroStatReader:
     # in domestic
     # numerator only available in current prices
     # denominator only available in historic prices
-    def dividend_payout_ratio(self, country: Country, year: int) -> float:
+    def dividend_payout_ratio(
+        self, country: str | Country, year: int, proxy_country: Country = Country("FRA")
+    ) -> float:
         """
         Calculate the dividend payout ratio for a given country and year.
 
@@ -302,6 +357,9 @@ class EuroStatReader:
         Returns:
         - float: The dividend payout ratio.
         """
+        if year not in [2010, 2011]:
+            # print("Warning: Using the 2011 data for the dividend payout ratio.")
+            year = 2011
         df = self.data["nonfinancial_transactions"]
 
         hh_prop_df = df[(df["na_item"] == "D4") & (df["direct"] == "RECV") & (df["sector"] == "S14")]
@@ -311,9 +369,12 @@ class EuroStatReader:
         df = self.data["iot_tables"]
         firm_surplus_df = df[(df["induse"] == "TOTAL") & (df["prod_na"] == "B2A3N")]
 
-        hh_prop = self.find_value(hh_prop_df, country, str(year))
-        hh_surplus = self.find_value(hh_surplus_df, country, str(year))
-        firm_surplus = self.find_value(firm_surplus_df, country, str(year))
+        hh_prop = self.find_value(hh_prop_df, country, str(year), return_last_value=False)
+        hh_surplus = self.find_value(hh_surplus_df, country, str(year), return_last_value=False)
+        firm_surplus = self.find_value(firm_surplus_df, country, str(year), return_last_value=False)
+
+        if hh_prop is None or hh_surplus is None or firm_surplus is None:
+            return self.dividend_payout_ratio(proxy_country, year)
 
         return (hh_prop + hh_surplus) / firm_surplus
 

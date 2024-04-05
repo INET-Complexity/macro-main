@@ -1,8 +1,24 @@
+from dataclasses import dataclass
+
 import pandas as pd
 
 from macro_data.configuration.countries import Country
 from macro_data.readers.default_readers import DataReaders
 from macro_data.readers.util.industry_extraction import compile_exogenous_industry_data
+
+
+@dataclass
+class ExogenousCountryData:
+    inflation: pd.DataFrame
+    national_accounts: pd.DataFrame
+    labour_stats: pd.DataFrame
+    house_price_index: pd.DataFrame
+
+    @classmethod
+    def from_data_readers(cls, readers: DataReaders, country_name: Country):
+        inflation = readers.imf_reader.get_inflation(country_name)
+        if inflation is None:
+            inflation = readers.world_bank.get_log_inflation(country_name)
 
 
 def create_all_exogenous_data(

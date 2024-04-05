@@ -9,6 +9,23 @@ import pandas as pd
 from macro_data.configuration.countries import Country
 from macro_data.readers.util.prune_util import DataFilterWarning, prune_index
 
+forced_vat = {
+    "TWN": 0.05,
+    "JPN": 0.1,
+    "ESP": 0.21,
+    "BRN": 0.0,
+    "HKG": 0.0,
+    "LAO": 0.0,
+    "IDN": 0.0,
+    "VNM": 0.0,
+    "MMR": 0.0,
+    "COL": 0.0,
+    "CHL": 0.0,
+    "CRI": 0.0,
+    "KOR": 0.0,
+    "KHM": 0.0,
+}
+
 
 class WorldBankReader:
     """
@@ -45,6 +62,7 @@ class WorldBankReader:
             self.data[key] = pd.read_csv(
                 path / (self.files_with_codes[key] + ".csv"),
                 skiprows=skiprows,
+                encoding="ISO-8859-1",
             )
 
     @staticmethod
@@ -63,6 +81,9 @@ class WorldBankReader:
             "cpi": "cpi",
             "historic_gdp": "API_NY.GDP.MKTP.CN_DS2_en_csv_v2_5358562",
             "population": "API_SP.POP.TOTL_DS2_en_csv_v2_79",
+            "gov_debt": "central_gov_debt",
+            "npl_ratios": "npl_ratios",
+            "inflation_arg": "inflation_arg",
         }
 
     def get_unemployment_rate(self, country: Country, year: int) -> float:
@@ -84,7 +105,7 @@ class WorldBankReader:
         df = self.data["population"].set_index("Country Code")
         return df.loc[country, str(year)]
 
-    def get_participation_rate(self, country: Country, year: int) -> float:
+    def get_participation_rate(self, country: Country) -> pd.DataFrame:
         """
         Retrieves the participation rate for a specific country and year.
 
@@ -96,8 +117,21 @@ class WorldBankReader:
             float: The participation rate for the specified country and year.
         """
         df = self.data["participation"]
-        df = df.loc[df["Country Code"] == country, str(year)]
-        return df.values[0] / 100.0
+        df = df.loc[df["Country Code"] == country]
+        data = []
+        index = []
+        for year in range(1960, 2024):
+            for month in [1, 4, 7, 10]:
+                index.append(pd.Timestamp(year, month, 1))
+                if country == "TWN":
+                    data.append(0.592)
+                else:
+                    if str(year) in df.columns:
+                        val = df[str(year)].values[0] / 100.0
+                    else:
+                        val = np.nan
+                    data.append(val)
+        return pd.DataFrame(data={"Participation Rate": data}, index=index).bfill()
 
     def get_tau_vat(self, country: Country, year: int) -> float:
         """
@@ -111,6 +145,8 @@ class WorldBankReader:
             float: The VAT tax rate for the specified country and year.
         """
         df = self.data["tau_vat"]
+        if country in forced_vat:
+            return forced_vat[country]
         df = df.loc[df["Country Code"] == country][str(year)]
         return df.values[0] / 100.0
 
