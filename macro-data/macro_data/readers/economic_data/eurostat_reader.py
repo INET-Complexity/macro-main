@@ -64,21 +64,26 @@ class EuroStatReader:
         prune(prune_date): Prunes the data to only include data from a specific date.
     """
 
-    def __init__(self, path: Path | str, country_code_path: Path | str):
+    def __init__(
+        self,
+        path: Path | str,
+        country_code_path: Path | str,
+        total_output: Optional[dict[str, float]] = None,
+        proxy_country: str = "GBR",
+    ):
         # Handle country codes
         self.c_map = pd.read_csv(country_code_path)
         # switch 2-digit code for Greece
         self.c_map.loc[self.c_map["Alpha-2 code"] == "GR", "Alpha-2 code"] = "EL"
         # switch 2-digit code United Kingdom
         self.c_map.loc[self.c_map["Alpha-2 code"] == "GB", "Alpha-2 code"] = "UK"
-        # add Euro Area code
-        self.c_map.loc[len(self.c_map)] = [
-            "Euro Area",
-            "EA",
-            "EA",
-            "",
-            "",
-        ]
+
+        self.remap_2_to_3 = self.c_map.set_index(["Alpha-2 code"])["Alpha-3 code"].to_dict()
+        self.remap_3_to_2 = self.c_map.set_index(["Alpha-3 code"])["Alpha-2 code"].to_dict()
+
+        # For proxying
+        self.proxy_country = proxy_country
+        self.total_output = total_output
 
         # Load data files
         self.files_with_codes = self.get_files_with_codes()
@@ -112,9 +117,10 @@ class EuroStatReader:
             "perc_growth_sector_F": "perc_growth_sector_F",
             "perc_growth_services": "perc_growth_services",
             "real_estate_services": "sector_l_iot",
+            "investment_percentage_of_gdp": "tec00132_linear",
         }
 
-    def country_code_switch(self, codes):
+    def country_code_switch(self, codes: pd.Series):
         """
         Converts a list of Alpha-2 country codes to Alpha-3 country codes.
 
@@ -124,9 +130,10 @@ class EuroStatReader:
         Returns:
             list: A list of corresponding Alpha-3 country codes.
         """
-        return [self.c_map.loc[self.c_map["Alpha-2 code"] == c, "Alpha-3 code"].values[0] for c in codes]
+        return codes.map(lambda x: self.remap_2_to_3.get(x, x))
 
-    def find_value(self, df: pd.DataFrame, country: Country, year: str) -> float:
+    @staticmethod
+    def find_value(df: pd.DataFrame, country: Country, year: str) -> float:
         """
         Find the value in the given DataFrame for the specified country and year.
 
@@ -171,7 +178,7 @@ class EuroStatReader:
     # historic domestic
     def get_total_nonfin_firm_debt(self, country: Country, year: int) -> float:
         df = self.data["financial_balance_sheets"]
-        country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
+        country_name_short = country.to_two_letter_code()
         df = df.loc[
             df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S11,LIAB,F4," + country_name_short
         ]
@@ -188,7 +195,7 @@ class EuroStatReader:
 
     def get_total_fin_firm_debt(self, country: Country, year: int) -> float:
         df = self.data["financial_balance_sheets"]
-        country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
+        country_name_short = country.to_two_letter_code()
         df = df.loc[
             df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S12,LIAB,F4," + country_name_short
         ]
@@ -222,7 +229,7 @@ class EuroStatReader:
     # historic domestic
     def get_total_nonfin_firm_deposits(self, country: Country, year: int) -> float:
         df = self.data["financial_balance_sheets"]
-        country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
+        country_name_short = country.to_two_letter_code()
         df = df.loc[df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S11,ASS,F2," + country_name_short]
         if str(year) in df.columns:
             res = df[str(year)].values[0]
@@ -238,7 +245,7 @@ class EuroStatReader:
     # historic domestic
     def get_total_bank_equity(self, country: Country, year: int) -> float:
         df = self.data["financial_balance_sheets"]
-        country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
+        country_name_short = country.to_two_letter_code()
         df = df.loc[
             df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S122_S123,ASS,F5," + country_name_short
         ]
@@ -435,7 +442,7 @@ class EuroStatReader:
 
     def get_imputed_rent_fraction_of_country(self, country: Country, year: int) -> float:
         df = self.data["real_estate_services"].set_index("freq,unit,stk_flow,induse,prod_na,geo\TIME_PERIOD")
-        country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
+        country_name_short = country.to_two_letter_code()
         return float(df.at["A,MIO_NAC,TOTAL,P3_S14,CPA_L68A," + country_name_short, str(year)]) / (
             float(df.at["A,MIO_NAC,TOTAL,P3_S14,CPA_L68A," + country_name_short, str(year)])
             + float(df.at["A,MIO_NAC,TOTAL,P3_S14,CPA_L68B," + country_name_short, str(year)])

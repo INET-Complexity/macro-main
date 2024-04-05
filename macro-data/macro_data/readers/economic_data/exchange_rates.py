@@ -49,15 +49,23 @@ class WorldBankRatesReader:
         return self.df[str(year)].to_dict()
 
     def to_usd(self, country: str, year: int) -> float:
+        if country == "ROW":
+            country = "USA"
         return 1 / self.df.loc[country, str(year)]
 
     def from_usd(self, country: str, year: int) -> float:
+        if country == "ROW":
+            country = "USA"
         return self.df.loc[country, str(year)]
 
     def from_eur_to_lcu(self, country: str, year: int) -> float:
+        if country == "ROW":
+            country = "USA"
         return self.to_usd("DEU", year) * self.from_usd(country, year)
 
     def from_usd_to_lcu(self, country: str, year: int) -> float:
+        if country == "ROW":
+            country = "USA"
         return self.from_usd(country, year)
 
     def prune(self, prune_date: date):
@@ -70,3 +78,40 @@ class WorldBankRatesReader:
         # WB exchange rates
         mask = prune_index(self.df.columns, prune_date)
         self.df = self.df.loc[:, mask]
+
+
+# class ExchangeRatesReader:
+#     def __init__(self, df):
+#         self.df = df
+#
+#     @classmethod
+#     def from_csv(cls, path: Path | str) -> "ExchangeRatesReader":
+#         df = pd.read_csv(path, index_col=0).T
+#         df.index = pd.DatetimeIndex(df.index)
+#         df = df.resample("QE").ffill()
+#         df.index = [str(d.year) + str("-Q") + str(int(d.month / 3)) for d in df.index]
+#         df.index = [pd.Timestamp(int(ind[0:4]), 3 * int(ind[6]) - 2, 1) for ind in df.index]
+#         return cls(df.T)
+#
+#     def exchange_rates_dict(self, year: int, quarter: int) -> dict[str, float]:
+#         return self.df[pd.Timestamp(int(year), 3 * int(quarter) - 2, 1)].to_dict()
+#
+#     def to_usd(self, country: str, year: int, quarter: int) -> float:
+#         if country == "ROW":
+#             country = "USA"
+#         return 1 / self.df.loc[country, pd.Timestamp(int(year), 3 * int(quarter) - 2, 1)]
+#
+#     def from_usd(self, country: str, year: int, quarter: int) -> float:
+#         if country == "ROW":
+#             country = "USA"
+#         return self.df.loc[country, pd.Timestamp(int(year), 3 * int(quarter) - 2, 1)]
+#
+#     def from_eur_to_lcu(self, country: str, year: int, quarter: int) -> float:
+#         if country == "ROW":
+#             country = "USA"
+#         return self.to_usd("DEU", year, quarter) * self.from_usd(country, year, quarter)
+#
+#     def from_usd_to_lcu(self, country: str, year: int, quarter: int) -> float:
+#         if country == "ROW":
+#             country = "USA"
+#         return self.from_usd(country, year, quarter)
