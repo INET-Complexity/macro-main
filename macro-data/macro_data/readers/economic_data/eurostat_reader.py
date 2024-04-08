@@ -509,6 +509,28 @@ class EuroStatReader:
             + float(df.at["A,MIO_NAC,TOTAL,P3_S14,CPA_L68B," + country_name_short, str(year)])
         )
 
+    def get_investment_fractions_of_country(
+        self,
+        country_name: str,
+        year: int,
+    ) -> dict[str, float]:
+        df = self.data["investment_percentage_of_gdp"].copy()
+        df_country = df.loc[df["geo"] == country_name]
+        if len(df_country) == 0:
+            return self.get_investment_fractions_of_country(self.proxy_country, year)
+        df_year = df_country.loc[df["TIME_PERIOD"] == year]
+        if len(df_year) == 0:
+            if year > 2011:
+                return self.get_investment_fractions_of_country(country_name, year - 1)
+            else:
+                return self.get_investment_fractions_of_country(country_name, 2011)
+        # total_perc = df_year.loc[df["indic"] == "INV_TOT"]["OBS_VALUE"].values[0] / 100.
+        firm_perc = df_year.loc[df["indic"] == "INV_BSN"]["OBS_VALUE"].values[0] / 100.0
+        hh_perc = df_year.loc[df["indic"] == "INV_HH"]["OBS_VALUE"].values[0] / 100.0
+        gov_perc = df_year.loc[df["indic"] == "INV_GOV"]["OBS_VALUE"].values[0] / 100.0
+        total_perc = firm_perc + hh_perc + gov_perc
+        return {"Firm": firm_perc, "Household": hh_perc, "Government": gov_perc, "Total": total_perc}
+
     def get_imputed_rent_fraction(
         self,
         country_names: list[Country],

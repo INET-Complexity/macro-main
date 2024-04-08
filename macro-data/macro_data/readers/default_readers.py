@@ -57,10 +57,12 @@ class DataPaths:
             exchange_rates_path=raw_data_path / "exchange_rates" / "exchange_rates.csv",
             eurostat_path=raw_data_path / "eurostat",
             hfcs_path=raw_data_path / "hfcs",
-            icio_paths={year: raw_data_path / "icio" / str(year) / f"ICIO2021_{year}.csv" for year in icio_years},
-            icio_pivot_paths={
-                year: raw_data_path / "icio" / str(year) / f"ICIO2021_{year}_pivot.csv" for year in icio_years
-            },
+            # icio_paths={year: raw_data_path / "icio" / str(year) / f"ICIO2021_{year}.csv" for year in icio_years},
+            icio_paths={year: raw_data_path / "icio" / f"{year}_SML.csv" for year in icio_years},
+            # icio_pivot_paths={
+            #     year: raw_data_path / "icio" / str(year) / f"ICIO2021_{year}_pivot.csv" for year in icio_years
+            # },
+            icio_pivot_paths={year: raw_data_path / "icio" / f"{year}_SML_P.csv" for year in icio_years},
             icio_agg_path=raw_data_path / "icio" / "mappings.json",
             wiod_sea_path=raw_data_path / "wiod_sea" / "wiod_sea.csv",
             wiod_sea_agg_path=raw_data_path / "wiod_sea" / "mappings.json",
@@ -146,6 +148,9 @@ class DataReaders:
 
         eu_only = list(set(eu_only).union(set(proxy_eu)))
 
+        def get_investment_year(year: int):
+            return get_investment_fractions(country_names, eurostat, proxy_country_dict, year)
+
         icio = {
             year: ICIOReader.agg_from_csv(
                 path=datapaths.icio_paths[year],
@@ -156,6 +161,7 @@ class DataReaders:
                 industries=industries,
                 exchange_rates=exchange_rates,
                 imputed_rent_fraction=eurostat.get_imputed_rent_fraction(eu_only, imputed_rent_year),
+                investment_fractions=get_investment_year(year),
             )
             for year in all_years
         }
@@ -234,6 +240,26 @@ class DataReaders:
             compustat_firms=compustat_firms,
             compustat_banks=compustat_banks,
         )
+
+    @classmethod
+    def get_investment_fractions(
+        cls,
+        country_names: list[Country],
+        eurostat: EuroStatReader,
+        proxy_country_dict: dict[Country, Country],
+        year: int,
+    ) -> dict[Country, dict[str, float]]:
+        investment_fractions = {}
+        for country_name in country_names:
+            if country_name.is_eu_country:
+                investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(
+                    country_name, year=year
+                )
+            else:
+                investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(
+                    proxy_country_dict[country_name], year=year
+                )
+        return investment_fractions
 
     def get_exogenous_data(self, country_name: Country) -> Optional[dict[str, Any]]:
         try:
@@ -333,7 +359,7 @@ def add_investment_matrix_to_icio(
     icio_reader: ICIOReader, sea_reader: WIODSEAReader, country_names: list[str], yearly_factor: float = 4.0
 ) -> None:
     for country_name in country_names:
-        gfcf = icio_reader.get_capital_inputs(country_name)
+        gfcf = icio_reader.get_firm_capital_inputs(country_name)
         cap = sea_reader.get_values_in_usd(country_name, "Capital Compensation") / yearly_factor
         investment_matrix = np.array([gfcf for _ in range(len(cap))]).T
         investment_matrix = investment_matrix * cap[None, :]  # proportionally fitting CAP
@@ -394,3 +420,20 @@ def match_iot_with_sea(
             sea_reader.df.index.get_level_values(0) == country_name,
             "Capital Stock",
         ] *= va_factor
+
+
+def get_investment_fractions(
+    country_names: list[Country],
+    eurostat: EuroStatReader,
+    proxy_country_dict: dict[Country, Country],
+    year: int,
+) -> dict[Country, dict[str, float]]:
+    investment_fractions = {}
+    for country_name in country_names:
+        if country_name.is_eu_country:
+            investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(country_name, year=year)
+        else:
+            investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(
+                proxy_country_dict[country_name], year=year
+            )
+    return investment_fractions

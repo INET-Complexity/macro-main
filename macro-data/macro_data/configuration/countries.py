@@ -62,6 +62,8 @@ class Country(StrEnum):
     JAPAN = "JPN"
     MEXICO = "MEX"
 
+    INDIA = "IND"
+
     REST_OF_WORLD = "ROW"
 
     def __str__(self):

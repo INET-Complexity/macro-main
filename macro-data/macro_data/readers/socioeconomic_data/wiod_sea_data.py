@@ -129,18 +129,19 @@ class WIODSEAReader:
         """
         return self.df.loc[country].loc[self.industries, field].values
 
-    def get_values_in_lcu(self, country: str, field: str) -> np.ndarray:
-        """
-        Get the values of a specific field in local currency units (LCU) for a given country and industry.
-
-        Args:
-            country (str): The name of the country.
-            field (str): The name of the field.
-
-        Returns:
-            np.ndarray: An array of values in LCU.
-        """
-        return self.get_values_in_usd(country, field) * self.exchange_rates.from_usd_to_lcu(country, self.year)
+    #
+    # def get_values_in_lcu(self, country: str, field: str) -> np.ndarray:
+    #     """
+    #     Get the values of a specific field in local currency units (LCU) for a given country and industry.
+    #
+    #     Args:
+    #         country (str): The name of the country.
+    #         field (str): The name of the field.
+    #
+    #     Returns:
+    #         np.ndarray: An array of values in LCU.
+    #     """
+    #     return self.get_values_in_usd(country, field) * self.exchange_rates.from_usd_to_lcu(country, self.year)
 
     def prune(self, prune_date: date):
         """

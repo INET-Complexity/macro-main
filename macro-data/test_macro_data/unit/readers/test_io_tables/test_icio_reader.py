@@ -28,7 +28,7 @@ class TestICIOReader:
 
     @pytest.mark.parametrize(
         "country, symbol",
-        product(["FRA"], ["Fixed Capital Formation", "Household Consumption"]),
+        product(["FRA"], ["Firm Fixed Capital Formation", "Household Consumption"]),
     )
     def test__column_allc(self, readers, country: str, symbol: str):
         assert len(readers.icio[2014].column_allc(country, symbol)) == len(readers.icio[2014].industries)

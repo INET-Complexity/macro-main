@@ -7,13 +7,21 @@ import pandas as pd
 from macro_data.configuration.countries import Country
 from macro_data.readers.util.prune_util import prune_index
 
+default_rates = {"BRN": 0.055, "KAZ": 0.15, "TUN": 0.06}
+
+
+def default_rate_df(dates: list[pd.Timestamp], rate):
+    return pd.DataFrame(
+        index=pd.to_datetime(dates),
+        data={"Policy Rate": np.full(len(dates), rate)},
+    )  #
+
 
 class PolicyRatesReader:
     def __init__(self, path: Path | str, country_code_path: Path | str):
-        temp_df = pd.read_csv(path)
-
+        self.path = path
+        self.df = pd.read_csv(path, engine="pyarrow")
         self.c_map = pd.read_csv(country_code_path)
-        # adds Euro Area to avoid breaking the country code mapping
         self.c_map.loc[len(self.c_map)] = [
             "Euro Area",
             "XM",
@@ -21,61 +29,69 @@ class PolicyRatesReader:
             "",
             "",
         ]
+        self.df["code"] = self.country_code_switch(self.df["REF_AREA"].values)
 
-        years = np.unique([y[0:4] for y in temp_df.columns[13:]])
-        countries = [{"country": c} for c in temp_df["Reference area"].values]
+    def get_policy_rates(self, country: Country | str) -> pd.DataFrame:
 
-        for y in years:
-            yearly_rates = temp_df[[date_value for date_value in temp_df.columns if y in date_value]].mean(axis=1)
-            for i, country in enumerate(countries):
-                country[y] = yearly_rates[i]
-
-        self.df = pd.DataFrame(countries)
-        self.df["code"] = self.country_code_switch(temp_df["REF_AREA"].values)
-
-    def cb_policy_rate(self, country: str, year: int) -> float:
         if isinstance(country, Country):
+            is_eu_country = country.is_eu_country
             country = country.value
-        if country in self.get_eu_country_code():
+        else:
+            is_eu_country = Country(country).is_eu_country
+
+        dates = self.get_dates()
+        if country == "CRI":
+            return self.costa_rica_rates()
+        elif country == "SGP":
+            return self.singapore_rates()
+        elif country in default_rates:
+            return default_rate_df(dates, default_rates[country])
+
+        if is_eu_country:
             country = "XM"
-        annual_policy_rate = self.df.loc[self.df["code"] == country, str(year)].values[0] / 100.0
-        return (1 + annual_policy_rate) ** (1.0 / 12) - 1.0
+
+        df_c = self.df.loc[self.df["code"] == country]
+        df_c = df_c.iloc[0, 13:-1]
+        df_c.index = pd.Index([pd.Timestamp(int(i[0:4]), int(i[5:7]), 1) for i in df_c.index])
+        df_c = df_c.groupby(pd.PeriodIndex(df_c.index, freq="Q")).mean()
+        df_c.index = df_c.index.to_timestamp()  # noqa
+        df_c.index = pd.to_datetime([d for d in df_c.index.values])
+        return pd.DataFrame(data={"Policy Rate": df_c.values / 100.0}, index=df_c.index)
+
+    def singapore_rates(self):
+        df = pd.read_csv(self.path / "policy_rate_sgp.csv", index_col=[0, 1, 2])
+        df = df.reset_index()
+        df["SORA Value Date"] = df["SORA Value Date"].ffill()
+        df[df == "SORA"] = np.nan
+        df["SORA"] = df["SORA"].astype(float)
+        df = df.groupby("SORA Value Date")["SORA"].mean()[:-1]
+        df.index = pd.to_datetime([pd.Timestamp(int(y), 1, 1) for y in df.index.values])
+        df = df.resample("QE").ffill()
+        df.index = pd.to_datetime([d + pd.Timedelta(days=1) for d in df.index.values])
+        df = pd.DataFrame(df)
+        df.columns = ["Policy Rate"]
+        return df / 100.0
+
+    def costa_rica_rates(self):
+        df = pd.read_csv(self.path.parent / "policy_rate_cri.csv", engine="pyarrow", index_col=0)
+        df = df.mean(axis=0)
+        df.index = pd.to_datetime([pd.Timestamp(int(y), 1, 1) for y in df.index.values])
+        df = df.resample("QE").ffill()
+        df.index = pd.to_datetime([d + pd.Timedelta(days=1) for d in df.index.values])
+        df = pd.DataFrame(df)
+        df.columns = ["Policy Rate"]
+        return df / 100.0
 
     def country_code_switch(self, codes):
         return [self.c_map.loc[self.c_map["Alpha-2 code"] == c, "Alpha-3 code"].values[0] for c in codes]
 
     @staticmethod
-    def get_eu_country_code():
-        return [
-            "AUT",
-            "BEL",
-            "BGR",
-            "HRV",
-            "CYP",
-            "CZE",
-            "DNK",
-            "EST",
-            "FIN",
-            "FRA",
-            "DEU",
-            "GRC",
-            "HUN",
-            "IRL",
-            "ITA",
-            "LVA",
-            "LTU",
-            "LUX",
-            "MLT",
-            "NLD",
-            "POL",
-            "PRT",
-            "ROU",
-            "SVK",
-            "SVN",
-            "ESP",
-            "SWE",
-            "GBR",
-        ]
+    def get_dates() -> list[pd.Timestamp]:
+        dates = []
+        for year in range(2000, 2025):
+            for month in [1, 4, 7, 10]:
+                dates.append(pd.Timestamp(year, month, 1))
+        return dates
 
     def prune(self, prune_date: date):
         """

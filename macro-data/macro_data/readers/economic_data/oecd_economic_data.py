@@ -649,8 +649,8 @@ class OECDEconData:
     def get_na_growth_rates(self, country: str) -> pd.DataFrame:
         data = self.data["QNA"]  # CQRSA
         data = data.loc[(data["LOCATION"] == country) & (data["FREQUENCY"] == "Q")]
-        if len(data) == 0:
-            return self.get_na_growth_rates(self.proxy_country)  # won't need this anymore
+        # if len(data) == 0:
+        #     return self.get_na_growth_rates(self.proxy_country)  # won't need this anymore
         na_data = data.pivot(index="TIME", columns="SUBJECT", values="Value")
         fields = {
             "GDP": "B1_GE",
