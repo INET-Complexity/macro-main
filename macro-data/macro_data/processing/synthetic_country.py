@@ -5,7 +5,7 @@ import pandas as pd
 
 from macro_data.configuration import CountryDataConfiguration
 from macro_data.configuration.countries import Country
-from macro_data.processing.country_data import TaxData, ExogenousCountryData
+from macro_data.processing.country_data import TaxData
 from macro_data.processing.synthetic_banks.default_synthetic_banks import DefaultSyntheticBanks
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 from macro_data.processing.synthetic_central_bank.default_synthetic_central_bank import DefaultSyntheticCentralBank
@@ -36,6 +36,7 @@ from macro_data.processing.synthetic_matching.matching_individuals_with_firms im
 from macro_data.processing.synthetic_population.hfcs_synthetic_population import SyntheticHFCSPopulation
 from macro_data.processing.synthetic_population.synthetic_population import SyntheticPopulation
 from macro_data.readers import DataReaders
+from macro_data.readers.exogenous_data import ExogenousCountryData
 
 
 @dataclass

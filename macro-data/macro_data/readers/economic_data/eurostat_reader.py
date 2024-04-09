@@ -529,7 +529,7 @@ class EuroStatReader:
         hh_perc = df_year.loc[df["indic"] == "INV_HH"]["OBS_VALUE"].values[0] / 100.0
         gov_perc = df_year.loc[df["indic"] == "INV_GOV"]["OBS_VALUE"].values[0] / 100.0
         total_perc = firm_perc + hh_perc + gov_perc
-        return {"Firm": firm_perc, "Household": hh_perc, "Government": gov_perc, "Total": total_perc}
+        return {"Firm": firm_perc / total_perc, "Household": hh_perc / total_perc, "Government": gov_perc / total_perc}
 
     def get_imputed_rent_fraction(
         self,

@@ -6,12 +6,14 @@ import numpy as np
 import pandas as pd
 
 from macro_data.configuration import DataConfiguration
+
 from macro_data.processing.synthetic_country import SyntheticCountry
 from macro_data.processing.synthetic_rest_of_the_world.default_synthetic_rest_of_the_world import (
     DefaultSyntheticRestOfTheWorld,
 )
 from macro_data.processing.synthetic_rest_of_the_world.synthetic_rest_of_the_world import SyntheticRestOfTheWorld
 from macro_data.readers import DataReaders, compile_industry_data, create_all_exogenous_data
+from macro_data.readers.exogenous_data import ExogenousCountryData
 
 
 @dataclass
@@ -100,6 +102,7 @@ class DataWrapper:
         country_names = configuration.countries
         industries = configuration.industries
         year = configuration.year
+        quarter = configuration.quarter
 
         scale_dict = {country: configuration.country_configs[country].scale for country in country_names}
 
@@ -126,7 +129,19 @@ class DataWrapper:
 
         year_range = 1 if single_hfcs_survey else 10
 
-        exogenous_data = create_all_exogenous_data(readers, country_names, proxy_countries=proxy_country_dict)
+        # exogenous_data = create_all_exogenous_data(readers, country_names, proxy_countries=proxy_country_dict)
+
+        exogenous_data = {
+            country: ExogenousCountryData.from_data_readers(
+                country_name=country,
+                readers=readers,
+                year=year,
+                quarter=quarter,
+                industry_vectors=industry_data["industry_vectors"][country],
+                proxy_country=proxy_country_dict.get(country, None),
+            )
+            for country in country_names
+        }
 
         # currently only EU countries implemented
 

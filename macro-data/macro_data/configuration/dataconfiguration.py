@@ -87,7 +87,8 @@ class DataConfiguration(BaseModel):
 
     Attributes:
         industries (list[str]): List of industries.
-        year (int): Year value.
+        year (int): Initial year.
+        quarter (int): Initial Quarter.
         prune_date (date): Prune date value.
         country_configs (dict[Country, CountryDataConfiguration]): Dictionary of country configurations.
         purpose (str): Purpose for this simulation.
@@ -96,6 +97,7 @@ class DataConfiguration(BaseModel):
 
     industries: list[str]
     year: int
+    quarter: int = 1
     prune_date: date
     country_configs: dict[Country, CountryDataConfiguration]
     purpose: str = ""

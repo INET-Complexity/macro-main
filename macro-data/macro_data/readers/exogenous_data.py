@@ -173,6 +173,8 @@ def compile_national_accounts_data(
     base_year: int,
     base_quarter: int,
 ):
+
+    inflation = inflation.reindex(national_accounts_growth.index).fillna(0.0)
     initial_taxes_on_products = (
         industry_vectors["Taxes Less Subsidies in LCU"].sum()
         + initial_vat * industry_vectors["Household Consumption in LCU"].sum()

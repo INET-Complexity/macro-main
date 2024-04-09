@@ -7,9 +7,8 @@ import yaml
 from macro_data.configuration import DataConfiguration
 from macro_data.configuration.countries import Country
 from macro_data.readers.default_readers import DataReaders
-from macro_data.readers.util.exogenous_data import create_all_exogenous_data
+from macro_data.readers.exogenous_data import create_all_exogenous_data
 from macro_data.readers.util.industry_extraction import compile_industry_data, compile_exogenous_industry_data
-from macro_data.configuration.process_config import process_config
 
 PARENT = pathlib.Path(__file__).parent.resolve()
 DATA_PATH = PARENT / "sample_raw_data"

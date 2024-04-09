@@ -142,16 +142,23 @@ class ICIOReader:
                 imputed_rents[country_name] = (
                     (
                         imputed_rent_fraction[country_name]
-                        * agg_df.at[(country_name, "L"), (country_name, "Household Consumption")]
+                        * agg_df.at[
+                            (country_name, "L"),
+                            (country_name, "Household Consumption"),
+                        ]
                     )
                     / yearly_factor
                     * exchange_rates.from_usd_to_lcu(country_name, year)
                 )
-            else:
-                imputed_rents[country_name] = (
-                    avg_imputed_rent_fraction * agg_df.at[(country_name, "L"), (country_name, "Household Consumption")]
+                agg_df.at[(country_name, "L"), (country_name, "Household Consumption")] -= (
+                    imputed_rent_fraction[country_name]
+                    * agg_df.at[
+                        (country_name, "L"),
+                        (country_name, "Household Consumption"),
+                    ]
                 )
-            agg_df.at[(country_name, "L"), (country_name, "Household Consumption")] -= imputed_rents[country_name]
+            else:
+                imputed_rents[country_name] = None
 
         agg_df = normalise_iot(
             agg_df,
