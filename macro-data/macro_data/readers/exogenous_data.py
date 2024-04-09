@@ -11,6 +11,7 @@ from macro_data.readers.util.industry_extraction import compile_exogenous_indust
 
 @dataclass
 class ExogenousCountryData:
+    country_name: Country
     inflation: pd.DataFrame
     national_accounts: pd.DataFrame
     labour_stats: pd.DataFrame
@@ -52,7 +53,39 @@ class ExogenousCountryData:
 
         house_price_index = readers.oecd_econ.get_house_price_index(country_name)
 
-        return cls(inflation, national_accounts_data, labour_stats, house_price_index)
+        return cls(
+            country_name=country_name,
+            inflation=inflation,
+            national_accounts=national_accounts_data,
+            labour_stats=labour_stats,
+            house_price_index=house_price_index,
+        )
+
+    def get_calibration_data(self, year: int, quarter: int):
+        index = self.national_accounts.index
+        unemployment = self.labour_stats[["Unemployment Rate (Value)", "Unemployment Rate (Growth)"]].reindex(index)
+
+        vacancies = self.labour_stats[["Vacancy Rate (Value)", "Vacancy Rate (Growth)"]].reindex(index)
+
+        house_price_index = self.house_price_index.reindex(index)["Nominal House Price Index Growth"]
+        house_price_index.name = "HPI (Growth)"
+        house_price_index = pd.DataFrame(house_price_index)
+
+        house_price_index["HPI (Value)"] = normalised_growth(house_price_index["HPI (Growth)"], year, quarter)
+
+        country_data = pd.concat(
+            (
+                self.national_accounts,
+                unemployment,
+                vacancies,
+                house_price_index,
+            ),
+            axis=1,
+        )
+
+        country_data.columns = pd.MultiIndex.from_product([[self.country_name], country_data.columns])
+
+        return country_data
 
 
 def prepare_labour_stats(country_name: Country, readers: DataReaders):
@@ -79,6 +112,19 @@ def prepare_labour_stats(country_name: Country, readers: DataReaders):
             axis=1,
         )
     labour_stats = labour_stats.ffill(axis=0)
+
+    labour_stats.rename(
+        columns={
+            "Unemployment Rate": "Unemployment Rate (Value)",
+            "Participation Rate": "Participation Rate (Value)",
+            "Vacancy Rate": "Vacancy Rate (Value)",
+        },
+        inplace=True,
+    )
+    labour_stats["Unemployment Rate (Growth)"] = labour_stats["Unemployment Rate (Value)"].pct_change()
+    labour_stats["Participation Rate (Growth)"] = labour_stats["Participation Rate (Value)"].pct_change()
+    labour_stats["Vacancy Rate (Growth)"] = labour_stats["Vacancy Rate (Value)"].pct_change()
+
     return labour_stats
 
 

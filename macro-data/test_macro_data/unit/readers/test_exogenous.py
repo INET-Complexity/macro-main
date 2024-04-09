@@ -15,3 +15,7 @@ class TestExogenous:
         )
 
         assert data.inflation.shape[0] > 0
+
+        calibration_data = data.get_calibration_data(2014, 1)
+
+        assert (calibration_data[("FRA", "HPI (Value)")].dropna() > 0).all()
