@@ -341,6 +341,18 @@ class DataReaders:
             / self.icio[year].get_exports(country).sum()
         )
 
+    def get_national_accounts_growth(self, country: Country) -> pd.DataFrame:
+        imf_growth = self.imf_reader.get_na_growth_rates(country)
+        oecd_growth = self.oecd_econ.get_na_growth_rates(country)
+
+        # pick columns of oecd growth not in imf growth
+        oecd_growth = oecd_growth[oecd_growth.columns.difference(imf_growth.columns)]
+
+        # merge the two dataframes, ensuring that imf growth has the index
+        merged = pd.merge_asof(imf_growth, oecd_growth, left_index=True, right_index=True)
+        merged = merged.loc[imf_growth.index]
+        return merged
+
 
 def prune_icio_dict(icio_dict: dict[int, Any], prune_date: date):
     # make sure prune date is the year in int format

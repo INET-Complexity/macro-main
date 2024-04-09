@@ -3,7 +3,9 @@ import pytest
 
 class TestWorldBankReader:
     def test__unemployment_rates(self, readers):
-        assert readers.world_bank.get_unemployment_rate("GBR", 2014) == pytest.approx(6.11e-2, abs=0.01)
+        assert readers.world_bank.get_unemployment_rate("GBR").loc["2014", "Unemployment Rate"].values[
+            0
+        ] == pytest.approx(6.11e-2, abs=0.01)
 
     def test__participation_rates(self, readers):
         assert readers.world_bank.get_participation_rate("GBR").loc["2014-01"].values[0] == pytest.approx(

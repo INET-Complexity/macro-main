@@ -176,6 +176,40 @@ class IMFReader:
 
         return data
 
+    def get_labour_stats(self, country: str | Country) -> Optional[pd.DataFrame]:
+        if isinstance(country, str):
+            country = Country(country)
+        country_english = str(country).lower()
+        data = self.data["international_financial_statistics"]
+        data.rename(columns=data.iloc[0]).drop(data.index[0]).reset_index(drop=True)
+        data = data.loc[(data["Attribute"] == "Value") & (data["Country Name"].str.lower() == country_english)]
+        data.set_index("Indicator Name", inplace=True)
+        if (
+            "Labor Force, Persons, Number of" not in data.index
+            or "Employment, Persons, Number of" not in data.index
+            or "Unemployment, Persons, Number of" not in data.columns
+            or "Labor Markets, Unemployment Rate, Percent" not in data.columns
+        ):
+            return None
+        data = data.loc[
+            [
+                "Labor Force, Persons, Number of",
+                "Employment, Persons, Number of",
+                "Unemployment, Persons, Number of",
+                "Labor Markets, Unemployment Rate, Percent",
+            ]
+        ].T.iloc[4:-1]
+        data.columns = [
+            "Labour Force",
+            "Employment Number",
+            "Unemployment Number",
+            "Unemployment Rate",
+        ]
+        data.index = [pd.Timestamp(int(ind[0:4]), 3 * int(ind[5]) - 2, 1) for ind in data.index]  # noqa
+        data = data.astype(float)
+        data["Unemployment Rate"] /= 100.0
+        return data
+
     def prune(self, prune_date: date):
         mask = prune_index(self.data["bank_demography"].columns, prune_date)
         self.data["bank_demography"] = self.data["bank_demography"].loc[:, mask]

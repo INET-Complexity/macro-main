@@ -86,21 +86,6 @@ class WorldBankReader:
             "inflation_arg": "inflation_arg",
         }
 
-    def get_unemployment_rate(self, country: Country, year: int) -> float:
-        """
-        Retrieves the unemployment rate for a specific country and year.
-
-        Parameters:
-            country (Country): The country code for the desired country.
-            year (int): The year for the data.
-
-        Returns:
-            float: The unemployment rate for the specified country and year.
-        """
-        df = self.data["unemployment"]
-        df = df.loc[df["Country Code"] == country, str(year)]
-        return df.values[0] / 100.0
-
     def get_population(self, country: Country, year: int) -> float:
         df = self.data["population"].set_index("Country Code")
         return df.loc[country, str(year)]
@@ -111,10 +96,9 @@ class WorldBankReader:
 
         Parameters:
             country (Country): The country code for the desired country.
-            year (int): The year for the data.
 
         Returns:
-            float: The participation rate for the specified country and year.
+            pd.DataFrame: A DataFrame containing the participation rate for the specified country.
         """
         df = self.data["participation"]
         df = df.loc[df["Country Code"] == country]
@@ -250,6 +234,87 @@ class WorldBankReader:
         # rename
         inflation_data.columns = ["Real CPI Inflation", "Real PPI Inflation"]
         return inflation_data
+
+    def get_unemployment_rate(self, country: str) -> pd.DataFrame:
+        """
+        Retrieves the unemployment rate for a specific country.
+
+        Parameters:
+            country (Country): The country code for the desired country.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the unemployment rate for the specified country.
+        """
+        df = self.data["unemployment"]
+        df = df.loc[df["Country Code"] == country]
+        df = df.drop(columns=["Country Code", "Country Name", "Indicator Name", "Indicator Code", "Unnamed: 66"])
+        df = df.T
+        df.index = pd.to_datetime(df.index, format="%Y")
+        df.columns = ["Unemployment Rate"]
+        return df.resample("QS").first().ffill().bfill() / 100.0
+
+    def get_inflation(self, country: str) -> pd.DataFrame:
+        if country == "ARG":
+            inflation_arg = 1.0 + self.data["inflation_arg"].set_index("Date") / 100.0
+            inflation_arg.index = pd.to_datetime(inflation_arg.index)
+            inflation_arg = inflation_arg.groupby(pd.Grouper(freq="QE")).cumprod() - 1.0
+            inflation_arg.index = pd.to_datetime([d + pd.Timedelta(days=1) for d in inflation_arg.index.values])
+            inflation_arg = inflation_arg.iloc[2:].iloc[::3]
+            inflation_arg = inflation_arg[["Amount", "Amount"]]
+            inflation_arg.columns = ["CPI Inflation", "PPI Inflation"]
+            return inflation_arg.astype(float)
+
+        # Get CPI and PPI data
+        data_cpi = self.data["cpi"].loc[self.data["cpi"]["Country Code"] == country]
+        data_ppi = self.data["ppi"].loc[self.data["ppi"]["Country Code"] == country]
+        dates, vals_cpi, vals_ppi = [], [], []
+        for year in range(1970, 2024):
+            for quarter in range(1, 5):
+                month = 3 * quarter - 2
+                s_month = str(month) if month > 9 else "0" + str(month)
+                dates.append(str(year) + "-Q" + str(quarter))
+
+                # CPI
+                if str(year) + s_month in data_cpi.columns:
+                    val_cpi = data_cpi.loc[:, str(year) + s_month].values
+                    if len(val_cpi) == 0:
+                        vals_cpi.append(np.nan)
+                    else:
+                        vals_cpi.append(val_cpi[0])
+                else:
+                    vals_cpi.append(np.nan)
+
+                # PPI
+                if str(year) + s_month in data_ppi.columns:
+                    val_ppi = data_ppi.loc[:, str(year) + s_month].values
+                    if len(val_ppi) == 0:
+                        vals_ppi.append(np.nan)
+                    else:
+                        vals_ppi.append(val_ppi[0])
+                else:
+                    vals_ppi.append(np.nan)
+
+        # Compute inflation
+        data_df = pd.DataFrame(
+            index=dates,
+            data={
+                "CPI Inflation": vals_cpi,
+                "PPI Inflation": vals_ppi,
+            },
+        )
+        data_df["CPI Inflation"] = np.log(data_df["CPI Inflation"] / data_df["CPI Inflation"].shift(1))
+        data_df["PPI Inflation"] = np.log(data_df["PPI Inflation"] / data_df["PPI Inflation"].shift(1))
+        data_df.index = [pd.Timestamp(int(ind[0:4]), 3 * int(ind[6]) - 2, 1) for ind in data_df.index]  # noqa
+
+        return data_df.astype(float)
+
+    def get_tau_exp(self, country: str, year: int, default_value: float = 0.0) -> float:
+        df = self.data["tau_exp"]
+        val = df.loc[df["Country Code"] == country, str(year)].values
+        if len(val) == 0 or np.isnan(val[0]):
+            return default_value
+        else:
+            return val[0]
 
     def prune(self, prune_date: date) -> None:
         """
