@@ -6,13 +6,14 @@ import numpy as np
 import pandas as pd
 
 from macro_data.configuration import DataConfiguration
+from macro_data.configuration.countries import Country
 
 from macro_data.processing.synthetic_country import SyntheticCountry
 from macro_data.processing.synthetic_rest_of_the_world.default_synthetic_rest_of_the_world import (
     DefaultSyntheticRestOfTheWorld,
 )
 from macro_data.processing.synthetic_rest_of_the_world.synthetic_rest_of_the_world import SyntheticRestOfTheWorld
-from macro_data.readers import DataReaders, compile_industry_data, create_all_exogenous_data
+from macro_data.readers import DataReaders, compile_industry_data
 from macro_data.readers.exogenous_data import ExogenousCountryData
 
 
@@ -35,6 +36,7 @@ class DataWrapper:
     exchange_rates: pd.DataFrame
     trade_proportions: pd.DataFrame
     configuration: DataConfiguration
+    calibration_data: pd.DataFrame
 
     @property
     def all_country_names(self) -> list[str]:
@@ -137,11 +139,22 @@ class DataWrapper:
                 readers=readers,
                 year=year,
                 quarter=quarter,
-                industry_vectors=industry_data["industry_vectors"][country],
+                industry_vectors=industry_data[country]["industry_vectors"],
                 proxy_country=proxy_country_dict.get(country, None),
             )
             for country in country_names
         }
+
+        calibration_data = pd.concat(
+            [exogenous_data[country].get_calibration_data(year, quarter) for country in country_names], axis=1
+        )
+
+        calibration_data = add_row_to_calibration(
+            calibration_data=calibration_data,
+            industry_data=industry_data,
+            year=year,
+            quarter=quarter,
+        )
 
         # currently only EU countries implemented
 
@@ -192,6 +205,7 @@ class DataWrapper:
             exchange_rates=exchange_rates,
             trade_proportions=trade_proportions,
             configuration=configuration,
+            calibration_data=calibration_data,
         )
 
     @classmethod
@@ -225,3 +239,96 @@ class DataWrapper:
 
         with open(path, "wb") as f:
             pkl.dump(self.__dict__, f)
+
+
+def add_row_to_calibration(
+    calibration_data: pd.DataFrame, industry_data: dict[str | Country, dict[str, pd.DataFrame]], year: int, quarter: int
+) -> pd.DataFrame:
+    """
+    Add the Rest of the World data to the calibration data.
+
+    Args:
+        calibration_data (pd.DataFrame): The calibration data.
+        industry_data (dict[str | Country, dict[str, pd.DataFrame]]): The industry data.
+        year (int): The year.
+        quarter (int): The quarter.
+
+    Returns:
+        pd.DataFrame: The calibration data with the Rest of the World data added.
+
+    """
+    countries = list(calibration_data.columns.get_level_values(0).unique())
+
+    total_country_imports_base = sum(
+        [industry_data[country]["industry_vectors"]["Imports in USD"] for country in countries]
+    )
+    total_country_exports_base = sum(
+        [industry_data[country]["industry_vectors"]["Exports in USD"] for country in countries]
+    )  # type: ignore
+
+    all_exports = calibration_data.xs("Exports (Value)", axis=1, level=1)
+    all_imports = calibration_data.xs("Imports (Value)", axis=1, level=1)
+
+    scaled_exports = all_exports / all_exports.loc[f"{year}-Q{quarter}"].iloc[0]
+    scaled_imports = all_imports / all_imports.loc[f"{year}-Q{quarter}"].iloc[0]
+
+    total_country_exports = sum(
+        [country_scaled_exports(country, industry_data, scaled_exports) for country in countries]
+    )
+
+    row_scale_exports = total_country_exports / total_country_exports_base.values  # type: ignore
+    row_exports_base = industry_data["ROW"]["industry_vectors"]["Exports in USD"]
+
+    # TODO is this OK ? I'd fill with the mean
+    row_scale_exports.fillna(1, inplace=True)
+
+    row_exports = row_scale_exports * row_exports_base.values
+    total_row_exports = row_exports.sum(axis=1)
+
+    total_country_imports = sum(
+        [country_scaled_imports(country, industry_data, scaled_imports) for country in countries]
+    )
+
+    row_imports = total_country_exports + row_exports - total_country_imports
+    # clip to be positive imports
+    total_row_imports = row_imports.sum(axis=1)
+
+    total_nominal_output = calibration_data.xs("Gross Output (Value)", axis=1, level=1).sum(axis=1)
+    total_real_output = calibration_data.xs("Real Gross Output (Value)", axis=1, level=1).sum(axis=1)
+
+    row_ppi = total_nominal_output / total_real_output
+
+    calibration_data[("ROW", "Exports (Value)")] = total_row_exports
+    calibration_data[("ROW", "Imports (Value)")] = total_row_imports
+    calibration_data[("ROW", "Exports (Growth)")] = calibration_data[("ROW", "Exports (Value)")].pct_change()
+    calibration_data[("ROW", "Imports (Growth)")] = calibration_data[("ROW", "Imports (Value)")].pct_change()
+
+    calibration_data[("ROW", "PPI (Value)")] = row_ppi
+    calibration_data[("ROW", "PPI (Growth)")] = calibration_data[("ROW", "PPI (Value)")].pct_change()
+
+    # real imports are imports over ppi
+    calibration_data[("ROW", "Real Imports (Value)")] = (
+        calibration_data[("ROW", "Imports (Value)")] / calibration_data[("ROW", "PPI (Value)")]
+    )
+
+    # same for exports
+    calibration_data[("ROW", "Real Exports (Value)")] = (
+        calibration_data[("ROW", "Exports (Value)")] / calibration_data[("ROW", "PPI (Value)")]
+    )
+    return calibration_data
+
+
+def country_scaled_exports(
+    country: str | Country, industry_data: dict[str | Country, dict[str, pd.DataFrame]], scaled_exports: pd.DataFrame
+) -> pd.DataFrame:
+    exports = industry_data[country]["industry_vectors"]["Exports in USD"]
+    scaled = scaled_exports[country]
+    return pd.DataFrame(exports.values * scaled.values[:, np.newaxis], index=scaled.index).fillna(0)
+
+
+def country_scaled_imports(
+    country: str | Country, industry_data: dict[str | Country, dict[str, pd.DataFrame]], scaled_imports: pd.DataFrame
+) -> pd.DataFrame:
+    imports = industry_data[country]["industry_vectors"]["Imports in USD"]
+    scaled = scaled_imports[country]
+    return pd.DataFrame(imports.values * scaled.values[:, np.newaxis], index=scaled.index).fillna(0)

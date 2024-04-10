@@ -156,6 +156,7 @@ class OECDEconData:
             "total_social_benefits_perc_gdp": "SOCX_AGG",
             "total_unemployment_benefits_perc_gdp": "DP_LIVE_UNEMP",
             "business_demography": "SDBS_BDI_ISIC4",
+            "business_demography1": "SSIS_BSC_ISIC4",
             "business_birth_rates": "SDBS_BDI_ISIC4_BIRTH",
             "business_death_rates": "SDBS_BDI_ISIC4_DEATH",
             "business_sizes": "SSIS_BSC_ISIC4",
@@ -223,10 +224,10 @@ class OECDEconData:
         # Load data
 
         # TODO: OECD data doesn't have US data for this, so we use Canada as a proxy
-        if country in {"USA", "MEX"}:
-            data_country = Country("CAN")
-        else:
-            data_country = country
+        # if country in {"USA", "MEX"}:
+        #     data_country = Country("CAN")
+        # else:
+        #     data_country = country
 
         if country == "GBR" and year < 2014:
             year = 2014
@@ -237,7 +238,7 @@ class OECDEconData:
         if country == "AUS" and year > 2010:
             year = 2014
 
-        df = self.data["business_demography"]
+        df = self.data["business_demography1"].copy()
         df = df.loc[
             (df["VAR"] == "ENTR")
             & (df["SRC"] == "SSIS")
@@ -247,11 +248,13 @@ class OECDEconData:
         ].copy()
 
         output.index = range(len(output))
-        df.loc[:, "ISIC"] = df["SEC"].copy().map(self.industry_mapping)
+        output.index = range(len(output))
+        df.loc[:, "ISIC"] = df["ISIC4"].copy().map(self.industry_mapping)
         df.dropna(subset="ISIC", inplace=True)
         isic_table = df.set_index(["ISIC", "LOCATION"])["Value"].sort_index().unstack()
         isic_table = isic_table.reindex(range(len(output))).fillna(0)
-        isic_table = isic_table[data_country]
+
+        isic_table = isic_table[country]
 
         # basic linear regression to fill missing values in
         # number of businesses
