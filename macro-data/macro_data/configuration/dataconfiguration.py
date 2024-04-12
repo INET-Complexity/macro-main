@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Optional, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .countries import Country
 
@@ -57,6 +57,17 @@ class BanksDataConfiguration(BaseModel):
     interest_rates: InterestRates = InterestRates()
 
 
+class CentralBankDataConfiguration(BaseModel):
+    """
+    Represents the configuration for the central bank.
+
+    Attributes:
+        inflation_target (float): The inflation target.
+    """
+
+    inflation_target: float = Field(0.02, ge=0.0, le=1.0)
+
+
 class CountryDataConfiguration(BaseModel):
     """
     Represents the configuration for a country.
@@ -64,6 +75,7 @@ class CountryDataConfiguration(BaseModel):
     Attributes:
         firms_configuration (FirmsDataConfiguration): The configuration for firms.
         banks_configuration (BanksDataConfiguration): The configuration for banks.
+        central_bank_configuration (CentralBankDataConfiguration): The configuration for the central bank.
         single_bank (bool): Single bank flag.
         single_firm_per_industry (bool): Single firm per industry flag.
         single_government_entity (bool): Single government entity flag.
@@ -74,6 +86,7 @@ class CountryDataConfiguration(BaseModel):
 
     firms_configuration: FirmsDataConfiguration
     banks_configuration: BanksDataConfiguration
+    central_bank_configuration: CentralBankDataConfiguration
     single_bank: bool
     single_firm_per_industry: bool
     single_government_entity: bool

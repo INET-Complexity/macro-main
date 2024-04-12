@@ -51,12 +51,13 @@ class PolicyRatesReader:
             country = "XM"
 
         df_c = self.df.loc[self.df["code"] == country]
-        df_c = df_c.iloc[0, 13:-1]
-        df_c.index = pd.Index([pd.Timestamp(int(i[0:4]), int(i[5:7]), 1) for i in df_c.index])
-        df_c = df_c.groupby(pd.PeriodIndex(df_c.index, freq="Q")).mean()
-        df_c.index = df_c.index.to_timestamp()  # noqa
-        df_c.index = pd.to_datetime([d for d in df_c.index.values])
-        return pd.DataFrame(data={"Policy Rate": df_c.values / 100.0}, index=df_c.index)
+        dt_cols = pd.to_datetime(df_c.columns, format="%Y-%m", errors="coerce")
+        df_c.drop(columns=df_c.columns[dt_cols.isna()], inplace=True)  # noqa
+        df_c = df_c.T
+        df_c.index = pd.to_datetime(df_c.index)
+        df_c = df_c.resample("QS").mean()
+        df_c.columns = ["Policy Rate"]
+        return df_c / 100.0
 
     def singapore_rates(self):
         df = pd.read_csv(self.path / "policy_rate_sgp.csv", index_col=[0, 1, 2])

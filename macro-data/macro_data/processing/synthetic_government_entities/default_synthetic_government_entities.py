@@ -9,6 +9,7 @@ from macro_data.processing.synthetic_government_entities.synthetic_government_en
     SyntheticGovernmentEntities,
 )
 from macro_data.readers.default_readers import DataReaders
+from macro_data.readers.exogenous_data import ExogenousCountryData
 
 
 class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
@@ -58,28 +59,25 @@ class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
         readers: DataReaders,
         country_name: Country,
         year: int,
-        exogenous_country_data: Optional[dict[str, pd.DataFrame]],
+        quarter: int,
+        exogenous_country_data: ExogenousCountryData,
         industry_data: dict[str, pd.DataFrame],
         single_government_entity: bool,
+        create_model: bool = False,
     ):
-        create_model = False
         if exogenous_country_data:
-            total_gov_consumption = (
-                exogenous_country_data["iot_industry_data"]
-                .xs("Government Consumption in USD", axis=1, level=0)
-                .sum(axis=1)
-            )
-            total_gov_consumption_filtered = total_gov_consumption.loc[:f"{year}-01-01":]
-            growth_series = total_gov_consumption_filtered / total_gov_consumption_filtered.shift(1)
+            total_gov_consumption = exogenous_country_data.national_accounts["Real Government Consumption (Value)"]
+            total_gov_consumption = total_gov_consumption.loc[total_gov_consumption.index < f"{year}-Q{quarter}"]
+            growth_series = 1 + total_gov_consumption.pct_change()
             total_gov_consumption_growth = growth_series.values
             if growth_series.dropna().shape[0] > 0:
                 create_model = True
         else:
             total_gov_consumption_growth = None
 
-        monthly_govt_consumption_in_usd = industry_data["industry_vectors"]["Government Consumption in USD"].values
-        monthly_govt_consumption_in_lcu = industry_data["industry_vectors"]["Government Consumption in LCU"].values
-        total_monthly_va_lcu = industry_data["industry_vectors"]["Value Added in LCU"].sum()
+        govt_consumption_in_usd = industry_data["industry_vectors"]["Government Consumption in USD"].values
+        govt_consumption_in_lcu = industry_data["industry_vectors"]["Government Consumption in LCU"].values
+        total_va_lcu = industry_data["industry_vectors"]["Value Added in LCU"].sum()
         total_number_of_firms = int(
             readers.oecd_econ.read_business_demography(
                 country=country_name,
@@ -91,15 +89,15 @@ class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
         n_entities = int(
             max(
                 1,
-                total_number_of_firms * monthly_govt_consumption_in_lcu.sum() / total_monthly_va_lcu,
+                total_number_of_firms * govt_consumption_in_lcu.sum() / total_va_lcu,
             )
         )
         n_entities = 1 if single_government_entity else n_entities
 
         gov_entity_data = pd.DataFrame(
             {
-                "Consumption in USD": monthly_govt_consumption_in_usd,
-                "Consumption in LCU": monthly_govt_consumption_in_lcu,
+                "Consumption in USD": govt_consumption_in_usd,
+                "Consumption in LCU": govt_consumption_in_lcu,
             }
         )
 

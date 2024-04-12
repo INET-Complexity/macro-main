@@ -162,6 +162,7 @@ class DataWrapper:
             country: SyntheticCountry.eu_synthetic_country(
                 country=country,
                 year=year,
+                quarter=quarter,
                 country_configuration=configuration.country_configs[country],
                 industries=industries,
                 readers=readers,
@@ -246,6 +247,8 @@ def add_row_to_calibration(
 ) -> pd.DataFrame:
     """
     Add the Rest of the World data to the calibration data.
+    This computes the Rest of the World exports and imports based on the exports and imports of the other countries,
+    along with PPI data.
 
     Args:
         calibration_data (pd.DataFrame): The calibration data.
@@ -321,6 +324,19 @@ def add_row_to_calibration(
 def country_scaled_exports(
     country: str | Country, industry_data: dict[str | Country, dict[str, pd.DataFrame]], scaled_exports: pd.DataFrame
 ) -> pd.DataFrame:
+    """
+    Takes a time-series indicating the relative scaling of the exports of a country (with 1 for the base time period)
+    and multiplies by the exports of the country at the base time period to get a dataframe with the scaled exports,
+    with the industry numbers as columns and the time periods as rows.
+
+    Args:
+        country (str | Country): The country.
+        industry_data (dict[str | Country, dict[str, pd.DataFrame]]): The industry data.
+        scaled_exports (pd.DataFrame): The scaled exports.
+
+    Returns:
+        pd.DataFrame: The scaled exports.
+    """
     exports = industry_data[country]["industry_vectors"]["Exports in USD"]
     scaled = scaled_exports[country]
     return pd.DataFrame(exports.values * scaled.values[:, np.newaxis], index=scaled.index).fillna(0)
@@ -329,6 +345,16 @@ def country_scaled_exports(
 def country_scaled_imports(
     country: str | Country, industry_data: dict[str | Country, dict[str, pd.DataFrame]], scaled_imports: pd.DataFrame
 ) -> pd.DataFrame:
+    """
+    Takes a time-series indicating the relative scaling of the imports of a country (with 1 for the base time period)
+    and multiplies by the imports of the country at the base time period to get a dataframe with the scaled imports,
+    with the industry numbers as columns and the time periods as rows.
+
+    Args:
+        country (str | Country): The country.
+        industry_data (dict[str | Country, dict[str, pd.DataFrame]]): The industry data.
+        scaled_imports (pd.DataFrame): The scaled imports.
+    """
     imports = industry_data[country]["industry_vectors"]["Imports in USD"]
     scaled = scaled_imports[country]
     return pd.DataFrame(imports.values * scaled.values[:, np.newaxis], index=scaled.index).fillna(0)

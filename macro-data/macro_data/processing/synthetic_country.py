@@ -92,10 +92,11 @@ class SyntheticCountry:
         cls,
         country: Country,
         year: int,
+        quarter: int,
         country_configuration: CountryDataConfiguration,
         industries: list[str],
         readers: DataReaders,
-        exogenous_country_data: dict[str, pd.DataFrame],
+        exogenous_country_data: ExogenousCountryData,
         country_industry_data: dict[str, pd.DataFrame],
         year_range: int,
         goods_criticality_matrix: pd.DataFrame,
@@ -106,6 +107,7 @@ class SyntheticCountry:
         Args:
             country: The country for which the synthetic country object is created.
             year: The year for which the synthetic country object is created.
+            quarter: The quarter for which the synthetic country object is created.
             country_configuration: The configuration settings for the country.
             industries: The list of industries in the country.
             readers: The data readers used to read data for the synthetic country object.
@@ -126,12 +128,15 @@ class SyntheticCountry:
             readers=readers,
             country_name=country,
             year=year,
+            quarter=quarter,
             exogenous_country_data=exogenous_country_data,
             industry_data=country_industry_data,
             single_government_entity=country_configuration.single_government_entity,
         )
 
-        central_bank = DefaultSyntheticCentralBank.from_readers(country, year, readers)
+        central_bank = DefaultSyntheticCentralBank.from_readers(
+            country, year, quarter, readers, exogenous_country_data, country_configuration.central_bank_configuration
+        )
 
         population: SyntheticHFCSPopulation = SyntheticHFCSPopulation.from_readers(
             readers=readers,

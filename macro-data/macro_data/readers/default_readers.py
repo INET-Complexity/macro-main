@@ -302,12 +302,12 @@ class DataReaders:
                 pd.date_range(
                     start=f"{years[0]}-01-01",
                     end=f"{years[-1] + 1}-01-01",
-                    freq="Y",
+                    freq="YE",
                 )
             ),
         )
 
-        benefits_data = benefits_data.resample("M").interpolate("linear")
+        benefits_data = benefits_data.resample("QE").interpolate("linear")
         benefits_data.index = pd.DatetimeIndex([pd.Timestamp(d.year, d.month, 1) for d in benefits_data.index])
         log_inflation = exogenous_data["log_inflation"]["Real CPI Inflation"].copy()
         log_inflation.index = pd.to_datetime(log_inflation.index, format="%Y-%m")
@@ -318,18 +318,14 @@ class DataReaders:
         return data
 
     def get_total_benefits_lcu(self, country_name: Country, year: int) -> float:
-        return (
-            self.oecd_econ.all_benefits_gdp_pct(country_name, year)
-            * self.world_bank.get_current_scaled_gdp(country_name, year)
-            * self.exchange_rates.from_usd_to_lcu(country_name, year)
+        return self.oecd_econ.all_benefits_gdp_pct(country_name, year) * self.world_bank.get_current_scaled_gdp(
+            country_name, year
         )
 
     def get_total_unemployment_benefits_lcu(self, country_name: Country, year: int) -> float:
-        return (
-            self.oecd_econ.unemployment_benefits_gdp_pct(country_name, year)
-            * self.world_bank.get_current_scaled_gdp(country_name, year)
-            * self.exchange_rates.from_usd_to_lcu(country_name, year)
-        )
+        return self.oecd_econ.unemployment_benefits_gdp_pct(
+            country_name, year
+        ) * self.world_bank.get_current_scaled_gdp(country_name, year)
 
     def get_govt_debt_lcu(self, country: Country, year: int) -> float:
         return self.oecd_econ.general_gov_debt(country, year) * self.exchange_rates.from_usd_to_lcu(country, year)

@@ -269,6 +269,10 @@ class OECDEconData:
         isic_table /= self.scale_dict[country]
 
         isic_table = isic_table.astype("int")
+
+        # if any values are 0 set them to 1
+        isic_table[isic_table == 0] = 1
+
         return isic_table.values.astype(int)
 
     @staticmethod

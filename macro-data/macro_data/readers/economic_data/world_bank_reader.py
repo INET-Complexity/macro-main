@@ -52,9 +52,11 @@ class WorldBankReader:
             if key in [
                 "long_term_interest_rates",
                 "short_term_interest_rates",
-                "government_debt_perc_gdp",
+                "gov_debt",
                 "ppi",
                 "cpi",
+                "npl_ratios",
+                "inflation_arg",
             ]:
                 skiprows = []
             else:
@@ -85,6 +87,20 @@ class WorldBankReader:
             "npl_ratios": "npl_ratios",
             "inflation_arg": "inflation_arg",
         }
+
+    def get_central_gov_debt(self, country: str, year: int) -> float:
+        df = self.data["gov_debt"].set_index("Country Code", drop=True)
+        if country == "ARG":
+            return 0.0
+        if country == "TWN":
+            return 0.0
+        if year == 1959:
+            return 0.0
+        val = df.at[country, str(year) + " [YR" + str(year) + "]"]
+        if val == "..":
+            return self.get_central_gov_debt(country, year - 1)
+        else:
+            return float(val)
 
     def get_population(self, country: Country, year: int) -> float:
         df = self.data["population"].set_index("Country Code")

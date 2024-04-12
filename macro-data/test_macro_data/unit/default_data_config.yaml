@@ -49,6 +49,10 @@ country_configs:
       zero_initial_debt:
         true
 
+    central_bank_configuration:
+      inflation_target:
+        0.02
+
     banks_configuration:
       long_term_firm_loan_maturity:
         60

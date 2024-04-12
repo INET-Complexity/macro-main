@@ -89,7 +89,7 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
                     * benefits_inflation_data["Unemployment Benefits"].iloc[-1]
                 )
             else:
-                current_unemployment_benefits = readers.get_total_unemployment_benefits_lcu(country_name, year)
+                current_unemployment_benefits = benefits_inflation_data["Unemployment Benefits"].iloc[-1]
 
             if other_benefits_model:
                 current_other_benefits = (
@@ -97,9 +97,7 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
                     * benefits_inflation_data["Other Total Benefits"].iloc[-1]
                 )
             else:
-                current_other_benefits = (
-                    readers.get_total_benefits_lcu(country_name, year) - current_unemployment_benefits
-                )
+                current_other_benefits = benefits_inflation_data["Other Total Benefits"].iloc[-1]
         else:
             # if exogenous data is not available, set the benefits models to None
             unemployment_benefits_model = None
@@ -108,11 +106,8 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
             current_other_benefits = readers.get_total_benefits_lcu(country_name, year) - current_unemployment_benefits
 
         # TODO: debt in USD or in local currency?
-        # debt = readers.oecd_econ.general_gov_debt(country_name, year)
 
-        debt = readers.oecd_econ.get_govt_debt_usd_ppp(country_name, year) * readers.exchange_rates.from_usd_to_lcu(
-            country_name, year
-        )
+        debt = readers.world_bank.get_central_gov_debt(country_name, year)
 
         central_gov_data = pd.DataFrame(
             data={
