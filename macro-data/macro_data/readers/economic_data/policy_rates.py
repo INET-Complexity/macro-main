@@ -56,6 +56,8 @@ class PolicyRatesReader:
         df_c = df_c.T
         df_c.index = pd.to_datetime(df_c.index)
         df_c = df_c.resample("QS").mean()
+        # pandas bug
+        df_c.index.freq = None
         df_c.columns = ["Policy Rate"]
         return df_c / 100.0
 

@@ -18,6 +18,7 @@ from macro_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
 )
 from macro_data.readers.default_readers import DataReaders
+from macro_data.readers.exogenous_data import ExogenousCountryData
 from macro_data.util.clean_data import remove_outliers
 from macro_data.util.imputation import apply_iterative_imputer
 from macro_data.util.regressions import fit_linear
@@ -164,9 +165,11 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         country_name_short: str,
         scale: int,
         year: int,
+        quarter: int,
         industry_data: dict[str, pd.DataFrame],
         industries: list[str],
         total_unemployment_benefits: float,
+        exogenous_data: ExogenousCountryData,
         rent_as_fraction_of_unemployment_rate: float = 0.25,
         n_quantiles: int = 5,
         population_ratio: float = 1.0,
@@ -184,9 +187,11 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             country_name_short (str): The short name of the country.
             scale (int): The scaling factor.
             year (int): The year.
+            quarter (int): The quarter.
             industry_data (dict[str, dict]): The industry data.
             industries (list[str]): The list of industries.
             total_unemployment_benefits (float): The total unemployment benefits.
+            exogenous_data (ExogenousCountryData): The exogenous data for the Country.
             rent_as_fraction_of_unemployment_rate (float): The rent as a fraction of the unemployment rate.
             n_quantiles (int, optional): The number of quantiles. Defaults to 5.
             population_ratio (float, optional): The population ratio. Defaults to 1.0. This is used in case
@@ -205,12 +210,10 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
         household_data, individual_data = sample_households(hfcs_households_data, hfcs_individuals_data, n_households)
 
-        if proxied_country is None:
-            unemployment_rate = readers.world_bank.get_unemployment_rate(country_name, year)
-            participation_rate = readers.world_bank.get_participation_rate(country_name, year)
-        else:
-            unemployment_rate = readers.world_bank.get_unemployment_rate(proxied_country, year)
-            participation_rate = readers.world_bank.get_participation_rate(proxied_country, year)
+        unemployment_rate = exogenous_data.labour_stats.loc[f"{year}-Q{quarter}", "Unemployment Rate (Value)"].iloc[0]
+        participation_rate = exogenous_data.labour_stats.loc[f"{year}-Q{quarter}", "Participation Rate (Value)"].iloc[0]
+
+        n_firms_by_industry = industry_data["industry_vectors"]["Number of Firms"].values
 
         individual_data = process_individual_data(
             individual_data,
@@ -219,6 +222,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             total_unemployment_benefits,
             unemployment_rate,
             participation_rate,
+            n_firms_by_industry,
         )
         n_unemployed = np.sum(individual_data["Activity Status"] == 2)
 

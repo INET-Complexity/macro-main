@@ -142,11 +142,13 @@ class SyntheticCountry:
             readers=readers,
             country_name=country,
             year=year,
+            quarter=quarter,
             industry_data=country_industry_data,
             industries=industries,
             scale=country_configuration.scale,
             total_unemployment_benefits=total_unemployment_benefits,
             country_name_short=country.to_two_letter_code(),
+            exogenous_data=exogenous_country_data,
         )
 
         firms = DefaultSyntheticFirms.from_readers(

@@ -267,7 +267,10 @@ class WorldBankReader:
         df = df.T
         df.index = pd.to_datetime(df.index, format="%Y")
         df.columns = ["Unemployment Rate"]
-        return df.resample("QS").first().ffill().bfill() / 100.0
+        df = df.resample("QS").first().ffill().bfill() / 100.0
+        # this is a pandas bug!
+        df.index.freq = None
+        return df
 
     def get_inflation(self, country: str) -> pd.DataFrame:
         if country == "ARG":
