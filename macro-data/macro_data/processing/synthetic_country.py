@@ -17,6 +17,7 @@ from macro_data.processing.synthetic_central_government.synthetic_central_govern
 from macro_data.processing.synthetic_credit_market.synthetic_credit_market import SyntheticCreditMarket
 from macro_data.processing.synthetic_firms.default_synthetic_firms import DefaultSyntheticFirms
 from macro_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
+from macro_data.processing.synthetic_goods_market.synthetic_goods_market import SyntheticGoodsMarket
 from macro_data.processing.synthetic_government_entities.default_synthetic_government_entities import (
     DefaultSyntheticGovernmentEntities,
 )
@@ -52,6 +53,7 @@ class SyntheticCountry:
         central_government (SyntheticCentralGovernment): Synthetic central government.
         government_entities (SyntheticGovernmentEntities): Synthetic government entities.
         housing_market (SyntheticHousingMarket): Synthetic housing market.
+        synthetic_goods_market (SyntheticGoodsMarket): Synthetic goods market.
         dividend_payout_ratio (float): Dividend payout ratio.
         long_term_interest_rate (float): Long term interest rate.
         policy_rate_markup (float): Policy rate markup.
@@ -74,6 +76,7 @@ class SyntheticCountry:
     central_government: SyntheticCentralGovernment
     government_entities: SyntheticGovernmentEntities
     housing_market: SyntheticHousingMarket
+    synthetic_goods_market: SyntheticGoodsMarket
     dividend_payout_ratio: float
     long_term_interest_rate: float
     policy_rate_markup: float
@@ -181,6 +184,10 @@ class SyntheticCountry:
             single_bank=country_configuration.single_bank,
         )
 
+        synthetic_goods_market = SyntheticGoodsMarket.from_readers(
+            country_name=country, year=year, quarter=quarter, readers=readers, exogenous_data=exogenous_country_data
+        )
+
         tax_data = TaxData.from_readers(readers, country, year)
 
         total_imputed_rent = readers.icio[year].imputed_rents[country]
@@ -230,6 +237,7 @@ class SyntheticCountry:
             country_configuration=country_configuration,
             industries=industries,
             consumption_weights_by_income=weights_by_income,
+            synthetic_goods_market=synthetic_goods_market,
         )
 
     @classmethod
@@ -328,6 +336,10 @@ class SyntheticCountry:
             exchange_rate_from_eur=exch_rate_proxy_to_lcu,
         )
 
+        synthetic_goods_market = SyntheticGoodsMarket.from_readers(
+            country_name=country, year=year, quarter=quarter, readers=readers, exogenous_data=exogenous_country_data
+        )
+
         tax_data = TaxData.from_readers(readers, country, year)
 
         total_imputed_rent = readers.icio[year].imputed_rents[country]
@@ -377,6 +389,7 @@ class SyntheticCountry:
             country_configuration=country_configuration,
             industries=industries,
             consumption_weights_by_income=weights_by_income,
+            synthetic_goods_market=synthetic_goods_market,
         )
 
     @classmethod

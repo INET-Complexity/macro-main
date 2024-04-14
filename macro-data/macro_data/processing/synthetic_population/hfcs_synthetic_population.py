@@ -497,7 +497,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             where=self.household_data["Wealth in Financial Assets"].values.astype(float) != 0.0,
         )
         fit_linear(
-            household_data=self.household_data,
+            data=self.household_data,
             independents=independents,
             dependent="Fraction Deposits / Total Financial Wealth",
             model=self.wealth_distribution_model,
@@ -535,7 +535,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         # Social transfers for each household group
         self.household_data["Regular Social Transfers"] /= self.household_data["Regular Social Transfers"].sum()
         social_transfers = fit_linear(
-            household_data=self.household_data,
+            data=self.household_data,
             independents=independents,
             dependent="Regular Social Transfers",
             model=self.social_transfers_model,
@@ -629,7 +629,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
         # Fit a model
         saving_rates = fit_linear(
-            household_data=self.household_data,
+            data=self.household_data,
             independents=independents,
             dependent="Saving Rate",
             model=self.saving_rates_model,
@@ -695,7 +695,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
         # Overwrite the model
         fit_linear(
-            household_data=self.household_data,
+            data=self.household_data,
             independents=independents,
             dependent="Saving Rate",
             model=self.saving_rates_model,
