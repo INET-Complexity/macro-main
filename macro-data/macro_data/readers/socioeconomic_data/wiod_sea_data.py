@@ -49,6 +49,7 @@ class WIODSEAReader:
         country_names: list[str],
         industries: list,
         exchange_rates: ExchangeRatesReader,
+        value_added_dict: dict[str, np.ndarray],
     ) -> "WIODSEAReader":
         """
         Aggregate socioeconomic data from a CSV file. Aggregation is done using a JSON file that maps sectors to aggregated sectors.
@@ -60,6 +61,7 @@ class WIODSEAReader:
             country_names (list[str]): The list of country names to include in the aggregation.
             industries (list): The list of industries to include in the aggregation.
             exchange_rates (ExchangeRatesReader): The exchange rates reader.
+            value_added_dict (dict[str, np.ndarray]): A dictionary containing the value added data.
 
         Returns:
             WIOD_SEA_Data: An instance of the WIOD_SEA_Data class containing the aggregated data.
@@ -75,9 +77,10 @@ class WIODSEAReader:
         stacked.rename(columns={str(year): "Value"}, inplace=True)
 
         # Don't include indices or employment info
-        stacked = stacked[stacked["variable"].isin(["VA", "LAB", "CAP", "K"])]
+        stacked = stacked[stacked["variable"].isin(["VA", "COMP", "CAP", "K"])]
 
         # Convert to USD
+        stacked["Value"] = np.maximum(1.0, stacked["Value"])  # minimum value
         stacked["Value"] /= stacked["country"].map(exchange_rates.exchange_rates_dict(year))
         stacked["Value"] *= 1e6
 
@@ -90,18 +93,25 @@ class WIODSEAReader:
         # Cosmetics
         sea = sea.loc[sea.index.get_level_values(0).isin(country_names)]
         sea = sea.loc[sea.index.get_level_values(1).isin(industries)]
+
         sea.index.names = ["Country", "Industry"]
         sea.columns.name = "Field"
         sea.rename(
             {
                 "VA": "Value Added",
-                "LAB": "Labour Compensation",
+                "COMP": "Labour Compensation",
                 "CAP": "Capital Compensation",
                 "K": "Capital Stock",
             },
             axis=1,
             inplace=True,
         )
+
+        # rescale
+        for country in country_names:
+            scale = value_added_dict[country] / sea.loc[country, "Value Added"].values
+            for field in ["Value Added", "Labour Compensation", "Capital Compensation", "Capital Stock"]:
+                sea.loc[country, field] = sea.loc[country, field].values * scale
 
         return cls(
             df=sea,

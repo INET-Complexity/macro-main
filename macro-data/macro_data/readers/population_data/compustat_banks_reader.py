@@ -51,11 +51,15 @@ class CompustatBanksReader:
         quarter: int,
         raw_quarterly_path: Path | str,
         countries: list[str | Country],
+        proxy_with_us: bool = True,
     ):
         raw_data = pd.read_csv(raw_quarterly_path, encoding="unicode_escape", engine="pyarrow")
 
         # pick
         data = raw_data[np.logical_and(raw_data["fyearq"] == year, raw_data["fqtr"] == quarter)]
+
+        if proxy_with_us:
+            countries += [Country("USA")]
 
         # pick countries in the list
         data = data[data["loc"].isin(countries)]
@@ -72,11 +76,9 @@ class CompustatBanksReader:
         data = data[var_keeping]
 
         # impute missing values
-        data = pd.DataFrame(
-            data=IterativeImputer().fit_transform(data.values),
-            columns=var_keeping,
-            index=data.index,
-        )
+
+        for c in data.index.get_level_values(0).unique():
+            data.loc[c] = IterativeImputer().fit_transform(data.loc[c].values)
 
         return cls(data)
 
@@ -85,8 +87,13 @@ class CompustatBanksReader:
         # list of numerical columns, ie var_numerical and var_keeping
         return [col for col in var_numerical if col in self.data.columns]
 
-    def get_country_data(self, country: str) -> pd.DataFrame:
-        return self.data.loc[country]
+    def get_country_data(self, country: str, exchange_rate: float) -> pd.DataFrame:
+        if country == "USA":
+            return self.data.loc[country]
+        else:
+            proxied = self.data.loc["USA"].copy()
+            proxied[self.numerical_columns] *= exchange_rate
+            return proxied
 
     def get_proxied_country_data(self, proxy_country: str | Country, exchange_rate: float):
         if isinstance(proxy_country, Country):

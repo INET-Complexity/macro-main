@@ -151,7 +151,18 @@ class SyntheticCountry:
             exogenous_data=exogenous_country_data,
         )
 
-        firms = DefaultSyntheticFirms.from_readers(
+        # firms = DefaultSyntheticFirms.from_readers(
+        #     readers=readers,
+        #     country_name=country,
+        #     year=year,
+        #     industry_data=country_industry_data,
+        #     industries=industries,
+        #     scale=country_configuration.scale,
+        #     n_employees_per_industry=population.number_employees_by_industry,
+        #     firm_configuration=country_configuration.firms_configuration,
+        # )
+
+        firms = DefaultSyntheticFirms.from_readers_compustat(
             readers=readers,
             country_name=country,
             year=year,
@@ -162,15 +173,13 @@ class SyntheticCountry:
             firm_configuration=country_configuration.firms_configuration,
         )
 
-        banks = DefaultSyntheticBanks.from_readers(
+        banks = DefaultSyntheticBanks.from_readers_compustat(
             readers=readers,
             country_name=country,
             year=year,
             scale=country_configuration.scale,
             single_bank=country_configuration.single_bank,
         )
-
-        exogenous_data = ExogenousCountryData(**exogenous_country_data)
 
         tax_data = TaxData.from_readers(readers, country, year)
 
@@ -215,7 +224,7 @@ class SyntheticCountry:
             industry_data=country_industry_data,
             goods_criticality_matrix=goods_criticality_matrix,
             tax_data=tax_data,
-            exogenous_data=exogenous_data,
+            exogenous_data=exogenous_country_data,
             scale=country_configuration.scale,
             country_name=country,
             country_configuration=country_configuration,
@@ -229,10 +238,11 @@ class SyntheticCountry:
         country: Country,
         proxy_country: Country,
         year: int,
+        quarter: int,
         country_configuration: CountryDataConfiguration,
         industries: list[str],
         readers: DataReaders,
-        exogenous_country_data: dict[str, pd.DataFrame],
+        exogenous_country_data: ExogenousCountryData,
         country_industry_data: dict[str, pd.DataFrame],
         year_range: int,
         goods_criticality_matrix: pd.DataFrame,
@@ -244,12 +254,14 @@ class SyntheticCountry:
             country: The country for which the synthetic country object is created.
             proxy_country: The proxy country to use for the synthetic country object.
             year: The year for which the synthetic country object is created.
+            quarter: The quarter for which the synthetic country object is created.
             country_configuration: The configuration settings for the country.
             industries: The list of industries in the country.
             readers: The data readers used to read data for the synthetic country object.
             exogenous_country_data: The exogenous data for the country.
             country_industry_data: The industry data for the country.
-            year_range: The range of years for which data is considered (determines the amount of data used to decide benefits setting).
+            year_range: The range of years for which data is considered
+             (determines the amount of data used to decide benefits setting).
             goods_criticality_matrix: The goods criticality matrix.
 
         Returns:
@@ -266,9 +278,12 @@ class SyntheticCountry:
             exogenous_country_data=exogenous_country_data,
             industry_data=country_industry_data,
             single_government_entity=country_configuration.single_government_entity,
+            quarter=quarter,
         )
 
-        central_bank = DefaultSyntheticCentralBank.from_readers(country, year, readers)
+        central_bank = DefaultSyntheticCentralBank.from_readers(
+            country, year, quarter, readers, exogenous_country_data, country_configuration.central_bank_configuration
+        )
 
         population_ratio = readers.world_bank.get_population(
             country=country, year=year
@@ -288,6 +303,8 @@ class SyntheticCountry:
             population_ratio=population_ratio,
             exch_rate=exch_rate_proxy_to_lcu,
             proxied_country=country,
+            quarter=quarter,
+            exogenous_data=exogenous_country_data,
         )
 
         firms = DefaultSyntheticFirms.from_readers(
@@ -310,8 +327,6 @@ class SyntheticCountry:
             single_bank=country_configuration.single_bank,
             exchange_rate_from_eur=exch_rate_proxy_to_lcu,
         )
-
-        exogenous_data = ExogenousCountryData(**exogenous_country_data)
 
         tax_data = TaxData.from_readers(readers, country, year)
 
@@ -356,7 +371,7 @@ class SyntheticCountry:
             industry_data=country_industry_data,
             goods_criticality_matrix=goods_criticality_matrix,
             tax_data=tax_data,
-            exogenous_data=exogenous_data,
+            exogenous_data=exogenous_country_data,
             scale=country_configuration.scale,
             country_name=country,
             country_configuration=country_configuration,

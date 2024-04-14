@@ -89,7 +89,53 @@ def distribute_industry_employee_remainder(
     return sizes
 
 
-def add_number_employees(
+def add_number_employees_compustat(
+    firm_data: pd.DataFrame,
+    compustat_data: pd.DataFrame,
+    n_emp_per_industry: np.ndarray | list,
+    n_firms_per_industry: np.ndarray | list,
+    n_industries: int,
+):
+    n_firms = n_firms_per_industry.sum()
+    firms_inds = np.random.choice(range(len(compustat_data)), n_firms, replace=True)
+
+    # select firms with those indices
+    compustat_data = compustat_data.iloc[firms_inds]
+
+    firm_data["Number of Employees"] = 0
+    current_firm_ind = 0
+    for industry in range(n_industries):
+        if n_emp_per_industry[industry] < n_firms_per_industry[industry]:
+            logging.warning(
+                f"Fewer Firms than Employees in Sector {industry},\n \
+                             Employees by industry: {n_emp_per_industry[industry]},\n \
+                            Firms by industry: {n_firms_per_industry[industry]}"
+            )
+
+        compustat_subset = compustat_data.iloc[current_firm_ind : current_firm_ind + n_firms_per_industry[industry]]
+        sizes = compustat_subset["Number of Employees"].values
+
+        sizes_norm = np.ones_like(sizes) if sizes.sum() == 0 else sizes / sizes.sum()
+        offset = 0
+
+        sizes_red = np.maximum(1, np.floor(sizes_norm * n_emp_per_industry[industry]) - offset).astype(int)
+        while sum(sizes_red) > n_emp_per_industry[industry]:
+            sizes_red = np.maximum(1, np.floor(sizes_norm * n_emp_per_industry[industry]) - offset).astype(int)
+            offset += 1
+
+        sizes = distribute_industry_employee_remainder(
+            sizes_red,
+            number_employees=n_emp_per_industry[industry],
+            n_firms_in_industry=n_firms_per_industry[industry],
+        )
+
+        firm_data.loc[firm_data["Industry"] == industry, "Number of Employees"] = sizes
+
+        current_firm_ind += n_firms_per_industry[industry]
+    return firm_data
+
+
+def add_number_employees_random(
     firm_data: pd.DataFrame,
     firm_size_zetas: np.ndarray | list | dict[int, float],
     n_employees_per_industry: np.ndarray | list,
@@ -216,6 +262,47 @@ def add_production(
     return firm_data
 
 
+def initialise_basic_firm_fields_compustat(
+    firm_data: pd.DataFrame,
+    industry_data: dict[str, pd.DataFrame],
+    compustat_data: pd.DataFrame,
+    n_employees_per_industry: np.ndarray | list,
+    n_firms_per_industry: NDArrayInt | list[int],
+    exchange_rate: float,
+    tau_sif: float,
+    assume_initial_unit: bool = False,
+):
+    n_industries = len(n_employees_per_industry)
+    n_firms = sum(n_firms_per_industry)
+    firm_data["Industry"] = np.array(
+        reduce(
+            lambda a, b: a + b,
+            ([industry] * s for industry, s in enumerate(n_firms_per_industry)),
+        )
+    )
+
+    firm_data = add_number_employees_compustat(
+        firm_data, compustat_data, n_employees_per_industry, n_firms_per_industry, n_industries
+    )
+
+    labour_compensation = industry_data["industry_vectors"]["Labour Compensation in LCU"].values
+    firm_data = add_wages(firm_data, n_employees_per_industry, n_firms, n_industries, labour_compensation, tau_sif)
+    output = industry_data["industry_vectors"]["Output in USD"].values
+    firm_data = add_production(firm_data, n_employees_per_industry, n_industries, output)
+    firm_data["Price in USD"] = 1.0
+    firm_data["Price"] = firm_data["Price in USD"] * exchange_rate
+    firm_data["Labour Inputs"] = firm_data["Production"].copy()
+
+    if assume_initial_unit:
+        firm_data["Labour Productivity"] = 1.0
+    else:
+        labour_prod_by_industry = output / n_employees_per_industry
+        for industry in range(n_industries):
+            firm_data.loc[firm_data["Industry"] == industry, "Labour Productivity"] = labour_prod_by_industry[industry]
+
+    return firm_data
+
+
 def initialise_basic_firm_fields(
     firm_data: pd.DataFrame,
     industry_data: dict[str, pd.DataFrame],
@@ -257,7 +344,7 @@ def initialise_basic_firm_fields(
         )
     )
 
-    firm_data = add_number_employees(
+    firm_data = add_number_employees_random(
         firm_data, firm_size_zetas, n_employees_per_industry, n_firms_per_industry, n_industries
     )
     labour_compensation = industry_data["industry_vectors"]["Labour Compensation in LCU"].values

@@ -166,6 +166,11 @@ class DataReaders:
             for year in all_years
         }
 
+        value_added_dict = {
+            country_name: icio[simulation_year].get_value_added(country_name) * icio[simulation_year].yearly_factor
+            for country_name in country_names
+        }
+
         wiod_sea = WIODSEAReader.agg_from_csv(
             path=datapaths.wiod_sea_path,
             year=simulation_year,
@@ -173,6 +178,7 @@ class DataReaders:
             exchange_rates=exchange_rates,
             aggregation_path=datapaths.wiod_sea_agg_path,
             country_names=country_names,
+            value_added_dict=value_added_dict,
         )
 
         add_investment_matrix_to_icio(
