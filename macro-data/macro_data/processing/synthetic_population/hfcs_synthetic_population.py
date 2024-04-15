@@ -32,6 +32,7 @@ RESTRICT_COLS = [
     "Corresponding Property Owner",
     "Corresponding Additionally Owned Houses ID",
     "Income",
+    "Investment",
     "Employee Income",
     "Regular Social Transfers",
     "Rental Income from Real Estate",
@@ -526,11 +527,20 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             independents = ["Income", "Debt"]
         # Household regular social transfers and pensions, impute missing values
         self.household_data = apply_iterative_imputer(
-            self.household_data, ["Type", "Net Wealth", "Regular Social Transfers"]
+            self.household_data,
+            [
+                "Type",
+                "Net Wealth",
+                "Regular Social Transfers",
+                "Income from Pensions",
+            ],
+            min_value=0,
         )
 
         # Aggregate
         self.household_data["Regular Social Transfers"] += self.household_data["Income from Pensions"].values
+
+        self.household_data["Income from Pensions"] = 0.0
 
         # Social transfers for each household group
         self.household_data["Regular Social Transfers"] /= self.household_data["Regular Social Transfers"].sum()
@@ -724,6 +734,10 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             inc_sr = (1.0 / (1 + vat) * np.outer(cons_weights, sr * income).T).sum()
             factor = 1.0 - diff / inc_sr
             self.household_data["Saving Rate"] = factor * sr
+
+        self.household_data["Consumption"] = (
+            1 / (1 + vat) * (1 - self.household_data["Saving Rate"]) * self.household_data["Income"]
+        )
 
         # Overwrite the model
         fit_linear(

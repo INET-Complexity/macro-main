@@ -464,7 +464,7 @@ class SyntheticCountry:
         # here this only changes if we change the independents of the function (e.g. income, debt)
         # not worth it to change it now
 
-        policy_rate = central_bank.central_bank_data["Policy Rate"].values[0]
+        policy_rate = central_bank.central_bank_data["policy_rate"].values[0]
 
         cls.initialise_pop_wealth_income(
             banks=banks,
