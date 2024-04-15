@@ -582,6 +582,18 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             + self.household_data["Income from Financial Assets"]
         )
 
+    def set_household_investment_rates(self, investment_rates: np.ndarray | float = 0.2) -> None:
+        """
+        Sets the investment rates for each household based on the given investment rates.
+
+        Parameters:
+            investment_rates (np.ndarray): The investment rates.
+
+        Returns:
+            None
+        """
+        self.household_data["Investment Rate"] = investment_rates
+
     def set_household_saving_rates(self, independents: Optional[list[str]] = None) -> None:
         """
         Sets the saving rates for each household based on the given independent variables.
@@ -636,6 +648,26 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         )
 
         self.household_data["Saving Rate"] = saving_rates
+
+    def normalise_household_investment(
+        self, tau_cf: float, iot_hh_investment: np.ndarray | pd.Series, positive_investment_rates: bool = True
+    ):
+        inv_weights = iot_hh_investment / iot_hh_investment.sum()
+        income = self.household_data["Income"].values
+        investment_rate = self.household_data["Investment Rate"].values
+
+        current_hh_investment = default_target_investment(
+            income_=income, investment_rate=investment_rate, tau_cf_=tau_cf, investment_weights_=inv_weights
+        )
+
+        factor = iot_hh_investment.sum() / current_hh_investment.sum()
+
+        self.household_data["Investment Rate"] = factor * investment_rate
+
+        # set initial investment
+        self.household_data["Investment"] = (self.household_data["Income"] * self.household_data["Investment Rate"]) / (
+            1 + tau_cf
+        )
 
     def normalise_household_consumption(
         self,
@@ -849,3 +881,12 @@ def default_desired_consumption(
     tau_vat_: float,
 ) -> np.ndarray:
     return 1.0 / (1 + tau_vat_) * np.outer(consumption_weights_, (1 - saving_rates_) * income_).T
+
+
+def default_target_investment(
+    income_: np.ndarray,
+    investment_weights_: np.ndarray,
+    investment_rate: np.ndarray,
+    tau_cf_: float,
+) -> np.ndarray:
+    return 1.0 / (1 + tau_cf_) * np.outer(investment_weights_, investment_rate * income_).T

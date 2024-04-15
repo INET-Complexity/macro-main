@@ -91,6 +91,9 @@ class DefaultSyntheticBanks(SyntheticBanks):
             country=country_name, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country_name, year)
         )
 
+        # select only positive debt
+        compustat_data = compustat_data[compustat_data["Debt"] > 0]
+
         if single_bank:
             number_of_banks = 1
         else:

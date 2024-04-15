@@ -32,10 +32,11 @@ class SyntheticGoodsMarket:
         exogenous_data: ExogenousCountryData,
         max_timeframe: float = 40,
     ) -> "SyntheticGoodsMarket":
-        rates = readers.exchange_rates.df.loc[country_name]
+        rates = readers.exchange_rates.df.loc[country_name].copy()
         inflation = exogenous_data.inflation["PPI Inflation"]
         growth = exogenous_data.national_accounts["Gross Output (Growth)"]
 
+        rates.index = pd.to_datetime(rates.index, format="%Y")
         # merge the three dataframes on index
         merged = pd.merge_asof(rates, inflation, left_index=True, right_index=True)
         merged = pd.merge_asof(merged, growth, left_index=True, right_index=True)
@@ -45,16 +46,20 @@ class SyntheticGoodsMarket:
 
         # select only data up to the current quarter
         merged = merged.loc[:f"{year}-Q{quarter}"]
+        # drop current quarter observation (ie last row)
+        merged = merged.iloc[:-1]
 
         # select last max_timeframe rows
         merged = merged.iloc[-max_timeframe:]
+
+        merged.columns = ["Exchange Rates", "PPI Inflation", "Growth"]
 
         model = LinearRegression()
 
         fit_linear(
             model=model,
             dependent="Exchange Rates",
-            independents=["PPI Inflation", "Gross Output (Growth)"],
+            independents=["PPI Inflation", "Growth"],
             data=merged,
         )
 

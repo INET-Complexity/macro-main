@@ -14,8 +14,8 @@ from .synthetic_government_entities.default_synthetic_government_entities import
 from .synthetic_government_entities.synthetic_government_entities import SyntheticGovernmentEntities
 from .synthetic_housing_market.default_synthetic_housing_market import DefaultSyntheticHousingMarket
 from .synthetic_housing_market.synthetic_housing_market import SyntheticHousingMarket
-from .synthetic_matching.matching_firms_with_banks import match_firms_with_banks
-from .synthetic_matching.matching_households_with_banks import match_households_with_banks
+from .synthetic_matching.matching_firms_with_banks import match_firms_with_banks_random
+from .synthetic_matching.matching_households_with_banks import match_households_with_banks_random
 from .synthetic_matching.matching_households_with_houses import (
     housing_info_from_population,
     set_housing_df,

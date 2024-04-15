@@ -153,41 +153,45 @@ class SyntheticPopulation(ABC):
         firm_production: np.ndarray,
         firm_employees: pd.DataFrame,
         unemployment_labour_inputs_fraction: float = 0.3,
+        override: bool = True,
     ) -> None:
-        self.individual_data["Labour Inputs"] = np.nan
+        if override:
+            self.individual_data["Labour Inputs"] = 1.0
+        else:
+            self.individual_data["Labour Inputs"] = np.nan
 
-        # Employed individuals contribute labour inputs proportional to their income from employment
-        for firm_id in range(firm_production.shape[0]):
-            self.individual_data.loc[firm_employees[firm_id], "Labour Inputs"] = (
-                self.individual_data.loc[firm_employees[firm_id], "Employee Income"]
-                / self.individual_data.loc[firm_employees[firm_id], "Employee Income"].sum()
-                * firm_production[firm_id]
-            )
+            # Employed individuals contribute labour inputs proportional to their income from employment
+            for firm_id in range(firm_production.shape[0]):
+                self.individual_data.loc[firm_employees[firm_id], "Labour Inputs"] = (
+                    self.individual_data.loc[firm_employees[firm_id], "Employee Income"]
+                    / self.individual_data.loc[firm_employees[firm_id], "Employee Income"].sum()
+                    * firm_production[firm_id]
+                )
 
-        # Unemployed individuals initial labour inputs are set to be a fraction of the
-        # mean labour inputs in the industry
-        for industry in range(len(self.industries)):
-            self.individual_data.loc[
-                np.logical_and(
-                    self.individual_data["Activity Status"] == 2,
-                    self.individual_data["Employment Industry"] == industry,
-                ),
-                "Labour Inputs",
-            ] = unemployment_labour_inputs_fraction * np.mean(
+            # Unemployed individuals initial labour inputs are set to be a fraction of the
+            # mean labour inputs in the industry
+            for industry in range(len(self.industries)):
                 self.individual_data.loc[
                     np.logical_and(
-                        self.individual_data["Activity Status"] == 1,
+                        self.individual_data["Activity Status"] == 2,
                         self.individual_data["Employment Industry"] == industry,
                     ),
                     "Labour Inputs",
-                ]
-            )
+                ] = unemployment_labour_inputs_fraction * np.mean(
+                    self.individual_data.loc[
+                        np.logical_and(
+                            self.individual_data["Activity Status"] == 1,
+                            self.individual_data["Employment Industry"] == industry,
+                        ),
+                        "Labour Inputs",
+                    ]
+                )
 
-        # Not economically active individuals contribute no labour inputs
-        self.individual_data.loc[
-            self.individual_data["Activity Status"] == 3,
-            "Labour Inputs",
-        ] = 0.0
+            # Not economically active individuals contribute no labour inputs
+            self.individual_data.loc[
+                self.individual_data["Activity Status"] == 3,
+                "Labour Inputs",
+            ] = 0.0
 
     @abstractmethod
     def compute_household_income(
@@ -237,6 +241,12 @@ class SyntheticPopulation(ABC):
         positive_saving_rates_only: bool = True,
         independents: Optional[list[str]] = None,
     ): ...
+
+    def set_household_investment_rates(self, investment_rates: np.ndarray | float = 0.2) -> None: ...
+
+    def normalise_household_investment(
+        self, tau_cf: float, iot_hh_investment: np.ndarray | pd.Series, positive_investment_rates: bool = True
+    ) -> None: ...
 
     def match_consumption_weights_by_income(
         self,

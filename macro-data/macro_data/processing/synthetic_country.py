@@ -28,8 +28,12 @@ from macro_data.processing.synthetic_housing_market.default_synthetic_housing_ma
     DefaultSyntheticHousingMarket,
 )
 from macro_data.processing.synthetic_housing_market.synthetic_housing_market import SyntheticHousingMarket
-from macro_data.processing.synthetic_matching.matching_firms_with_banks import match_firms_with_banks
-from macro_data.processing.synthetic_matching.matching_households_with_banks import match_households_with_banks
+from macro_data.processing.synthetic_matching.matching_firms_with_banks import (
+    match_firms_with_banks_optimal,
+)
+from macro_data.processing.synthetic_matching.matching_households_with_banks import (
+    match_households_with_banks_optimal,
+)
 from macro_data.processing.synthetic_matching.matching_households_with_houses import set_housing_df
 from macro_data.processing.synthetic_matching.matching_individuals_with_firms import (
     match_individuals_with_firms_country,
@@ -407,6 +411,7 @@ class SyntheticCountry:
         total_rent: float,
         central_bank: SyntheticCentralBank,
         weights_by_income: pd.DataFrame,
+        independents: Optional[list[str]] = None,
     ) -> tuple[SyntheticCreditMarket, SyntheticHousingMarket]:
         """
         This function takes care of matching the different agents together and initialising the Credit
@@ -428,6 +433,7 @@ class SyntheticCountry:
             total_rent (float): The total rent in the country.
             central_bank (SyntheticCentralBank): The synthetic central bank.
             weights_by_income (pd.DataFrame): The weights by income for the country.
+            independents (list[str]): The list of independent variables for the household wealth.
 
         Returns:
             tuple[SyntheticCreditMarket, SyntheticHousingMarket]: A tuple containing the synthetic credit market,
@@ -442,8 +448,11 @@ class SyntheticCountry:
             firms=firms,
             population=population,
         )
-        match_firms_with_banks(firms=firms, banks=banks)
-        match_households_with_banks(population=population, banks=banks)
+        match_firms_with_banks_optimal(firms=firms, banks=banks)
+
+        population.compute_household_wealth(independents=independents)
+
+        match_households_with_banks_optimal(population=population, banks=banks)
         housing_data = set_housing_df(
             synthetic_population=population,
             rental_income_taxes=tax_data.income_tax,
@@ -463,7 +472,7 @@ class SyntheticCountry:
             country_industry_data=country_industry_data,
             firms=firms,
             population=population,
-            vat=tax_data.value_added_tax,
+            tax_data=tax_data,
             weights_by_income=weights_by_income,
             independents=independents,
         )
@@ -557,22 +566,28 @@ class SyntheticCountry:
         country_industry_data: dict[str, pd.DataFrame],
         firms: SyntheticFirms,
         population: SyntheticPopulation,
-        vat: float,
+        tax_data: TaxData,
         weights_by_income: pd.DataFrame,
         independents: Optional[list[str]] = None,
     ):
-        population.compute_household_wealth(independents=independents)
         population.compute_household_income(
             total_social_transfers=central_government.central_gov_data["Other Social Benefits"].values[0],
             independents=independents,
         )
         population.set_household_saving_rates(independents=independents)
+        population.set_household_investment_rates()
         iot_consumption = country_industry_data["industry_vectors"]["Household Consumption in LCU"]
         population.normalise_household_consumption(
-            iot_hh_consumption=iot_consumption, vat=vat, independents=independents
+            iot_hh_consumption=iot_consumption, vat=tax_data.value_added_tax, independents=independents
         )
+
+        population.normalise_household_investment(
+            tau_cf=tax_data.capital_formation_tax,
+            iot_hh_investment=country_industry_data["industry_vectors"]["Household Capital Inputs in LCU"],
+        )
+
         population.match_consumption_weights_by_income(
-            weights_by_income=weights_by_income, iot_hh_consumption=iot_consumption, vat=vat
+            weights_by_income=weights_by_income, iot_hh_consumption=iot_consumption, vat=tax_data.value_added_tax
         )
         banks.initialise_deposits_and_loans(
             synthetic_population=population,
