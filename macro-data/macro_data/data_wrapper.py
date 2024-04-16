@@ -188,6 +188,7 @@ class DataWrapper:
                     country_industry_data=industry_data[country],
                     year_range=year_range,
                     goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
+                    quarter=quarter,
                 )
 
         synthetic_row = DefaultSyntheticRestOfTheWorld.from_readers(
