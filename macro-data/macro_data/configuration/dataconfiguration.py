@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Optional, Any
+from typing import Optional, Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -18,6 +18,7 @@ class FirmsDataConfiguration(BaseModel):
         capital_inputs_utilisation_rate (float): Capital inputs utilisation rate.
     """
 
+    constructor: Literal["Compustat", "Default"] = "Compustat"
     zero_initial_deposits: bool = True
     zero_initial_debt: bool = True
     initial_inventory_to_input_fraction: float = 0
@@ -51,6 +52,7 @@ class BanksDataConfiguration(BaseModel):
         interest_rates (InterestRates): The interest rates configuration.
     """
 
+    constructor: Literal["Compustat", "Default"] = "Compustat"
     long_term_firm_loan_maturity: int = 60
     consumption_exp_loan_maturity: int = 12
     mortgage_maturity: int = 120

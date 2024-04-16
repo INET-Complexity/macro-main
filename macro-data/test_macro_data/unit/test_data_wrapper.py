@@ -46,6 +46,23 @@ class TestCreator:
 
         assert True
 
+    def test__default_banks_firms(self, data_config_path):
+        with open(data_config_path, "r") as f:
+            config_dict = yaml.safe_load(f)
+        # not necessary to do the country splitting here
+        # since the fixture used only has one country key
+        configuration = DataConfiguration(**config_dict)
+        configuration.country_configs[Country("FRA")].firms_configuration.constructor = "Default"
+        configuration.country_configs[Country("FRA")].banks_configuration.constructor = "Default"
+        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
+        configuration.prune_date = None
+        creator = DataWrapper.from_config(
+            configuration=configuration,
+            raw_data_path=raw_data_path,
+            single_hfcs_survey=True,
+        )
+        assert creator.synthetic_countries.keys() == {"FRA"}
+
     def test__create_us_can(self, data_config_path, multic_readers):
         with open(data_config_path, "r") as f:
             config_dict = yaml.safe_load(f)

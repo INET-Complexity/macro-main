@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from macro_data.configuration.countries import Country
+from macro_data.configuration.dataconfiguration import BanksDataConfiguration
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 
 from macro_data.readers.default_readers import DataReaders
@@ -30,6 +31,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
         year: int,
         readers: DataReaders,
         scale: int,
+        banks_data_configuration: BanksDataConfiguration,
         exchange_rate_from_eur: float = 1.0,
     ) -> "DefaultSyntheticBanks":
         """
@@ -49,10 +51,21 @@ class DefaultSyntheticBanks(SyntheticBanks):
             year (int): The year.
             readers (DataReaders): The data readers object.
             scale (int): The scaling factor.
+            banks_data_configuration (BanksDataConfiguration): The banks data configuration object.
+            exchange_rate_from_eur (float): The exchange rate from EUR to the local currency.
 
         Returns:
             SyntheticBanks: The initialized SyntheticBanks object.
         """
+        if banks_data_configuration.constructor == "Compustat":
+            return cls.from_readers_compustat(
+                country_name=country_name,
+                year=year,
+                readers=readers,
+                single_bank=single_bank,
+                scale=scale,
+            )
+
         if single_bank:
             number_of_banks = 1
         else:
@@ -61,6 +74,15 @@ class DefaultSyntheticBanks(SyntheticBanks):
 
         bank_equity = readers.eurostat.get_total_bank_equity(country=country_name, year=year) * exchange_rate_from_eur
         bank_data = pd.DataFrame({"Equity": np.ones(number_of_banks) * bank_equity / number_of_banks})
+        bank_data["Deposits from Firms"] = np.ones(number_of_banks)
+        bank_data["Deposits from Households"] = np.ones(number_of_banks)
+        bank_data["Loans to Firms"] = np.ones(number_of_banks)
+        bank_data["Consumption Loans to Households"] = np.ones(number_of_banks)
+        bank_data["Mortgages to Households"] = np.ones(number_of_banks)
+        bank_data["Loans to Households"] = (
+            bank_data["Consumption Loans to Households"] + bank_data["Mortgages to Households"]
+        )
+
         return cls(country_name, year, number_of_banks, bank_data)
 
     @classmethod

@@ -297,7 +297,7 @@ class OECDEconData:
         size_means = [np.mean([int(v) for v in s.split("-")]) for s in sizes]
 
         df = self.data["business_demography1"]
-        df = df.loc[(df["LOCATION"] == country) & (df["TIME"] == year)]
+        df = df.loc[(df["LOCATION"] == country) & (df["TIME"] == year) & (df["VAR"] == "ENTR")]
         if len(df) == 0:
             return None
 

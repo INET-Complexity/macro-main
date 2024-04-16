@@ -158,18 +158,7 @@ class SyntheticCountry:
             exogenous_data=exogenous_country_data,
         )
 
-        # firms = DefaultSyntheticFirms.from_readers(
-        #     readers=readers,
-        #     country_name=country,
-        #     year=year,
-        #     industry_data=country_industry_data,
-        #     industries=industries,
-        #     scale=country_configuration.scale,
-        #     n_employees_per_industry=population.number_employees_by_industry,
-        #     firm_configuration=country_configuration.firms_configuration,
-        # )
-
-        firms = DefaultSyntheticFirms.from_readers_compustat(
+        firms = DefaultSyntheticFirms.from_readers(
             readers=readers,
             country_name=country,
             year=year,
@@ -180,12 +169,13 @@ class SyntheticCountry:
             firm_configuration=country_configuration.firms_configuration,
         )
 
-        banks = DefaultSyntheticBanks.from_readers_compustat(
+        banks = DefaultSyntheticBanks.from_readers(
             readers=readers,
             country_name=country,
             year=year,
             scale=country_configuration.scale,
             single_bank=country_configuration.single_bank,
+            banks_data_configuration=country_configuration.banks_configuration,
         )
 
         synthetic_goods_market = SyntheticGoodsMarket.from_readers(
@@ -319,7 +309,7 @@ class SyntheticCountry:
             exogenous_data=exogenous_country_data,
         )
 
-        firms = DefaultSyntheticFirms.from_readers_compustat(
+        firms = DefaultSyntheticFirms.from_readers(
             readers=readers,
             country_name=country,
             year=year,
@@ -331,12 +321,13 @@ class SyntheticCountry:
             exchange_rate_from_eur=exch_rate_proxy_to_lcu,
         )
 
-        banks = DefaultSyntheticBanks.from_readers_compustat(
+        banks = DefaultSyntheticBanks.from_readers(
             readers=readers,
             country_name=country,
             year=year,
             scale=country_configuration.scale,
             single_bank=country_configuration.single_bank,
+            banks_data_configuration=country_configuration.banks_configuration,
         )
 
         synthetic_goods_market = SyntheticGoodsMarket.from_readers(
