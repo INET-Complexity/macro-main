@@ -558,6 +558,18 @@ class SyntheticCountry:
         )
         return credit_market
 
+    @property
+    def n_sellers_by_industry(self):
+        return self.firms.number_of_firms_by_industry
+
+    @property
+    def n_buyers(self):
+        return (
+            self.population.number_of_households
+            + self.firms.number_of_firms
+            + self.government_entities.number_of_entities
+        )
+
     @classmethod
     def initialise_pop_wealth_income(
         cls,

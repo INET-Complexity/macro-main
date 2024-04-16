@@ -201,6 +201,10 @@ class SyntheticPopulation(ABC):
     ) -> None: ...
 
     @property
+    def number_of_households(self):
+        return self.household_data.shape[0]
+
+    @property
     def number_employees_by_industry(self) -> np.ndarray:
         number_employees_by_industry = np.zeros(len(self.industries))
         for industry_ind in range(len(self.industries)):

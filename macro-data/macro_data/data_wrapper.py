@@ -34,7 +34,8 @@ class DataWrapper:
     synthetic_countries: dict[str, SyntheticCountry]
     synthetic_rest_of_the_world: SyntheticRestOfTheWorld
     exchange_rates: pd.DataFrame
-    trade_proportions: pd.DataFrame
+    origin_trade_proportions: pd.DataFrame
+    destination_trade_proportions: pd.DataFrame
     configuration: DataConfiguration
     calibration_data: pd.DataFrame
 
@@ -191,21 +192,36 @@ class DataWrapper:
                     quarter=quarter,
                 )
 
+        row_exports_growth = calibration_data[("ROW", "Exports (Growth)")]
+        row_imports_growth = calibration_data[("ROW", "Imports (Growth)")]
+
+        total_number_sellers = np.sum(
+            [synthetic_countries[country].n_sellers_by_industry for country in synthetic_countries], axis=1
+        )
+
+        total_number_buyers = np.sum([synthetic_countries[country].n_buyers for country in synthetic_countries])
+
         synthetic_row = DefaultSyntheticRestOfTheWorld.from_readers(
             readers=readers,
             year=year,
-            exogenous_row_data=exogenous_data.get("ROW", None) if exogenous_data else None,
-            row_industry_data=industry_data["ROW"],
+            industry_data=industry_data,
+            n_sellers_by_industry=total_number_sellers,
+            n_buyers=total_number_buyers,
+            row_configuration=configuration.row_data_config,
+            row_exports_growth=row_exports_growth,
+            row_imports_growth=row_imports_growth,
         )
 
         exchange_rates = readers.exchange_rates.df
-        trade_proportions = readers.icio[year].get_trade_proportions()
+        origin_trade_proportions = readers.icio[year].get_origin_trade_proportions()
+        destination_trade_proportions = readers.icio[year].get_destination_trade_proportions()
 
         return cls(
             synthetic_countries=synthetic_countries,
             synthetic_rest_of_the_world=synthetic_row,
             exchange_rates=exchange_rates,
-            trade_proportions=trade_proportions,
+            origin_trade_proportions=origin_trade_proportions,
+            destination_trade_proportions=destination_trade_proportions,
             configuration=configuration,
             calibration_data=calibration_data,
         )

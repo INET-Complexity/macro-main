@@ -512,21 +512,69 @@ class ICIOReader:
     def get_trade(self, start_country: str, end_country: str) -> pd.Series:
         return self.iot.loc[start_country, end_country].sum(axis=1).loc[self.industries] / self.yearly_factor
 
-    def get_trade_proportions(self) -> pd.DataFrame:
-        trade_proportions = {"start_country": [], "end_country": [], "industry": [], "value": []}
+    def get_origin_trade_proportions(self) -> pd.DataFrame:
+        trade_proportions = {
+            "start_country": [],
+            "end_country": [],
+            "industry": [],
+            "value": [],
+        }
         for end_country in self.considered_countries + ["ROW"]:
             if end_country == "ROW":
                 imports_total = self.get_imports(end_country)
             else:
                 imports_total = self.get_imports(end_country) + self.get_trade(end_country, end_country)
             for start_country in self.considered_countries + ["ROW"]:
-                if start_country == end_country == "ROW":
-                    continue
                 trade_proportions["start_country"] += [start_country] * len(self.industries)
                 trade_proportions["end_country"] += [end_country] * len(self.industries)
                 trade_proportions["industry"] += list(range(len(self.industries)))
-                trade_proportions["value"] += list((self.get_trade(start_country, end_country) / imports_total).values)
-        return pd.DataFrame(trade_proportions).set_index(["start_country", "end_country", "industry"])
+                if start_country == end_country == "ROW":
+                    trade_proportions["value"] += list(np.zeros(len(self.industries)))
+                else:
+                    trade_proportions["value"] += list(
+                        (self.get_trade(start_country, end_country) / imports_total).values
+                    )
+        return pd.DataFrame(trade_proportions).set_index(["start_country", "end_country", "industry"]).sort_index()
+
+    def get_destination_trade_proportions(self) -> pd.DataFrame:
+        trade_proportions = {
+            "start_country": [],
+            "end_country": [],
+            "industry": [],
+            "value": [],
+        }
+        for start_country in self.considered_countries + ["ROW"]:
+            if start_country == "ROW":
+                exports_total = self.get_exports(start_country)
+            else:
+                exports_total = self.get_exports(start_country) + self.get_trade(start_country, start_country)
+            for end_country in self.considered_countries + ["ROW"]:
+                if start_country == end_country == "ROW":
+                    trade_proportions["value"] += list(np.zeros(len(self.industries)))
+                else:
+                    trade_proportions["value"] += list(
+                        (self.get_trade(start_country, end_country) / exports_total).values
+                    )
+                trade_proportions["start_country"] += [start_country] * len(self.industries)
+                trade_proportions["end_country"] += [end_country] * len(self.industries)
+                trade_proportions["industry"] += list(range(len(self.industries)))
+        return pd.DataFrame(trade_proportions).set_index(["start_country", "end_country", "industry"]).sort_index()
+
+    # def get_trade_proportions(self) -> pd.DataFrame:
+    #     trade_proportions = {"start_country": [], "end_country": [], "industry": [], "value": []}
+    #     for end_country in self.considered_countries + ["ROW"]:
+    #         if end_country == "ROW":
+    #             imports_total = self.get_imports(end_country)
+    #         else:
+    #             imports_total = self.get_imports(end_country) + self.get_trade(end_country, end_country)
+    #         for start_country in self.considered_countries + ["ROW"]:
+    #             if start_country == end_country == "ROW":
+    #                 continue
+    #             trade_proportions["start_country"] += [start_country] * len(self.industries)
+    #             trade_proportions["end_country"] += [end_country] * len(self.industries)
+    #             trade_proportions["industry"] += list(range(len(self.industries)))
+    #             trade_proportions["value"] += list((self.get_trade(start_country, end_country) / imports_total).values)
+    #     return pd.DataFrame(trade_proportions).set_index(["start_country", "end_country", "industry"])
 
     def get_intermediate_inputs_matrix(self, country_name: str) -> pd.DataFrame:
         total_output = self.get_total_output(country_name)

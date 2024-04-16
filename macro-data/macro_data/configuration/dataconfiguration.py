@@ -94,6 +94,20 @@ class CountryDataConfiguration(BaseModel):
     eu_proxy_country: Optional[Country] = None
 
 
+class ROWDataConfiguration(BaseModel):
+    """
+    Represents the configuration for the rest of the world.
+
+    Attributes:
+        model_imports (bool): Whether to fit a model for imports.
+        model_exports (bool): Whether to fit a model for exports.
+    """
+
+    model_imports: bool = False
+    model_exports: bool = False
+    assume_one_exporter_by_industry: bool = True
+
+
 class DataConfiguration(BaseModel):
     """
     Represents a configuration object for the data package.
@@ -113,6 +127,7 @@ class DataConfiguration(BaseModel):
     quarter: int = 1
     prune_date: date
     country_configs: dict[Country, CountryDataConfiguration]
+    row_data_config: ROWDataConfiguration = ROWDataConfiguration()
     purpose: str = ""
     author: str = "INET"
 
