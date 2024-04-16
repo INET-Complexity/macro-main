@@ -13,7 +13,7 @@ PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 
 
 class TestSyntheticPopulation:
-    def test__init(self, readers, configuration, industry_data):
+    def test__init(self, readers, configuration, industry_data, exogenous_data):
         industries = configuration.industries
 
         france = Country("FRA")
@@ -28,6 +28,8 @@ class TestSyntheticPopulation:
             industry_data=industry_data[france],
             rent_as_fraction_of_unemployment_rate=0.5,
             total_unemployment_benefits=1000.0,
+            quarter=1,
+            exogenous_data=exogenous_data,
         )
 
         # Check if we have all the necessary fields
@@ -92,7 +94,7 @@ class TestSyntheticPopulation:
 
 
 @pytest.mark.parametrize("country", [Country("CAN"), Country("USA")])
-def test__household_consumption(multic_readers, multic_industry_data, configuration, country):
+def test__household_consumption(multic_readers, multic_industry_data, configuration, country, exogenous_data):
     industries = configuration.industries
 
     proxy_country = Country("FRA")
@@ -115,6 +117,8 @@ def test__household_consumption(multic_readers, multic_industry_data, configurat
         total_unemployment_benefits=1000.0,
         population_ratio=population_ratio,
         exch_rate=exch_rate_proxy_to_lcu,
+        exogenous_data=exogenous_data,
+        quarter=1,
     )
 
     assert True

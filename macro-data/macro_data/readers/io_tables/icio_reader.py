@@ -2,6 +2,7 @@ import json
 import os
 from functools import reduce
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -109,7 +110,11 @@ class ICIOReader:
         imputed_rent_fraction: dict[str, float],
         investment_fractions: dict[Country | str, dict[str, float]],
         yearly_factor: float = 4.0,
+        proxy_country_dict: Optional[dict[str | Country, str | Country]] = None,
     ) -> "ICIOReader":
+
+        if proxy_country_dict is None:
+            proxy_country_dict = {}
 
         # considered_countries = [c.value if isinstance(c, Country) else c for c in considered_countries]
 
@@ -136,12 +141,19 @@ class ICIOReader:
 
         avg_imputed_rent_fraction = sum(imputed_rent_fraction.values()) / len(imputed_rent_fraction)
 
+        new_rent_fraction = {}
+        for c in considered_countries:
+            if c in imputed_rent_fraction.keys():
+                new_rent_fraction[c] = imputed_rent_fraction[c]
+            else:
+                new_rent_fraction[c] = imputed_rent_fraction.get(proxy_country_dict[c], avg_imputed_rent_fraction)
+
         imputed_rents = {}
         for country_name in considered_countries:
-            if country_name in imputed_rent_fraction.keys():
+            if country_name in new_rent_fraction.keys():
                 imputed_rents[country_name] = (
                     (
-                        imputed_rent_fraction[country_name]
+                        new_rent_fraction[country_name]
                         * agg_df.at[
                             (country_name, "L"),
                             (country_name, "Household Consumption"),
@@ -151,7 +163,7 @@ class ICIOReader:
                     * exchange_rates.from_usd_to_lcu(country_name, year)
                 )
                 agg_df.at[(country_name, "L"), (country_name, "Household Consumption")] -= (
-                    imputed_rent_fraction[country_name]
+                    new_rent_fraction[country_name]
                     * agg_df.at[
                         (country_name, "L"),
                         (country_name, "Household Consumption"),

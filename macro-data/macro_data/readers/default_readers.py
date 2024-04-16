@@ -162,6 +162,7 @@ class DataReaders:
                 exchange_rates=exchange_rates,
                 imputed_rent_fraction=eurostat.get_imputed_rent_fraction(eu_only, imputed_rent_year),
                 investment_fractions=get_investment_year(year),
+                proxy_country_dict=proxy_country_dict,
             )
             for year in all_years
         }

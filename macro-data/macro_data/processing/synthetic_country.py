@@ -319,7 +319,7 @@ class SyntheticCountry:
             exogenous_data=exogenous_country_data,
         )
 
-        firms = DefaultSyntheticFirms.from_readers(
+        firms = DefaultSyntheticFirms.from_readers_compustat(
             readers=readers,
             country_name=country,
             year=year,
@@ -331,13 +331,12 @@ class SyntheticCountry:
             exchange_rate_from_eur=exch_rate_proxy_to_lcu,
         )
 
-        banks = DefaultSyntheticBanks.from_readers(
+        banks = DefaultSyntheticBanks.from_readers_compustat(
             readers=readers,
             country_name=country,
             year=year,
             scale=country_configuration.scale,
             single_bank=country_configuration.single_bank,
-            exchange_rate_from_eur=exch_rate_proxy_to_lcu,
         )
 
         synthetic_goods_market = SyntheticGoodsMarket.from_readers(
