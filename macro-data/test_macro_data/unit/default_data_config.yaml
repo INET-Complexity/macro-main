@@ -32,6 +32,8 @@ year:
   2014
 prune_date:
   "2010-01-01"
+seed:
+  0
 
 country_configs:
   FRA:

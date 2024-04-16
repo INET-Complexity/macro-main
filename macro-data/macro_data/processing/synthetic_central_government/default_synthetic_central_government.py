@@ -171,7 +171,7 @@ def build_other_benefits_model(benefits_inflation_data: pd.DataFrame, regression
     benefits_inflation_data["Other benefits growth ratio"] = (
         1 + benefits_inflation_data["Other Total Benefits"].pct_change()
     )
-    selection = benefits_inflation_data.last(f"{regression_window}M").dropna()
+    selection = benefits_inflation_data.iloc[-regression_window:].dropna()
     if selection.shape[0] > 0:
         model = LinearRegression()
         model.fit(

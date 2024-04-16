@@ -309,7 +309,7 @@ class DataReaders:
                 pd.date_range(
                     start=f"{years[0]}-01-01",
                     end=f"{years[-1] + 1}-01-01",
-                    freq="YE",
+                    freq="Y",
                 )
             ),
         )

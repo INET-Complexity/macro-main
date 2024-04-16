@@ -201,5 +201,5 @@ class HFCSReader:
             year=year,
         ) * df.loc[
             :, var_numerical_union
-        ].replace(["A", "M"], np.nan)
+        ].apply(pd.to_numeric, errors="coerce")
         return df
