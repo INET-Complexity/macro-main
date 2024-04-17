@@ -112,7 +112,6 @@ class DataReaders:
         single_icio_survey: bool = False,
         proxy_country_dict: dict[Country, Country] = None,
     ):
-
         if proxy_country_dict is None:
             proxy_country_dict = {country: country for country in country_names}
 
