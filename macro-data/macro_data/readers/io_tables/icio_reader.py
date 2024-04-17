@@ -112,7 +112,6 @@ class ICIOReader:
         yearly_factor: float = 4.0,
         proxy_country_dict: Optional[dict[str | Country, str | Country]] = None,
     ) -> "ICIOReader":
-
         if proxy_country_dict is None:
             proxy_country_dict = {}
 

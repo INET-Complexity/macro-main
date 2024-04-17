@@ -32,7 +32,6 @@ class PolicyRatesReader:
         self.df["code"] = self.country_code_switch(self.df["REF_AREA"].values)
 
     def get_policy_rates(self, country: Country | str) -> pd.DataFrame:
-
         if isinstance(country, Country):
             is_eu_country = country.is_eu_country
             country = country.value

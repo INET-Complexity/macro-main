@@ -28,7 +28,6 @@ class ECBReader:
         path: Path | str,
         proxy_country: Country = Country("DEU"),
     ):
-
         # For proxying
         self.proxy_country = proxy_country
 
