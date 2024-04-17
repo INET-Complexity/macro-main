@@ -51,7 +51,9 @@ def match_firms_with_banks_optimal(
     number_of_firms_by_bank = np.floor(number_of_firms_by_bank).astype(int)
 
     # assign firms to banks if needed
-    if firms.number_of_firms > number_of_firms_by_bank.sum():
+    number_of_firms_by_bank_sum = number_of_firms_by_bank.sum()
+
+    if firms.number_of_firms - number_of_firms_by_bank_sum > 0:
         add_inds = np.random.choice(
             len(number_of_firms_by_bank),
             firms.number_of_firms - number_of_firms_by_bank.sum(),
