@@ -36,7 +36,6 @@ def match_firms_with_banks_optimal(
     firms: SyntheticFirms,
     banks: SyntheticBanks,
 ) -> None:
-
     # rescale
     rescale(firms, "Deposits", banks, "Deposits from Firms")
     rescale(firms, "Debt", banks, "Loans to Firms")
@@ -74,10 +73,10 @@ def match_firms_with_banks_optimal(
 
     bank_accounts = np.array(bank_accounts)
 
-    bank_by_account = np.concatenate(
-        [np.full(number_of_firms_by_bank[bank_id], bank_id) for bank_id in range(banks.number_of_banks)]
-    ).astype(int)
-
+    bank_by_account = np.array(
+        [bank_id for bank_id in range(banks.number_of_banks) for _ in range(number_of_firms_by_bank[bank_id])],
+        dtype=int,
+    )
     cost = sp.spatial.distance_matrix(
         (firms.firm_data["Deposits"].values + firms.firm_data["Debt"].values)[:, None],
         bank_accounts[:, None],
