@@ -238,6 +238,9 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         )
 
         if exch_rate != 1.0:
+            # make sure all the columns are floats
+            household_data.loc[:, CONVERT_HH_COLS] = household_data.loc[:, CONVERT_HH_COLS].astype(float)
+            individual_data.loc[:, CONVERT_IND_COLS] = individual_data.loc[:, CONVERT_IND_COLS].astype(float)
             household_data.loc[:, CONVERT_HH_COLS] *= exch_rate
             individual_data.loc[:, CONVERT_IND_COLS] *= exch_rate
 

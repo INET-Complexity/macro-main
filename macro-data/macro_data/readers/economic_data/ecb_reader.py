@@ -11,13 +11,15 @@ def country_code_switch(codes: Iterable[str]):
     return [Country.convert_two_letter_to_three(c) for c in codes]
 
 
-def preprocess_df(df: pd.DataFrame, freq="Q") -> Optional[pd.Series]:
+def preprocess_df(df: pd.DataFrame, freq="QS") -> Optional[pd.Series]:
     # df = df.loc[:, df.columns != "TIME PERIOD"]
     df.drop(columns="TIME PERIOD", inplace=True)
     df.columns = [c[-26:-24] for c in df.columns]
     df.drop(columns="U2", inplace=True)
     df.columns = country_code_switch(df.columns)
-    return df.resample(freq).mean()
+    data = df.resample(freq).mean()
+    data.freq = None
+    return data
 
 
 class ECBReader:

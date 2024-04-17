@@ -121,9 +121,11 @@ def prepare_labour_stats(country_name: Country, readers: DataReaders):
         },
         inplace=True,
     )
-    labour_stats["Unemployment Rate (Growth)"] = labour_stats["Unemployment Rate (Value)"].pct_change()
-    labour_stats["Participation Rate (Growth)"] = labour_stats["Participation Rate (Value)"].pct_change()
-    labour_stats["Vacancy Rate (Growth)"] = labour_stats["Vacancy Rate (Value)"].pct_change()
+    labour_stats["Unemployment Rate (Growth)"] = labour_stats["Unemployment Rate (Value)"].pct_change(fill_method=None)
+    labour_stats["Participation Rate (Growth)"] = labour_stats["Participation Rate (Value)"].pct_change(
+        fill_method=None
+    )
+    labour_stats["Vacancy Rate (Growth)"] = labour_stats["Vacancy Rate (Value)"].pct_change(fill_method=None)
 
     return labour_stats
 
