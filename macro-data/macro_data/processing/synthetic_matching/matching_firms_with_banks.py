@@ -88,8 +88,20 @@ def match_firms_with_banks_optimal(
 
     # Record the optimal configuration
     _, corr_bank_accounts = lsa(cost)
-    corr_banks = bank_by_account[corr_bank_accounts]
-    firms.firm_data["Corresponding Bank ID"] = corr_banks
+    try:
+        corr_banks = [bank_by_account[corresponding] for corresponding in corr_bank_accounts]
+    except:
+        raise ValueError(
+            f"The length of corr_bank_accounts is {len(corr_bank_accounts)} "
+            f"and the length of bank_by_account is {len(bank_by_account)}"
+        )
+    try:
+        firms.firm_data["Corresponding Bank ID"] = corr_banks
+    except:
+        raise ValueError(
+            f"The length of corr_banks is {len(corr_banks)} "
+            f"and the length of firms.firm_data is {firms.firm_data.shape[0]}"
+        )
     banks.bank_data["Corresponding Firms ID"] = [
         np.where(corr_banks == bank_id) for bank_id in range(banks.number_of_banks)
     ]
