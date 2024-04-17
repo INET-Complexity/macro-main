@@ -20,7 +20,9 @@ class TestCreator:
         configuration = DataConfiguration(**config_dict)
         configuration.prune_date = None
         configuration.seed = None
-        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
+        raw_data_path = TEST_PATH / "unit" /"sample_raw_data"
+        # Check if there is a file in raw data path
+        raise ValueError(f"{raw_data_path}, {raw_data_path.exists()}")
         creator = DataWrapper.from_config(
             configuration=configuration,
             raw_data_path=raw_data_path,
