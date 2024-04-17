@@ -44,7 +44,11 @@ def match_firms_with_banks_optimal(
     # sum of loans and deposits to firms
     loans_and_deposits = banks.bank_data["Deposits from Firms"].values + banks.bank_data["Loans to Firms"].values
     # number of firms by bank
-    number_of_firms_by_bank = firms.number_of_firms * loans_and_deposits / loans_and_deposits.sum()
+    number_of_firms_by_bank = (
+        firms.number_of_firms * loans_and_deposits / loans_and_deposits.sum()
+        if loans_and_deposits.sum() > 0
+        else np.full(banks.number_of_banks, firms.number_of_firms / banks.number_of_banks)
+    )
 
     # round down
     number_of_firms_by_bank = np.floor(number_of_firms_by_bank).astype(int)
@@ -73,10 +77,10 @@ def match_firms_with_banks_optimal(
 
     bank_accounts = np.array(bank_accounts)
 
-    bank_by_account = np.array(
-        [bank_id for bank_id in range(banks.number_of_banks) for _ in range(number_of_firms_by_bank[bank_id])],
-        dtype=int,
-    )
+    bank_by_account = np.concatenate(
+        [np.full(number_of_firms_by_bank[bank_id], bank_id) for bank_id in range(banks.number_of_banks)]
+    ).astype(int)
+
     cost = sp.spatial.distance_matrix(
         (firms.firm_data["Deposits"].values + firms.firm_data["Debt"].values)[:, None],
         bank_accounts[:, None],

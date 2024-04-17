@@ -414,6 +414,8 @@ def function_parameters_dependent_initialisation(
     used_capital_inputs = (
         firm_data["Production"].values * capital_inputs_depreciation_matrix[:, firm_data["Industry"].values]
     ).T.astype(float)
+    # TODO : Sam's version with compustat data can have firms with negative deposits, and this doesn't work
+
     if assume_zero_initial_deposits:
         firm_data["Deposits"] = 0.0
     else:

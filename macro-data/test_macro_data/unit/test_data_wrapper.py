@@ -55,6 +55,42 @@ class TestCreator:
         configuration = DataConfiguration(**config_dict)
         configuration.country_configs[Country("FRA")].firms_configuration.constructor = "Default"
         configuration.country_configs[Country("FRA")].banks_configuration.constructor = "Default"
+        configuration.country_configs[Country("FRA")].single_bank = False
+        configuration.country_configs[Country("FRA")].firms_configuration.zero_initial_deposits = False
+        configuration.country_configs[Country("FRA")].firms_configuration.zero_initial_debt = False
+        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
+        configuration.prune_date = None
+        creator = DataWrapper.from_config(
+            configuration=configuration,
+            raw_data_path=raw_data_path,
+            single_hfcs_survey=True,
+        )
+        assert creator.synthetic_countries.keys() == {"FRA"}
+
+    def test__single_banks(self, data_config_path):
+        with open(data_config_path, "r") as f:
+            config_dict = yaml.safe_load(f)
+        # not necessary to do the country splitting here
+        # since the fixture used only has one country key
+        configuration = DataConfiguration(**config_dict)
+        configuration.country_configs[Country("FRA")].single_bank = True
+        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
+        configuration.prune_date = None
+        creator = DataWrapper.from_config(
+            configuration=configuration,
+            raw_data_path=raw_data_path,
+            single_hfcs_survey=True,
+        )
+        assert creator.synthetic_countries.keys() == {"FRA"}
+
+    def test_no_deposits_debt(self, data_config_path):
+        with open(data_config_path, "r") as f:
+            config_dict = yaml.safe_load(f)
+        # not necessary to do the country splitting here
+        # since the fixture used only has one country key
+        configuration = DataConfiguration(**config_dict)
+        configuration.country_configs[Country("FRA")].firms_configuration.zero_initial_deposits = True
+        configuration.country_configs[Country("FRA")].firms_configuration.zero_initial_debt = True
         raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
         configuration.prune_date = None
         creator = DataWrapper.from_config(

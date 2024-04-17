@@ -47,9 +47,9 @@ country_configs:
       false
     firms_configuration:
       zero_initial_deposits:
-        true
+        false
       zero_initial_debt:
-        true
+        false
 
     central_bank_configuration:
       inflation_target:

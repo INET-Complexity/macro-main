@@ -1,5 +1,5 @@
 import logging
-from typing import Self
+from typing import Self, Optional
 
 import numpy as np
 import pandas as pd
@@ -66,6 +66,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
         n_employees_per_industry: np.ndarray,
         firm_configuration: FirmsDataConfiguration,
         exchange_rate_from_eur: float = 1.0,
+        proxy_country: Optional[Country] = None,
     ) -> "DefaultSyntheticFirms":
         n_firms_per_industry = industry_data["industry_vectors"]["Number of Firms"].values
         n_firms = n_firms_per_industry.sum()
@@ -74,6 +75,12 @@ class DefaultSyntheticFirms(SyntheticFirms):
 
         exchange_rate = readers.exchange_rates.from_usd_to_lcu(country_name, year)
         tau_sif = readers.oecd_econ.read_tau_sif(country_name, year)
+
+        total_firm_deposits = (
+            readers.eurostat.get_total_nonfin_firm_deposits(proxy_country, year) * exchange_rate_from_eur
+            if proxy_country
+            else readers.eurostat.get_total_nonfin_firm_deposits(country_name, year)
+        )
 
         match firm_configuration.constructor:
             case "Default":
