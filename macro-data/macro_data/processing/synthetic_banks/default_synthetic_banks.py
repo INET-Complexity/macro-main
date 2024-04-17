@@ -122,8 +122,6 @@ class DefaultSyntheticBanks(SyntheticBanks):
             oecd_banks = readers.oecd_econ.read_number_of_banks(country=country_name, year=year)
             number_of_banks = max(1, int(oecd_banks / scale))
 
-        # temp, reseed
-        np.random.seed(0)
         banks_inds = np.random.choice(range(len(compustat_data)), number_of_banks, replace=True)
 
         compustat_selection = compustat_data.iloc[banks_inds]

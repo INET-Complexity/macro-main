@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import time
 
 from macro_data.configuration import DataConfiguration
 from macro_data.configuration.countries import Country
@@ -27,7 +28,8 @@ class DataWrapper:
         synthetic_countries (dict[str, SyntheticCountry]): The synthetic countries.
         synthetic_rest_of_the_world (SyntheticRestOfTheWorld): The synthetic rest of the world.
         exchange_rates (pd.DataFrame): The exchange rates.
-        trade_proportions (pd.DataFrame): The trade proportions.
+        origin_trade_proportions (pd.DataFrame): The trade proportions by origin.
+        destination_trade_proportions (pd.DataFrame): The trade proportions by destination.
         configuration (DataConfiguration): The data configuration.
     """
 
@@ -68,7 +70,6 @@ class DataWrapper:
         cls,
         configuration: DataConfiguration,
         raw_data_path: Path | str,
-        random_seed: int = 0,
         single_hfcs_survey: bool = True,
         single_icio_survey: bool = True,
     ) -> "DataWrapper":
@@ -79,7 +80,6 @@ class DataWrapper:
         Args:
             configuration (DataConfiguration): The data configuration.
             raw_data_path (Path | str): The path to the raw data.
-            random_seed (int, optional): The random seed for reproducibility. Defaults to 0.
             single_hfcs_survey (bool, optional): Whether to use a single HFCS survey. Defaults to True.
             single_icio_survey (bool, optional): Whether to use a single ICIO survey. Defaults to True.
 
@@ -90,6 +90,11 @@ class DataWrapper:
         if isinstance(raw_data_path, str):
             raw_data_path = Path(raw_data_path)
 
+        if configuration.seed is not None:
+            np.random.seed(configuration.seed)
+        else:
+            np.random.seed(int(time.time()))
+
         for country, country_config in configuration.country_configs.items():
             if country_config.eu_proxy_country is None and not country.is_eu_country:
                 raise ValueError(f"{country} is not in EU: please set an EU proxy country.")
@@ -99,8 +104,6 @@ class DataWrapper:
             for country in configuration.countries
             if not country.is_eu_country
         }
-
-        np.random.seed(random_seed)
 
         country_names = configuration.countries
         industries = configuration.industries

@@ -132,6 +132,7 @@ class DataConfiguration(BaseModel):
     row_data_config: ROWDataConfiguration = ROWDataConfiguration()
     purpose: str = ""
     author: str = "INET"
+    seed: Optional[int] = None
 
     def model_post_init(self, __context: Any) -> None:
         """

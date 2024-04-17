@@ -19,6 +19,7 @@ class TestCreator:
         # since the fixture used only has one country key
         configuration = DataConfiguration(**config_dict)
         configuration.prune_date = None
+        configuration.seed = None
         raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
         creator = DataWrapper.from_config(
             configuration=configuration,
