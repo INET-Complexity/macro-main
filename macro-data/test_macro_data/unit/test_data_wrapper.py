@@ -18,7 +18,10 @@ class TestCreator:
         # not necessary to do the country splitting here
         # since the fixture used only has one country key
         configuration = DataConfiguration(**config_dict)
+        configuration.prune_date = None
+        configuration.seed = None
         raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
+        # Check if there is a file in raw data path
         creator = DataWrapper.from_config(
             configuration=configuration,
             raw_data_path=raw_data_path,
@@ -44,6 +47,59 @@ class TestCreator:
         )
 
         assert True
+
+    def test__default_banks_firms(self, data_config_path):
+        with open(data_config_path, "r") as f:
+            config_dict = yaml.safe_load(f)
+        # not necessary to do the country splitting here
+        # since the fixture used only has one country key
+        configuration = DataConfiguration(**config_dict)
+        configuration.country_configs[Country("FRA")].firms_configuration.constructor = "Default"
+        configuration.country_configs[Country("FRA")].banks_configuration.constructor = "Default"
+        configuration.country_configs[Country("FRA")].single_bank = False
+        configuration.country_configs[Country("FRA")].firms_configuration.zero_initial_deposits = False
+        configuration.country_configs[Country("FRA")].firms_configuration.zero_initial_debt = False
+        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
+        configuration.prune_date = None
+        creator = DataWrapper.from_config(
+            configuration=configuration,
+            raw_data_path=raw_data_path,
+            single_hfcs_survey=True,
+        )
+        assert creator.synthetic_countries.keys() == {"FRA"}
+
+    def test__single_banks(self, data_config_path):
+        with open(data_config_path, "r") as f:
+            config_dict = yaml.safe_load(f)
+        # not necessary to do the country splitting here
+        # since the fixture used only has one country key
+        configuration = DataConfiguration(**config_dict)
+        configuration.country_configs[Country("FRA")].single_bank = True
+        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
+        configuration.prune_date = None
+        creator = DataWrapper.from_config(
+            configuration=configuration,
+            raw_data_path=raw_data_path,
+            single_hfcs_survey=True,
+        )
+        assert creator.synthetic_countries.keys() == {"FRA"}
+
+    def test_no_deposits_debt(self, data_config_path):
+        with open(data_config_path, "r") as f:
+            config_dict = yaml.safe_load(f)
+        # not necessary to do the country splitting here
+        # since the fixture used only has one country key
+        configuration = DataConfiguration(**config_dict)
+        configuration.country_configs[Country("FRA")].firms_configuration.zero_initial_deposits = True
+        configuration.country_configs[Country("FRA")].firms_configuration.zero_initial_debt = True
+        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
+        configuration.prune_date = None
+        creator = DataWrapper.from_config(
+            configuration=configuration,
+            raw_data_path=raw_data_path,
+            single_hfcs_survey=True,
+        )
+        assert creator.synthetic_countries.keys() == {"FRA"}
 
     def test__create_us_can(self, data_config_path, multic_readers):
         with open(data_config_path, "r") as f:
@@ -82,7 +138,7 @@ class TestCreator:
 
         for country_name in [france, united_states, canada]:
             exch_rate = multic_readers.exchange_rates.from_usd_to_lcu(country_name, 2014)
-            usd_consumption = multic_readers.icio[2014].get_monthly_hh_consumption(country_name)
+            usd_consumption = multic_readers.icio[2014].get_hh_consumption(country_name)
 
             total_consumption = usd_consumption.sum()
 
@@ -99,7 +155,7 @@ class TestCreator:
 
             assert total_disposable_income / (1 + vat) == pytest.approx(total_consumption * exch_rate, rel=5e-2)
 
-            govt_consumption_reader = multic_readers.icio[2014].get_monthly_govt_consumption(country_name)
+            govt_consumption_reader = multic_readers.icio[2014].get_govt_consumption(country_name)
 
             assert govt_consumption_reader.sum() == pytest.approx(govt_consumption_usd, rel=5e-2)
 

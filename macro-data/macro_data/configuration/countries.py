@@ -12,6 +12,9 @@ with open(THIS_FILE_PATH / "3_codes.yaml", "r") as f:
 with open(THIS_FILE_PATH / "country_names.yaml", "r") as f:
     country_names = yaml.safe_load(f)
 
+inverse_country_codes = {v: k for k, v in country_codes.items()}
+
+
 EU_COUNTRIES = [
     "AUT",
     "BEL",
@@ -59,6 +62,8 @@ class Country(StrEnum):
     JAPAN = "JPN"
     MEXICO = "MEX"
 
+    INDIA = "IND"
+
     REST_OF_WORLD = "ROW"
 
     def __str__(self):
@@ -66,6 +71,10 @@ class Country(StrEnum):
 
     def to_two_letter_code(self):
         return country_codes[self.value]
+
+    @staticmethod
+    def convert_two_letter_to_three(two_letter_code: str):
+        return inverse_country_codes[two_letter_code]
 
     @property
     def is_eu_country(self):

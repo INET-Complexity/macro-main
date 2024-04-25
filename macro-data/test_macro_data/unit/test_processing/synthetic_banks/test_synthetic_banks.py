@@ -3,6 +3,8 @@ import pathlib
 import numpy as np
 import pandas as pd
 
+from macro_data.configuration.countries import Country
+from macro_data.configuration.dataconfiguration import BanksDataConfiguration
 from macro_data.processing.synthetic_banks.default_synthetic_banks import (
     DefaultSyntheticBanks,
 )
@@ -12,8 +14,14 @@ PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 
 class TestSyntheticBanks:
     def test__create(self, readers):
+        banks_configuration = BanksDataConfiguration()
         banks = DefaultSyntheticBanks.from_readers(
-            single_bank=True, country_name="FRA", year=2014, readers=readers, scale=10000
+            single_bank=True,
+            country_name=Country("FRA"),
+            year=2014,
+            readers=readers,
+            scale=10000,
+            banks_data_configuration=banks_configuration,
         )
         # banks.create(
         #     bank_equity=1000,
@@ -37,7 +45,17 @@ class TestSyntheticBanks:
         #     bank_markup_interest_rate_overdraft_household=0.01,
         # )
 
-        assert "Equity" in banks.bank_data.columns
+        columns = {
+            "Equity",
+            "Loans to Firms",
+            "Deposits from Firms",
+            "Deposits from Households",
+            "Mortgages to Households",
+            "Consumption Loans to Households",
+            "Loans to Households",
+        }
+
+        assert set(banks.bank_data.columns) == columns
         # Check if we have all the necessary fields
         # for bank_field in [
         #     "Equity",

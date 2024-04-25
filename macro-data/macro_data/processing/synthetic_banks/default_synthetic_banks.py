@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from macro_data.configuration.countries import Country
+from macro_data.configuration.dataconfiguration import BanksDataConfiguration
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 
 from macro_data.readers.default_readers import DataReaders
@@ -30,6 +31,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
         year: int,
         readers: DataReaders,
         scale: int,
+        banks_data_configuration: BanksDataConfiguration,
         exchange_rate_from_eur: float = 1.0,
     ) -> "DefaultSyntheticBanks":
         """
@@ -49,18 +51,96 @@ class DefaultSyntheticBanks(SyntheticBanks):
             year (int): The year.
             readers (DataReaders): The data readers object.
             scale (int): The scaling factor.
+            banks_data_configuration (BanksDataConfiguration): The banks data configuration object.
+            exchange_rate_from_eur (float): The exchange rate from EUR to the local currency.
 
         Returns:
             SyntheticBanks: The initialized SyntheticBanks object.
         """
+        if banks_data_configuration.constructor == "Compustat":
+            return cls.from_readers_compustat(
+                country_name=country_name,
+                year=year,
+                readers=readers,
+                single_bank=single_bank,
+                scale=scale,
+            )
+
         if single_bank:
             number_of_banks = 1
         else:
-            bank_branches = readers.oecd_econ.read_number_of_bank_branches(country=country_name, year=year)
+            bank_branches = readers.oecd_econ.read_number_of_banks(country=country_name, year=year)
             number_of_banks = max(1, int(bank_branches / scale))
 
         bank_equity = readers.eurostat.get_total_bank_equity(country=country_name, year=year) * exchange_rate_from_eur
         bank_data = pd.DataFrame({"Equity": np.ones(number_of_banks) * bank_equity / number_of_banks})
+        bank_data["Deposits from Firms"] = np.ones(number_of_banks)
+        bank_data["Deposits from Households"] = np.ones(number_of_banks)
+        bank_data["Loans to Firms"] = np.ones(number_of_banks)
+        bank_data["Consumption Loans to Households"] = np.ones(number_of_banks)
+        bank_data["Mortgages to Households"] = np.ones(number_of_banks)
+        bank_data["Loans to Households"] = (
+            bank_data["Consumption Loans to Households"] + bank_data["Mortgages to Households"]
+        )
+
+        return cls(country_name, year, number_of_banks, bank_data)
+
+    @classmethod
+    def from_readers_compustat(
+        cls, country_name: Country, year: int, readers: DataReaders, single_bank: bool, scale: int
+    ) -> "DefaultSyntheticBanks":
+        """
+        Initialize a SyntheticBanks object from Compustat data readers.
+        This method creates a single bank or multiple banks, depending on the number of banks
+        in the country obtained from the data.
+
+        Bank equity is set to the total bank equity (obtained from Compustat) in the country
+        divided by the number of banks.
+
+        Args:
+            cls (class): The class object.
+            country_name (Country): The name of the country.
+            year (int): The year.
+            readers (DataReaders): The data readers object.
+            single_bank (bool): Flag indicating whether to create a single bank or multiple banks.
+            scale (int): The scaling factor.
+
+        Returns:
+            SyntheticBanks: The initialized SyntheticBanks object.
+        """
+
+        compustat_data = readers.compustat_banks.get_country_data(
+            country=country_name, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country_name, year)
+        )
+
+        # select only positive debt
+        compustat_data = compustat_data[compustat_data["Debt"] > 0]
+
+        if single_bank:
+            number_of_banks = 1
+        else:
+            oecd_banks = readers.oecd_econ.read_number_of_banks(country=country_name, year=year)
+            number_of_banks = max(1, int(oecd_banks / scale))
+
+        banks_inds = np.random.choice(range(len(compustat_data)), number_of_banks, replace=True)
+
+        compustat_selection = compustat_data.iloc[banks_inds]
+
+        total_bank_equity = readers.eurostat.get_total_bank_equity(country=country_name, year=year)
+
+        bank_data = pd.DataFrame(
+            {
+                "Deposits from Firms": compustat_selection["Deposits"].values,
+                "Deposits from Households": compustat_selection["Deposits"].values,
+                "Loans to Firms": compustat_selection["Debt"].values,
+                "Consumption Loans to Households": compustat_selection["Debt"].values,
+                "Mortgages to Households": compustat_selection["Debt"].values,
+                "Loans to Households": compustat_selection["Debt"].values,
+                "Equity": compustat_selection["Equity"].values,
+            }
+        )
+        bank_data["Equity"] *= total_bank_equity / bank_data["Equity"].sum()
+
         return cls(country_name, year, number_of_banks, bank_data)
 
     def set_bank_equity(self, bank_equity: float) -> None:

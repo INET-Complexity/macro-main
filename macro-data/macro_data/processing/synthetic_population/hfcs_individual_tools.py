@@ -16,24 +16,28 @@ def process_individual_data(
     total_unemployment_benefits: float,
     unemployment_rate: float,
     participation_rate: float,
+    n_firms_by_industry: list[int] | np.ndarray,
 ) -> pd.DataFrame:
     """
     Process individual data by performing various data cleaning and transformation steps.
 
     Args:
-        country_name (Country): The name of the country.
         individual_data (pd.DataFrame): The individual data to be processed.
         industries (list[str]): The list of industries.
-        readers (DataReaders): The data readers object.
         scale (int): The scale factor.
         total_unemployment_benefits (float): The total unemployment benefits.
-        year (int): The year.
         unemployment_rate (float): The unemployment rate.
         participation_rate (float): The participation rate.
+        n_firms_by_industry (list[int] | np.ndarray): The number of firms by industry.
 
     Returns:
         pd.DataFrame: The processed individual data.
     """
+
+    # Temporarily set age
+    no_age = individual_data["Age"].isna()
+    individual_data.loc[no_age, "Age"] = np.random.choice(range(0, 100), no_age.sum(), replace=True)
+
     individual_data = remove_outliers(
         data=individual_data,
         cols=["Employee Income", "Gender", "Age", "Education", "Labour Status"],
@@ -48,7 +52,7 @@ def process_individual_data(
         unemployment_rate=unemployment_rate,
         participation_rate=participation_rate,
     )
-    individual_data = fill_individual_nace(individual_data, industries)
+    individual_data = fill_individual_nace(individual_data, industries, n_firms_by_industry)
     n_unemployed = np.sum(individual_data["Activity Status"] == 2)
 
     # DANGER: if we don't have total unemployment benefits
@@ -80,6 +84,9 @@ def process_individual_data(
             "Corresponding Household ID",
         ]
     ]
+
+    individual_data["Corresponding Invested Firm"] = np.nan
+    individual_data["Corresponding Invested Bank"] = np.nan
 
     return individual_data
 
@@ -362,7 +369,9 @@ def increase_participation_rate(individual_data: pd.DataFrame, participation_rat
     ] = np.nan
 
 
-def fill_individual_nace(individual_data: pd.DataFrame, industries: list[str]) -> pd.DataFrame:
+def fill_individual_nace(
+    individual_data: pd.DataFrame, industries: list[str], n_firms_by_industry: list[int] | np.ndarray
+) -> pd.DataFrame:
     """
     Fill in missing values in the 'Employment Industry' column of the individual_data DataFrame
     based on the provided industries list.
@@ -370,6 +379,7 @@ def fill_individual_nace(individual_data: pd.DataFrame, industries: list[str]) -
     Args:
         individual_data (pd.DataFrame): DataFrame containing individual data.
         industries (list[str]): List of industries.
+        n_firms_by_industry (list[int] | np.ndarray): Number of firms by industry.
 
     Returns:
         pd.DataFrame: DataFrame with missing values in the 'Employment Industry' column filled.
@@ -394,26 +404,48 @@ def fill_individual_nace(individual_data: pd.DataFrame, industries: list[str]) -
         "Employment Industry",
     ] = np.nan
 
-    # Get current frequency of NACE employments
-    frequencies = np.array(
-        [np.sum(individual_data["Employment Industry"] == ind) for ind in range(len(industries))]
-    ).astype(float)
-    frequencies /= np.sum(frequencies)
+    # Assumption
+    individual_data.loc[individual_data["Activity Status"] == 3, "Employment Industry"] = np.nan
 
-    # Fill-in missing sectors
-    sectors_missing = np.where(frequencies == 0)[0]
-    individuals_missing_industry = np.where(
-        np.logical_and(
-            individual_data["Activity Status"] < 3,
-            pd.isnull(individual_data["Employment Industry"]).values,
-        )
-    )[0]
-    individual_data.loc[individuals_missing_industry, "Employment Industry"] = np.random.choice(
-        sectors_missing,
-        len(individuals_missing_industry),
-        replace=True,
+    n_employees_by_sector = (
+        individual_data.groupby("Employment Industry").apply(lambda x: (x["Activity Status"] == 1).sum()).values
     )
-    # # Distribute proportionally
+
+    for ind in range(len(industries)):
+        individual_data, n_employees_by_sector = reassign_industry(
+            ind,
+            n_firms_by_industry,
+            n_employees_by_sector,
+            individual_data,
+        )
+
+    # frequencies = np.array(
+    #     [
+    #         np.sum(
+    #             np.logical_and(
+    #                 individual_data["Activity Status"] < 3,
+    #                 individual_data["Employment Industry"] == ind,
+    #             )
+    #         )
+    #         for ind in range(len(industries))
+    #     ]
+    # ).astype(float)
+    # frequencies /= np.sum(frequencies)
+    frequencies = (
+        individual_data.groupby("Employment Industry").apply(lambda x: (x["Activity Status"] < 3).sum()).values
+    )
+    frequencies = frequencies / np.sum(frequencies)
+
+    # fill in missing sector of unemployed people
+    mask = np.logical_and(individual_data["Activity Status"] < 3, pd.isnull(individual_data["Employment Industry"]))
+    individuals_without_industry = np.flatnonzero(mask)
+
+    new_industries = np.random.choice(range(len(industries)), len(individuals_without_industry), replace=True)
+
+    individual_data.loc[individuals_without_industry, "Employment Industry"] = new_industries
+
+    # # Fill-in missing sectors
+    # sectors_missing = np.where(frequencies == 0)[0]
     # individuals_missing_industry = np.where(
     #     np.logical_and(
     #         individual_data["Activity Status"] < 3,
@@ -421,15 +453,93 @@ def fill_individual_nace(individual_data: pd.DataFrame, industries: list[str]) -
     #     )
     # )[0]
     # individual_data.loc[individuals_missing_industry, "Employment Industry"] = np.random.choice(
-    #     np.arange(len(industries)),
+    #     sectors_missing,
     #     len(individuals_missing_industry),
-    #     p=frequencies,
     #     replace=True,
     # )
-
-    # Assumption
-    individual_data.loc[individual_data["Activity Status"] == 3, "Employment Industry"] = np.nan
+    #
+    # individual_data.loc[individual_data["Activity Status"] == 3, "Employment Industry"] = np.nan
     return individual_data
+
+
+def reassign_industry(
+    ind: int,
+    n_firms_by_industry: list[int] | np.ndarray,
+    n_employees_by_industry: list[int] | np.ndarray,
+    individual_data: pd.DataFrame,
+):
+    # we need to have at least one employee per firm
+    # so we first compute the number of extra employees needed that we need to reassign
+    n_extra = n_firms_by_industry[ind] - n_employees_by_industry[ind]
+    if n_extra > 0:
+        # boolean mask for individual data with Activity Status == 1 and Employment Industry nan
+        mask = np.logical_and(
+            individual_data["Activity Status"] == 1,
+            pd.isnull(individual_data["Employment Industry"]),
+        )
+        # get the indices of the individuals that satisfy the mask
+        individuals_without_industry = np.flatnonzero(mask)
+
+        # if we have less individuals that can be reassigned than the number of extra employees needed
+        # we will reassign them
+        if len(individuals_without_industry) < n_extra:
+            # the number of individuals that must be reassigned
+            reset_ind = n_extra - len(individuals_without_industry)
+
+            # iterate over industry and identify employees within industry that can be reassigned
+            individuals_having_industry = []
+            for i in range(len(n_employees_by_industry)):
+                list_employed_in_industry = select_employed_in_industry(individual_data, i)
+                n_select = len(list_employed_in_industry) - n_firms_by_industry[i]
+                individuals_having_industry += list(
+                    np.random.choice(list_employed_in_industry, n_select, replace=False)
+                )
+
+            individuals_having_industry = np.array(individuals_having_industry)
+
+            # then we select randomly from this index a number reset_ind of them
+            # and set their industry to nan
+            if len(individuals_having_industry) > 0:
+                individuals_to_reassign = np.random.choice(individuals_having_industry, reset_ind, replace=False)
+                individual_data.loc[individuals_to_reassign, "Employment Industry"] = np.nan
+
+            # now get the individuals without industry again
+            mask = np.logical_and(
+                individual_data["Activity Status"] == 1,
+                pd.isnull(individual_data["Employment Industry"]),
+            )
+            individuals_without_industry = np.flatnonzero(mask)
+
+            # if we still have individuals to reassign, pick n_extra of them and assign them to the industry
+            if len(individuals_without_industry) > 0:
+                individuals_to_reassign = np.random.choice(individuals_without_industry, n_extra, replace=False)
+                individual_data.loc[individuals_to_reassign, "Employment Industry"] = ind
+
+            # update the number of employees by industry
+            n_employees_by_industry = (
+                individual_data.groupby("Employment Industry").apply(lambda x: (x["Activity Status"] == 1).sum()).values
+            )
+
+    return individual_data, n_employees_by_industry
+
+
+def select_employed_in_industry(individual_data: pd.DataFrame, industry: int) -> np.ndarray:
+    """
+    Selects the employed individuals in the given industry from the individual_data DataFrame.
+
+    Parameters:
+        individual_data (pd.DataFrame): DataFrame containing individual data.
+        industry (int): The industry to select employed individuals from.
+
+    Returns:
+        np.ndarray: The indices of employed individuals in the given industry.
+    """
+    return np.flatnonzero(
+        np.logical_and(
+            individual_data["Activity Status"] == 1,
+            individual_data["Employment Industry"] == industry,
+        )
+    )
 
 
 def fill_individual_employee_income(
@@ -459,7 +569,7 @@ def fill_individual_employee_income(
     no_income = individual_data["Employee Income"] == 0.0
     individual_data.loc[is_employed & no_income, "Employee Income"] = np.nan
     individual_data = apply_iterative_imputer(
-        individual_data, columns=["Employee Income", "Age", "Education"], selection=is_employed
+        individual_data, columns=["Employee Income", "Age", "Education"], selection=is_employed, min_value=0
     )
 
     # Only employed individuals receive employee income
@@ -469,7 +579,7 @@ def fill_individual_employee_income(
     individual_data.loc[:, "Employee Income"] *= scale
 
     # Monthly!
-    individual_data.loc[:, "Employee Income"] /= 12.0
+    individual_data.loc[:, "Employee Income"] /= 4.0
 
     # Employee income is at least the unemployment rate
     is_employed = individual_data["Activity Status"] == 1

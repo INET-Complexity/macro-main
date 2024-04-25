@@ -18,6 +18,7 @@ from macro_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
 )
 from macro_data.readers.default_readers import DataReaders
+from macro_data.readers.exogenous_data import ExogenousCountryData
 from macro_data.util.clean_data import remove_outliers
 from macro_data.util.imputation import apply_iterative_imputer
 from macro_data.util.regressions import fit_linear
@@ -31,6 +32,7 @@ RESTRICT_COLS = [
     "Corresponding Property Owner",
     "Corresponding Additionally Owned Houses ID",
     "Income",
+    "Investment",
     "Employee Income",
     "Regular Social Transfers",
     "Rental Income from Real Estate",
@@ -164,14 +166,17 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         country_name_short: str,
         scale: int,
         year: int,
+        quarter: int,
         industry_data: dict[str, pd.DataFrame],
         industries: list[str],
         total_unemployment_benefits: float,
+        exogenous_data: ExogenousCountryData,
         rent_as_fraction_of_unemployment_rate: float = 0.25,
         n_quantiles: int = 5,
         population_ratio: float = 1.0,
         exch_rate: float = 1.0,
-        proxied_country=None,
+        proxied_country: str | Country = None,
+        yearly_factor: float = 4.0,
     ) -> "SyntheticHFCSPopulation":
         """
         Creates a synthetic population from data readers.
@@ -183,15 +188,18 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             country_name_short (str): The short name of the country.
             scale (int): The scaling factor.
             year (int): The year.
+            quarter (int): The quarter.
             industry_data (dict[str, dict]): The industry data.
             industries (list[str]): The list of industries.
             total_unemployment_benefits (float): The total unemployment benefits.
+            exogenous_data (ExogenousCountryData): The exogenous data for the Country.
             rent_as_fraction_of_unemployment_rate (float): The rent as a fraction of the unemployment rate.
             n_quantiles (int, optional): The number of quantiles. Defaults to 5.
             population_ratio (float, optional): The population ratio. Defaults to 1.0. This is used in case
                                                  the HFCS population is used as a proxy for another country.
             exch_rate (float, optional): The exchange rate. Defaults to 1.0.
             proxied_country (str, optional): The name of the proxied country. Defaults to None.
+            yearly_factor (float, optional): The yearly factor. Defaults to 4.0 for 4 quarters.
 
         Returns:
             cls: The synthetic population object.
@@ -203,12 +211,10 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
         household_data, individual_data = sample_households(hfcs_households_data, hfcs_individuals_data, n_households)
 
-        if proxied_country is None:
-            unemployment_rate = readers.world_bank.get_unemployment_rate(country_name, year)
-            participation_rate = readers.world_bank.get_participation_rate(country_name, year)
-        else:
-            unemployment_rate = readers.world_bank.get_unemployment_rate(proxied_country, year)
-            participation_rate = readers.world_bank.get_participation_rate(proxied_country, year)
+        unemployment_rate = exogenous_data.labour_stats.loc[f"{year}-Q{quarter}", "Unemployment Rate (Value)"].iloc[0]
+        participation_rate = exogenous_data.labour_stats.loc[f"{year}-Q{quarter}", "Participation Rate (Value)"].iloc[0]
+
+        n_firms_by_industry = industry_data["industry_vectors"]["Number of Firms"].values
 
         individual_data = process_individual_data(
             individual_data,
@@ -217,6 +223,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             total_unemployment_benefits,
             unemployment_rate,
             participation_rate,
+            n_firms_by_industry,
         )
         n_unemployed = np.sum(individual_data["Activity Status"] == 2)
 
@@ -231,6 +238,9 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         )
 
         if exch_rate != 1.0:
+            # make sure all the columns are floats
+            household_data.loc[:, CONVERT_HH_COLS] = household_data.loc[:, CONVERT_HH_COLS].astype(float)
+            individual_data.loc[:, CONVERT_IND_COLS] = individual_data.loc[:, CONVERT_IND_COLS].astype(float)
             household_data.loc[:, CONVERT_HH_COLS] *= exch_rate
             individual_data.loc[:, CONVERT_IND_COLS] *= exch_rate
 
@@ -491,7 +501,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             where=self.household_data["Wealth in Financial Assets"].values.astype(float) != 0.0,
         )
         fit_linear(
-            household_data=self.household_data,
+            data=self.household_data,
             independents=independents,
             dependent="Fraction Deposits / Total Financial Wealth",
             model=self.wealth_distribution_model,
@@ -520,16 +530,25 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             independents = ["Income", "Debt"]
         # Household regular social transfers and pensions, impute missing values
         self.household_data = apply_iterative_imputer(
-            self.household_data, ["Type", "Net Wealth", "Regular Social Transfers"]
+            self.household_data,
+            [
+                "Type",
+                "Net Wealth",
+                "Regular Social Transfers",
+                "Income from Pensions",
+            ],
+            min_value=0,
         )
 
         # Aggregate
         self.household_data["Regular Social Transfers"] += self.household_data["Income from Pensions"].values
 
+        self.household_data["Income from Pensions"] = 0.0
+
         # Social transfers for each household group
         self.household_data["Regular Social Transfers"] /= self.household_data["Regular Social Transfers"].sum()
         social_transfers = fit_linear(
-            household_data=self.household_data,
+            data=self.household_data,
             independents=independents,
             dependent="Regular Social Transfers",
             model=self.social_transfers_model,
@@ -556,7 +575,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         fa_mask = np.logical_not(np.isnan(self.household_data["Income from Financial Assets"].values.astype(float)))
         self.household_data["Income from Financial Assets"] *= self.scale
         self.coefficient_fa_income = (
-            self.household_data["Income from Financial Assets"].values.astype(float)[fa_mask].sum() / 12.0
+            self.household_data["Income from Financial Assets"].values.astype(float)[fa_mask].sum() / self.yearly_factor
         ) / (self.household_data["Wealth in Other Financial Assets"].values.astype(float)[fa_mask]).sum()
         self.household_data["Income from Financial Assets"] = (
             self.coefficient_fa_income * self.household_data["Wealth in Other Financial Assets"].values
@@ -575,6 +594,18 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             + self.household_data["Rental Income from Real Estate"]
             + self.household_data["Income from Financial Assets"]
         )
+
+    def set_household_investment_rates(self, investment_rates: np.ndarray | float = 0.2) -> None:
+        """
+        Sets the investment rates for each household based on the given investment rates.
+
+        Parameters:
+            investment_rates (np.ndarray): The investment rates.
+
+        Returns:
+            None
+        """
+        self.household_data["Investment Rate"] = investment_rates
 
     def set_household_saving_rates(self, independents: Optional[list[str]] = None) -> None:
         """
@@ -623,13 +654,33 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
         # Fit a model
         saving_rates = fit_linear(
-            household_data=self.household_data,
+            data=self.household_data,
             independents=independents,
             dependent="Saving Rate",
             model=self.saving_rates_model,
         )
 
         self.household_data["Saving Rate"] = saving_rates
+
+    def normalise_household_investment(
+        self, tau_cf: float, iot_hh_investment: np.ndarray | pd.Series, positive_investment_rates: bool = True
+    ):
+        inv_weights = iot_hh_investment / iot_hh_investment.sum()
+        income = self.household_data["Income"].values
+        investment_rate = self.household_data["Investment Rate"].values
+
+        current_hh_investment = default_target_investment(
+            income_=income, investment_rate=investment_rate, tau_cf_=tau_cf, investment_weights_=inv_weights
+        )
+
+        factor = iot_hh_investment.sum() / current_hh_investment.sum()
+
+        self.household_data["Investment Rate"] = factor * investment_rate
+
+        # set initial investment
+        self.household_data["Investment"] = (self.household_data["Income"] * self.household_data["Investment Rate"]) / (
+            1 + tau_cf
+        )
 
     def normalise_household_consumption(
         self,
@@ -687,9 +738,13 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             factor = 1.0 - diff / inc_sr
             self.household_data["Saving Rate"] = factor * sr
 
+        self.household_data["Consumption"] = (
+            1 / (1 + vat) * (1 - self.household_data["Saving Rate"]) * self.household_data["Income"]
+        )
+
         # Overwrite the model
         fit_linear(
-            household_data=self.household_data,
+            data=self.household_data,
             independents=independents,
             dependent="Saving Rate",
             model=self.saving_rates_model,
@@ -843,3 +898,12 @@ def default_desired_consumption(
     tau_vat_: float,
 ) -> np.ndarray:
     return 1.0 / (1 + tau_vat_) * np.outer(consumption_weights_, (1 - saving_rates_) * income_).T
+
+
+def default_target_investment(
+    income_: np.ndarray,
+    investment_weights_: np.ndarray,
+    investment_rate: np.ndarray,
+    tau_cf_: float,
+) -> np.ndarray:
+    return 1.0 / (1 + tau_cf_) * np.outer(investment_weights_, investment_rate * income_).T

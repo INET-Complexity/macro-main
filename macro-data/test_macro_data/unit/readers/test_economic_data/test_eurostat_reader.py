@@ -57,8 +57,8 @@ class TestEuroStatReader:
         assert readers.eurostat.longterm_central_gov_bond_rates("LVA", 2012) == pytest.approx(0.0457, abs=0.01)
 
     def test__dividend_payout_ratio(self, readers):
-        assert readers.eurostat.dividend_payout_ratio("AUT", 2016) == pytest.approx(0.714, abs=0.01)
-        assert readers.eurostat.dividend_payout_ratio("LUX", 2012) == pytest.approx(0.283, abs=0.01)
+        assert readers.eurostat.dividend_payout_ratio("AUT", 2016) == pytest.approx(0.463, abs=0.01)
+        assert readers.eurostat.dividend_payout_ratio("LUX", 2012) == pytest.approx(0.299, abs=0.01)
 
     def test__firm_risk_premium(self, readers):
         assert readers.eurostat.firm_risk_premium("FRA", 2014) == pytest.approx(0.00570, abs=0.001)

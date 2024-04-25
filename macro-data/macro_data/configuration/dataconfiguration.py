@@ -1,7 +1,7 @@
 from datetime import date
-from typing import Optional, Any
+from typing import Optional, Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .countries import Country
 
@@ -18,6 +18,7 @@ class FirmsDataConfiguration(BaseModel):
         capital_inputs_utilisation_rate (float): Capital inputs utilisation rate.
     """
 
+    constructor: Literal["Compustat", "Default"] = "Compustat"
     zero_initial_deposits: bool = True
     zero_initial_debt: bool = True
     initial_inventory_to_input_fraction: float = 0
@@ -51,10 +52,22 @@ class BanksDataConfiguration(BaseModel):
         interest_rates (InterestRates): The interest rates configuration.
     """
 
+    constructor: Literal["Compustat", "Default"] = "Compustat"
     long_term_firm_loan_maturity: int = 60
     consumption_exp_loan_maturity: int = 12
     mortgage_maturity: int = 120
     interest_rates: InterestRates = InterestRates()
+
+
+class CentralBankDataConfiguration(BaseModel):
+    """
+    Represents the configuration for the central bank.
+
+    Attributes:
+        inflation_target (float): The inflation target.
+    """
+
+    inflation_target: float = Field(0.02, ge=0.0, le=1.0)
 
 
 class CountryDataConfiguration(BaseModel):
@@ -64,6 +77,7 @@ class CountryDataConfiguration(BaseModel):
     Attributes:
         firms_configuration (FirmsDataConfiguration): The configuration for firms.
         banks_configuration (BanksDataConfiguration): The configuration for banks.
+        central_bank_configuration (CentralBankDataConfiguration): The configuration for the central bank.
         single_bank (bool): Single bank flag.
         single_firm_per_industry (bool): Single firm per industry flag.
         single_government_entity (bool): Single government entity flag.
@@ -74,11 +88,26 @@ class CountryDataConfiguration(BaseModel):
 
     firms_configuration: FirmsDataConfiguration
     banks_configuration: BanksDataConfiguration
+    central_bank_configuration: CentralBankDataConfiguration
     single_bank: bool
     single_firm_per_industry: bool
     single_government_entity: bool
     scale: int
     eu_proxy_country: Optional[Country] = None
+
+
+class ROWDataConfiguration(BaseModel):
+    """
+    Represents the configuration for the rest of the world.
+
+    Attributes:
+        model_imports (bool): Whether to fit a model for imports.
+        model_exports (bool): Whether to fit a model for exports.
+    """
+
+    model_imports: bool = False
+    model_exports: bool = False
+    assume_one_exporter_by_industry: bool = True
 
 
 class DataConfiguration(BaseModel):
@@ -87,7 +116,8 @@ class DataConfiguration(BaseModel):
 
     Attributes:
         industries (list[str]): List of industries.
-        year (int): Year value.
+        year (int): Initial year.
+        quarter (int): Initial Quarter.
         prune_date (date): Prune date value.
         country_configs (dict[Country, CountryDataConfiguration]): Dictionary of country configurations.
         purpose (str): Purpose for this simulation.
@@ -96,10 +126,13 @@ class DataConfiguration(BaseModel):
 
     industries: list[str]
     year: int
+    quarter: int = 1
     prune_date: date
     country_configs: dict[Country, CountryDataConfiguration]
+    row_data_config: ROWDataConfiguration = ROWDataConfiguration()
     purpose: str = ""
     author: str = "INET"
+    seed: Optional[int] = None
 
     def model_post_init(self, __context: Any) -> None:
         """

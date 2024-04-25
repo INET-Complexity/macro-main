@@ -11,14 +11,17 @@ from macro_data.configuration.countries import Country
 from macro_data.readers.criticality_data.goods_criticality_reader import (
     GoodsCriticalityReader,
 )
+from macro_data.readers.economic_data.ecb_reader import ECBReader
 from macro_data.readers.economic_data.eurostat_reader import EuroStatReader
-from macro_data.readers.economic_data.exchange_rates import WorldBankRatesReader
+from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
 from macro_data.readers.economic_data.imf_reader import IMFReader
 from macro_data.readers.economic_data.oecd_economic_data import OECDEconData
 from macro_data.readers.economic_data.ons_reader import ONSReader
 from macro_data.readers.economic_data.policy_rates import PolicyRatesReader
 from macro_data.readers.economic_data.world_bank_reader import WorldBankReader
 from macro_data.readers.io_tables.icio_reader import ICIOReader
+from macro_data.readers.population_data.compustat_banks_reader import CompustatBanksReader
+from macro_data.readers.population_data.compustat_firms_reader import CompustatFirmsReader
 from macro_data.readers.population_data.hfcs_reader import HFCSReader
 from macro_data.readers.socioeconomic_data.wiod_sea_data import WIODSEAReader
 from macro_data.readers.util.prune_util import DataFilterWarning
@@ -42,6 +45,10 @@ class DataPaths:
     imf_path: Path
     ons_path: Path
     world_bank_path: Path
+    ecb_path: Path
+    compustat_firms_annual_path: Path
+    compustat_firms_quarterly_path: Path
+    compustat_banks_path: Path
 
     @classmethod
     def default_paths(cls, raw_data_path: Path, icio_years: Iterable[int]):
@@ -50,13 +57,12 @@ class DataPaths:
             exchange_rates_path=raw_data_path / "exchange_rates" / "exchange_rates.csv",
             eurostat_path=raw_data_path / "eurostat",
             hfcs_path=raw_data_path / "hfcs",
-            icio_paths={
-                year: raw_data_path / "icio" / str(year) / ("ICIO2021_" + str(year) + ".csv") for year in icio_years
-            },
-            icio_pivot_paths={
-                year: raw_data_path / "icio" / str(year) / ("ICIO2021_" + str(year) + "_pivot.csv")
-                for year in icio_years
-            },
+            # icio_paths={year: raw_data_path / "icio" / str(year) / f"ICIO2021_{year}.csv" for year in icio_years},
+            icio_paths={year: raw_data_path / "icio" / f"{year}_SML.csv" for year in icio_years},
+            # icio_pivot_paths={
+            #     year: raw_data_path / "icio" / str(year) / f"ICIO2021_{year}_pivot.csv" for year in icio_years
+            # },
+            icio_pivot_paths={year: raw_data_path / "icio" / f"{year}_SML_P.csv" for year in icio_years},
             icio_agg_path=raw_data_path / "icio" / "mappings.json",
             wiod_sea_path=raw_data_path / "wiod_sea" / "wiod_sea.csv",
             wiod_sea_agg_path=raw_data_path / "wiod_sea" / "mappings.json",
@@ -67,6 +73,10 @@ class DataPaths:
             imf_path=raw_data_path / "imf",
             ons_path=raw_data_path / "ons",
             world_bank_path=raw_data_path / "world_bank",
+            ecb_path=raw_data_path / "ecb",
+            compustat_firms_annual_path=raw_data_path / "compustat" / "firms_annual.csv",
+            compustat_firms_quarterly_path=raw_data_path / "compustat" / "firms_quarterly.csv",
+            compustat_banks_path=raw_data_path / "compustat" / "banks.csv",
         )
 
 
@@ -81,8 +91,11 @@ class DataReaders:
     ons: ONSReader
     policy_rates: PolicyRatesReader
     imf_reader: IMFReader
-    exchange_rates: WorldBankRatesReader
+    exchange_rates: ExchangeRatesReader
     goods_criticality: GoodsCriticalityReader
+    ecb_reader: ECBReader
+    compustat_firms: CompustatFirmsReader
+    compustat_banks: CompustatBanksReader
 
     @classmethod
     def from_raw_data(
@@ -99,7 +112,6 @@ class DataReaders:
         single_icio_survey: bool = False,
         proxy_country_dict: dict[Country, Country] = None,
     ):
-
         if proxy_country_dict is None:
             proxy_country_dict = {country: country for country in country_names}
 
@@ -113,7 +125,7 @@ class DataReaders:
         datapaths = DataPaths.default_paths(raw_data_path, all_years)
 
         goods_criticality = GoodsCriticalityReader.from_csv(path=datapaths.goods_criticality_path)
-        exchange_rates = WorldBankRatesReader.from_csv(path=datapaths.exchange_rates_path)
+        exchange_rates = ExchangeRatesReader.from_csv(path=datapaths.exchange_rates_path)
         eurostat = EuroStatReader(path=datapaths.eurostat_path, country_code_path=datapaths.country_codes_path)
 
         proxified = [country if country.is_eu_country else proxy_country_dict[country] for country in country_names]
@@ -135,6 +147,9 @@ class DataReaders:
 
         eu_only = list(set(eu_only).union(set(proxy_eu)))
 
+        def get_investment_year(year: int):
+            return get_investment_fractions(country_names, eurostat, proxy_country_dict, year)
+
         icio = {
             year: ICIOReader.agg_from_csv(
                 path=datapaths.icio_paths[year],
@@ -145,8 +160,15 @@ class DataReaders:
                 industries=industries,
                 exchange_rates=exchange_rates,
                 imputed_rent_fraction=eurostat.get_imputed_rent_fraction(eu_only, imputed_rent_year),
+                investment_fractions=get_investment_year(year),
+                proxy_country_dict=proxy_country_dict,
             )
             for year in all_years
+        }
+
+        value_added_dict = {
+            country_name: icio[simulation_year].get_value_added(country_name) * icio[simulation_year].yearly_factor
+            for country_name in country_names
         }
 
         wiod_sea = WIODSEAReader.agg_from_csv(
@@ -156,6 +178,7 @@ class DataReaders:
             exchange_rates=exchange_rates,
             aggregation_path=datapaths.wiod_sea_agg_path,
             country_names=country_names,
+            value_added_dict=value_added_dict,
         )
 
         add_investment_matrix_to_icio(
@@ -181,6 +204,22 @@ class DataReaders:
 
         world_bank = WorldBankReader(path=datapaths.world_bank_path)
 
+        ecb_reader = ECBReader(path=datapaths.ecb_path)
+
+        all_countries = list(set(country_names).union(set(proxy_country_dict.values())))
+
+        compustat_firms = CompustatFirmsReader.from_raw_data(
+            year=simulation_year,
+            quarter=1,
+            countries=all_countries,
+            raw_annual_path=datapaths.compustat_firms_annual_path,
+            raw_quarterly_path=datapaths.compustat_firms_quarterly_path,
+        )
+
+        compustat_banks = CompustatBanksReader.from_raw_data(
+            year=simulation_year, quarter=1, raw_quarterly_path=datapaths.compustat_banks_path, countries=all_countries
+        )
+
         if prune_date:
             exchange_rates.prune(prune_date)
             eurostat.prune(prune_date)
@@ -203,7 +242,30 @@ class DataReaders:
             imf_reader=imf_reader,
             exchange_rates=exchange_rates,
             goods_criticality=goods_criticality,
+            ecb_reader=ecb_reader,
+            compustat_firms=compustat_firms,
+            compustat_banks=compustat_banks,
         )
+
+    @classmethod
+    def get_investment_fractions(
+        cls,
+        country_names: list[Country],
+        eurostat: EuroStatReader,
+        proxy_country_dict: dict[Country, Country],
+        year: int,
+    ) -> dict[Country, dict[str, float]]:
+        investment_fractions = {}
+        for country_name in country_names:
+            if country_name.is_eu_country:
+                investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(
+                    country_name, year=year
+                )
+            else:
+                investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(
+                    proxy_country_dict[country_name], year=year
+                )
+        return investment_fractions
 
     def get_exogenous_data(self, country_name: Country) -> Optional[dict[str, Any]]:
         try:
@@ -225,12 +287,12 @@ class DataReaders:
         # unemp = [self.get_total_unemployment_benefits_lcu(country_name, year) for year in years]
         unemp = [
             self.oecd_econ.unemployment_benefits_gdp_pct(country_name, year)
-            * self.world_bank.get_current_monthly_gdp(country_name, year)
+            * self.world_bank.get_current_scaled_gdp(country_name, year)
             for year in years
         ]
         other = [
             self.oecd_econ.all_benefits_gdp_pct(country_name, year)
-            * self.world_bank.get_current_monthly_gdp(country_name, year)
+            * self.world_bank.get_current_scaled_gdp(country_name, year)
             - unemp[i]
             for i, year in enumerate(years)
         ]
@@ -251,7 +313,7 @@ class DataReaders:
             ),
         )
 
-        benefits_data = benefits_data.resample("M").interpolate("linear")
+        benefits_data = benefits_data.resample("QE").interpolate("linear")
         benefits_data.index = pd.DatetimeIndex([pd.Timestamp(d.year, d.month, 1) for d in benefits_data.index])
         log_inflation = exogenous_data["log_inflation"]["Real CPI Inflation"].copy()
         log_inflation.index = pd.to_datetime(log_inflation.index, format="%Y-%m")
@@ -262,18 +324,14 @@ class DataReaders:
         return data
 
     def get_total_benefits_lcu(self, country_name: Country, year: int) -> float:
-        return (
-            self.oecd_econ.all_benefits_gdp_pct(country_name, year)
-            * self.world_bank.get_current_monthly_gdp(country_name, year)
-            * self.exchange_rates.from_usd_to_lcu(country_name, year)
+        return self.oecd_econ.all_benefits_gdp_pct(country_name, year) * self.world_bank.get_current_scaled_gdp(
+            country_name, year
         )
 
     def get_total_unemployment_benefits_lcu(self, country_name: Country, year: int) -> float:
-        return (
-            self.oecd_econ.unemployment_benefits_gdp_pct(country_name, year)
-            * self.world_bank.get_current_monthly_gdp(country_name, year)
-            * self.exchange_rates.from_usd_to_lcu(country_name, year)
-        )
+        return self.oecd_econ.unemployment_benefits_gdp_pct(
+            country_name, year
+        ) * self.world_bank.get_current_scaled_gdp(country_name, year)
 
     def get_govt_debt_lcu(self, country: Country, year: int) -> float:
         return self.oecd_econ.general_gov_debt(country, year) * self.exchange_rates.from_usd_to_lcu(country, year)
@@ -284,6 +342,18 @@ class DataReaders:
             * self.exchange_rates.from_usd_to_lcu(country, year)
             / self.icio[year].get_exports(country).sum()
         )
+
+    def get_national_accounts_growth(self, country: Country) -> pd.DataFrame:
+        imf_growth = self.imf_reader.get_na_growth_rates(country)
+        oecd_growth = self.oecd_econ.get_na_growth_rates(country)
+
+        # pick columns of oecd growth not in imf growth
+        oecd_growth = oecd_growth[oecd_growth.columns.difference(imf_growth.columns)]
+
+        # merge the two dataframes, ensuring that imf growth has the index
+        merged = pd.merge_asof(imf_growth, oecd_growth, left_index=True, right_index=True)
+        merged = merged.loc[imf_growth.index]
+        return merged
 
 
 def prune_icio_dict(icio_dict: dict[int, Any], prune_date: date):
@@ -300,13 +370,11 @@ def prune_icio_dict(icio_dict: dict[int, Any], prune_date: date):
 
 
 def add_investment_matrix_to_icio(
-    icio_reader: ICIOReader,
-    sea_reader: WIODSEAReader,
-    country_names: list[str],
+    icio_reader: ICIOReader, sea_reader: WIODSEAReader, country_names: list[str], yearly_factor: float = 4.0
 ) -> None:
     for country_name in country_names:
-        gfcf = icio_reader.get_monthly_capital_inputs(country_name)
-        cap = sea_reader.get_values_in_usd(country_name, "Capital Compensation") / 12.0
+        gfcf = icio_reader.get_firm_capital_inputs(country_name)
+        cap = sea_reader.get_values_in_usd(country_name, "Capital Compensation") / yearly_factor
         investment_matrix = np.array([gfcf for _ in range(len(cap))]).T
         investment_matrix = investment_matrix * cap[None, :]  # proportionally fitting CAP
         investment_matrix *= gfcf.sum() / investment_matrix.sum()  # match GFCF exactly
@@ -343,13 +411,14 @@ def match_iot_with_sea(
     icio_reader: ICIOReader,
     sea_reader: WIODSEAReader,
     country_names: list[str],
+    yearly_factor: float = 4.0,
 ) -> None:
     for country_name in country_names:
         sea_reader.df.loc[
             sea_reader.df.index.get_level_values(0) == country_name,
             "Capital Compensation",
-        ] = 12 * icio_reader.investment_matrices[country_name].values.sum(axis=0)
-        new_va = 12 * icio_reader.get_monthly_value_added(country_name)
+        ] = yearly_factor * icio_reader.investment_matrices[country_name].values.sum(axis=0)
+        new_va = yearly_factor * icio_reader.get_value_added(country_name)
         va_factor = new_va / get_sea(country_name, "Value Added", sea_reader)
         sea_reader.df.loc[
             sea_reader.df.index.get_level_values(0) == country_name,
@@ -365,3 +434,20 @@ def match_iot_with_sea(
             sea_reader.df.index.get_level_values(0) == country_name,
             "Capital Stock",
         ] *= va_factor
+
+
+def get_investment_fractions(
+    country_names: list[Country],
+    eurostat: EuroStatReader,
+    proxy_country_dict: dict[Country, Country],
+    year: int,
+) -> dict[Country, dict[str, float]]:
+    investment_fractions = {}
+    for country_name in country_names:
+        if country_name.is_eu_country:
+            investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(country_name, year=year)
+        else:
+            investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(
+                proxy_country_dict[country_name], year=year
+            )
+    return investment_fractions

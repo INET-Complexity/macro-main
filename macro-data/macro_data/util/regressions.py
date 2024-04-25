@@ -6,7 +6,7 @@ from sklearn.linear_model import LinearRegression
 
 # TODO does the normalisation make sense?
 def fit_linear(
-    household_data: pd.DataFrame,
+    data: pd.DataFrame,
     independents: list[str],
     dependent: str,
     model: LinearRegression,
@@ -19,7 +19,7 @@ def fit_linear(
     Then, the model is fitted.
 
     Args:
-        household_data (pd.DataFrame): The household data.
+        data (pd.DataFrame): The dataframe containing the data to be fitted.
         independents (list[str]): The list of independent variables.
         dependent (str): The dependent variable.
         model (LinearRegression): The linear regression model.
@@ -30,8 +30,8 @@ def fit_linear(
     Raises:
         None
     """
-    dependent_data = household_data[dependent].values
-    x = household_data[independents].values
+    dependent_data = data[dependent].values
+    x = data[independents].values
     imp_mean = SimpleImputer(missing_values=np.nan, strategy="mean")
     x = imp_mean.fit_transform(x)
     if len(independents) == 0:

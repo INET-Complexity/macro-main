@@ -1,8 +1,9 @@
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
-from macro_data.readers.economic_data.exchange_rates import WorldBankRatesReader
+from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
 
 var_mapping = {
     "ID": "ID",
@@ -81,6 +82,7 @@ var_numerical = [
     "Outstanding Balance of other Non-Mortgage Loans",
     "Rent Paid",
     "Amount spent on Consumption of Goods and Services",
+    "Consumption of Consumer Goods/Services as a Share of Income",
 ]
 
 
@@ -102,7 +104,7 @@ class HFCSReader:
         country_name_short: str,
         year: int,
         hfcs_data_path: Path,
-        exchange_rates: WorldBankRatesReader,
+        exchange_rates: ExchangeRatesReader,
         num_surveys: int = 5,
     ) -> "HFCSReader":
         # Take default paths
@@ -180,25 +182,24 @@ class HFCSReader:
         country_name: str,
         country_name_short: str,
         year: int,
-        exchange_rates: WorldBankRatesReader,
+        exchange_rates: ExchangeRatesReader,
     ) -> pd.DataFrame:
         # Load inet_data
-        df = pd.read_csv(path, encoding="unicode_escape", low_memory=False)
+        df = pd.read_csv(path, encoding="unicode_escape", engine="pyarrow")
 
         # Cosmetics
         df = df[df["SA0100"] == country_name_short]
         df = df[[col for col in var_mapping.keys() if col in df.columns]]
         df.rename(columns=var_mapping, inplace=True)
         df.set_index("ID", inplace=True)
-        df.replace("A", 0.0, inplace=True)
 
         # Change currencies to the local currency
         var_numerical_union = [v for v in var_numerical if v in df.columns]
-        df.loc[:, var_numerical_union] = df.loc[:, var_numerical_union].astype(float)
+        df.loc[:, var_numerical_union] = df.loc[:, var_numerical_union].replace(["A", "M"], np.nan).astype(float)
         df.loc[:, var_numerical_union] = exchange_rates.from_eur_to_lcu(
             country=country_name,
             year=year,
         ) * df.loc[
             :, var_numerical_union
-        ].replace("A", 0.0).fillna(0.0)
+        ].apply(pd.to_numeric, errors="coerce")
         return df

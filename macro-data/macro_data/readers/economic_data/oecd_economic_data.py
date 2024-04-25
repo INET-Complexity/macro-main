@@ -12,6 +12,99 @@ from scipy.special import zetac
 from macro_data.configuration.countries import Country
 from macro_data.readers.util.prune_util import DataFilterWarning
 
+force_tau_sif = {
+    "AUS": 0.0,
+    "CHL": 0.0,
+    "CRI": 0.0,
+    "DNK": 0.0,
+    "GRC": 0.22,
+    "LVA": 0.0,
+    "LTU": 0.015,
+    "TUR": 0.0,
+    "KHM": 0.0,
+    "KOR": 0.0,
+    "COL": 0.0,
+    "MEX": 0.0,
+    "IND": 0.0,
+    "IDN": 0.0,
+    "LAO": 0.0,
+    "MMR": 0.0,
+    "VNM": 0.0,
+}
+
+# tau siw
+force_tau_siw = {
+    "AUS": 0.0,
+    "CHL": 0.0,
+    "CRI": 0.0,
+    "COL": 0.0,
+    "DNK": 0.0,
+    "GRC": 0.14,
+    "LVA": 0.0,
+    "LTU": 0.07,
+    "TUR": 0.0,
+    "KHM": 0.0,
+    "KOR": 0.0,
+    "MEX": 0.0,
+    "IND": 0.0,
+    "IDN": 0.0,
+    "LAO": 0.0,
+    "MMR": 0.0,
+    "VNM": 0.0,
+}
+
+# tau firm
+force_tau_firm = {
+    "KHM": 0.0,
+    "CYP": 0.125,
+    "KAZ": 0.2,
+    "LAO": 0.0,
+    "MAR": 0.2,
+    "MMR": 0.0,
+    "PHL": 0.25,
+    "IDN": 0.0,
+    "TUN": 0.15,
+    "TWN": 0.2,
+    "CRI": 0.0,
+    "KOR": 0.0,
+    "MEX": 0.0,
+    "VNM": 0.0,
+    "CHL": 0.0,
+    "COL": 0.0,
+}
+
+force_tau_income = {
+    "ARG": 0.04,
+    "BRA": 0.075,
+    "BRN": 0.0,
+    "BGR": 0.1,
+    "KHM": 0.0,
+    "CHN": 0.1,
+    "CRI": 0.0,
+    "HRV": 0.2,
+    "CHL": 0.0,
+    "CYP": 0.2,
+    "IND": 0.05,
+    "IDN": 0.0,
+    "HKG": 0.1,
+    "KAZ": 0.1,
+    "KOR": 0.0,
+    "MEX": 0.0,
+    "LAO": 0.0,
+    "MYS": 0.08,
+    "MLT": 0.1,
+    "MAR": 0.12,
+    "MMR": 0.0,
+    "PER": 0.17,
+    "PHL": 0.05,
+    "ROU": 0.1,
+    "RUS": 0.13,
+    "SAU": 0.2,
+    "SGP": 0.1,
+    "ZAF": 0.18,
+    "TWN": 0.05,
+}
+
 
 class OECDEconData:
     def __init__(
@@ -63,6 +156,7 @@ class OECDEconData:
             "total_social_benefits_perc_gdp": "SOCX_AGG",
             "total_unemployment_benefits_perc_gdp": "DP_LIVE_UNEMP",
             "business_demography": "SDBS_BDI_ISIC4",
+            "business_demography1": "SSIS_BSC_ISIC4",
             "business_birth_rates": "SDBS_BDI_ISIC4_BIRTH",
             "business_death_rates": "SDBS_BDI_ISIC4_DEATH",
             "business_sizes": "SSIS_BSC_ISIC4",
@@ -84,6 +178,8 @@ class OECDEconData:
             "total_job_vacancies": "LAB_REG_VAC",
             "experimental_consumption_statistics": "EGDNA_PUBLIC",
             "gross_gov_debt_usd_ppp": "oecd_govt_debt_usd_ppp",
+            "KEI": "KEI",
+            "QNA": "QNA",
         }
 
     def employees_by_industry(self, year: int, country: Country) -> pd.Series:
@@ -128,25 +224,37 @@ class OECDEconData:
         # Load data
 
         # TODO: OECD data doesn't have US data for this, so we use Canada as a proxy
-        if country in {"USA", "MEX"}:
-            data_country = Country("CAN")
-        else:
-            data_country = country
+        # if country in {"USA", "MEX"}:
+        #     data_country = Country("CAN")
+        # else:
+        #     data_country = country
 
-        df = self.data["business_demography"]
+        if country == "GBR" and year < 2014:
+            year = 2014
+        if country == "GBR" and year > 2018:
+            year = 2018
+        if country == "DEU" and year < 2012:
+            year = 2012
+        if country == "AUS" and year > 2010:
+            year = 2014
+
+        df = self.data["business_demography1"].copy()
         df = df.loc[
-            (df["IND"] == "ENTR_BD_EMPL")
+            (df["VAR"] == "ENTR")
+            & (df["SRC"] == "SSIS")
             & (df["TIME"] == year)
             & (df["Size Class"] == "Total")
-            & (df["LOCATION"] == data_country)
+            & (df["LOCATION"] == country)
         ].copy()
 
         output.index = range(len(output))
-        df.loc[:, "ISIC"] = df["SEC"].copy().map(self.industry_mapping)
+        output.index = range(len(output))
+        df.loc[:, "ISIC"] = df["ISIC4"].copy().map(self.industry_mapping)
         df.dropna(subset="ISIC", inplace=True)
         isic_table = df.set_index(["ISIC", "LOCATION"])["Value"].sort_index().unstack()
         isic_table = isic_table.reindex(range(len(output))).fillna(0)
-        isic_table = isic_table[data_country]
+
+        isic_table = isic_table[country]
 
         # basic linear regression to fill missing values in
         # number of businesses
@@ -161,6 +269,10 @@ class OECDEconData:
         isic_table /= self.scale_dict[country]
 
         isic_table = isic_table.astype("int")
+
+        # if any values are 0 set them to 1
+        isic_table[isic_table == 0] = 1
+
         return isic_table.values.astype(int)
 
     @staticmethod
@@ -184,8 +296,8 @@ class OECDEconData:
         sizes = ["1-9", "10-19", "20-49", "50-249", "250"]
         size_means = [np.mean([int(v) for v in s.split("-")]) for s in sizes]
 
-        df = self.data["business_sizes"]
-        df = df.loc[(df["LOCATION"] == country) & (df["TIME"] == year)]
+        df = self.data["business_demography1"]
+        df = df.loc[(df["LOCATION"] == country) & (df["TIME"] == year) & (df["VAR"] == "ENTR")]
         if len(df) == 0:
             return None
 
@@ -223,19 +335,43 @@ class OECDEconData:
 
         return final_zetas
 
-    def read_tau_sif(self, country: Country, year: int) -> float:
+    @staticmethod
+    def find_closest_year(df: pd.DataFrame, year: int):
+        years = df["YEA"].unique()
+        min_year = min(years, key=lambda x: abs(x - year))
+        return df.loc[df["YEA"] == min_year]
+
+    def read_tau_sif(self, country: Country | str, year: int) -> float:
+        if isinstance(country, str):
+            country = Country(country)
+        if country.value in force_tau_sif:
+            return force_tau_sif[country.value]
         df = self.data["employers_contribution_social_insurance"]
         df = df.loc[(df["COU"] == country) & (df["YEA"] == year)]
+        if len(df) == 0:
+            df = self.find_closest_year(df, year)
         return df.loc[df["RATE_THRESH"] == "01_MR", "Value"].iloc[0] / 100.0
 
-    def read_tau_siw(self, country: Country, year: int) -> float:
+    def read_tau_siw(self, country: Country | str, year: int) -> float:
+        if isinstance(country, str):
+            country = Country(country)
+        if country.value in force_tau_siw:
+            return force_tau_siw[country.value]
         df = self.data["employees_contribution_social_insurance"]
         df = df.loc[(df["COU"] == country) & (df["YEA"] == year)]
+        if len(df) == 0:
+            df = self.find_closest_year(df, year)
         return df.loc[df["RATE_THRESH"] == "01_MR", "Value"].iloc[0] / 100.0
 
-    def read_tau_firm(self, country: Country, year: int) -> float:
+    def read_tau_firm(self, country: Country | str, year: int) -> float:
+        if isinstance(country, str):
+            country = Country(country)
+        if country.value in force_tau_firm:
+            return force_tau_firm[country.value]
         df = self.data["corporate_income_tax_rate"]
         df = df.loc[(df["COU"] == country) & (df["YEA"] == year)]
+        if len(df) == 0:
+            df = self.find_closest_year(df, year)
         df.set_index("CORP_TAX", inplace=True)
         return df.loc["COMB_CIT_RATE", "Value"] / 100.0
 
@@ -321,16 +457,37 @@ class OECDEconData:
         else:
             return df.loc[df["TIME"] == year, "Value"].mean() / 100.0
 
-    def all_benefits_gdp_pct(self, country: Country, year: int) -> float:
-        all_benefits = self.data["total_social_benefits_perc_gdp"]
-        if country.value in all_benefits["COUNTRY"].values:
-            value = all_benefits.loc[
-                (all_benefits["COUNTRY"] == country) & (all_benefits["YEAR"] == year),
-                "Value",
-            ].iloc[0]
-            return value / 100.0
+    def all_benefits_gdp_pct(self, country: str, year: int, average_oecd: float = 0.212) -> float:
+        if country == "ARG":
+            country = "CHL"
+        if country == "BRA":
+            return 0.367
+        if country == "JPN":  # https://www.ids.ac.uk/download.php?file=files/dmfile/SocialProtectioninSouthAsia.pdf
+            return 0.16
+        if country == "LKA":  # https://www.ids.ac.uk/download.php?file=files/dmfile/SocialProtectioninSouthAsia.pdf
+            return 0.057
+        if country == "IND":  # https://www.ids.ac.uk/download.php?file=files/dmfile/SocialProtectioninSouthAsia.pdf
+            return 0.1
+        if country == "BGD":  # https://www.ids.ac.uk/download.php?file=files/dmfile/SocialProtectioninSouthAsia.pdf
+            return 0.053
+        if country == "NPL":  # https://www.ids.ac.uk/download.php?file=files/dmfile/SocialProtectioninSouthAsia.pdf
+            return 0.023
+        if country == "PAK":  # https://www.ids.ac.uk/download.php?file=files/dmfile/SocialProtectioninSouthAsia.pdf
+            return 0.016
+        if country == "BRN":  # https://databankfiles.worldbank.org/public/ddpext_download/hci/HCI_2pager_BRN.pdf
+            return 0.034
+        if country == "CEN":
+            return 0.0
+        if country == "GRC":  # https://data.oecd.org/socialexp/social-benefits-to-households.htm
+            return 0.29
+        if country == "LVA":
+            return 0.19
+        df = self.data["total_social_benefits_perc_gdp"]
+        val = df.loc[(df["COUNTRY"] == country) & (df["YEAR"] == year), "Value"].values
+        if len(val) == 0 or np.isnan(val[0]):
+            return average_oecd
         else:
-            return all_benefits.loc[all_benefits["YEAR"] == year, "Value"].mean() / 100.0
+            return val[0] / 100.0
 
     # current domestic
     def general_gov_debt(self, country: Country, year: int) -> float:
@@ -338,28 +495,27 @@ class OECDEconData:
         value = df.loc[(df["LOCATION"] == country) & (df["TIME"] == year), "Value"].iloc[0]
         return value * 1e6
 
-    def get_unemployment_rate(self, country: Country) -> pd.DataFrame:
+    def get_unemployment_rate(self, country: str) -> pd.DataFrame:
         data = self.data["unemployment_rates"].loc[
             (self.data["unemployment_rates"]["LOCATION"] == country)
             & (self.data["unemployment_rates"]["SUBJECT"] == "TOT")
-            & (self.data["unemployment_rates"]["FREQUENCY"] == "M")
+            & (self.data["unemployment_rates"]["FREQUENCY"] == "Q")
         ]
         dates, vals = [], []
         for year in range(1970, 2024):
-            for month in range(1, 13):
-                s_month = str(month) if month > 9 else "0" + str(month)
-                dates.append(str(year) + "-" + str(month))
-                val = data.loc[data["TIME"] == str(year) + "-" + s_month, "Value"].values
+            for quarter in range(1, 5):
+                dates.append(str(year) + "-Q" + str(quarter))
+                val = data.loc[data["TIME"] == str(year) + "-Q" + str(quarter), "Value"].values
                 if len(val) == 0:
                     vals.append(np.nan)
                 else:
                     vals.append(val[0] / 100.0)
-
-        dates = pd.to_datetime(dates, format="%Y-%m")
-        return pd.DataFrame(
+        data = pd.DataFrame(
             index=dates,
             data={"Unemployment Rate": vals},
         )
+        data.index = [pd.Timestamp(int(ind[0:4]), 3 * int(ind[6]) - 2, 1) for ind in data.index]
+        return data
 
     def get_consumption_rates_by_income(self, country: Country) -> pd.DataFrame:
         df = self.data["consumption_by_income_quintiles"]
@@ -372,10 +528,9 @@ class OECDEconData:
 
         return df
 
-    def get_house_price_index(self, country: Country) -> pd.DataFrame:
+    def get_house_price_index(self, country: str) -> pd.DataFrame:
         df = self.data["housing_index"]
         dates, val_real, val_nominal = [], [], []
-        corr_months = {1: [1, 2, 3], 2: [4, 5, 6], 3: [7, 8, 9], 4: [10, 11, 12]}
         for year in range(1970, 2024):
             for quarter in range(1, 5):
                 if quarter == 1:
@@ -404,32 +559,29 @@ class OECDEconData:
                     & (df["TIME"] == str(prev_year) + "-Q" + str(prev_quarter)),
                     "Value",
                 ].values
-                for month in corr_months[quarter]:
-                    dates.append(str(year) + "-" + str(month))
-                    if len(curr_value_real) == 1 and len(prev_value_real) == 1:
-                        val_real.append(curr_value_real[0] / prev_value_real[0] - 1.0)
-                    else:
-                        val_real.append(np.nan)
-                    if len(curr_value_nominal) == 1 and len(prev_value_nominal) == 1:
-                        val_nominal.append(curr_value_nominal[0] / prev_value_nominal[0] - 1.0)
-                    else:
-                        val_nominal.append(np.nan)
-
-        dates = pd.to_datetime(dates, format="%Y-%m")
-
-        return pd.DataFrame(
+                dates.append(str(year) + "-Q" + str(quarter))
+                if len(curr_value_real) == 1 and len(prev_value_real) == 1:
+                    val_real.append(curr_value_real[0] / prev_value_real[0] - 1.0)
+                else:
+                    val_real.append(np.nan)
+                if len(curr_value_nominal) == 1 and len(prev_value_nominal) == 1:
+                    val_nominal.append(curr_value_nominal[0] / prev_value_nominal[0] - 1.0)
+                else:
+                    val_nominal.append(np.nan)
+        data = pd.DataFrame(
             index=dates,
             data={
                 "Real House Price Index Growth": val_real,
                 "Nominal House Price Index Growth": val_nominal,
             },
         )
+        data.index = [pd.Timestamp(int(ind[0:4]), 3 * int(ind[6]) - 2, 1) for ind in data.index]
+        return data
 
     def get_vacancy_rate(self, country: Country) -> pd.DataFrame:
         active_population_size = self.data["active_population_size"]
         total_job_vacancies = self.data["total_job_vacancies"]
         dates, vacancy_rate = [], []
-        corr_months = {1: [1, 2, 3], 2: [4, 5, 6], 3: [7, 8, 9], 4: [10, 11, 12]}
         for year in range(1970, 2024):
             for quarter in range(1, 5):
                 pop_size = (
@@ -440,20 +592,19 @@ class OECDEconData:
                         "Value",
                     ].values
                 )
-                for month in corr_months[quarter]:
-                    s_month = str(month) if month > 9 else "0" + str(month)
-                    total_vacs = total_job_vacancies.loc[
-                        (total_job_vacancies["LOCATION"] == country)
-                        & (total_job_vacancies["TIME"] == str(year) + "-" + str(s_month)),
-                        "Value",
-                    ].values
-                    dates.append(str(year) + "-" + str(month))
-                    if len(pop_size) == 1 and len(total_vacs) == 1:
-                        vacancy_rate.append(total_vacs[0] / pop_size[0])
-                    else:
-                        vacancy_rate.append(np.nan)
-        dates = pd.to_datetime(dates, format="%Y-%m")
-        return pd.DataFrame(index=dates, data={"Vacancy Rate": vacancy_rate})
+                total_vacs = total_job_vacancies.loc[
+                    (total_job_vacancies["LOCATION"] == country)
+                    & (total_job_vacancies["TIME"] == str(year) + "-Q" + str(quarter)),
+                    "Value",
+                ].values
+                dates.append(str(year) + "-Q" + str(quarter))
+                if len(pop_size) == 1 and len(total_vacs) == 1:
+                    vacancy_rate.append(total_vacs[0] / pop_size[0])
+                else:
+                    vacancy_rate.append(np.nan)
+        data = pd.DataFrame(index=dates, data={"Vacancy Rate": vacancy_rate})
+        data.index = [pd.Timestamp(int(ind[0:4]), 3 * int(ind[6]) - 2, 1) for ind in data.index]
+        return data
 
     def get_household_consumption_by_income_quantile(self, country: Country, year: int) -> pd.DataFrame:
         assert year
@@ -472,6 +623,93 @@ class OECDEconData:
         df = df[df["Financial instrument"] == "Total"]
         df = df[df["REF_AREA"] == country]
         return df.set_index("TIME_PERIOD").loc[year, "OBS_VALUE"] * 1e6
+
+    def get_inflation(self, country: str) -> pd.DataFrame:
+        data = self.data["KEI"]
+        data = data.loc[data["LOCATION"] == country]
+        dates, cpi, ppi = [], [], []
+        for year in range(1970, 2024):
+            for quarter in range(1, 5):
+                dates.append(str(year) + "-Q" + str(quarter))
+                curr_data = data.loc[data["TIME"] == str(year) + "-Q" + str(quarter)]
+                cpi_data = curr_data.loc[curr_data["SUBJECT"] == "CPALTT01"]["Value"].values
+                if len(cpi_data) == 1:
+                    cpi.append(cpi_data[0])
+                else:
+                    cpi.append(np.nan)
+                ppi_data = curr_data.loc[curr_data["SUBJECT"] == "PIEAMP01"]["Value"].values
+                if len(ppi_data) == 1:
+                    ppi.append(ppi_data[0])
+                else:
+                    ppi.append(np.nan)
+        if np.isnan(cpi).sum() == len(cpi):
+            data = pd.DataFrame(data={"CPI Inflation": ppi, "PPI Inflation": ppi}, index=dates)
+        elif np.isnan(ppi).sum() == len(ppi):
+            data = pd.DataFrame(data={"CPI Inflation": cpi, "PPI Inflation": cpi}, index=dates)
+        else:
+            data = pd.DataFrame(data={"CPI Inflation": cpi, "PPI Inflation": ppi}, index=dates)
+        data.index = [pd.Timestamp(int(ind[0:4]), 3 * int(ind[6]) - 2, 1) for ind in data.index]
+        with warnings.catch_warnings():
+            warnings.simplefilter(action="ignore", category=FutureWarning)
+            return data.pct_change()
+
+    def get_na_growth_rates(self, country: str) -> pd.DataFrame:
+        data = self.data["QNA"]  # CQRSA
+        data = data.loc[(data["LOCATION"] == country) & (data["FREQUENCY"] == "Q")]
+        # if len(data) == 0:
+        #     return self.get_na_growth_rates(self.proxy_country)  # won't need this anymore
+        na_data = data.pivot(index="TIME", columns="SUBJECT", values="Value")
+        fields = {
+            "GDP": "B1_GE",
+            "HH Cons": "P31S14_S15",
+            "Gov Cons": "P3S13",
+            "Gross Fixed Capital Formation": "P51",
+            "Changes in Inventories": "P52",
+            # "Acquisitions less Disposals of Valuables": "P53",
+            "Exports": "P6",
+            "Imports": "P7",
+            "Compensation of Employees": "D1S1",
+            "Gross Operating Surplus and Mixed Income": "B2G_B3G",
+            # "Taxes less Subsidies on Production and Imports": "D2_D3",
+            "Gross Value Added": "B1G",
+            "Gross Value Added - A": "B1GVA",
+            "Gross Value Added - B, C, D, E": "B1GVB_E",
+            "Gross Value Added - C": "B1GVC",
+            "Gross Value Added - F": "B1GVF",
+            "Gross Value Added - G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U": "B1GVG_U",
+            "Gross Value Added - G, H, I": "B1GVG_I",
+            "Gross Value Added - J": "B1GVJ",
+            "Gross Value Added - K": "B1GVK",
+            "Gross Value Added - L": "B1GVL",
+            "Gross Value Added - M, N": "B1GVM_N",
+            "Gross Value Added - O, P, Q": "B1GVO_Q",
+            "Gross Value Added - R, S, T, U": "B1GVR_U",
+            "Taxes less Subsidies on Production": "D21_D31",
+        }
+
+        # Get values
+        cols, col_desc = [], []
+        for col in fields.keys():
+            if fields[col] in na_data.columns:
+                cols.append(fields[col])
+                col_desc.append(col)
+        na_data = na_data.loc[:, cols]
+        na_data.columns = col_desc
+        na_data = 1000.0 * na_data
+
+        # Calculate growth rates
+        na_data = (na_data / na_data.shift(1) - 1.0).iloc[1:]
+        if "GDP" in na_data.columns:
+            na_data["Gross Output"] = na_data["GDP"].values
+            na_data["Intermediate Consumption"] = na_data["GDP"].values
+            for col in fields.keys():
+                if col not in na_data.columns:
+                    na_data[col] = na_data["GDP"].values
+
+        # Change index
+        na_data.index = [pd.Timestamp(int(ind[0:4]), 3 * int(ind[6]) - 2, 1) for ind in na_data.index]  # noqa
+
+        return na_data
 
     def prune(self, prune_date: date):
         for key, value in self.data.items():

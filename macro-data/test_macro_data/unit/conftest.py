@@ -7,9 +7,8 @@ import yaml
 from macro_data.configuration import DataConfiguration
 from macro_data.configuration.countries import Country
 from macro_data.readers.default_readers import DataReaders
-from macro_data.readers.util.exogenous_data import create_all_exogenous_data
+from macro_data.readers.exogenous_data import create_all_exogenous_data, ExogenousCountryData
 from macro_data.readers.util.industry_extraction import compile_industry_data, compile_exogenous_industry_data
-from macro_data.configuration.process_config import process_config
 
 PARENT = pathlib.Path(__file__).parent.resolve()
 DATA_PATH = PARENT / "sample_raw_data"
@@ -116,6 +115,17 @@ def gen_multic_readers(data_path):
 def industry_data(readers):
     return compile_industry_data(
         year=2014, readers=readers, country_names=[Country("FRA")], single_firm_per_industry={"FRA": True}
+    )
+
+
+@pytest.fixture(scope="module", name="exogenous_data")
+def exogenous_data(readers, industry_data):
+    return ExogenousCountryData.from_data_readers(
+        country_name=Country("FRA"),
+        readers=readers,
+        year=2014,
+        quarter=1,
+        industry_vectors=industry_data["FRA"]["industry_vectors"],
     )
 
 

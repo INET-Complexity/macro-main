@@ -2,7 +2,7 @@ from datetime import date
 
 from macro_data.configuration.countries import Country
 from macro_data.readers.default_readers import prune_icio_dict
-from macro_data.readers.util.exogenous_data import create_all_exogenous_data
+from macro_data.readers.exogenous_data import create_all_exogenous_data
 
 
 def test__prune_icio_dict():

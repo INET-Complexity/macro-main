@@ -84,10 +84,6 @@ class SyntheticBanks(ABC):
         # Bank data
         self.bank_data = bank_data
 
-    def create_agents(self, bank_equity: float) -> None:
-        # Set initial bank equity
-        self.set_bank_equity(bank_equity=bank_equity)
-
     def initialise_deposits_and_loans(
         self, synthetic_population: SyntheticPopulation, firm_deposits: np.ndarray, firm_debt: np.ndarray
     ) -> None:
