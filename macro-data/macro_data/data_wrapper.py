@@ -22,7 +22,12 @@ from macro_data.readers.exogenous_data import ExogenousCountryData
 class DataWrapper:
     """
     This class is used to create all the synthetic data for the INET model.
-    Consists of a dictionary with countries as keys and the synthetic countries as values.
+    The wrapper contains all the synthetic data needed to run the model. It contains a dictionary of synthetic
+    countries, a synthetic rest of the world, exchange rates, trade proportions by origin and destination
+    and a data configuration.
+
+    Each synthetic country is itself a dataclass that contains the synthetically generated data for a single country
+    and all of the agents that make it up.
 
     Attributes:
         synthetic_countries (dict[str, SyntheticCountry]): The synthetic countries.

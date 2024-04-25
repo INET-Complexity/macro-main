@@ -5,6 +5,7 @@ import pandas as pd
 
 from macro_data.configuration import CountryDataConfiguration
 from macro_data.configuration.countries import Country
+from macro_data.processing import set_housing_df
 from macro_data.processing.country_data import TaxData
 from macro_data.processing.synthetic_banks.default_synthetic_banks import DefaultSyntheticBanks
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
@@ -34,7 +35,6 @@ from macro_data.processing.synthetic_matching.matching_firms_with_banks import (
 from macro_data.processing.synthetic_matching.matching_households_with_banks import (
     match_households_with_banks_optimal,
 )
-from macro_data.processing.synthetic_matching.matching_households_with_houses import set_housing_df
 from macro_data.processing.synthetic_matching.matching_individuals_with_firms import (
     match_individuals_with_firms_country,
 )
@@ -191,21 +191,25 @@ class SyntheticCountry:
         policy_rate_markup = readers.eurostat.firm_risk_premium(country=country, year=year)
 
         weights_by_income = readers.oecd_econ.get_household_consumption_by_income_quantile(country=country, year=year)
+        cls.match_households_firms_banks(banks, firms, industries, population, tax_data)
 
-        (
-            credit_market,
-            housing_market,
-        ) = cls.post_agents_init(
+        housing_data = set_housing_df(
+            synthetic_population=population,
+            rental_income_taxes=tax_data.income_tax,
+            social_housing_rent=population.social_housing_rent,
+            total_imputed_rent=total_imputed_rent,
+        )
+
+        housing_market = DefaultSyntheticHousingMarket(country, housing_data)
+
+        credit_market = cls.set_wealth_and_credit(
             banks=banks,
             central_government=central_government,
-            country=country,
             country_configuration=country_configuration,
             country_industry_data=country_industry_data,
             firms=firms,
-            industries=industries,
             population=population,
             tax_data=tax_data,
-            total_rent=total_imputed_rent,
             central_bank=central_bank,
             weights_by_income=weights_by_income,
         )
@@ -344,20 +348,25 @@ class SyntheticCountry:
 
         weights_by_income = readers.oecd_econ.get_household_consumption_by_income_quantile(country=country, year=year)
 
-        (
-            credit_market,
-            housing_market,
-        ) = cls.post_agents_init(
+        cls.match_households_firms_banks(banks, firms, industries, population, tax_data)
+
+        housing_data = set_housing_df(
+            synthetic_population=population,
+            rental_income_taxes=tax_data.income_tax,
+            social_housing_rent=population.social_housing_rent,
+            total_imputed_rent=total_imputed_rent,
+        )
+
+        housing_market = DefaultSyntheticHousingMarket(country, housing_data)
+
+        credit_market = cls.set_wealth_and_credit(
             banks=banks,
             central_government=central_government,
-            country=country,
             country_configuration=country_configuration,
             country_industry_data=country_industry_data,
             firms=firms,
-            industries=industries,
             population=population,
             tax_data=tax_data,
-            total_rent=total_imputed_rent,
             central_bank=central_bank,
             weights_by_income=weights_by_income,
         )
@@ -387,22 +396,18 @@ class SyntheticCountry:
         )
 
     @classmethod
-    def post_agents_init(
+    def set_wealth_and_credit(
         cls,
         banks: SyntheticBanks,
         central_government: SyntheticCentralGovernment,
-        country: Country,
         country_configuration: CountryDataConfiguration,
         country_industry_data: dict[str, pd.DataFrame],
         firms: SyntheticFirms,
-        industries: list[str],
         population: SyntheticPopulation,
         tax_data: TaxData,
-        total_rent: float,
         central_bank: SyntheticCentralBank,
         weights_by_income: pd.DataFrame,
-        independents: Optional[list[str]] = None,
-    ) -> tuple[SyntheticCreditMarket, SyntheticHousingMarket]:
+    ) -> SyntheticCreditMarket:
         """
         This function takes care of matching the different agents together and initialising the Credit
         and Housing markets.
@@ -413,43 +418,19 @@ class SyntheticCountry:
         Args:
             banks (SyntheticBanks): The synthetic banks.
             central_government (SyntheticCentralGovernment): The synthetic central government.
-            country (Country): The country object representing the EU country.
             country_configuration (CountryDataConfiguration): The configuration data for the country.
             country_industry_data (dict[str, pd.DataFrame]): The industry data for the country.
             firms (SyntheticFirms): The synthetic firms.
-            industries (list[str]): The list of industries in the country.
             population (SyntheticPopulation): The synthetic population.
             tax_data (TaxData): The tax data for the country.
-            total_rent (float): The total rent in the country.
             central_bank (SyntheticCentralBank): The synthetic central bank.
             weights_by_income (pd.DataFrame): The weights by income for the country.
-            independents (list[str]): The list of independent variables for the household wealth.
 
         Returns:
             tuple[SyntheticCreditMarket, SyntheticHousingMarket]: A tuple containing the synthetic credit market,
             exogenous data, and synthetic housing market.
         """
-        income_taxes = tax_data.income_tax
-        employee_social_contribution_taxes = tax_data.employee_social_insurance_tax
-        match_individuals_with_firms_country(
-            industries=industries,
-            income_taxes=income_taxes,
-            employee_social_contribution_taxes=employee_social_contribution_taxes,
-            firms=firms,
-            population=population,
-        )
-        match_firms_with_banks_optimal(firms=firms, banks=banks)
 
-        population.compute_household_wealth(independents=independents)
-
-        match_households_with_banks_optimal(population=population, banks=banks)
-        housing_data = set_housing_df(
-            synthetic_population=population,
-            rental_income_taxes=tax_data.income_tax,
-            social_housing_rent=population.social_housing_rent,
-            total_imputed_rent=total_rent,
-        )
-        housing_market = DefaultSyntheticHousingMarket(housing_market_data=housing_data, country_name=country)
         independents = None
         # here this only changes if we change the independents of the function (e.g. income, debt)
         # not worth it to change it now
@@ -478,10 +459,30 @@ class SyntheticCountry:
             risk_premium=tax_data.risk_premium,
             policy_rate=policy_rate,
         )
-        return (
-            credit_market,
-            housing_market,
+        return credit_market
+
+    @classmethod
+    def match_households_firms_banks(
+        cls,
+        banks: SyntheticBanks,
+        firms: SyntheticFirms,
+        industries: list[str],
+        population: SyntheticPopulation,
+        tax_data: TaxData,
+        independents: Optional[list[str]] = None,
+    ):
+        income_taxes = tax_data.income_tax
+        employee_social_contribution_taxes = tax_data.employee_social_insurance_tax
+        match_individuals_with_firms_country(
+            industries=industries,
+            income_taxes=income_taxes,
+            employee_social_contribution_taxes=employee_social_contribution_taxes,
+            firms=firms,
+            population=population,
         )
+        match_firms_with_banks_optimal(firms=firms, banks=banks)
+        population.compute_household_wealth(independents=independents)
+        match_households_with_banks_optimal(population=population, banks=banks)
 
     @classmethod
     def init_credit_market(
@@ -630,17 +631,25 @@ class SyntheticCountry:
         owned_houses = housing_data["Is Owner-Occupied"]
         total_rent = housing_data.loc[owned_houses, "Rent"].sum()
 
-        credit_market, housing_market = self.post_agents_init(
+        self.match_households_firms_banks(self.banks, self.firms, self.industries, self.population, self.tax_data)
+
+        housing_data = set_housing_df(
+            synthetic_population=self.population,
+            rental_income_taxes=self.tax_data.income_tax,
+            social_housing_rent=self.population.social_housing_rent,
+            total_imputed_rent=total_rent,
+        )
+
+        housing_market = DefaultSyntheticHousingMarket(self.country_name, housing_data)
+
+        credit_market = self.set_wealth_and_credit(
             banks=self.banks,
             central_government=self.central_government,
-            country=self.country_name,
             country_configuration=self.country_configuration,
             country_industry_data=self.industry_data,
             firms=self.firms,
-            industries=self.industries,
             population=self.population,
             tax_data=self.tax_data,
-            total_rent=total_rent,
             central_bank=self.central_bank,
             weights_by_income=self.consumption_weights_by_income,
         )
