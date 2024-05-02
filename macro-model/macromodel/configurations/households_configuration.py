@@ -51,8 +51,8 @@ class PropertyFunction(BaseModel):
         "maximum_price_income_coefficient": 5.0,
         "maximum_price_income_exponent": 1.0,
         "maximum_price_noise_std": 0.3,
-        "probability_stay_in_owned_property": 0.5,
-        "probability_stay_in_rented_property": 0.5,
+        "probability_stay_in_owned_property": 1.0,
+        "probability_stay_in_rented_property": 1.0,
         "psychological_pressure_of_renting": 0.1,
         "rental_yield_btl_temperature": 1.0,
     }
@@ -106,7 +106,7 @@ class WealthFunction(BaseModel):
     path_name: str = "wealth"
     name: Literal["DefaultWealthSetter"] = "DefaultWealthSetter"
     parameters: dict[str, Any] = {
-        "other_real_assets_depreciation_rate": 0.05,
+        "other_real_assets_depreciation_rate": 0.00,
         "independents": ["Income", "Debt"],
     }
 

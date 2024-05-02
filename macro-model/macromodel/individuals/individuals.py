@@ -128,3 +128,7 @@ class Individuals(Agent):
 
     def save_to_h5(self, group: h5py.Group):
         self.ts.write_to_h5("individuals", group)
+
+    @property
+    def n_individuals(self) -> int:
+        return self.states["Age"].shape[0]

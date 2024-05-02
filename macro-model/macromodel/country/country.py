@@ -925,5 +925,12 @@ class Country:
             "CFPI": self.economy.total_cfpi_inflation(),
             "Gross Output": self.firms.total_sales() + self.firms.total_taxes_paid_on_production(),
             "Unemployment Rate": self.economy.unemployment_rate(),
+            "Payday Loan Debt": self.households.payday_loan_debt(),
+            "Consumption Expansion Loan Debt": self.households.consumption_expansion_loan_debt(),
+            "Mortgage Debt": self.households.mortgage_debt(),
         }
         return pd.DataFrame(data_dict)
+
+    @property
+    def n_individuals(self) -> int:
+        return self.individuals.n_individuals

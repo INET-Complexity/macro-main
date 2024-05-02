@@ -151,7 +151,7 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
         num_newly_fired = 0
         excess_productivity = prev_labour_productivity - desired_labour_productivity
         initial_excess_productivity = excess_productivity.copy()
-        for firm_id in np.where(excess_productivity > 0)[0]:
+        for firm_id in np.where(excess_productivity > 1)[0]:
             if len(firm_employments[firm_id]) == 1:
                 continue
 

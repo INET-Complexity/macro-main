@@ -1,51 +1,60 @@
-import logging
+from typing import Optional
+
 import numpy as np
-from abc import abstractmethod, ABC
+from abc import ABC
 
 from macromodel.forecaster.forecaster import (
-    AutoregForecaster,
     OLSForecaster,
     ConstantForecaster,
+    ImplementedAutoregForecaster,
+    ManualAutoregForecaster,
 )
 
 
 class InflationForecasting(ABC):
-    @abstractmethod
-    def forecast_inflation(self, historic_inflation: np.ndarray) -> float:
-        pass
+    def __init__(self):
+        self.forecaster = None
+
+    def forecast_inflation(
+        self,
+        historic_inflation: np.ndarray,
+        min_inflation: Optional[float] = None,
+        max_inflation: Optional[float] = None,
+        t: int = 1,
+        assume_zero_noise: bool = False,
+    ) -> float | np.ndarray:
+        forecast = self.forecaster.forecast(
+            historic_inflation,
+            t,
+            assume_zero_noise=assume_zero_noise,
+        )
+        if min_inflation is not None:
+            forecast = np.maximum(min_inflation, forecast)
+        if max_inflation is not None:
+            forecast = np.maximum(max_inflation, forecast)
+        return forecast
 
 
 class InflationForecastingConstant(InflationForecasting):
     def __init__(self, value: float, *args, **kwargs):
+        super().__init__()
         self.forecaster = ConstantForecaster(value=value)
-        if args or kwargs:
-            logging.warning(
-                "InflationForecastingConstant: args and kwargs are not used. " "Please check the documentation."
-            )
-
-    def forecast_inflation(self, historic_inflation: np.ndarray) -> float:
-        return self.forecaster.forecast(historic_inflation)
-
-
-class InflationForecastingAutoReg(InflationForecasting):
-    def __init__(self, lags: int, window: int, *args, **kwargs):
-        self.forecaster = AutoregForecaster(lags)
-        self.window = window
-        if args or kwargs:
-            logging.warning(
-                "InflationForecastingAutoReg: args and kwargs are not used. " "Please check the documentation."
-            )
-
-    def forecast_inflation(self, historic_inflation: np.ndarray) -> float:
-        return self.forecaster.forecast(historic_inflation[-self.window :])
 
 
 class InflationForecastingOLS(InflationForecasting):
-    def __init__(self, window: int, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
         self.forecaster = OLSForecaster()
-        self.window = window
-        if args or kwargs:
-            logging.warning("InflationForecastingOLS: args and kwargs are not used. " "Please check the documentation.")
 
-    def forecast_inflation(self, historic_inflation: np.ndarray) -> float:
-        return self.forecaster.forecast(historic_inflation[-self.window :])
+
+class InflationImplementedForecastingAutoReg(InflationForecasting):
+    def __init__(self, lags: int, *args, **kwargs):
+        super().__init__()
+        self.forecaster = ImplementedAutoregForecaster(lags)
+
+
+class InflationManualForecastingAutoReg(InflationForecasting):
+    def __init__(self, lags: int, *args, **kwargs):
+        assert lags == 1
+        super().__init__()
+        self.forecaster = ManualAutoregForecaster()

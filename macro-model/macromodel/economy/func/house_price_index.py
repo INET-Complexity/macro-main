@@ -1,47 +1,60 @@
-import logging
+from typing import Optional
+
 import numpy as np
-from abc import abstractmethod, ABC
+from abc import ABC
 
 from macromodel.forecaster.forecaster import (
-    AutoregForecaster,
     OLSForecaster,
     ConstantForecaster,
+    ImplementedAutoregForecaster,
+    ManualAutoregForecaster,
 )
 
 
 class HPIForecasting(ABC):
-    @abstractmethod
-    def forecast_hpi_growth(self, historic_hpi_growth: np.ndarray) -> float:
-        pass
+    def __init__(self):
+        self.forecaster = None
+
+    def forecast_hpi_growth(
+        self,
+        historic_hpi: np.ndarray,
+        min_hpi_growth: Optional[float] = None,
+        max_hpi_growth: Optional[float] = None,
+        t: int = 1,
+        assume_zero_noise: bool = False,
+    ) -> float:
+        forecast = self.forecaster.forecast(
+            historic_hpi,
+            t,
+            assume_zero_noise=assume_zero_noise,
+        )
+        if min_hpi_growth is not None:
+            forecast = np.maximum(min_hpi_growth, forecast)
+        if max_hpi_growth is not None:
+            forecast = np.maximum(max_hpi_growth, forecast)
+        return forecast
 
 
 class HPIForecastingConstant(HPIForecasting):
     def __init__(self, value: float, *args, **kwargs):
+        super().__init__()
         self.forecaster = ConstantForecaster(value=value)
-        if args or kwargs:
-            logging.warning("HPIForecastingConstant: args and kwargs are not used. " "Please check the documentation.")
-
-    def forecast_hpi_growth(self, historic_hpi_growth: np.ndarray) -> float:
-        return self.forecaster.forecast(historic_hpi_growth)
-
-
-class HPIForecastingAutoReg(HPIForecasting):
-    def __init__(self, lags: int, window: int, *args, **kwargs):
-        self.forecaster = AutoregForecaster(lags)
-        self.window = window
-        if args or kwargs:
-            logging.warning("HPIForecastingAutoReg: args and kwargs are not used. " "Please check the documentation.")
-
-    def forecast_hpi_growth(self, historic_hpi_growth: np.ndarray) -> float:
-        return self.forecaster.forecast(historic_hpi_growth[-self.window :])
 
 
 class HPIForecastingOLS(HPIForecasting):
-    def __init__(self, window: int, *args, **kwargs):
+    def __init__(self):
+        super().__init__()
         self.forecaster = OLSForecaster()
-        self.window = window
-        if args or kwargs:
-            logging.warning("HPIForecastingOLS: args and kwargs are not used. " "Please check the documentation.")
 
-    def forecast_hpi_growth(self, historic_hpi_growth: np.ndarray) -> float:
-        return self.forecaster.forecast(historic_hpi_growth[-self.window :])
+
+class HPIImplementedForecastingAutoReg(HPIForecasting):
+    def __init__(self, lags: int, *args, **kwargs):
+        super().__init__()
+        self.forecaster = ImplementedAutoregForecaster(lags)
+
+
+class HPIManualForecastingAutoReg(HPIForecasting):
+    def __init__(self, lags: int, *args, **kwargs):
+        assert lags == 1
+        super().__init__()
+        self.forecaster = ManualAutoregForecaster()

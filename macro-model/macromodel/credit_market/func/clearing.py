@@ -134,9 +134,9 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
 
         # Select loan maturity
         if loan_type == LoanTypes.FIRM_SHORT_TERM_LOAN:
-            loan_maturity = banks.parameters["short_term_firm_loan_maturity"]["value"]
+            loan_maturity = banks.parameters.short_term_firm_loan_maturity
         else:
-            loan_maturity = banks.parameters["long_term_firm_loan_maturity"]["value"]
+            loan_maturity = banks.parameters.long_term_firm_loan_maturity
 
         # Get bank interest rates
         if loan_type == LoanTypes.FIRM_SHORT_TERM_LOAN:
@@ -180,13 +180,12 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
                 if firm_target_credit[firm_id] == 0:
                     break
                 bank_cap_req = (
-                    banks.ts.current("equity")[bank_id] / banks.parameters["capital_requirement_coefficient"]["value"]
+                    banks.ts.current("equity")[bank_id] / banks.parameters.capital_requirement_coefficient
                     - banks.ts.current("total_outstanding_loans")[bank_id]
                     - new_credit_by_bank[bank_id]
                 )
                 firm_risk_assessment = (
-                    banks.parameters["loan_to_value_ratio"]["value"]
-                    * firms.ts.current("capital_inputs_stock_value")[firm_id]
+                    banks.parameters.loan_to_value_ratio * firms.ts.current("capital_inputs_stock_value")[firm_id]
                     - firms.ts.current("debt")[firm_id]
                     - new_credit_by_firm[firm_id]
                     + min(0, firms.ts.current("deposits")[firm_id])
@@ -242,9 +241,9 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
 
         # Select loan maturity
         if loan_type == LoanTypes.HOUSEHOLD_PAYDAY_LOAN:
-            loan_maturity = banks.parameters["household_payday_loan_maturity"]["value"]
+            loan_maturity = banks.parameters.household_payday_loan_maturity
         else:
-            loan_maturity = banks.parameters["household_consumption_expansion_loan_maturity"]["value"]
+            loan_maturity = banks.parameters.household_consumption_expansion_loan_maturity
 
         # Get bank interest rates
         if loan_type == LoanTypes.HOUSEHOLD_PAYDAY_LOAN:
@@ -291,13 +290,12 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
                 if household_target_credit[household_id] == 0:
                     break
                 bank_cap_req = (
-                    banks.ts.current("equity")[bank_id] / banks.parameters["capital_requirement_coefficient"]["value"]
+                    banks.ts.current("equity")[bank_id] / banks.parameters.capital_requirement_coefficient
                     - banks.ts.current("total_outstanding_loans")[bank_id]
                     - new_credit_by_bank[bank_id]
                 )
                 household_risk_assessment = (
-                    banks.parameters["loan_to_net_wealth_ratio"]["value"]
-                    * households.ts.current("net_wealth")[household_id]
+                    banks.parameters.loan_to_net_wealth_ratio * households.ts.current("net_wealth")[household_id]
                     - new_credit_by_household[household_id]
                 )
                 value_granted = max(
@@ -382,22 +380,21 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
                 if household_target_credit[household_id] == 0:
                     break
                 loan_to_value_limit = (
-                    banks.parameters["loan_to_value_ratio_mortgage"]["value"]
-                    / (1 - banks.parameters["loan_to_value_ratio_mortgage"]["value"])
+                    banks.parameters.loan_to_value_ratio_mortgage
+                    / (1 - banks.parameters.loan_to_value_ratio_mortgage)
                     * households.ts.current("wealth_financial_assets")[household_id]
                 )
                 loan_to_income_limit = (
-                    banks.parameters["loan_to_income_ratio_mortgage"]["value"]
-                    * households.ts.current("income")[household_id]
+                    banks.parameters.loan_to_income_ratio_mortgage * households.ts.current("income")[household_id]
                 )
                 debt_service_to_income_limit = (
-                    banks.parameters["debt_service_to_income_ratio_mortgage"]["value"]
+                    banks.parameters.debt_service_to_income_ratio_mortgage
                     * households.ts.current("income")[household_id]
-                    * (1 - (1 + banks_ir[bank_id]) ** (-banks.parameters["mortgage_maturity"]["value"]))
+                    * (1 - (1 + banks_ir[bank_id]) ** (-banks.parameters.mortgage_maturity))
                     / banks_ir[bank_id]
                 )
                 bank_cap_req = (
-                    banks.ts.current("equity")[bank_id] / banks.parameters["capital_requirement_coefficient"]["value"]
+                    banks.ts.current("equity")[bank_id] / banks.parameters.capital_requirement_coefficient
                     - banks.ts.current("total_outstanding_loans")[bank_id]
                     - new_credit_by_bank[bank_id]
                 )
@@ -423,7 +420,7 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
                     household_target_credit[household_id] -= value_granted
                     new_loan_types.append(loan_type)
                     new_loan_value.append(value_granted)
-                    new_loan_maturity.append(banks.parameters["mortgage_maturity"]["value"])
+                    new_loan_maturity.append(banks.parameters.mortgage_maturity)
                     new_loan_interest_rate.append(banks_ir[bank_id])
                     new_loan_bank_id.append(bank_id)
                     new_loan_recipient_id.append(household_id)

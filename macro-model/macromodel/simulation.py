@@ -38,7 +38,7 @@ class Simulation:
                 )
             if not check_compatibility(data_configuration.country_configs[country], country_sim_conf):  # type: ignore
                 datawrapper.synthetic_countries[country].reset_firm_function_dependent(
-                    **country_sim_conf.firms_configuration.reset_params,
+                    **country_sim_conf.firms.reset_params,
                     zero_initial_debt=False,
                     zero_initial_deposits=False,
                 )
@@ -199,6 +199,9 @@ class Simulation:
         for country_name, country in self.countries.items():
             df = country.shallow_output()
             df.to_hdf(save_dir / file_name, key=country_name, mode="a")
+
+    def get_country_shallow_output(self, country: str):
+        return self.countries[country].shallow_output()
 
 
 def check_compatibility(

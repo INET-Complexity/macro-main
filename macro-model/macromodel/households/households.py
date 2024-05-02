@@ -137,7 +137,7 @@ class Households(Agent):
         states["Type"] = map_to_enum(states["Type"], HouseholdType)
 
         # Corresponding individuals
-        states["corr_individuals"] = [corr_individuals.values[i][0] for i in range(len(corr_individuals.values))]
+        states["corr_individuals"] = list(corr_individuals.values)
 
         # Number of adults individuals in the household
         states["Number of Adults"] = np.array(
@@ -671,3 +671,12 @@ class Households(Agent):
 
     def total_consumption(self) -> np.ndarray:
         return self.ts.get_aggregate("total_consumption")
+
+    def payday_loan_debt(self) -> np.ndarray:
+        return self.ts.get_aggregate("payday_loan_debt")
+
+    def consumption_expansion_loan_debt(self) -> np.ndarray:
+        return self.ts.get_aggregate("consumption_expansion_loan_debt")
+
+    def mortgage_debt(self) -> np.ndarray:
+        return self.ts.get_aggregate("mortgage_debt")

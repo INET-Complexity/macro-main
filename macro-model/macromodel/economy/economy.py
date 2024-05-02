@@ -129,24 +129,37 @@ class Economy:
         exogenous_log_inflation: pd.DataFrame,
         exogenous_sectoral_growth: pd.DataFrame,
         exogenous_hpi_growth: pd.DataFrame,
+        max_clip: float = 0.06,
+        min_clip: float = -0.06,
+        window: int = 60,
+        assume_zero_noise: bool = True,
     ) -> None:
         # Forecast CPI inflation
         historic_cpi_inflation = np.concatenate(
             (
-                exogenous_log_inflation["Real CPI Inflation"].values,
+                exogenous_log_inflation["Real CPI Inflation"].values[-window:],
                 np.array(self.ts.historic("cpi_inflation")).flatten(),
             )
         )
-        self.ts.estimated_cpi_inflation.append([self.functions["inflation"].forecast_inflation(historic_cpi_inflation)])
+
+        cpi_forecast = self.functions["inflation"].forecast_inflation(historic_cpi_inflation)[0]
+        cpi_forecast = np.clip(cpi_forecast, a_min=min_clip, a_max=max_clip)
+
+        self.ts.estimated_cpi_inflation.append([cpi_forecast])
 
         # Forecast PPI inflation
         historic_ppi_inflation = np.concatenate(
             (
-                exogenous_log_inflation["Real PPI Inflation"].values,
+                exogenous_log_inflation["Real PPI Inflation"].values[-window:],
                 np.array(self.ts.historic("ppi_inflation")).flatten(),
             )
         )
-        self.ts.estimated_ppi_inflation.append([self.functions["inflation"].forecast_inflation(historic_ppi_inflation)])
+
+        ppi_forecast = self.functions["inflation"].forecast_inflation(
+            historic_ppi_inflation, assume_zero_noise=assume_zero_noise
+        )[0]
+        ppi_forecast = np.clip(ppi_forecast, a_min=min_clip, a_max=max_clip)
+        self.ts.estimated_ppi_inflation.append([ppi_forecast])
 
         # Forecast industry-level growth
         estimated_growth = np.zeros(self.n_industries)
@@ -160,19 +173,24 @@ class Economy:
                         np.array(self.ts.historic("sectoral_growth"))[:, g],
                     )
                 )
-            estimated_growth[g] = self.functions["growth"].forecast_growth(historic_growth)
+            estimated_growth[g] = self.functions["growth"].forecast_growth(
+                historic_growth, assume_zero_noise=assume_zero_noise
+            )
         self.ts.estimated_sectoral_growth.append(estimated_growth)
 
         # Forecast house price index growth
         historic_hpi_growth = np.concatenate(
             (
-                exogenous_hpi_growth["Nominal House Price Index Growth"].values,
+                exogenous_hpi_growth["Nominal House Price Index Growth"].values[-window:],
                 np.array(self.ts.historic("nominal_house_price_index_growth")).flatten(),
             )
         )
-        self.ts.estimated_nominal_house_price_index_growth.append(
-            [self.functions["house_price_index"].forecast_hpi_growth(historic_hpi_growth)]
-        )
+
+        hpi_forecast = self.functions["house_price_index"].forecast_hpi_growth(
+            historic_hpi_growth, assume_zero_noise=assume_zero_noise
+        )[0]
+        hpi_forecast = np.clip(hpi_forecast, a_min=min_clip, a_max=max_clip)
+        self.ts.estimated_nominal_house_price_index_growth.append([hpi_forecast])
 
     def compute_sectoral_sentiment(self) -> None:
         self.ts.sectoral_sentiment.append(self.functions["sentiment"].compute_sentiment(n_industries=self.n_industries))
