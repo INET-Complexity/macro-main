@@ -1,16 +1,22 @@
+from typing import Tuple
+
 import numpy as np
 
 from abc import abstractmethod, ABC
 
 
 class BankDemography(ABC):
+    def __init__(self, solvency_ratio: float):
+        self.solvency_ratio = solvency_ratio
+
     @abstractmethod
     def handle_bank_insolvency(
         self,
         current_bank_equity: np.ndarray,
+        current_bank_loans: np.ndarray,
         current_bank_deposits: np.ndarray,
         is_insolvent: np.ndarray,
-    ) -> float:
+    ) -> Tuple[float, float]:
         pass
 
 
@@ -18,28 +24,36 @@ class NoBankDemography(BankDemography):
     def handle_bank_insolvency(
         self,
         current_bank_equity: np.ndarray,
+        current_bank_loans: np.ndarray,
         current_bank_deposits: np.ndarray,
         is_insolvent: np.ndarray,
-    ) -> float:
-        return 0.0
+    ) -> Tuple[float, float]:
+        return 0.0, float(np.mean(current_bank_equity))
 
 
 class DefaultBankDemography(BankDemography):
     def handle_bank_insolvency(
         self,
         current_bank_equity: np.ndarray,
+        current_bank_loans: np.ndarray,
         current_bank_deposits: np.ndarray,
         is_insolvent: np.ndarray,
-    ) -> float:
-        insolvent_banks = np.logical_and(current_bank_equity < 0, current_bank_equity + current_bank_deposits < 0)
+    ) -> Tuple[float, float]:
+        insolvent_banks = (
+            np.divide(
+                current_bank_equity,
+                current_bank_loans + current_bank_deposits,
+                out=np.zeros(current_bank_equity.shape),
+                where=current_bank_loans + current_bank_deposits != 0.0,
+            )
+            < self.solvency_ratio
+        )
         is_insolvent[insolvent_banks] = True
 
         # Compute average equity of non-insolvent banks
-        average_equity = np.mean(current_bank_equity[~insolvent_banks])
-
-        # Inject equity
+        if np.sum(~insolvent_banks) > 0:
+            average_equity = float(np.mean(current_bank_equity[~insolvent_banks]))
+        else:
+            average_equity = float(np.mean(current_bank_equity))
         equity_injection = np.maximum(0.0, average_equity - current_bank_equity[insolvent_banks]).sum()
-        current_bank_equity[insolvent_banks] = average_equity
-        current_bank_deposits[insolvent_banks] = 0.0
-
-        return equity_injection
+        return equity_injection, average_equity
