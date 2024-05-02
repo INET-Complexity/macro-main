@@ -126,77 +126,142 @@ class Economy:
 
     def set_estimates(
         self,
-        exogenous_log_inflation: pd.DataFrame,
-        exogenous_sectoral_growth: pd.DataFrame,
+        exogenous_growth: np.ndarray,
+        exogenous_inflation: pd.DataFrame,
         exogenous_hpi_growth: pd.DataFrame,
-        max_clip: float = 0.06,
-        min_clip: float = -0.06,
-        window: int = 60,
-        assume_zero_noise: bool = True,
+        forecasting_window: int,
+        total_initial_production: float,
+        exogenous_cpi_inflation_during: np.ndarray,
+        exogenous_ppi_inflation_during: np.ndarray,
+        exogenous_output_during: np.ndarray,
+        default_growth: float = 0.005,
+        default_inflation: float = 0.0,
+        default_hpi_growth: float = 0.0,
+        min_inflation: float = -0.1,
+        max_inflation: float = 0.1,
+        min_growth: float = -0.2,
+        max_growth: float = 0.2,
+        log_it: bool = False,
+        assume_zero_growth: bool = False,
+        assume_zero_noise: bool = False,
     ) -> None:
         # Forecast CPI inflation
         historic_cpi_inflation = np.concatenate(
             (
-                exogenous_log_inflation["Real CPI Inflation"].values[-window:],
+                exogenous_inflation["CPI Inflation"].values[-forecasting_window:],
                 np.array(self.ts.historic("cpi_inflation")).flatten(),
             )
         )
-
-        cpi_forecast = self.functions["inflation"].forecast_inflation(historic_cpi_inflation)[0]
-        cpi_forecast = np.clip(cpi_forecast, a_min=min_clip, a_max=max_clip)
-
-        self.ts.estimated_cpi_inflation.append([cpi_forecast])
+        if assume_zero_growth:
+            self.ts.estimated_cpi_inflation.append([0.0])
+        else:
+            if len(historic_cpi_inflation[~np.isnan(historic_cpi_inflation)]) < 3:
+                self.ts.estimated_cpi_inflation.append([default_inflation])
+            else:
+                estimated_cpi_inflation = self.functions["inflation"].forecast_inflation(
+                    historic_inflation=historic_cpi_inflation,
+                    exogenous_inflation=exogenous_cpi_inflation_during,
+                    current_time=len(self.ts.historic("cpi")),
+                    assume_zero_noise=assume_zero_noise,
+                )[0]
+                estimated_cpi_inflation = np.maximum(
+                    min_inflation,
+                    np.minimum(max_inflation, estimated_cpi_inflation),
+                )
+                assert not np.isnan(estimated_cpi_inflation)
+                self.ts.estimated_cpi_inflation.append([estimated_cpi_inflation])
 
         # Forecast PPI inflation
         historic_ppi_inflation = np.concatenate(
             (
-                exogenous_log_inflation["Real PPI Inflation"].values[-window:],
+                exogenous_inflation["PPI Inflation"].values[-forecasting_window:],
                 np.array(self.ts.historic("ppi_inflation")).flatten(),
             )
         )
+        if assume_zero_growth:
+            self.ts.estimated_ppi_inflation.append([0.0])
+        else:
+            if len(historic_ppi_inflation[~np.isnan(historic_ppi_inflation)]) < 3:
+                self.ts.estimated_ppi_inflation.append([default_inflation])
+            else:
+                estimated_ppi_inflation = self.functions["inflation"].forecast_inflation(
+                    historic_inflation=historic_ppi_inflation,
+                    exogenous_inflation=exogenous_ppi_inflation_during,
+                    current_time=len(self.ts.historic("ppi")),
+                    assume_zero_noise=assume_zero_noise,
+                )[0]
+                estimated_ppi_inflation = np.maximum(
+                    min_inflation,
+                    np.minimum(max_inflation, estimated_ppi_inflation),
+                )
+                assert not np.isnan(estimated_ppi_inflation)
+                self.ts.estimated_ppi_inflation.append([estimated_ppi_inflation])
 
-        ppi_forecast = self.functions["inflation"].forecast_inflation(
-            historic_ppi_inflation, assume_zero_noise=assume_zero_noise
-        )[0]
-        ppi_forecast = np.clip(ppi_forecast, a_min=min_clip, a_max=max_clip)
-        self.ts.estimated_ppi_inflation.append([ppi_forecast])
-
-        # Forecast industry-level growth
-        estimated_growth = np.zeros(self.n_industries)
-        for g in range(self.n_industries):
-            if len(self.ts.historic("sectoral_growth")) == 0:
-                historic_growth = exogenous_sectoral_growth[g].values
+        # Forecast growth
+        if assume_zero_growth:
+            self.ts.estimated_growth.append([0.0])
+        else:
+            if exogenous_growth is None:
+                self.ts.estimated_growth.append([default_growth])
             else:
                 historic_growth = np.concatenate(
                     (
-                        exogenous_sectoral_growth[g].values,
-                        np.array(self.ts.historic("sectoral_growth"))[:, g],
+                        exogenous_growth[-forecasting_window:],
+                        np.array(self.ts.historic("total_growth")).flatten(),
                     )
                 )
-            estimated_growth[g] = self.functions["growth"].forecast_growth(
-                historic_growth, assume_zero_noise=assume_zero_noise
-            )
-        self.ts.estimated_sectoral_growth.append(estimated_growth)
+                historic_output = total_initial_production * np.cumprod(1 + historic_growth)
+                historic_output *= self.ts.current("total_output")[-1] / historic_output[-1]
+                if historic_output[-1] == 0.0:
+                    estimated_growth = self.ts.current("total_growth")[0]
+                else:
+                    if log_it:
+                        estimated_output = np.exp(
+                            self.functions["growth"].forecast_growth(
+                                historic_growth=np.log(historic_output),
+                                exogenous_output=np.log(exogenous_output_during),
+                                current_time=len(self.ts.historic("ppi")),
+                                assume_zero_noise=assume_zero_noise,
+                            )[0]
+                        )
+                    else:
+                        estimated_output = self.functions["growth"].forecast_growth(
+                            historic_growth=historic_output,
+                            exogenous_output=exogenous_output_during,
+                            current_time=len(self.ts.historic("ppi")),
+                            assume_zero_noise=assume_zero_noise,
+                        )[0]
+                    estimated_growth = estimated_output / self.ts.current("total_output")[-1] - 1.0
+                estimated_growth = np.maximum(min_growth, np.minimum(max_growth, estimated_growth))
+                assert not np.isnan(estimated_growth)
+                self.ts.estimated_growth.append([estimated_growth])
 
         # Forecast house price index growth
         historic_hpi_growth = np.concatenate(
             (
-                exogenous_hpi_growth["Nominal House Price Index Growth"].values[-window:],
-                np.array(self.ts.historic("nominal_house_price_index_growth")).flatten(),
+                exogenous_hpi_growth["Nominal House Price Index Growth"].values[-forecasting_window:],
+                np.array(self.ts.historic("hpi_inflation")).flatten(),
             )
         )
-
-        hpi_forecast = self.functions["house_price_index"].forecast_hpi_growth(
-            historic_hpi_growth, assume_zero_noise=assume_zero_noise
-        )[0]
-        hpi_forecast = np.clip(hpi_forecast, a_min=min_clip, a_max=max_clip)
-        self.ts.estimated_nominal_house_price_index_growth.append([hpi_forecast])
-
-    def compute_sectoral_sentiment(self) -> None:
-        self.ts.sectoral_sentiment.append(self.functions["sentiment"].compute_sentiment(n_industries=self.n_industries))
+        if assume_zero_growth:
+            self.ts.estimated_hpi_inflation.append([0.0])
+        else:
+            if len(historic_hpi_growth[~np.isnan(historic_hpi_growth)]) < 3:
+                self.ts.estimated_hpi_inflation.append([default_hpi_growth])
+            else:
+                estimated_hpi_inflation = self.functions["house_price_index"].forecast_hpi_growth(
+                    historic_hpi=historic_hpi_growth,
+                    min_hpi_growth=min_growth,
+                    max_hpi_growth=max_growth,
+                    assume_zero_noise=assume_zero_noise,
+                )[0]
+                assert not np.isnan(estimated_hpi_inflation)
+                self.ts.estimated_hpi_inflation.append([estimated_hpi_inflation])
 
     @staticmethod
-    def compute_number_of_employed_individuals(current_individual_activity_status: np.ndarray) -> int:
+    def compute_number_of_employed_individuals(
+        current_individual_activity_status: np.ndarray,
+    ) -> int:
         return int(np.sum(current_individual_activity_status == ActivityStatus.EMPLOYED))
 
     def compute_price_indicators(
@@ -235,6 +300,7 @@ class Economy:
                     government_nominal_amount_spent=government_nominal_amount_spent,
                     industry=None,
                 )
+                / self.ts.initial("initial_price")[0][0]
             ]
         )
 
@@ -247,11 +313,20 @@ class Economy:
                         self.ts.current("good_prices"),
                         np.full(self.n_industries, 1.0 / self.n_industries),
                     )
+                    / self.ts.initial("initial_price")[0][0]
                 ]
             )
         else:
             consumption_by_industry_norm /= consumption_by_industry_norm.sum()
-            self.ts.cpi.append([np.dot(self.ts.current("good_prices"), consumption_by_industry_norm)])
+            self.ts.cpi.append(
+                [
+                    np.dot(
+                        self.ts.current("good_prices"),
+                        consumption_by_industry_norm,
+                    )
+                    / self.ts.initial("initial_price")[0][0]
+                ]
+            )
 
         # CFPI
         firm_inv_weights_norm = firms_real_amount_bought_as_capital_goods.sum(axis=0)
@@ -262,26 +337,29 @@ class Economy:
                         self.ts.current("good_prices"),
                         np.full(self.n_industries, 1.0 / self.n_industries),
                     )
+                    / self.ts.initial("initial_price")[0][0]
                 ]
             )
         else:
             firm_inv_weights_norm /= firm_inv_weights_norm.sum()
-            self.ts.cfpi.append([np.dot(self.ts.current("good_prices"), firm_inv_weights_norm)])
+            self.ts.cfpi.append(
+                [np.dot(self.ts.current("good_prices"), firm_inv_weights_norm) / self.ts.initial("initial_price")[0][0]]
+            )
 
     def compute_inflation(self) -> None:
         # CPI inflation
-        self.ts.cpi_inflation.append([np.log(self.ts.current("cpi")[0] / self.ts.prev("cpi")[0])])
+        self.ts.cpi_inflation.append([self.ts.current("cpi")[0] / self.ts.prev("cpi")[0] - 1.0])
 
         # PPI inflation
-        self.ts.ppi_inflation.append([np.log(self.ts.current("ppi")[0] / self.ts.prev("ppi")[0])])
+        self.ts.ppi_inflation.append([self.ts.current("ppi")[0] / self.ts.prev("ppi")[0] - 1.0])
 
         # CFPI inflation
-        self.ts.cfpi_inflation.append([np.log(self.ts.current("cfpi")[0] / self.ts.prev("cfpi")[0])])
+        self.ts.cfpi_inflation.append([self.ts.current("cfpi")[0] / self.ts.prev("cfpi")[0] - 1.0])
 
         # Price inflation by industry
         inflation_by_industry = np.zeros(self.n_industries)
         for g in range(self.n_industries):
-            inflation_by_industry[g] = np.log(self.ts.current("good_prices")[g] / self.ts.prev("good_prices")[g])
+            inflation_by_industry[g] = self.ts.current("good_prices")[g] / self.ts.prev("good_prices")[g] - 1.0
         self.ts.industry_inflation.append(inflation_by_industry)
 
     def compute_growth(
@@ -291,7 +369,16 @@ class Economy:
         industries: np.ndarray,
     ) -> None:
         # Total growth
-        self.ts.total_growth.append([(current_production.sum() - prev_production.sum()) / prev_production.sum()])
+        if prev_production.sum() == 0.0:
+            self.ts.total_growth.append([0.0])
+        else:
+            self.ts.total_growth.append([(current_production.sum() - prev_production.sum()) / prev_production.sum()])
+        if self.ts.current("total_growth")[0] < -1.0:
+            print(current_production.sum(), prev_production.sum())
+            print("--")
+            print(self.ts.current("ppi_inflation"))
+            print("---")
+            exit()
 
         # Growth by sector
         current_sectoral_growth = np.zeros(self.n_industries)
@@ -309,9 +396,11 @@ class Economy:
         current_property_values: np.ndarray,
         previous_property_values: np.ndarray,
     ) -> None:
-        self.ts.nominal_house_price_index_growth.append(
-            [current_property_values.sum() / previous_property_values.sum() - 1.0]
-        )
+        if previous_property_values.sum() == 0:
+            self.ts.hpi_inflation.append([0.0])
+        else:
+            self.ts.hpi_inflation.append([current_property_values.sum() / previous_property_values.sum() - 1.0])
+        self.ts.hpi.append([(1 + self.ts.current("hpi_inflation")[0]) * self.ts.current("hpi")[0]])
 
     def compute_average_price(
         self,
@@ -326,8 +415,12 @@ class Economy:
         if industry is None:
             if (
                 firm_real_amount_bought.sum() + household_real_amount_bought.sum() + government_real_amount_bought.sum()
+            ) == 0.0 or (
+                firm_nominal_amount_spent.sum()
+                + household_nominal_amount_spent.sum()
+                + government_nominal_amount_spent.sum()
             ) == 0.0:
-                return self.ts.current("good_prices")
+                return self.ts.current("ppi")[0]
             else:
                 return (
                     firm_nominal_amount_spent.sum()
@@ -343,6 +436,11 @@ class Economy:
                 firm_real_amount_bought[:, industry].sum()
                 + household_real_amount_bought[:, industry].sum()
                 + government_real_amount_bought[:, industry].sum()
+                == 0.0
+            ) or (
+                firm_nominal_amount_spent[:, industry].sum()
+                + household_nominal_amount_spent[:, industry].sum()
+                + government_nominal_amount_spent[:, industry].sum()
                 == 0.0
             ):
                 return self.ts.current("good_prices")[industry]
@@ -411,9 +509,17 @@ class Economy:
                 / (
                     np.sum(current_individual_activity_status == ActivityStatus.EMPLOYED)
                     + np.sum(current_individual_activity_status == ActivityStatus.UNEMPLOYED)
+                    + np.sum(current_individual_activity_status == ActivityStatus.FIRM_INVESTOR)
+                    + np.sum(current_individual_activity_status == ActivityStatus.BANK_INVESTOR)
                 )
             ]
         )
+        if self.ts.prev("unemployment_rate")[0] == 0.0:
+            self.ts.unemployment_rate_growth.append([0.0])
+        else:
+            self.ts.unemployment_rate_growth.append(
+                [self.ts.current("unemployment_rate")[0] / self.ts.prev("unemployment_rate")[0] - 1.0]
+            )
 
         # The participation rate
         self.ts.participation_rate.append(
@@ -421,23 +527,49 @@ class Economy:
                 (
                     np.sum(current_individual_activity_status == ActivityStatus.EMPLOYED)
                     + np.sum(current_individual_activity_status == ActivityStatus.UNEMPLOYED)
+                    + np.sum(current_individual_activity_status == ActivityStatus.FIRM_INVESTOR)
+                    + np.sum(current_individual_activity_status == ActivityStatus.BANK_INVESTOR)
                 )
                 / len(current_individual_activity_status)
             ]
         )
+        if self.ts.prev("participation_rate")[0] == 0.0:
+            self.ts.participation_rate_growth.append([0.0])
+        else:
+            self.ts.participation_rate_growth.append(
+                [self.ts.current("participation_rate")[0] / self.ts.prev("participation_rate")[0] - 1.0]
+            )
 
         # The vacancy rate
-        self.ts.vacancy_rate.append(
-            [
-                (current_desired_firm_labour_inputs.sum() - current_firm_labour_inputs.sum())
-                / current_desired_firm_labour_inputs.sum()
-            ]
-        )
+        if current_desired_firm_labour_inputs.sum() == 0.0:
+            self.ts.vacancy_rate.append([0.0])
+        else:
+            self.ts.vacancy_rate.append(
+                [
+                    (current_desired_firm_labour_inputs.sum() - current_firm_labour_inputs.sum())
+                    / current_desired_firm_labour_inputs.sum()
+                ]
+            )
+        if self.ts.prev("vacancy_rate")[0] == 0.0:
+            self.ts.vacancy_rate_growth.append([0.0])
+        else:
+            self.ts.vacancy_rate_growth.append(
+                [self.ts.current("vacancy_rate")[0] / self.ts.prev("vacancy_rate")[0] - 1.0]
+            )
 
         # The job reallocation rate
-        self.ts.job_reallocation_rate.append(
-            [(num_ind_newly_joining + num_ind_newly_leaving) / num_ind_employed_before_cleaning]
-        )
+        if num_ind_employed_before_cleaning == 0.0:
+            self.ts.job_reallocation_rate.append([0.0])
+        else:
+            self.ts.job_reallocation_rate.append(
+                [(num_ind_newly_joining + num_ind_newly_leaving) / num_ind_employed_before_cleaning]
+            )
+        if self.ts.prev("job_reallocation_rate")[0] == 0.0:
+            self.ts.job_reallocation_rate_growth.append([0.0])
+        else:
+            self.ts.job_reallocation_rate_growth.append(
+                [self.ts.current("job_reallocation_rate")[0] / self.ts.prev("job_reallocation_rate")[0] - 1.0]
+            )
 
     def compute_rental_market_aggregates(
         self,
@@ -451,29 +583,322 @@ class Economy:
 
     def compute_gdp(
         self,
-        sales_minus_ii: float,
+        total_output: float,
+        sectoral_sales: np.ndarray,
+        sectoral_intermediate_consumption: np.ndarray,
         taxes_on_products: float,
+        taxes_on_production: float,
         rent_paid: float,
         rent_imputed: float,
         hh_consumption: float,
         gov_consumption: float,
-        change_in_firm_stock_inventories: float,
-        exports_minus_imports: float,
-        operating_surplus_plus_wages: float,
+        change_in_inventories: float,
+        gross_fixed_capital_formation: float,
+        exports: float,
+        imports: float,
+        operating_surplus: float,
+        wages: float,
         rent_received: float,
+        running_multiple_countries: bool,
+        always_adjust: bool = True,
     ) -> None:
-        self.ts.gdp_output.append([sales_minus_ii + taxes_on_products + rent_paid + rent_imputed])
-        self.ts.gdp_expenditure.append(
+        self.ts.gdp_output.append(
             [
-                change_in_firm_stock_inventories
-                + hh_consumption
-                + gov_consumption
-                + exports_minus_imports
-                + rent_paid
-                + rent_imputed
+                total_output
+                - sectoral_intermediate_consumption.sum()
+                - taxes_on_production
+                + taxes_on_products
+                # + rent_paid
+                # + rent_imputed
             ]
         )
-        self.ts.gdp_income.append([operating_surplus_plus_wages + taxes_on_products + rent_received + rent_imputed])
+        if self.ts.prev("gdp_output")[0] == 0.0:
+            self.ts.gdp_output_growth.append([0.0])
+        else:
+            self.ts.gdp_output_growth.append([self.ts.current("gdp_output")[0] / self.ts.prev("gdp_output")[0] - 1.0])
+        self.ts.total_output.append([total_output])
+        if self.ts.prev("total_output")[0] == 0.0:
+            self.ts.total_output_growth.append([0.0])
+        else:
+            self.ts.total_output_growth.append(
+                [self.ts.current("total_output")[0] / self.ts.prev("total_output")[0] - 1.0]
+            )
+        self.ts.total_intermediate_consumption.append([sectoral_intermediate_consumption.sum()])
+        if self.ts.prev("total_intermediate_consumption")[0] == 0.0:
+            self.ts.total_intermediate_consumption_growth.append([0.0])
+        else:
+            self.ts.total_intermediate_consumption_growth.append(
+                [
+                    self.ts.current("total_intermediate_consumption")[0]
+                    / self.ts.prev("total_intermediate_consumption")[0]
+                    - 1.0
+                ]
+            )
+        self.ts.total_gross_value_added.append([total_output - sectoral_intermediate_consumption.sum()])
+        if self.ts.prev("total_gross_value_added")[0] == 0.0:
+            self.ts.total_gross_value_added_growth.append([0.0])
+        else:
+            self.ts.total_gross_value_added_growth.append(
+                [self.ts.current("total_gross_value_added")[0] / self.ts.prev("total_gross_value_added")[0] - 1.0]
+            )
+        self.ts.total_gross_value_added_a.append([sectoral_sales[0] - sectoral_intermediate_consumption[0]])
+        if self.ts.prev("total_gross_value_added_a")[0] == 0.0:
+            self.ts.total_gross_value_added_a_growth.append([0.0])
+        else:
+            self.ts.total_gross_value_added_a_growth.append(
+                [self.ts.current("total_gross_value_added_a")[0] / self.ts.prev("total_gross_value_added_a")[0] - 1.0]
+            )
+        self.ts.total_gross_value_added_bcde.append(
+            [sectoral_sales[1:5].sum() - sectoral_intermediate_consumption[1:5].sum()]
+        )
+        if self.ts.prev("total_gross_value_added_bcde")[0] == 0.0:
+            self.ts.total_gross_value_added_bcde_growth.append([0.0])
+        else:
+            self.ts.total_gross_value_added_bcde_growth.append(
+                [
+                    self.ts.current("total_gross_value_added_bcde")[0] / self.ts.prev("total_gross_value_added_bcde")[0]
+                    - 1.0
+                ]
+            )
+        self.ts.total_gross_value_added_c.append([sectoral_sales[2] - sectoral_intermediate_consumption[2]])
+        if self.ts.prev("total_gross_value_added_c")[0] == 0.0:
+            self.ts.total_gross_value_added_c_growth.append([0.0])
+        else:
+            self.ts.total_gross_value_added_c_growth.append(
+                [self.ts.current("total_gross_value_added_c")[0] / self.ts.prev("total_gross_value_added_c")[0] - 1.0]
+            )
+        self.ts.total_gross_value_added_f.append([sectoral_sales[5] - sectoral_intermediate_consumption[5]])
+        if self.ts.prev("total_gross_value_added_f")[0] == 0.0:
+            self.ts.total_gross_value_added_f_growth.append([0.0])
+        else:
+            self.ts.total_gross_value_added_f_growth.append(
+                [self.ts.current("total_gross_value_added_f")[0] / self.ts.prev("total_gross_value_added_f")[0] - 1.0]
+            )
+        self.ts.total_gross_value_added_ghijklmnopqrstu.append(
+            [sectoral_sales[6:].sum() - sectoral_intermediate_consumption[6:].sum()]
+        )
+        if self.ts.prev("total_gross_value_added_ghijklmnopqrstu")[0] == 0.0:
+            self.ts.total_gross_value_added_ghijklmnopqrstu_growth.append([0.0])
+        else:
+            self.ts.total_gross_value_added_ghijklmnopqrstu_growth.append(
+                [
+                    self.ts.current("total_gross_value_added_ghijklmnopqrstu")[0]
+                    / self.ts.prev("total_gross_value_added_ghijklmnopqrstu")[0]
+                    - 1.0
+                ]
+            )
+        self.ts.total_gross_value_added_ghi.append(
+            [sectoral_sales[6:9].sum() - sectoral_intermediate_consumption[6:9].sum()]
+        )
+        if self.ts.prev("total_gross_value_added_ghi")[0] == 0.0:
+            self.ts.total_gross_value_added_ghi_growth.append([0.0])
+        else:
+            self.ts.total_gross_value_added_ghi_growth.append(
+                [
+                    self.ts.current("total_gross_value_added_ghi")[0] / self.ts.prev("total_gross_value_added_ghi")[0]
+                    - 1.0
+                ]
+            )
+        self.ts.total_gross_value_added_j.append([sectoral_sales[9] - sectoral_intermediate_consumption[9]])
+        if self.ts.prev("total_gross_value_added_j")[0] == 0.0:
+            self.ts.total_gross_value_added_j_growth.append([0.0])
+        else:
+            self.ts.total_gross_value_added_j_growth.append(
+                [self.ts.current("total_gross_value_added_j")[0] / self.ts.prev("total_gross_value_added_j")[0] - 1.0]
+            )
+        self.ts.total_gross_value_added_k.append([sectoral_sales[10] - sectoral_intermediate_consumption[10]])
+        if self.ts.prev("total_gross_value_added_k")[0] == 0.0:
+            self.ts.total_gross_value_added_k_growth.append([0.0])
+        else:
+            self.ts.total_gross_value_added_k_growth.append(
+                [self.ts.current("total_gross_value_added_k")[0] / self.ts.prev("total_gross_value_added_k")[0] - 1.0]
+            )
+        self.ts.total_gross_value_added_l.append([sectoral_sales[11] - sectoral_intermediate_consumption[11]])
+        if self.ts.prev("total_gross_value_added_l")[0] == 0.0:
+            self.ts.total_gross_value_added_l_growth.append([0.0])
+        else:
+            self.ts.total_gross_value_added_l_growth.append(
+                [self.ts.current("total_gross_value_added_l")[0] / self.ts.prev("total_gross_value_added_l")[0] - 1.0]
+            )
+        self.ts.total_gross_value_added_mn.append(
+            [sectoral_sales[12:14].sum() - sectoral_intermediate_consumption[12:14].sum()]
+        )
+        if self.ts.prev("total_gross_value_added_mn")[0] == 0.0:
+            self.ts.total_gross_value_added_mn_growth.append([0.0])
+        else:
+            self.ts.total_gross_value_added_mn_growth.append(
+                [self.ts.current("total_gross_value_added_mn")[0] / self.ts.prev("total_gross_value_added_mn")[0] - 1.0]
+            )
+        self.ts.total_gross_value_added_opq.append(
+            [sectoral_sales[14:17].sum() - sectoral_intermediate_consumption[14:17].sum()]
+        )
+        if self.ts.prev("total_gross_value_added_opq")[0] == 0.0:
+            self.ts.total_gross_value_added_opq_growth.append([0.0])
+        else:
+            self.ts.total_gross_value_added_opq_growth.append(
+                [
+                    self.ts.current("total_gross_value_added_opq")[0] / self.ts.prev("total_gross_value_added_opq")[0]
+                    - 1.0
+                ]
+            )
+        self.ts.total_gross_value_added_rstu.append(
+            [sectoral_sales[17:].sum() - sectoral_intermediate_consumption[17:].sum()]
+        )
+        if self.ts.prev("total_gross_value_added_rstu")[0] == 0.0:
+            self.ts.total_gross_value_added_rstu_growth.append([0.0])
+        else:
+            self.ts.total_gross_value_added_rstu_growth.append(
+                [
+                    self.ts.current("total_gross_value_added_rstu")[0] / self.ts.prev("total_gross_value_added_rstu")[0]
+                    - 1.0
+                ]
+            )
+        self.ts.total_taxes_less_subsidies_on_products.append([taxes_on_products])
+        if self.ts.prev("total_taxes_less_subsidies_on_products")[0] == 0.0:
+            self.ts.total_taxes_less_subsidies_on_products_growth.append([0.0])
+        else:
+            self.ts.total_taxes_less_subsidies_on_products_growth.append(
+                [
+                    self.ts.current("total_taxes_less_subsidies_on_products")[0]
+                    / self.ts.prev("total_taxes_less_subsidies_on_products")[0]
+                    - 1.0
+                ]
+            )
+        self.ts.total_taxes_on_production.append([taxes_on_production])
+        if self.ts.prev("total_taxes_on_production")[0] == 0.0:
+            self.ts.total_taxes_on_production_growth.append([0.0])
+        else:
+            self.ts.total_taxes_on_production_growth.append(
+                [self.ts.current("total_taxes_on_production")[0] / self.ts.prev("total_taxes_on_production")[0] - 1.0]
+            )
+        gdp_expenditure = (
+            change_in_inventories
+            + gross_fixed_capital_formation
+            + hh_consumption
+            + gov_consumption
+            + exports
+            - imports
+            # + rent_paid
+            # + rent_imputed
+        )
+        self.ts.total_household_fce.append([hh_consumption])
+        if self.ts.prev("total_household_fce")[0] == 0.0:
+            self.ts.total_household_fce_growth.append([0.0])
+        else:
+            self.ts.total_household_fce_growth.append(
+                [self.ts.current("total_household_fce")[0] / self.ts.prev("total_household_fce")[0] - 1.0]
+            )
+        self.ts.total_government_fce.append([gov_consumption])
+        if self.ts.prev("total_government_fce")[0] == 0.0:
+            self.ts.total_government_fce_growth.append([0.0])
+        else:
+            self.ts.total_government_fce_growth.append(
+                [self.ts.current("total_government_fce")[0] / self.ts.prev("total_government_fce")[0] - 1.0]
+            )
+        self.ts.total_gross_fixed_capital_formation.append([gross_fixed_capital_formation])
+        if self.ts.prev("total_gross_fixed_capital_formation")[0] == 0.0:
+            self.ts.total_gross_fixed_capital_formation_growth.append([0.0])
+        else:
+            self.ts.total_gross_fixed_capital_formation_growth.append(
+                [
+                    self.ts.current("total_gross_fixed_capital_formation")[0]
+                    / self.ts.prev("total_gross_fixed_capital_formation")[0]
+                    - 1.0
+                ]
+            )
+        self.ts.total_changes_in_inventories.append([change_in_inventories])
+        if self.ts.prev("total_changes_in_inventories")[0] == 0:
+            self.ts.total_changes_in_inventories_growth.append([0.0])
+        else:
+            self.ts.total_changes_in_inventories_growth.append(
+                [
+                    self.ts.current("total_changes_in_inventories")[0] / self.ts.prev("total_changes_in_inventories")[0]
+                    - 1.0
+                ]
+            )
+        self.ts.gdp_income.append(
+            [
+                operating_surplus
+                + wages
+                + taxes_on_products
+                # + rent_received
+                # + rent_imputed
+            ]
+        )
+        if self.ts.prev("gdp_income")[0] == 0.0:
+            self.ts.gdp_income_growth.append([0.0])
+        else:
+            self.ts.gdp_income_growth.append([self.ts.current("gdp_income")[0] / self.ts.prev("gdp_income")[0] - 1.0])
+        self.ts.total_gross_operating_surplus_and_mixed_income.append([operating_surplus])
+        if self.ts.prev("total_gross_operating_surplus_and_mixed_income")[0] == 0.0:
+            self.ts.total_gross_operating_surplus_and_mixed_income_growth.append([0.0])
+        else:
+            self.ts.total_gross_operating_surplus_and_mixed_income_growth.append(
+                [
+                    self.ts.current("total_gross_operating_surplus_and_mixed_income")[0]
+                    / self.ts.prev("total_gross_operating_surplus_and_mixed_income")[0]
+                    - 1.0
+                ]
+            )
+        self.ts.total_compensation_of_employees.append([wages])
+        if self.ts.prev("total_compensation_of_employees")[0] == 0.0:
+            self.ts.total_compensation_of_employees_growth.append([0.0])
+        else:
+            self.ts.total_compensation_of_employees_growth.append(
+                [
+                    self.ts.current("total_compensation_of_employees")[0]
+                    / self.ts.prev("total_compensation_of_employees")[0]
+                    - 1.0
+                ]
+            )
+
+        # Some adjustments may be necessary
+        if running_multiple_countries or always_adjust:
+            if gdp_expenditure > self.ts.current("gdp_output")[0]:
+                imports += gdp_expenditure - self.ts.current("gdp_output")[0]
+            else:
+                exports += self.ts.current("gdp_output")[0] - gdp_expenditure
+
+        # Update exports, imports, and expenditure
+        self.ts.total_exports.append([exports])
+        if self.ts.prev("total_exports")[0] == 0:
+            self.ts.total_exports_growth.append([0.0])
+        else:
+            self.ts.total_exports_growth.append(
+                [self.ts.current("total_exports")[0] / self.ts.prev("total_exports")[0] - 1.0]
+            )
+        self.ts.total_imports.append([imports])
+        if self.ts.prev("total_imports")[0] == 0.0:
+            self.ts.total_imports_growth.append([0.0])
+        else:
+            self.ts.total_imports_growth.append(
+                [self.ts.current("total_imports")[0] / self.ts.prev("total_imports")[0] - 1.0]
+            )
+        self.ts.gdp_expenditure.append(
+            [
+                change_in_inventories
+                + gross_fixed_capital_formation
+                + hh_consumption
+                + gov_consumption
+                + exports
+                - imports
+                # + rent_paid
+                # + rent_imputed
+            ]
+        )
+        if self.ts.prev("gdp_expenditure")[0] == 0.0:
+            self.ts.gdp_expenditure_growth.append([0.0])
+        else:
+            self.ts.gdp_expenditure_growth.append(
+                [self.ts.current("gdp_expenditure")[0] / self.ts.prev("gdp_expenditure")[0] - 1.0]
+            )
+
+        # GDP sanity check
+        assert np.isclose(
+            self.ts.current("gdp_output")[0],
+            self.ts.current("gdp_expenditure")[0],
+        )
+        assert np.isclose(self.ts.current("gdp_output")[0], self.ts.current("gdp_income")[0])
 
     def save_to_h5(self, group: h5py.Group):
         self.ts.write_to_h5("economy", group)

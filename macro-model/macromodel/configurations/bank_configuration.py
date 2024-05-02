@@ -25,6 +25,7 @@ class BankParameters(BaseModel):
         long_term_firm_loan_maturity (int): The maturity in months of long-term firm loans.
         mortgage_maturity (int): The maturity in months of mortgages.
         short_term_firm_loan_maturity (int): The maturity in months of short-term firm loans.
+        solvency_ratio (float): solvency ratio as the fraction of equity to assets, under which the bank is bankrupt.
     """  # noqa: D301
 
     capital_requirement_coefficient: float = Field(ge=0, le=1, default=0.03)
@@ -41,6 +42,7 @@ class BankParameters(BaseModel):
     long_term_firm_loan_maturity: int = Field(ge=0, default=60)
     mortgage_maturity: int = Field(ge=0, default=120)
     short_term_firm_loan_maturity: int = Field(ge=0, default=12)
+    solvency_ratio: float = Field(ge=0, le=1, default=0.05)
 
 
 class DemographyFunction(BaseModel):
@@ -50,7 +52,7 @@ class DemographyFunction(BaseModel):
 
     path_name: str = "demography"
     name: Literal["NoBankDemography", "DefaultBankDemography"] = "DefaultBankDemography"
-    parameters: dict[str, Any] = {}
+    parameters: dict[str, Any] = {"solvency_ratio": 0.05}
 
 
 class InterestRateFunction(BaseModel):
@@ -60,7 +62,7 @@ class InterestRateFunction(BaseModel):
 
     path_name: str = "interest_rates"
     name: Literal["DefaultInterestRatesSetter"] = "DefaultInterestRatesSetter"
-    parameters: dict[str, Any] = {"interest_noise_std": 0.0}
+    parameters: dict[str, Any] = {}
 
 
 class BankFunctions(BaseModel):

@@ -50,7 +50,13 @@ class CentralBank(Agent):
         ts = create_central_bank_timeseries(data)
 
         # No additional states initially
-        states: dict[str, float | np.ndarray | list[np.ndarray]] = {}
+        states: dict[str, float | np.ndarray | list[np.ndarray]] = {
+            "targeted_inflation_rate": data["targeted_inflation_rate"].values[0],
+            "rho": data["rho"].values[0],
+            "r_star": data["r_star"].values[0],
+            "xi_pi": data["xi_pi"].values[0],
+            "xi_gamma": data["xi_gamma"].values[0],
+        }
 
         return cls(
             country_name,

@@ -46,11 +46,17 @@ class Simulation:
         countries_without_row = list(set(datawrapper.all_country_names) - {"ROW"})
         countries_with_row = datawrapper.all_country_names
 
+        model_dict = {
+            country_name: country.synthetic_goods_market.exchange_rates_model
+            for country_name, country in datawrapper.synthetic_countries.items()
+        }
+
         exchange_rates = ExchangeRates.from_data(
             exchange_rates_data=datawrapper.exchange_rates,
             exchange_rate_config=simulation_configuration.exchange_rates_configuration,
             initial_year=datawrapper.configuration.year,
             country_names=countries_without_row,
+            exchange_rates_model=model_dict,
         )
 
         countries = {
