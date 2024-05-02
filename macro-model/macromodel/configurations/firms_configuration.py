@@ -13,6 +13,37 @@ class BoughtGoodsDistributor(BaseModel):
     parameters: dict[str, Any] = {}
 
 
+class ExcessDemand(BaseModel):
+    """
+    The function used by firms to calculate their excess demand for goods.
+    Options: DefaultExcessDemandSetter, ZeroExcessDemandSetter
+    """
+
+    name: Literal["ConstrainedExcessDemandSetter",] = "ConstrainedExcessDemandSetter"
+    path_name: str = "excess_demand"
+    parameters: dict[str, Any] = {
+        "consider_intermediate_inputs": False,
+        "consider_capital_inputs": True,
+        "consider_labour_inputs": False,
+    }
+
+
+class LabourProductivity(BaseModel):
+    """
+    The function used to calculate the labour productivity of firms.
+    Options: WorkEffortLabourProductivitySetter
+    """
+
+    name: Literal["WorkEffortLabourProductivitySetter"] = "WorkEffortLabourProductivitySetter"
+    path_name: str = "labour_productivity"
+    parameters: dict[str, Any] = {
+        "max_increase_in_work_effort": 1.5,
+        "consider_intermediate_inputs": True,
+        "consider_capital_inputs": True,
+        "work_effort_increase_speed": 1.0,
+    }
+
+
 class DemandEstimator(BaseModel):
     """
     The function used by firms to estimate their future demand for goods.
@@ -21,6 +52,17 @@ class DemandEstimator(BaseModel):
 
     name: Literal["DefaultDemandEstimator"] = "DefaultDemandEstimator"
     path_name: str = "demand_estimator"
+    parameters: dict[str, Any] = {}
+
+
+class ProfitEstimator(BaseModel):
+    """
+    The function used by firms to estimate their future profits.
+    Options: DefaultProfitEstimator
+    """
+
+    name: Literal["DefaultFirmProfitsSetter"] = "DefaultProfitsSetter"
+    path_name: str = "profit_estimator"
     parameters: dict[str, Any] = {}
 
 
@@ -181,6 +223,9 @@ class FirmsFunctions(BaseModel):
     target_intermediate_inputs: TargetIntermediateInputs = TargetIntermediateInputs()
     wage_setter: WageSetter = WageSetter()
     target_production: TargetProduction = TargetProduction()
+    excess_demand: ExcessDemand = ExcessDemand()
+    labour_productivity: LabourProductivity = LabourProductivity()
+    profit_estimator: ProfitEstimator = ProfitEstimator()
 
 
 class FirmsParameters(BaseModel):
