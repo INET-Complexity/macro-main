@@ -101,12 +101,12 @@ class ROWDataConfiguration(BaseModel):
     Represents the configuration for the rest of the world.
 
     Attributes:
-        model_imports (bool): Whether to fit a model for imports.
-        model_exports (bool): Whether to fit a model for exports.
+        fit_imports (bool): Whether to fit a model for imports.
+        fit_exports (bool): Whether to fit a model for exports.
     """
 
-    model_imports: bool = False
-    model_exports: bool = False
+    fit_imports: bool = False
+    fit_exports: bool = False
     assume_one_exporter_by_industry: bool = True
 
 

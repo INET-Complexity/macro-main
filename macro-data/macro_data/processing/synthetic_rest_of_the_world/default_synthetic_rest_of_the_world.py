@@ -66,7 +66,7 @@ class DefaultSyntheticRestOfTheWorld(SyntheticRestOfTheWorld):
         row_data["Price in USD"] = 1
         row_data["Price in LCU"] = exchange_rate * row_data["Price in USD"]
 
-        if row_configuration.model_exports:
+        if row_configuration.fit_exports:
             if row_exports_growth is None:
                 raise ValueError("Exports growth data is required.")
             exports_model = LinearRegression()
@@ -74,7 +74,7 @@ class DefaultSyntheticRestOfTheWorld(SyntheticRestOfTheWorld):
         else:
             exports_model = None
 
-        if row_configuration.model_imports:
+        if row_configuration.fit_imports:
             if row_imports_growth is None:
                 raise ValueError("Imports growth data is required.")
             imports_model = LinearRegression()
