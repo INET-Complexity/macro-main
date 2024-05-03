@@ -176,6 +176,8 @@ class SyntheticCountry:
             scale=country_configuration.scale,
             single_bank=country_configuration.single_bank,
             banks_data_configuration=country_configuration.banks_configuration,
+            quarter=quarter,
+            inflation_data=exogenous_country_data.inflation,
         )
 
         synthetic_goods_market = SyntheticGoodsMarket.from_readers(
@@ -252,6 +254,7 @@ class SyntheticCountry:
         country_industry_data: dict[str, pd.DataFrame],
         year_range: int,
         goods_criticality_matrix: pd.DataFrame,
+        proxy_inflation_data: pd.DataFrame,
     ) -> "SyntheticCountry":
         """
         Create a synthetic country object for a country using a European Union country as a proxy for population.
@@ -269,6 +272,7 @@ class SyntheticCountry:
             year_range: The range of years for which data is considered
              (determines the amount of data used to decide benefits setting).
             goods_criticality_matrix: The goods criticality matrix.
+            proxy_inflation_data: The inflation data for the proxy country.
 
         Returns:
             The synthetic country object.
@@ -332,6 +336,9 @@ class SyntheticCountry:
             scale=country_configuration.scale,
             single_bank=country_configuration.single_bank,
             banks_data_configuration=country_configuration.banks_configuration,
+            quarter=quarter,
+            inflation_data=proxy_inflation_data,
+            proxy_eu_country=proxy_country,
         )
 
         synthetic_goods_market = SyntheticGoodsMarket.from_readers(

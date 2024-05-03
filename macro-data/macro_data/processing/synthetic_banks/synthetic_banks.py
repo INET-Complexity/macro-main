@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
 
-
 from macro_data.processing.synthetic_population.synthetic_population import SyntheticPopulation
 
 
@@ -43,17 +42,36 @@ class SyntheticBanks(ABC):
         year (int): The year of the data.
         number_of_banks (int): The number of banks.
         bank_data (pd.DataFrame): The bank data.
+        quarter (int): The quarter of the data.
+        firm_passthrough (float): The firm passthrough.
+        firm_ect (float): The firm ECT.
+        firm_rate (float): The firm rate.
+
+        hh_consumption_passthrough (float): The household consumption passthrough.
+        hh_consumption_ect (float): The household consumption ECT.
+        hh_consumption_rate (float): The household consumption rate.
+
+        hh_mortgage_passthrough (float): The household mortgage passthrough.
+        hh_mortgage_ect (float): The household mortgages ECT.
+        hh_mortgage_rate (float): The household mortgages rate.
 
     Methods:
-        __init__(self, country_name: str, year: int, number_of_banks: int, bank_data: pd.DataFrame): Initializes the SyntheticBanks object.
+        __init__(self, country_name: str, year: int,
+         number_of_banks: int,
+          bank_data: pd.DataFrame): Initializes the SyntheticBanks object.
         create_agents(self, bank_equity: float) -> None: Creates agents with the specified bank equity.
-        initialise_deposits_and_loans(self, synthetic_population: SyntheticPopulation, synthetic_firms: SyntheticFirms) -> None: Initializes the deposits and loans for households and firms.
+        initialise_deposits_and_loans(self, synthetic_population: SyntheticPopulation,
+         synthetic_firms: SyntheticFirms) -> None: Initializes the deposits and loans for households and firms.
         set_deposits_from_firms(self, firm_deposits: np.ndarray) -> None: Sets the deposits from firms.
         set_deposits_from_households(self, household_deposits: np.ndarray) -> None: Sets the deposits from households.
         set_loans_to_firms(self, firm_debt: np.ndarray) -> None: Sets the loans to firms.
-        set_loans_to_households(self, household_mortgage_debt: np.ndarray, household_other_debt: np.ndarray) -> None: Sets the loans to households.
+        set_loans_to_households(self, household_mortgage_debt: np.ndarray,
+         household_other_debt: np.ndarray) -> None: Sets the loans to households.
         set_bank_equity(self, bank_equity: float) -> None: Sets the bank equity.
-        set_bank_deposits(self, firm_deposits: np.ndarray, household_deposits: np.ndarray, firm_debt: np.ndarray, household_debt: np.ndarray) -> None: Sets the bank deposits.
+        set_bank_deposits(self, firm_deposits: np.ndarray,
+                            household_deposits: np.ndarray,
+                            firm_debt: np.ndarray,
+                            household_debt: np.ndarray) -> None: Sets the bank deposits.
         initialise_rates_profits_liabilities(self, readers: DataReaders,
                                              bank_markup_interest_rate_household_consumption_loans: float,
                                              bank_markup_interest_rate_mortgages: float,
@@ -75,14 +93,44 @@ class SyntheticBanks(ABC):
     """
 
     @abstractmethod
-    def __init__(self, country_name: str, year: int, number_of_banks: int, bank_data: pd.DataFrame):
+    def __init__(
+        self,
+        country_name: str,
+        year: int,
+        number_of_banks: int,
+        bank_data: pd.DataFrame,
+        quarter: int,
+        firm_passthrough: float,
+        firm_ect: float,
+        firm_rate: float,
+        hh_consumption_passthrough: float,
+        hh_consumption_ect: float,
+        hh_consumption_rate: float,
+        hh_mortgage_passthrough: float,
+        hh_mortgage_ect: float,
+        hh_mortgage_rate: float,
+    ) -> None:
         # Parameters
         self.country_name = country_name
         self.year = year
+        self.quarter = quarter
         self.number_of_banks = number_of_banks
 
         # Bank data
         self.bank_data = bank_data
+
+        # Interest rates
+        self.firm_passthrough = firm_passthrough
+        self.firm_ect = firm_ect
+        self.firm_rate = firm_rate
+
+        self.hh_consumption_passthrough = hh_consumption_passthrough
+        self.hh_consumption_ect = hh_consumption_ect
+        self.hh_consumption_rate = hh_consumption_rate
+
+        self.hh_mortgage_passthrough = hh_mortgage_passthrough
+        self.hh_mortgage_ect = hh_mortgage_ect
+        self.hh_mortgage_rate = hh_mortgage_rate
 
     def initialise_deposits_and_loans(
         self, synthetic_population: SyntheticPopulation, firm_deposits: np.ndarray, firm_debt: np.ndarray

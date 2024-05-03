@@ -1,8 +1,17 @@
+from typing import Optional
+
 import numpy as np
 import pandas as pd
 
 from macro_data.configuration.countries import Country
 from macro_data.configuration.dataconfiguration import BanksDataConfiguration
+from macro_data.processing.synthetic_banks.rates_utils import (
+    default_rate_values,
+    rates_dataframe,
+    fit_firm_models,
+    fit_household_models,
+    fit_mortgage_models,
+)
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 
 from macro_data.readers.default_readers import DataReaders
@@ -15,12 +24,32 @@ class DefaultSyntheticBanks(SyntheticBanks):
         year: int,
         number_of_banks: int,
         bank_data: pd.DataFrame,
+        quarter: int,
+        firm_passthrough: float,
+        firm_ect: float,
+        firm_rate: float,
+        hh_consumption_passthrough: float,
+        hh_consumption_ect: float,
+        hh_consumption_rate: float,
+        hh_mortgage_passthrough: float,
+        hh_mortgage_ect: float,
+        hh_mortgage_rate: float,
     ):
         super().__init__(
             country_name,
             year,
             number_of_banks,
             bank_data,
+            quarter=quarter,
+            firm_passthrough=firm_passthrough,
+            firm_ect=firm_ect,
+            firm_rate=firm_rate,
+            hh_consumption_passthrough=hh_consumption_passthrough,
+            hh_consumption_ect=hh_consumption_ect,
+            hh_consumption_rate=hh_consumption_rate,
+            hh_mortgage_passthrough=hh_mortgage_passthrough,
+            hh_mortgage_ect=hh_mortgage_ect,
+            hh_mortgage_rate=hh_mortgage_rate,
         )
 
     @classmethod
@@ -32,7 +61,10 @@ class DefaultSyntheticBanks(SyntheticBanks):
         readers: DataReaders,
         scale: int,
         banks_data_configuration: BanksDataConfiguration,
+        quarter: int,
+        inflation_data: pd.DataFrame,
         exchange_rate_from_eur: float = 1.0,
+        proxy_eu_country: Optional[Country] = None,
     ) -> "DefaultSyntheticBanks":
         """
         Initialize a SyntheticBanks object from data readers.
@@ -49,10 +81,13 @@ class DefaultSyntheticBanks(SyntheticBanks):
             single_bank (bool): Flag indicating whether to create a single bank or multiple banks.
             country_name (Country): The name of the country.
             year (int): The year.
+            quarter (int): The quarter.
             readers (DataReaders): The data readers object.
             scale (int): The scaling factor.
             banks_data_configuration (BanksDataConfiguration): The banks data configuration object.
             exchange_rate_from_eur (float): The exchange rate from EUR to the local currency.
+            proxy_eu_country (Optional[Country]): The proxy EU country.
+            inflation_data (pd.DataFrame): The inflation data.
 
         Returns:
             SyntheticBanks: The initialized SyntheticBanks object.
@@ -64,6 +99,10 @@ class DefaultSyntheticBanks(SyntheticBanks):
                 readers=readers,
                 single_bank=single_bank,
                 scale=scale,
+                quarter=quarter,
+                inflation_data=inflation_data,
+                exchange_rate_from_eur=exchange_rate_from_eur,
+                proxy_eu_country=proxy_eu_country,
             )
 
         if single_bank:
@@ -83,11 +122,47 @@ class DefaultSyntheticBanks(SyntheticBanks):
             bank_data["Consumption Loans to Households"] + bank_data["Mortgages to Households"]
         )
 
-        return cls(country_name, year, number_of_banks, bank_data)
+        (
+            firm_ect,
+            firm_passthrough,
+            firm_rate,
+            hh_consumption_ect,
+            hh_consumption_passthrough,
+            hh_consumption_rate,
+            hh_mortgage_ect,
+            hh_mortgage_passthrough,
+            hh_mortgage_rate,
+        ) = cls.initialise_rates(country_name, inflation_data, proxy_eu_country, quarter, readers, year)
+
+        return cls(
+            country_name,
+            year,
+            number_of_banks,
+            bank_data,
+            firm_passthrough=firm_passthrough,
+            firm_ect=firm_ect,
+            firm_rate=firm_rate,
+            hh_consumption_passthrough=hh_consumption_passthrough,
+            hh_consumption_ect=hh_consumption_ect,
+            hh_consumption_rate=hh_consumption_rate,
+            hh_mortgage_passthrough=hh_mortgage_passthrough,
+            hh_mortgage_ect=hh_mortgage_ect,
+            hh_mortgage_rate=hh_mortgage_rate,
+            quarter=quarter,
+        )
 
     @classmethod
     def from_readers_compustat(
-        cls, country_name: Country, year: int, readers: DataReaders, single_bank: bool, scale: int
+        cls,
+        country_name: Country,
+        year: int,
+        readers: DataReaders,
+        single_bank: bool,
+        scale: int,
+        quarter: int,
+        inflation_data: pd.DataFrame,
+        exchange_rate_from_eur: float = 1.0,
+        proxy_eu_country: Optional[Country] = None,
     ) -> "DefaultSyntheticBanks":
         """
         Initialize a SyntheticBanks object from Compustat data readers.
@@ -104,6 +179,10 @@ class DefaultSyntheticBanks(SyntheticBanks):
             readers (DataReaders): The data readers object.
             single_bank (bool): Flag indicating whether to create a single bank or multiple banks.
             scale (int): The scaling factor.
+            quarter (int): The quarter.
+            inflation_data (pd.DataFrame): The inflation data.
+            exchange_rate_from_eur (float): The exchange rate from EUR to the local currency.
+            proxy_eu_country (Optional[Country]): The proxy EU country.
 
         Returns:
             SyntheticBanks: The initialized SyntheticBanks object.
@@ -141,7 +220,93 @@ class DefaultSyntheticBanks(SyntheticBanks):
         )
         bank_data["Equity"] *= total_bank_equity / bank_data["Equity"].sum()
 
-        return cls(country_name, year, number_of_banks, bank_data)
+        (
+            firm_ect,
+            firm_passthrough,
+            firm_rate,
+            hh_consumption_ect,
+            hh_consumption_passthrough,
+            hh_consumption_rate,
+            hh_mortgage_ect,
+            hh_mortgage_passthrough,
+            hh_mortgage_rate,
+        ) = cls.initialise_rates(country_name, inflation_data, proxy_eu_country, quarter, readers, year)
+
+        return cls(
+            country_name,
+            year,
+            number_of_banks,
+            bank_data,
+            quarter=quarter,
+            firm_passthrough=firm_passthrough,
+            firm_ect=firm_ect,
+            firm_rate=firm_rate,
+            hh_consumption_passthrough=hh_consumption_passthrough,
+            hh_consumption_ect=hh_consumption_ect,
+            hh_consumption_rate=hh_consumption_rate,
+            hh_mortgage_passthrough=hh_mortgage_passthrough,
+            hh_mortgage_ect=hh_mortgage_ect,
+            hh_mortgage_rate=hh_mortgage_rate,
+        )
+
+    @classmethod
+    def initialise_rates(cls, country_name, inflation_data, proxy_eu_country, quarter, readers, year):
+        if country_name.is_eu_country:
+            data_country = country_name
+        else:
+            if proxy_eu_country is None:
+                raise ValueError("Proxy EU country is required for non-EU countries.")
+            data_country = proxy_eu_country
+        firm_rate = readers.ecb_reader.get_firm_rates(data_country)
+        household_consumption_rate = readers.ecb_reader.get_household_consumption_rates(data_country)
+        household_mortgage_rates = readers.ecb_reader.get_household_mortgage_rates(data_country)
+        policy_rates = readers.policy_rates.get_policy_rates(data_country)
+        npl_rates = readers.world_bank.get_npl_ratios(data_country)
+        if any(
+            [
+                firm_rate is None,
+                household_consumption_rate is None,
+                household_mortgage_rates is None,
+                npl_rates is None,
+            ]
+        ):
+            firm_passthrough, firm_ect, firm_rate = default_rate_values(policy_rates)
+            hh_consumption_passthrough, household_consumption_ect, household_consumption_rate = default_rate_values(
+                policy_rates
+            )
+            hh_mortgage_passthrough, household_mortgages_ect, household_mortgages_rate = default_rate_values(
+                policy_rates
+            )
+        else:
+            df = rates_dataframe(
+                firm_rate,
+                household_consumption_rate,
+                household_mortgage_rates,
+                inflation_data,
+                npl_rates,
+                policy_rates,
+                year,
+                quarter,
+            )
+
+            firm_passthrough, firm_ect, firm_rate = fit_firm_models(df, n_lags=1)
+            hh_consumption_passthrough, household_consumption_ect, household_consumption_rate = fit_household_models(
+                df, n_lags=1
+            )
+            hh_mortgage_passthrough, household_mortgages_ect, household_mortgages_rate = fit_mortgage_models(
+                df, n_lags=1
+            )
+        return (
+            firm_ect,
+            firm_passthrough,
+            firm_rate,
+            household_consumption_ect,
+            hh_consumption_passthrough,
+            household_consumption_rate,
+            household_mortgages_ect,
+            hh_mortgage_passthrough,
+            household_mortgages_rate,
+        )
 
     def set_bank_equity(self, bank_equity: float) -> None:
         self.bank_data["Equity"] = np.full(self.number_of_banks, bank_equity / self.number_of_banks)

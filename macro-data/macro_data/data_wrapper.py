@@ -154,6 +154,20 @@ class DataWrapper:
             for country in country_names
         }
 
+        proxy_inflation = {}
+
+        non_eu_countries = [country for country in country_names if not country.is_eu_country]
+
+        for country in non_eu_countries:
+            if proxy_country_dict[country] is not None:
+                proxy_country = proxy_country_dict[country]
+                inflation = readers.imf_reader.get_inflation(proxy_country)
+                if inflation is None:
+                    inflation = readers.world_bank.get_inflation(proxy_country)
+                proxy_inflation[country] = inflation
+            else:
+                proxy_inflation[country] = None
+
         calibration_data = pd.concat(
             [exogenous_data[country].get_calibration_data(year, quarter) for country in country_names], axis=1
         )
@@ -198,6 +212,7 @@ class DataWrapper:
                     year_range=year_range,
                     goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
                     quarter=quarter,
+                    proxy_inflation_data=proxy_inflation[country],
                 )
 
         row_exports_growth = calibration_data[("ROW", "Exports (Growth)")]

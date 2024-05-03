@@ -370,3 +370,16 @@ class WorldBankReader:
             if years_as_columns is True:
                 mask = prune_index(value.columns, prune_date)
                 self.data[key] = value.loc[:, mask]
+
+    def get_npl_ratios(self, country: Country | str) -> pd.DataFrame:
+        npl_ratio = self.data["npl_ratios"].set_index("Country Code", drop=True).loc[[country]]
+        new_cols = [str(y) + " [YR" + str(y) + "]" for y in range(1960, 2022)]
+        npl_ratio = npl_ratio.loc[:, new_cols]
+        npl_ratio.columns = [str(y) for y in range(1960, 2022)]
+        npl_ratio.columns = pd.to_datetime(npl_ratio.columns, format="%Y")
+
+        npl_ratio = npl_ratio.T
+
+        npl_ratio[npl_ratio == ".."] = np.nan
+
+        return npl_ratio.astype(float) / 100.0
