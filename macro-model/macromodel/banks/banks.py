@@ -65,6 +65,12 @@ class Banks(Agent):
             "corr_firms": [corr_firms_id.values[i][0] for i in range(corr_firms_id.shape[0])],
             "corr_households": [corr_households_id.values[i][0] for i in range(corr_households_id.shape[0])],
             "is_insolvent": np.full(ts.current("n_banks"), False),
+            "Firm Pass Through": synthetic_banks.firm_passthrough,
+            "Firm ECT": synthetic_banks.firm_ect,
+            "Household Consumption Pass Through": synthetic_banks.hh_consumption_passthrough,
+            "Household Consumption ECT": synthetic_banks.hh_consumption_ect,
+            "Household Mortgage Pass Through": synthetic_banks.hh_mortgage_passthrough,
+            "Household Mortgage ECT": synthetic_banks.hh_mortgage_ect,
         }
 
         return cls(
