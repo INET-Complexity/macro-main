@@ -448,26 +448,23 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             + self.household_data["Outstanding Balance of other Non-Mortgage Loans"]
         )
 
-    def set_debt_installments(self, credit_market_data: pd.DataFrame) -> None:
+    def set_debt_installments(
+        self, consumption_installments: np.ndarray, ce_installments: np.ndarray, mortgage_installments: np.ndarray
+    ) -> None:
         """
         Sets the debt installments for each household based on the credit market data.
 
         Args:
-            credit_market_data (DataFrame): The credit market data.
+            consumption_installments (np.ndarray): The consumption loan installments.
+            ce_installments (np.ndarray): The payday loan installments.
+            mortgage_installments (np.ndarray): The mortgage loan installments.
 
         Returns:
             None
         """
-        credit_market_data_household_loans = credit_market_data.loc[credit_market_data["loan_type"].isin([4, 5])]
-        debt_installments = np.zeros(len(self.household_data))
-        for household_id in range(len(self.household_data)):
-            curr_loans = credit_market_data_household_loans[
-                credit_market_data_household_loans["loan_recipient_id"] == household_id
-            ]
-            for loan_id in range(len(curr_loans)):
-                debt_installments[household_id] += float(
-                    curr_loans.iloc[loan_id]["loan_value"] / curr_loans.iloc[loan_id]["loan_maturity"]
-                )
+        debt_installments = (
+            consumption_installments.sum(axis=0) + ce_installments.sum(axis=0) + mortgage_installments.sum(axis=0)
+        )
         self.household_data["Debt Installments"] = debt_installments
 
     def set_household_net_wealth(self) -> None:

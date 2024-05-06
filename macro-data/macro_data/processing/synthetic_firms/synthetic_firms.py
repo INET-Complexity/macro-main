@@ -6,6 +6,7 @@ import pandas as pd
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 
 from macro_data.processing.country_data import TaxData
+from macro_data.processing.synthetic_credit_market.loan_data import LongtermLoans, ShorttermLoans
 
 
 class SyntheticFirms(ABC):
@@ -120,6 +121,7 @@ class SyntheticFirms(ABC):
         self,
         industry_data: dict[str, pd.DataFrame],
         synthetic_banks: SyntheticBanks,
-        credit_market_data: pd.DataFrame,
+        long_term_loans: LongtermLoans,
+        short_term_loans: ShorttermLoans,
         tax_data: TaxData,
     ) -> None: ...

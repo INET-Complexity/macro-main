@@ -222,7 +222,9 @@ class SyntheticPopulation(ABC):
         self.consumption_weights = consumption_weights.copy()
 
     @abstractmethod
-    def set_debt_installments(self, credit_market_data: pd.DataFrame) -> None: ...
+    def set_debt_installments(
+        self, consumption_installments: np.ndarray, ce_installments: np.ndarray, mortgage_installments: np.ndarray
+    ) -> None: ...
 
     @abstractmethod
     def set_household_saving_rates(self, independents: Optional[list[str]] = None) -> None: ...

@@ -540,12 +540,17 @@ class SyntheticCountry:
             mortgage_maturity=country_configuration.banks_configuration.mortgage_maturity,
             zero_firm_debt=country_configuration.firms_configuration.zero_initial_debt,
         )
-        population.set_debt_installments(credit_market.credit_market_data)
+        population.set_debt_installments(
+            consumption_installments=credit_market.consumption_expansion_loans.installments,
+            mortgage_installments=credit_market.mortgage_loans.installments,
+            ce_installments=credit_market.payday_loans.installments,
+        )
         firms.set_additional_initial_conditions(
             tax_data=tax_data,
             industry_data=country_industry_data,
             synthetic_banks=banks,
-            credit_market_data=credit_market.credit_market_data,
+            long_term_loans=credit_market.longterm_loans,
+            short_term_loans=credit_market.shortterm_loans,
         )
         central_government.update_fields(
             synthetic_banks=banks,
