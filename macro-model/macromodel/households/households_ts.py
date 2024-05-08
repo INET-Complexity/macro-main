@@ -8,8 +8,10 @@ from macromodel.util.get_histogram import get_histogram
 def create_households_timeseries(
     data: pd.DataFrame,
     initial_consumption_by_industry: np.ndarray,
+    initial_investment: np.ndarray,
     scale: int,
     vat: float,
+    tau_cf: float,
 ) -> TimeSeries:
     n_industries = len(initial_consumption_by_industry)
     return TimeSeries(
@@ -21,9 +23,15 @@ def create_households_timeseries(
         amount_bought=np.full(len(data), np.nan),
         consumption=np.full(len(data), np.nan),
         total_consumption=[(1 + vat) * initial_consumption_by_industry.sum()],
+        total_consumption_before_vat=[initial_consumption_by_industry.sum()],
         industry_consumption=initial_consumption_by_industry,
+        #
+        target_investment=initial_investment,
+        total_investment=[(1 + tau_cf) * initial_investment.sum()],
+        total_investment_before_vat=[initial_investment.sum()],
         investment_in_other_real_assets=np.full(len(data), np.nan),
         total_investment_in_other_real_assets=[0.0],
+        initial_investment=initial_investment,
         #
         income=data["Income"].values,
         income_histogram=get_histogram(data["Income"].values, scale),

@@ -61,7 +61,7 @@ class ProfitEstimator(BaseModel):
     Options: DefaultProfitEstimator
     """
 
-    name: Literal["DefaultFirmProfitsSetter"] = "DefaultProfitsSetter"
+    name: Literal["DefaultFirmProfitsSetter"] = "DefaultFirmProfitsSetter"
     path_name: str = "profit_estimator"
     parameters: dict[str, Any] = {}
 

@@ -65,6 +65,7 @@ class Exogenous:
 
         # Cutting-off exchange rates
         self.exchange_rates_data = self.exchange_rates_data.T
+        self.exchange_rates_data = self.exchange_rates_data.loc[:, country_name.value]
         self.exchange_rates_data.index = [ind for ind in self.exchange_rates_data.index]
         self.exchange_rates_data.index = pd.PeriodIndex(self.exchange_rates_data.index, freq="Q").to_timestamp()
         self.exchange_rates_data.columns = ["Exchange Rate"]
@@ -74,6 +75,8 @@ class Exogenous:
         self.exchange_rates_data_during = self.exchange_rates_data.loc[
             self.exchange_rates_data.index >= pd.Timestamp(initial_year, 3 * initial_quarter - 2, 1)
         ]
+
+
 
         # Put it all together in a time series object
         self.ts = create_exogenous_timeseries(
@@ -116,8 +119,8 @@ class Exogenous:
             exchange_rates_data=exchange_rates.historic_exchange_rate_data,
             inflation=exogenous_data.inflation,
             national_accounts=exogenous_data.national_accounts,
-            unemployment_rate=exogenous_data.labour_stats[["Unemployment Rate"]],
-            vacancy_rate=exogenous_data.labour_stats[["Vacancy Rate"]],
+            unemployment_rate=exogenous_data.labour_stats[["Unemployment Rate (Value)"]],
+            vacancy_rate=exogenous_data.labour_stats[["Vacancy Rate (Value)"]],
             house_price_index=exogenous_data.house_price_index,
             initial_year=initial_year,
             initial_quarter=1,

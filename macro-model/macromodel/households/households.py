@@ -2,7 +2,7 @@ import h5py
 import numpy as np
 import pandas as pd
 import warnings
-from macro_data import SyntheticPopulation
+from macro_data import SyntheticPopulation, SyntheticCountry
 from typing import Any, Optional
 
 from macromodel.configurations import HouseholdsConfiguration
@@ -20,16 +20,16 @@ from macromodel.util.property_mapping import map_to_enum
 
 class Households(Agent):
     def __init__(
-        self,
-        country_name: str,
-        all_country_names: list[str],
-        n_industries: int,
-        functions: dict[str, Any],
-        ts: TimeSeries,
-        states: dict[str, float | np.ndarray | list[np.ndarray]],
-        consumption_weights: np.ndarray,
-        consumption_weights_by_income: np.ndarray,
-        use_consumption_weights_by_income: bool,
+            self,
+            country_name: str,
+            all_country_names: list[str],
+            n_industries: int,
+            functions: dict[str, Any],
+            ts: TimeSeries,
+            states: dict[str, float | np.ndarray | list[np.ndarray]],
+            consumption_weights: np.ndarray,
+            consumption_weights_by_income: np.ndarray,
+            use_consumption_weights_by_income: bool,
     ):
         n_entities = ts.current("n_households")
         super().__init__(
@@ -60,15 +60,16 @@ class Households(Agent):
 
     @classmethod
     def from_pickled_agent(
-        cls,
-        synthetic_population: SyntheticPopulation,
-        configuration: HouseholdsConfiguration,
-        country_name: str,
-        all_country_names: list[str],
-        industries: list[str],
-        initial_consumption_by_industry: np.ndarray,
-        value_added_tax: float,
-        scale: int,
+            cls,
+            synthetic_population: SyntheticPopulation,
+            synthetic_country: SyntheticCountry,
+            configuration: HouseholdsConfiguration,
+            country_name: str,
+            all_country_names: list[str],
+            industries: list[str],
+            initial_consumption_by_industry: np.ndarray,
+            value_added_tax: float,
+            scale: int,
     ) -> "Households":
         individual_ages = synthetic_population.individual_data["Age"].values
 
@@ -126,11 +127,39 @@ class Households(Agent):
                     states[state_name] = hh_data[state_name].values.astype(int).flatten()
                     states[state_name][states[state_name] < 0] = -1
 
+        # TODO: this is set to 0.2 in Sam's code, and transformed somehow into 0.0945. by the time the data is exported
+        #  We need to 1. make this a parameters, 2. move this to the macro-data package.
+        #  In general, we should think of where to put the piece of code below.
+
+        investment_rate = 0.09425048
+        investment_weights = synthetic_country.industry_data["industry_vectors"]['Household Capital Inputs in LCU']
+        investment_weights = investment_weights.values / investment_weights.values.sum()
+        tau_cf = synthetic_country.tax_data.capital_formation_tax
+        income = synthetic_population.household_data["Income"].values  # Income is different from Sam's
+
+        initial_investment = pd.DataFrame(
+            data=(
+                    1.0
+                    / (1 + tau_cf)
+                    * np.outer(investment_weights, investment_rate * income).T
+            ),
+            index=pd.Index(
+                range(
+                    len(
+                        synthetic_population.household_data
+                    )
+                )
+            ),
+            columns=pd.Index(synthetic_country.industries, name="Industry"),
+        )
+
         ts = create_households_timeseries(
             data=hh_data,
             initial_consumption_by_industry=initial_consumption_by_industry,
+            initial_investment=initial_investment.values,
             scale=scale,
             vat=value_added_tax,
+            tau_cf=tau_cf,
         )
 
         # Update the household type
@@ -171,8 +200,8 @@ class Households(Agent):
         return np.bincount(corr_households, weights=individual_income)
 
     def compute_social_transfer_income(
-        self,
-        total_other_social_transfers: float,
+            self,
+            total_other_social_transfers: float,
     ) -> np.ndarray:
         inds = ["Income", "Debt"]
         return self.functions["social_transfers"].get_social_transfers(
@@ -198,20 +227,20 @@ class Households(Agent):
         )
 
     def compute_rental_income(
-        self,
-        housing_data: pd.DataFrame,
-        income_taxes: float,
+            self,
+            housing_data: pd.DataFrame,
+            income_taxes: float,
     ) -> np.ndarray:
         housing_data_rented_out = housing_data.loc[
             (housing_data["Is Owner-Occupied"] == 0) & (housing_data["Corresponding Inhabitant Household ID"] != -1)
-        ]
+            ]
         housing_data_rented_out_grouped = housing_data_rented_out.groupby("Corresponding Owner Household ID")[
             "Rent"
         ].sum()
         rental_income = np.zeros(self.ts.current("n_households"))
         rental_income[housing_data_rented_out_grouped.index.values] = (
-            1 - income_taxes
-        ) * housing_data_rented_out_grouped.values
+                                                                              1 - income_taxes
+                                                                      ) * housing_data_rented_out_grouped.values
         return rental_income
 
     def compute_income_from_financial_assets(self) -> np.ndarray:
@@ -223,10 +252,10 @@ class Households(Agent):
 
     def compute_income(self) -> np.ndarray:
         return (
-            self.ts.current("income_employee")
-            + self.ts.current("income_social_transfers")
-            + self.ts.current("income_rental")
-            + self.ts.current("income_financial_assets")
+                self.ts.current("income_employee")
+                + self.ts.current("income_social_transfers")
+                + self.ts.current("income_rental")
+                + self.ts.current("income_financial_assets")
         )
 
     def get_saving_rates_by_household(self, independents: Optional[list[str]] = None) -> np.ndarray:
@@ -248,9 +277,9 @@ class Households(Agent):
         )
 
     def compute_target_consumption_before_ce(
-        self,
-        per_capita_unemployment_benefits: float,
-        tau_vat: float,
+            self,
+            per_capita_unemployment_benefits: float,
+            tau_vat: float,
     ) -> np.ndarray:
         saving_rates = self.get_saving_rates_by_household()
         self.ts.saving_rates_histogram.append(get_histogram(saving_rates, None))
@@ -258,7 +287,7 @@ class Households(Agent):
             saving_rates=saving_rates,
             income=self.ts.current("income"),
             household_benefits=self.states["Number of Adults"] * per_capita_unemployment_benefits
-            + self.ts.current("income_social_transfers"),
+                               + self.ts.current("income_social_transfers"),
             historic_consumption=self.ts.historic("consumption"),
             consumption_weights=self.consumption_weights,
             consumption_weights_by_income=self.consumption_weights_by_income,
@@ -267,13 +296,13 @@ class Households(Agent):
         )
 
     def prepare_housing_market_clearing(
-        self,
-        housing_data: pd.DataFrame,
-        observed_fraction_value_price: np.ndarray,
-        observed_fraction_rent_value: np.ndarray,
-        expected_hpi_growth: float,
-        assumed_mortgage_maturity: int,
-        rental_income_taxes: float,
+            self,
+            housing_data: pd.DataFrame,
+            observed_fraction_value_price: np.ndarray,
+            observed_fraction_rent_value: np.ndarray,
+            expected_hpi_growth: float,
+            assumed_mortgage_maturity: int,
+            rental_income_taxes: float,
     ) -> None:
         # Households make decisions on their demand for properties
         (
@@ -328,10 +357,10 @@ class Households(Agent):
         )
 
     def update_rent(
-        self,
-        housing_data: pd.DataFrame,
-        historic_inflation: list[np.ndarray],
-        exogenous_inflation_before: np.ndarray,
+            self,
+            housing_data: pd.DataFrame,
+            historic_inflation: list[np.ndarray],
+            exogenous_inflation_before: np.ndarray,
     ) -> None:
         housing_data["Rent"] = self.functions["rent"].compute_rent(
             current_rent=housing_data["Rent"].values,
@@ -339,11 +368,11 @@ class Households(Agent):
         )
 
     def process_housing_market_clearing(
-        self,
-        housing_data: pd.DataFrame,
-        social_housing_function: Any,
-        current_sales: pd.DataFrame,
-        current_unemployment_benefits_by_individual: float,
+            self,
+            housing_data: pd.DataFrame,
+            social_housing_function: Any,
+            current_sales: pd.DataFrame,
+            current_unemployment_benefits_by_individual: float,
     ) -> None:
         # Calculate rent
         rent_by_household, imputed_rent_by_household = self.compute_rent(
@@ -361,10 +390,10 @@ class Households(Agent):
         self.ts.price_paid_for_property.append(price_paid_for_property)
 
     def compute_rent(
-        self,
-        housing_data: pd.DataFrame,
-        social_housing_function: Any,
-        current_unemployment_benefits_by_individual: float,
+            self,
+            housing_data: pd.DataFrame,
+            social_housing_function: Any,
+            current_unemployment_benefits_by_individual: float,
     ) -> tuple[np.ndarray, np.ndarray]:
         rent_by_household = np.zeros(self.ts.current("n_households"))
         imputed_rent_by_household = np.zeros(self.ts.current("n_households"))
@@ -444,9 +473,9 @@ class Households(Agent):
         self.ts.total_target_mortgage.append([self.ts.current("target_mortgage").sum()])
 
     def compute_interest_paid_on_deposits(
-        self,
-        bank_interest_rate_on_household_deposits: np.ndarray,
-        bank_overdraft_rate_on_household_deposits: np.ndarray,
+            self,
+            bank_interest_rate_on_household_deposits: np.ndarray,
+            bank_overdraft_rate_on_household_deposits: np.ndarray,
     ) -> np.ndarray:
         return -bank_interest_rate_on_household_deposits[self.states["Corresponding Bank ID"]] * np.maximum(
             0.0, self.ts.current("wealth_deposits")
@@ -534,9 +563,9 @@ class Households(Agent):
         new_wealth = np.maximum(
             0.0,
             (
-                self.ts.current("income")
-                - self.ts.current("rent")
-                - self.ts.current("nominal_amount_spent_in_lcu").sum(axis=1)
+                    self.ts.current("income")
+                    - self.ts.current("rent")
+                    - self.ts.current("nominal_amount_spent_in_lcu").sum(axis=1)
             ),
         )
         (new_wealth_in_deposits, new_wealth_in_other_financial_assets) = self.functions["wealth"].distribute_new_wealth(
@@ -549,9 +578,9 @@ class Households(Agent):
         used_up_wealth = -np.minimum(
             0.0,
             (
-                self.ts.current("income")
-                - self.ts.current("rent")
-                - self.ts.current("nominal_amount_spent_in_lcu").sum(axis=1)
+                    self.ts.current("income")
+                    - self.ts.current("rent")
+                    - self.ts.current("nominal_amount_spent_in_lcu").sum(axis=1)
             ),
         )
         (
@@ -612,9 +641,9 @@ class Households(Agent):
         )
 
     def compute_wealth_of_other_financial_assets(
-        self,
-        new_wealth_in_other_financial_assets: float,
-        used_up_wealth_in_other_financial_assets: float,
+            self,
+            new_wealth_in_other_financial_assets: float,
+            used_up_wealth_in_other_financial_assets: float,
     ) -> np.ndarray:
         return self.functions["wealth"].compute_wealth_in_other_financial_assets(
             current_wealth_in_other_financial_assets=self.ts.current("wealth_other_financial_assets"),
@@ -623,10 +652,10 @@ class Households(Agent):
         )
 
     def compute_wealth_in_deposits(
-        self,
-        new_wealth_in_deposits: np.ndarray,
-        used_up_wealth_in_deposits: np.ndarray,
-        tau_cf: float,
+            self,
+            new_wealth_in_deposits: np.ndarray,
+            used_up_wealth_in_deposits: np.ndarray,
+            tau_cf: float,
     ) -> np.ndarray:
         return self.functions["wealth"].compute_wealth_in_deposits(
             current_wealth_in_deposits=self.ts.current("wealth_deposits"),
@@ -636,8 +665,8 @@ class Households(Agent):
             price_paid_for_property=self.ts.current("price_paid_for_property"),
             debt_installments=self.ts.current("debt_installments"),
             new_loans=self.ts.current("received_payday_loans")
-            + self.ts.current("received_consumption_expansion_loans")
-            + self.ts.current("received_mortgages"),
+                      + self.ts.current("received_consumption_expansion_loans")
+                      + self.ts.current("received_mortgages"),
             new_real_wealth=self.ts.current("wealth_real_assets") - self.ts.prev("wealth_real_assets"),
             tau_cf=tau_cf,
         )
@@ -647,9 +676,9 @@ class Households(Agent):
         self.ts.total_consumption_expansion_loan_debt.append([self.ts.current("consumption_expansion_loan_debt").sum()])
         self.ts.total_mortgage_debt.append([self.ts.current("mortgage_debt").sum()])
         return (
-            self.ts.current("payday_loan_debt")
-            + self.ts.current("consumption_expansion_loan_debt")
-            + self.ts.current("mortgage_debt")
+                self.ts.current("payday_loan_debt")
+                + self.ts.current("consumption_expansion_loan_debt")
+                + self.ts.current("mortgage_debt")
         )
 
     def compute_net_wealth(self) -> np.ndarray:

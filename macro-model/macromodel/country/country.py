@@ -2,6 +2,7 @@ import h5py
 import logging
 import numpy as np
 import pandas as pd
+from typing import Optional, Any
 from macro_data import SyntheticCountry
 
 from macromodel.banks.banks import Banks
@@ -125,6 +126,7 @@ class Country:
         ]
         households = Households.from_pickled_agent(
             synthetic_population=synthetic_population,
+            synthetic_country=synthetic_country,
             configuration=country_configuration.households,
             country_name=country_name,
             all_country_names=all_country_names,
@@ -203,6 +205,7 @@ class Country:
             central_government=central_government,
             government_entities=government_entities,
             households=households,
+            industry_vectors=synthetic_country.industry_data["industry_vectors"],
             initial_sentiment=(country_configuration.economy.functions.sentiment.parameters["value"]),
             exogenous=exogenous,
         )
