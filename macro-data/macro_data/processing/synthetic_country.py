@@ -585,6 +585,8 @@ class SyntheticCountry:
         weights_by_income: pd.DataFrame,
         independents: Optional[list[str]] = None,
     ):
+        population.compute_household_wealth(independents=independents)
+
         population.compute_household_income(
             total_social_transfers=central_government.central_gov_data["Other Social Benefits"].values[0],
             independents=independents,

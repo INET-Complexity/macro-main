@@ -904,3 +904,25 @@ def default_target_investment(
     tau_cf_: float,
 ) -> np.ndarray:
     return 1.0 / (1 + tau_cf_) * np.outer(investment_weights_, investment_rate * income_).T
+
+
+def set_initial_values(household_data: pd.DataFrame, scale: int):
+    household_data.loc[
+        household_data["Value of Household Vehicles"].isna(),
+        "Value of Household Vehicles",
+    ] = 0.0
+    household_data.loc[
+        household_data["Value of Household Valuables"].isna(),
+        "Value of Household Valuables",
+    ] = 0.0
+    household_data.loc[
+        household_data["Value of Self-Employment Businesses"].isna(),
+        "Value of Self-Employment Businesses",
+    ] = 0.0
+
+    household_data["Wealth Other Real Assets"] = (
+        household_data["Value of Household Vehicles"]
+        + household_data["Value of Household Valuables"]
+        + household_data["Value of Self-Employment Businesses"]
+    )
+    household_data.loc[:, "Wealth Other Real Assets"] *= scale
