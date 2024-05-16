@@ -585,14 +585,19 @@ class SyntheticCountry:
         weights_by_income: pd.DataFrame,
         independents: Optional[list[str]] = None,
     ):
-        population.compute_household_wealth(independents=independents)
+        population.set_wealth_distribution_function(independents=independents)
 
         population.compute_household_income(
             total_social_transfers=central_government.central_gov_data["Other Social Benefits"].values[0],
             independents=independents,
         )
         population.set_household_saving_rates(independents=independents)
-        population.set_household_investment_rates()
+
+        household_investment = country_industry_data["industry_vectors"]["Household Capital Inputs in LCU"].values
+
+        population.set_household_investment_rates(
+            household_investment=household_investment, capital_formation_taxrate=tax_data.capital_formation_tax
+        )
         iot_consumption = country_industry_data["industry_vectors"]["Household Consumption in LCU"]
         population.normalise_household_consumption(
             iot_hh_consumption=iot_consumption, vat=tax_data.value_added_tax, independents=independents

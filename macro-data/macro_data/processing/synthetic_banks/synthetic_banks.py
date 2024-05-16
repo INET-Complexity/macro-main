@@ -226,7 +226,9 @@ class SyntheticBanks(ABC):
         )
 
         self.set_interest_received_from_loans()
-        self.set_interest_received_from_deposits(central_bank_policy_rate=policy_rate)
+        # TODO Override, to align with Sam
+        central_bank_policy_rate = self.bank_data["Interest Rates on Household Deposits"].values[0]
+        self.set_interest_received_from_deposits(central_bank_policy_rate=central_bank_policy_rate)
         self.set_profits()
         self.set_corporate_taxes_paid(tau_bank=tau_bank)
 
@@ -248,43 +250,31 @@ class SyntheticBanks(ABC):
         bank_markup_interest_rate_overdraft_household: float,
     ) -> None:
         # Short-term interest rates for firm loans
-        self.bank_data["Short-Term Interest Rates on Firm Loans"] = (
-            central_bank_policy_rate + bank_markup_interest_rate_short_term_firm_loans
-        )
+        self.bank_data["Short-Term Interest Rates on Firm Loans"] = self.firm_rate
 
         # Long-term interest rates for firm loans
-        self.bank_data["Long-Term Interest Rates on Firm Loans"] = (
-            central_bank_policy_rate + bank_markup_interest_rate_long_term_firm_loans
-        )
+        self.bank_data["Long-Term Interest Rates on Firm Loans"] = self.firm_rate
 
         # Interest rates for household payday loans
-        self.bank_data["Interest Rates on Household Payday Loans"] = (
-            central_bank_policy_rate + bank_markup_interest_rate_household_payday_loans
-        )
+        self.bank_data["Interest Rates on Household Payday Loans"] = self.hh_consumption_rate
 
         # Interest rates for household consumption loans
-        self.bank_data["Interest Rates on Household Consumption Loans"] = (
-            central_bank_policy_rate + bank_markup_interest_rate_household_consumption_loans
-        )
+        self.bank_data["Interest Rates on Household Consumption Loans"] = self.hh_consumption_rate
 
         # Interest rates for mortgages
-        self.bank_data["Interest Rates on Mortgages"] = central_bank_policy_rate + bank_markup_interest_rate_mortgages
+        self.bank_data["Interest Rates on Mortgages"] = self.hh_mortgage_rate
 
         # Interest rates on firm deposits
-        self.bank_data["Interest Rates on Firm Deposits"] = central_bank_policy_rate
+        # self.bank_data["Interest Rates on Firm Deposits"] = central_bank_policy_rate
 
         # Overdraft rate on firm deposits
-        self.bank_data["Overdraft Rate on Firm Deposits"] = (
-            central_bank_policy_rate + bank_markup_interest_rate_overdraft_firm
-        )
+        self.bank_data["Overdraft Rate on Firm Deposits"] = self.firm_rate
 
         # Interest rates on household deposits
-        self.bank_data["Interest Rates on Household Deposits"] = central_bank_policy_rate
+        # self.bank_data["Interest Rates on Household Deposits"] = central_bank_policy_rate
 
         # Overdraft rate on household deposits
-        self.bank_data["Overdraft Rate on Household Deposits"] = (
-            central_bank_policy_rate + bank_markup_interest_rate_overdraft_household
-        )
+        self.bank_data["Overdraft Rate on Household Deposits"] = self.hh_consumption_rate
 
     def set_interest_received_from_loans(self) -> None:
         self.bank_data["Interest received from Loans"] = (

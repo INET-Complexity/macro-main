@@ -1,7 +1,7 @@
 import pytest
 import yaml
 
-from macro_data import DataWrapper
+from macro_data import DataWrapper, SyntheticCountry
 from pathlib import Path
 import tempfile
 
@@ -27,6 +27,8 @@ class TestCreator:
             raw_data_path=raw_data_path,
             single_hfcs_survey=True,
         )
+
+        check_country_credit(creator.synthetic_countries["FRA"])
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
@@ -197,3 +199,25 @@ class TestCreator:
         )
 
         assert creator.synthetic_countries.keys() == {"CAN"}
+
+
+def check_country_credit(country: SyntheticCountry):
+    pop_debt = country.population.household_data["Debt"].sum()
+    firm_debt = country.firms.firm_data["Debt"].sum()
+
+    firm_deposits_in_bank = country.banks.bank_data["Deposits from Firms"].sum()
+    household_deposits_in_bank = country.banks.bank_data["Deposits from Households"].sum()
+
+    household_deposits = country.population.household_data["Wealth in Deposits"].sum()
+    firm_deposits = country.firms.firm_data["Deposits"].sum()
+
+    firm_loans = country.banks.bank_data["Loans to Firms"].sum()
+    household_loans = country.banks.bank_data["Loans to Households"].sum()
+
+    # loans match debt
+    assert firm_loans == firm_debt
+    assert household_loans == pop_debt
+
+    # deposits match deposits in bank
+    assert firm_deposits == firm_deposits_in_bank
+    assert household_deposits == household_deposits_in_bank

@@ -592,17 +592,39 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             + self.household_data["Income from Financial Assets"]
         )
 
-    def set_household_investment_rates(self, investment_rates: np.ndarray | float = 0.2) -> None:
+    def set_household_investment_rates(
+        self,
+        household_investment: np.ndarray,
+        capital_formation_taxrate: float,
+        default_investment_rates: np.ndarray | float = 0.2,
+    ) -> None:
         """
         Sets the investment rates for each household based on the given investment rates.
 
         Parameters:
-            investment_rates (np.ndarray): The investment rates.
+            household_investment (np.ndarray): The household investment by industry.
+            capital_formation_taxrate (float): The capital formation tax rate.
+            default_investment_rates (np.ndarray): The investment rates.
 
         Returns:
             None
         """
-        self.household_data["Investment Rate"] = investment_rates
+        # self.household_data["Investment Rate"] = default_investment_rates
+        income = self.household_data["Income"].values
+        investment_weights = household_investment / household_investment.sum()
+
+        current_investment = np.outer(investment_weights, default_investment_rates * income) / (
+            1 + capital_formation_taxrate
+        )
+
+        factor = household_investment.sum() / current_investment.sum()
+
+        self.household_data["Investment Rate"] = factor * default_investment_rates
+
+        # set initial investment
+        self.household_data["Investment"] = (self.household_data["Income"] * self.household_data["Investment Rate"]) / (
+            1 + capital_formation_taxrate
+        )
 
     def set_household_saving_rates(self, independents: Optional[list[str]] = None) -> None:
         """

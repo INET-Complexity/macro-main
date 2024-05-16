@@ -382,8 +382,8 @@ class OECDEconData:
         # df = df.loc[df["ALL_IN"] == "ALL_IN_RATE_SING_NO_CH"]
         # return df["Value"].values[0] / 100.0
 
-        if country.value in force_tau_income:
-            return force_tau_income[country.value]
+        if country in force_tau_income:
+            return force_tau_income[country]
         else:
             return 0.09  # OECD average
 

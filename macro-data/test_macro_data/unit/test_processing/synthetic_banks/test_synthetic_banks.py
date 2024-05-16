@@ -55,6 +55,8 @@ class TestSyntheticBanks:
             "Mortgages to Households",
             "Consumption Loans to Households",
             "Loans to Households",
+            "Interest Rates on Firm Deposits",
+            "Interest Rates on Household Deposits",
         }
 
         assert set(banks.bank_data.columns) == columns

@@ -134,6 +134,13 @@ class DefaultSyntheticBanks(SyntheticBanks):
             hh_mortgage_rate,
         ) = cls.initialise_rates(country_name, inflation_data, proxy_eu_country, quarter, readers, year)
 
+        initial_central_bank_policy_rate = (
+            readers.policy_rates.get_policy_rates(country_name).loc[f"{year}-Q{quarter}", "Policy Rate"].values[0]
+        )
+
+        bank_data["Interest Rates on Firm Deposits"] = initial_central_bank_policy_rate
+        bank_data["Interest Rates on Household Deposits"] = initial_central_bank_policy_rate
+
         return cls(
             country_name,
             year,
@@ -231,6 +238,13 @@ class DefaultSyntheticBanks(SyntheticBanks):
             hh_mortgage_passthrough,
             hh_mortgage_rate,
         ) = cls.initialise_rates(country_name, inflation_data, proxy_eu_country, quarter, readers, year)
+
+        initial_central_bank_policy_rate = (
+            readers.policy_rates.get_policy_rates(country_name).loc[f"{year}-Q{quarter}", "Policy Rate"].values[0]
+        )
+
+        bank_data["Interest Rates on Firm Deposits"] = initial_central_bank_policy_rate
+        bank_data["Interest Rates on Household Deposits"] = initial_central_bank_policy_rate
 
         return cls(
             country_name,

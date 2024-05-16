@@ -248,7 +248,12 @@ class SyntheticPopulation(ABC):
         independents: Optional[list[str]] = None,
     ): ...
 
-    def set_household_investment_rates(self, investment_rates: np.ndarray | float = 0.2) -> None: ...
+    def set_household_investment_rates(
+        self,
+        household_investment: np.ndarray,
+        capital_formation_taxrate: float,
+        default_investment_rates: np.ndarray | float = 0.2,
+    ) -> None: ...
 
     def normalise_household_investment(
         self, tau_cf: float, iot_hh_investment: np.ndarray | pd.Series, positive_investment_rates: bool = True
@@ -261,3 +266,5 @@ class SyntheticPopulation(ABC):
         vat: float,
         consumption_variance: float = 0.1,
     ) -> None: ...
+
+    def set_wealth_distribution_function(self, independents: Optional[list[str]] = None) -> None: ...
