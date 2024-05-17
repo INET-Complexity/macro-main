@@ -4,13 +4,21 @@ from abc import abstractmethod, ABC
 
 
 class DemandEstimator(ABC):
+    def __init__(
+        self,
+        sectoral_growth_adjustment_speed: float,
+        firm_growth_adjustment_speed: float,
+    ):
+        self.sectoral_growth_adjustment_speed = sectoral_growth_adjustment_speed
+        self.firm_growth_adjustment_speed = max(0.0, min(1.0, firm_growth_adjustment_speed))
+        self.firm_growth_adjustment_speed = firm_growth_adjustment_speed
+
     @abstractmethod
     def compute_estimated_demand(
         self,
         previous_demand: np.ndarray,
-        estimated_sectoral_growth: np.ndarray,
+        current_estimated_growth: float,
         estimated_growth_by_firm: np.ndarray,
-        firm_industry: np.ndarray,
     ) -> np.ndarray:
         pass
 
@@ -19,8 +27,11 @@ class DefaultDemandEstimator(DemandEstimator):
     def compute_estimated_demand(
         self,
         previous_demand: np.ndarray,
-        estimated_sectoral_growth: np.ndarray,
+        current_estimated_growth: float,
         estimated_growth_by_firm: np.ndarray,
-        firm_industry: np.ndarray,
     ) -> np.ndarray:
-        return (1 + estimated_sectoral_growth[firm_industry]) * (1 + estimated_growth_by_firm) * previous_demand
+        return (
+            (1 + self.sectoral_growth_adjustment_speed * current_estimated_growth)
+            * (1 + self.firm_growth_adjustment_speed * estimated_growth_by_firm)
+            * previous_demand
+        )

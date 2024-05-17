@@ -10,8 +10,15 @@ class ExcessDemandSetter(ABC):
         consider_capital_inputs: float,
         consider_labour_inputs: float,
     ):
+        self.consider_intermediate_inputs = max(
+            0.0, min(1.0, consider_intermediate_inputs)
+        )
         self.consider_intermediate_inputs = consider_intermediate_inputs
+        self.consider_capital_inputs = max(
+            0.0, min(1.0, consider_capital_inputs)
+        )
         self.consider_capital_inputs = consider_capital_inputs
+        self.consider_labour_inputs = max(0.0, min(1.0, consider_labour_inputs))
         self.consider_labour_inputs = consider_labour_inputs
 
     @abstractmethod

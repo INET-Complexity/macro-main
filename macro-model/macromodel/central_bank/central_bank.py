@@ -67,8 +67,13 @@ class CentralBank(Agent):
             states,
         )
 
-    def compute_rate(self) -> float:
-        return self.functions["policy_rate"].compute_rate(prev_rate=self.ts.current("policy_rate")[0])
+    def compute_rate(self, inflation: float, growth: float) -> float:
+        return self.functions["policy_rate"].compute_rate(
+            prev_rate=self.ts.current("policy_rate")[0],
+            inflation=inflation,
+            growth=growth,
+            central_bank_states=self.states,
+        )
 
     def save_to_h5(self, group: h5py.Group):
         self.ts.write_to_h5("central_Bank", group)

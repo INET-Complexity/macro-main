@@ -36,7 +36,7 @@ class HPIForecasting(ABC):
 
 
 class HPIForecastingConstant(HPIForecasting):
-    def __init__(self, value: float, *args, **kwargs):
+    def __init__(self, value: float):
         super().__init__()
         self.forecaster = ConstantForecaster(value=value)
 
@@ -48,13 +48,13 @@ class HPIForecastingOLS(HPIForecasting):
 
 
 class HPIImplementedForecastingAutoReg(HPIForecasting):
-    def __init__(self, lags: int, *args, **kwargs):
+    def __init__(self, lags: int):
         super().__init__()
         self.forecaster = ImplementedAutoregForecaster(lags)
 
 
 class HPIManualForecastingAutoReg(HPIForecasting):
-    def __init__(self, lags: int, *args, **kwargs):
+    def __init__(self, lags: int):
         assert lags == 1
         super().__init__()
         self.forecaster = ManualAutoregForecaster()

@@ -52,7 +52,10 @@ class DemandEstimator(BaseModel):
 
     name: Literal["DefaultDemandEstimator"] = "DefaultDemandEstimator"
     path_name: str = "demand_estimator"
-    parameters: dict[str, Any] = {}
+    parameters: dict[str, Any] = {
+        "firm_growth_adjustment_speed": 0.0,
+        "sectoral_growth_adjustment_speed": 0.0,
+    }
 
 
 class ProfitEstimator(BaseModel):
@@ -72,7 +75,7 @@ class DemandForGoods(BaseModel):
     Options: DefaultDemandSetter, DemandExcessSetter
     """
 
-    name: Literal["DefaultDemandSetter", "DemandExcessSetter"] = "DefaultDemandSetter"
+    name: Literal["DefaultDemandSetter"] = "DefaultDemandSetter"
     path_name: str = "demand_for_goods"
     parameters: dict[str, Any] = {}
 
@@ -96,7 +99,10 @@ class DesiredLabour(BaseModel):
 
     name: Literal["DefaultDesiredLabourSetter"] = "DefaultDesiredLabourSetter"
     path_name: str = "desired_labour"
-    parameters: dict[str, Any] = {}
+    parameters: dict[str, Any] = {
+        "consider_intermediate_inputs": False,
+        "consider_capital_inputs": True,
+    }
 
 
 class GrowthEstimator(BaseModel):
@@ -127,9 +133,15 @@ class Prices(BaseModel):
     Options: ConstantPriceSetter, SupplyDemandPriceSetter, CANVASPriceSetter
     """
 
-    name: Literal["ConstantPriceSetter", "SupplyDemandPriceSetter", "CANVASPriceSetter"] = "CANVASPriceSetter"
+    name: Literal["DefaultPriceSetter", "ExogenousPriceSetter"] = "DefaultPriceSetter"
     path_name: str = "prices"
-    parameters: dict[str, Any] = {"price_setting_noise_std": 0.05, "price_setting_speed": 1.0}
+    parameters: dict[str, Any] = {
+        "price_setting_noise_std": 0.05,
+        "price_setting_speed": 1.0,
+        "price_setting_speed_gf": 1.0,
+        "price_setting_speed_dp": 0.0,
+        "price_setting_speed_cp": 0.0,
+    }
 
 
 class Production(BaseModel):
@@ -140,7 +152,7 @@ class Production(BaseModel):
 
     name: Literal["PureLeontief", "CriticalAndImportantLeontief", "CriticalLeontief", "Linear"] = "PureLeontief"
     path_name: str = "production"
-    parameters: dict[str, Any] = {"production_noise_std": 0.0}
+    parameters: dict[str, Any] = {}
 
 
 class TargetCapitalInputs(BaseModel):
@@ -153,7 +165,7 @@ class TargetCapitalInputs(BaseModel):
         "UnconstrainedTargetCapitalInputsSetter"
     )
     path_name: str = "target_capital_inputs"
-    parameters: dict[str, Any] = {"target_capital_inputs_fraction": 0.0}
+    parameters: dict[str, Any] = {"target_capital_inputs_fraction": 0.0, "credit_gap_fraction": 0.0}
 
 
 class TargetCredit(BaseModel):
@@ -162,7 +174,7 @@ class TargetCredit(BaseModel):
     Options: DefaultTargetCreditSetter
     """
 
-    name: Literal["DefaultTargetCreditSetter"] = "DefaultTargetCreditSetter"
+    name: Literal["DefaultTargetCreditSetter", "SimpleTargetCreditSetter"] = "DefaultTargetCreditSetter"
     path_name: str = "target_credit"
     parameters: dict[str, Any] = {}
 
@@ -177,7 +189,7 @@ class TargetIntermediateInputs(BaseModel):
         "UnconstrainedTargetIntermediateInputsSetter"
     )
     path_name: str = "target_intermediate_inputs"
-    parameters: dict[str, Any] = {"target_intermediate_inputs_fraction": 0.0}
+    parameters: dict[str, Any] = {"target_intermediate_inputs_fraction": 0.0, "credit_gap_fraction": 0.0}
 
 
 class WageSetter(BaseModel):
@@ -186,9 +198,13 @@ class WageSetter(BaseModel):
     Options: DefaultFirmWageSetter
     """
 
-    name: Literal["DefaultFirmWageSetter"] = "DefaultFirmWageSetter"
+    name: Literal["WorkEffortFirmWageSetter"] = "WorkEffortFirmWageSetter"
     path_name: str = "wage_setter"
-    parameters: dict[str, Any] = {"labour_market_tightness_markup_scale": 0.0, "markup_time_span": 4}
+    parameters: dict[str, Any] = {
+        "labour_market_tightness_markup_scale": 0.0,
+        "markup_time_span": 4,
+        "max_increase_in_work_effort": 1.5,
+    }
 
 
 class TargetProduction(BaseModel):
@@ -205,6 +221,13 @@ class TargetProduction(BaseModel):
         "maximum_debt_to_equity_ratio": 2.0,
         "maximum_growth_rate": 0.1,
         "target_inventory_to_production_fraction": 0.0,
+        "financial_constrains_fraction": 0.0,
+        "intermediate_inputs_target_considers_labour_inputs": False,
+        "intermediate_inputs_target_considers_intermediate_inputs": False,
+        "intermediate_inputs_target_considers_capital_inputs": True,
+        "capital_inputs_target_considers_labour_inputs": False,
+        "capital_inputs_target_considers_intermediate_inputs": False,
+        "capital_inputs_target_considers_capital_inputs": True,
     }
 
 

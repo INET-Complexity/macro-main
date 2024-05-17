@@ -2,7 +2,6 @@ import h5py
 import logging
 import numpy as np
 import pandas as pd
-from typing import Optional, Any
 from macro_data import SyntheticCountry
 
 from macromodel.banks.banks import Banks
@@ -261,11 +260,10 @@ class Country:
             exogenous_hpi_growth=self.exogenous.house_price_index_before,
             exogenous_ppi_inflation_during=self.exogenous.national_accounts_during["PPI (Growth)"].values.flatten(),
             exogenous_cpi_inflation_during=self.exogenous.national_accounts_during["CPI (Growth)"].values.flatten(),
-            exogenous_output_during=self.exogenous.national_accounts_during[
-                "Real Gross Output (Value)"
+            exogenous_growth_during=self.exogenous.national_accounts_during[
+                "Real Gross Output (Growth)"
             ].values.flatten(),
             forecasting_window=self.forecasting_window,
-            total_initial_production=self.firms.ts.initial("production").sum(),
             assume_zero_growth=self.assume_zero_growth,
             assume_zero_noise=self.assume_zero_noise,
         )
@@ -284,6 +282,19 @@ class Country:
         self.firms.ts.wage_tightness_markup.append(self.firms.compute_wages_markup())
 
         # Firms determine the wages they're willing to pay new employees
+        """
+        self.firms.states["offered_wage_function"] = self.firms.compute_offered_wage_function(
+            corresponding_firm=self.individuals.states["Corresponding Firm ID"],
+            current_individual_labour_inputs=self.individuals.ts.current("labour_inputs"),
+            previous_employee_income=self.individuals.ts.current("employee_income"),
+            unemployment_benefits_by_individual=self.central_government.ts.current(
+                "unemployment_benefits_by_individual"
+            )[0],
+            income_taxes=self.central_government.states["Income Tax"],
+            employee_social_insurance_tax=self.central_government.states["Employee Social Insurance Tax"],
+            employer_social_insurance_tax=self.central_government.states["Employer Social Insurance Tax"],
+        )
+        """
 
         # Individuals set reservation wages
         self.individuals.ts.reservation_wages.append(
@@ -657,6 +668,7 @@ class Country:
             current_good_prices=self.economy.ts.current("good_prices"),
             historic_ppi=np.array(self.economy.ts.historic("ppi")).flatten(),
             expected_inflation=self.economy.ts.current("estimated_ppi_inflation")[0],
+            expected_growth=self.economy.ts.current("estimated_growth")[0],
             forecasting_window=self.forecasting_window,
             assume_zero_growth=self.assume_zero_growth,
             assume_zero_noise=self.assume_zero_noise,
@@ -1042,27 +1054,6 @@ class Country:
 
     def update_population_structure(self) -> None:
         self.individuals.update_demography()
-
-    def reset(
-        self,
-        config: Optional[dict[str, Any]] = None,
-        config_init: Optional[dict[str, Any]] = None,
-    ) -> None:
-        self.individuals.reset(config, config_init)
-        self.households.reset(config, config_init)
-        self.firms.reset(config, config_init)
-        self.central_government.reset(config, config_init)
-        self.government_entities.reset(config, config_init)
-        self.banks.reset(config, config_init)
-        self.central_bank.reset(config, config_init)
-
-        self.economy.reset(config, config_init)
-
-        self.labour_market.reset(config, config_init)
-        self.credit_market.reset(config, config_init)
-        self.housing_market.reset(config, config_init)
-
-        self.exogenous.reset(config, config_init)
 
     def save_to_h5(self, h5_file: h5py.File):
         group = h5_file.create_group(self.country_name)

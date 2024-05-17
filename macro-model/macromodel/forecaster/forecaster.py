@@ -9,7 +9,7 @@ from typing import Literal
 
 def check_len(data: np.ndarray):
     if len(data) < 3:
-        raise ValueError("Array is too small to be forecasted")
+        raise ValueError("Array is too small to be forecasted", data)
 
 
 class Forecaster(ABC):
@@ -19,7 +19,7 @@ class Forecaster(ABC):
 
 
 class ConstantForecaster(Forecaster):
-    def __init__(self, value: float, *args, **kwargs):
+    def __init__(self, value: float):
         self.value = value
 
     def forecast(self, data: np.ndarray, t: int = 1, assume_zero_noise: bool = False) -> np.ndarray:
@@ -36,7 +36,7 @@ class OLSForecaster(Forecaster):
 
 
 class ImplementedAutoregForecaster(Forecaster):
-    def __init__(self, lags: int, trend: Literal["n", "c", "t", "ct"] = "t", *args, **kwargs):
+    def __init__(self, lags: int, trend: Literal["n", "c", "t", "ct"] = "t"):
         self.lags = lags
         self.trend = trend
 

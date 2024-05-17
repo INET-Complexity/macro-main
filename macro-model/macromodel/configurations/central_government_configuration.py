@@ -3,7 +3,9 @@ from typing import Literal
 
 
 class SocialBenefits(BaseModel):
-    name: Literal["ConstantSocialBenefitsSetter", "DefaultSocialBenefitsSetter"] = "DefaultSocialBenefitsSetter"
+    name: Literal["ConstantSocialBenefitsSetter", "DefaultSocialBenefitsSetter", "GrowthSocialBenefitsSetter"] = (
+        "DefaultSocialBenefitsSetter"
+    )
     path_name: str = "social_benefits"
     parameters: dict = {}
 

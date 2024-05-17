@@ -18,6 +18,8 @@ class InflationForecasting(ABC):
     def forecast_inflation(
         self,
         historic_inflation: np.ndarray,
+        exogenous_inflation: np.ndarray,
+        current_time: int,
         min_inflation: Optional[float] = None,
         max_inflation: Optional[float] = None,
         t: int = 1,
@@ -36,25 +38,43 @@ class InflationForecasting(ABC):
 
 
 class InflationForecastingConstant(InflationForecasting):
-    def __init__(self, value: float, *args, **kwargs):
+    def __init__(self, value: float):
         super().__init__()
         self.forecaster = ConstantForecaster(value=value)
 
 
 class InflationForecastingOLS(InflationForecasting):
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         super().__init__()
         self.forecaster = OLSForecaster()
 
 
 class InflationImplementedForecastingAutoReg(InflationForecasting):
-    def __init__(self, lags: int, *args, **kwargs):
+    def __init__(self, lags: int):
         super().__init__()
         self.forecaster = ImplementedAutoregForecaster(lags)
 
 
 class InflationManualForecastingAutoReg(InflationForecasting):
-    def __init__(self, lags: int, *args, **kwargs):
+    def __init__(self, lags: int):
         assert lags == 1
         super().__init__()
         self.forecaster = ManualAutoregForecaster()
+
+
+class ExogenousInflationForecasting(InflationForecasting):
+    def __init__(self, lags: int):
+        super().__init__()
+        self.forecaster = None
+
+    def forecast_inflation(
+        self,
+        historic_inflation: np.ndarray,
+        exogenous_inflation: np.ndarray,
+        current_time: int,
+        min_inflation: Optional[float] = None,
+        max_inflation: Optional[float] = None,
+        t: int = 1,
+        assume_zero_noise: bool = False,
+    ) -> float | np.ndarray:
+        return np.array([exogenous_inflation[current_time]])

@@ -80,14 +80,17 @@ class CentralGovernment(Agent):
 
     def update_benefits(
         self,
-        historic_cpi_inflation: list[np.ndarray],
-        exogenous_cpi_inflation: np.ndarray,
+        historic_ppi_inflation: list[np.ndarray],
+        exogenous_ppi_inflation: np.ndarray,
+        current_estimated_ppi_inflation: float,
         current_unemployment_rate: float,
+        current_estimated_growth: float,
     ) -> None:
-        all_cpi_inflation = np.concatenate(
+        all_ppi_inflation = np.concatenate(
             (
-                exogenous_cpi_inflation,
-                np.array(historic_cpi_inflation).flatten(),
+                exogenous_ppi_inflation,
+                np.array(historic_ppi_inflation).flatten(),
+                [current_estimated_ppi_inflation],
             )
         )
 
@@ -96,7 +99,8 @@ class CentralGovernment(Agent):
             [
                 self.functions["social_benefits"].compute_unemployment_benefits(
                     prev_unemployment_benefits=self.ts.current("unemployment_benefits_by_individual")[0],
-                    historic_cpi_inflation=all_cpi_inflation,
+                    historic_ppi_inflation=all_ppi_inflation,
+                    current_estimated_growth=current_estimated_growth,
                     current_unemployment_rate=current_unemployment_rate,
                     model=self.states["unemployment_benefits_model"],
                 )
@@ -108,7 +112,8 @@ class CentralGovernment(Agent):
             [
                 self.functions["social_benefits"].compute_regular_transfer_to_households(
                     prev_regular_transfer_to_households=self.ts.current("total_other_benefits")[0],
-                    historic_cpi_inflation=all_cpi_inflation,
+                    historic_ppi_inflation=all_ppi_inflation,
+                    current_estimated_growth=current_estimated_growth,
                     current_unemployment_rate=current_unemployment_rate,
                     model=self.states["other_benefits_model"],
                 )
@@ -119,16 +124,16 @@ class CentralGovernment(Agent):
         self,
         current_individual_activity_status: np.ndarray,
     ) -> np.ndarray:
-        unemployment_benefits = np.zeros_like(current_individual_activity_status)
+        unemployment_benefits = np.zeros(current_individual_activity_status.shape)
         unemployment_benefits[current_individual_activity_status == ActivityStatus.UNEMPLOYED] = self.ts.current(
             "unemployment_benefits_by_individual"
-        )
+        )[0]
         return unemployment_benefits.astype(float)
 
     def compute_taxes(
         self,
         current_ind_employee_income: np.ndarray,
-        current_total_rent_paid: np.ndarray,
+        current_total_rent_paid: float,
         current_income_financial_assets: np.ndarray,
         current_ind_activity: np.ndarray,
         current_ind_realised_cons: np.ndarray,
@@ -172,11 +177,11 @@ class CentralGovernment(Agent):
         self.ts.taxes_income.append(
             [
                 self.states["Income Tax"] * (1 - self.states["Employee Social Insurance Tax"]) * tot_wages_employed_ind
-                + self.states["Income Tax"] * current_total_rent_paid.sum()
+                + self.states["Income Tax"] * current_total_rent_paid
                 + self.states["Income Tax"] * current_income_financial_assets.sum(),
             ]
         )
-        self.ts.taxes_rental_income.append([self.states["Income Tax"] * current_total_rent_paid.sum()])
+        self.ts.taxes_rental_income.append([self.states["Income Tax"] * current_total_rent_paid])
 
         # Taxes on employer social insurance
         self.ts.taxes_employer_si.append([self.states["Employer Social Insurance Tax"] * tot_wages_employed_ind])
@@ -192,7 +197,10 @@ class CentralGovernment(Agent):
             + self.ts.current("taxes_exports")[0]
         )
 
-    def compute_revenue(self, household_rent_paid_to_government: float) -> float:
+    def compute_revenue(
+        self,
+        household_rent_paid_to_government: float,
+    ) -> float:
         self.ts.total_rent_received.append([household_rent_paid_to_government])
         return (
             self.ts.current("taxes_production")[0]

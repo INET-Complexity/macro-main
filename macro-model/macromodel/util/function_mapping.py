@@ -36,7 +36,7 @@ def get_functions(
     return functions
 
 
-def functions_from_model(model: BaseModel, loc: str):
+def functions_from_model(model: BaseModel, loc: str) -> dict[str, Any]:
     loaded_classes = {}
     for field_name, field_value in model:
         path_name = field_value.path_name

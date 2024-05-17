@@ -8,9 +8,9 @@ class FirmDemography(ABC):
     def handle_firm_insolvency(
         self,
         current_firm_is_insolvent: np.ndarray,
-        current_firm_debts: np.ndarray,
+        current_firm_equity: np.ndarray,
         current_firm_deposits: np.ndarray,
-    ) -> None:
+    ) -> np.ndarray:
         pass
 
 
@@ -18,20 +18,17 @@ class NoFirmDemography(FirmDemography):
     def handle_firm_insolvency(
         self,
         current_firm_is_insolvent: np.ndarray,
-        current_firm_debts: np.ndarray,
+        current_firm_equity: np.ndarray,
         current_firm_deposits: np.ndarray,
-    ) -> None:
-        pass
+    ) -> np.ndarray:
+        return np.full(current_firm_is_insolvent.shape, False)
 
 
 class DefaultFirmDemography(FirmDemography):
     def handle_firm_insolvency(
         self,
         current_firm_is_insolvent: np.ndarray,
-        current_firm_debts: np.ndarray,
+        current_firm_equity: np.ndarray,
         current_firm_deposits: np.ndarray,
     ) -> None:
-        insolvent_firms = np.logical_and(current_firm_debts < 0, current_firm_deposits < 0)
-        current_firm_is_insolvent[insolvent_firms] = True
-        current_firm_debts[insolvent_firms] = 0.0
-        current_firm_deposits[insolvent_firms] = 0.0
+        return np.logical_and(current_firm_equity < 0, current_firm_deposits < 0)

@@ -12,7 +12,13 @@ class LabourProductivitySetter(ABC):
         work_effort_increase_speed: float,
     ):
         self.max_increase_in_work_effort = max_increase_in_work_effort
+        self.consider_intermediate_inputs = max(
+            0.0, min(1.0, consider_intermediate_inputs)
+        )
         self.consider_intermediate_inputs = consider_intermediate_inputs
+        self.consider_capital_inputs = max(
+            0.0, min(1.0, consider_capital_inputs)
+        )
         self.consider_capital_inputs = consider_capital_inputs
         self.work_effort_increase_speed = work_effort_increase_speed
 

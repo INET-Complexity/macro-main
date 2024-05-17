@@ -8,7 +8,11 @@ class Growth(BaseModel):
     """
 
     name: Literal[
-        "GrowthForecastingConstant", "GrowthManualForecastingAutoReg", "GrowthImplementedForecastingAutoReg"
+        "GrowthForecastingConstant",
+        "GrowthForecastingOLS",
+        "GrowthManualForecastingAutoReg",
+        "GrowthImplementedForecastingAutoReg",
+        "ExogenousGrowthForecasting",
     ] = "GrowthForecastingConstant"
     parameters: dict = {"value": 0.0}
     path_name: str = "growth"
@@ -19,9 +23,12 @@ class HPI(BaseModel):
     The function used for setting how the house price index is centrally forecasted.
     """
 
-    name: Literal["HPIForecastingConstant", "HPIManualForecastingAutoReg", "HPIImplementedForecastingAutoReg"] = (
-        "HPIForecastingConstant"
-    )
+    name: Literal[
+        "HPIForecastingConstant",
+        "HPIManualForecastingAutoReg",
+        "HPIImplementedForecastingAutoReg",
+        "HPIManualForecastingAutoReg",
+    ] = "HPIForecastingConstant"
     parameters: dict = {"value": 0.0}
     path_name: str = "house_price_index"
 
@@ -32,7 +39,10 @@ class Inflation(BaseModel):
     """
 
     name: Literal[
-        "InflationForecastingConstant", "InflationImplementedForecastingAutoReg", "InflationManualForecastingAutoReg"
+        "InflationForecastingConstant",
+        "InflationImplementedForecastingAutoReg",
+        "InflationManualForecastingAutoReg",
+        "ExogenousInflationForecasting",
     ] = "InflationForecastingConstant"
     parameters: dict = {"value": 0.0}
     path_name: str = "inflation"
@@ -56,7 +66,7 @@ class EconomyFunctions(BaseModel):
     growth: Growth = Growth()
     house_price_index: HPI = HPI()
     inflation: Inflation = Inflation()
-    sentiment: Sentiment = Sentiment()
+    # sentiment: Sentiment = Sentiment()
 
 
 class EconomyConfiguration(BaseModel):

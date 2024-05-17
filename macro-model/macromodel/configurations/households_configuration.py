@@ -3,7 +3,7 @@ from typing import Any, Literal
 
 
 class HouseholdsParameters(BaseModel):
-    consumption_weights_by_income_quantile: bool = False
+    take_consumption_weights_by_income_quantile: bool = False
 
 
 class FinancialAssetsFunction(BaseModel):
@@ -13,7 +13,7 @@ class FinancialAssetsFunction(BaseModel):
 
     path_name: str = "financial_assets"
     name: Literal["ConstantFinancialAssets", "DefaultFinancialAssets"] = "ConstantFinancialAssets"
-    parameters: dict[str, Any] = {}
+    parameters: dict[str, Any] = {"income_from_fa_noise_std": 0.0}
 
 
 class ConsumptionFunction(BaseModel):
@@ -22,11 +22,22 @@ class ConsumptionFunction(BaseModel):
     """
 
     path_name: str = "consumption"
-    name: Literal["DefaultHouseholdConsumption"] = "DefaultHouseholdConsumption"
+    name: Literal["DefaultHouseholdConsumption", "ExogenousHouseholdConsumption"] = "DefaultHouseholdConsumption"
     parameters: dict[str, Any] = {
         "consumption_smoothing_fraction": 0.0,
         "consumption_smoothing_window": 12,
+        "minimum_consumption_fraction": 1.0,
     }
+
+
+class InvestmentFunction(BaseModel):
+    """
+    The function used for setting household investment.
+    """
+
+    path_name: str = "investment"
+    name: Literal["DefaultHouseholdInvestment", "NoHouseholdInvestment"] = "DefaultHouseholdInvestment"
+    parameters: dict[str, Any] = {}
 
 
 class InsolvencyFunction(BaseModel):
@@ -50,11 +61,24 @@ class PropertyFunction(BaseModel):
         "cost_comparison_temperature": 1.0,
         "maximum_price_income_coefficient": 5.0,
         "maximum_price_income_exponent": 1.0,
-        "maximum_price_noise_std": 0.3,
-        "probability_stay_in_owned_property": 1.0,
-        "probability_stay_in_rented_property": 1.0,
+        "maximum_price_noise_variance": 0.3,
+        "probability_stay_in_owned_property": 0.5,
+        "probability_stay_in_rented_property": 0.5,
         "psychological_pressure_of_renting": 0.1,
         "rental_yield_btl_temperature": 1.0,
+        "price_initial_markup": 0.0,
+        "price_decrease_probability": 0.0,
+        "price_decrease_mean": 0.0,
+        "price_decrease_variance": 0.0,
+        "rent_initial_markup": 0.0,
+        "rent_decrease_probability": 0.0,
+        "rent_decrease_mean": 0.0,
+        "rent_decrease_variance": 0.0,
+        "maximum_price_noise_mean": 0.0,
+        "maximum_rent_income_coefficient": 0.2,
+        "maximum_rent_income_exponent": 0.0,
+        "partial_rent_inflation_indexation": 0.0,
+        "partial_rent_inflation_delay": 1.0,
     }
 
 
@@ -94,7 +118,7 @@ class TargetCreditFunction(BaseModel):
     path_name: str = "target_credit"
     name: Literal["DefaultHouseholdTargetCredit"] = "DefaultHouseholdTargetCredit"
     parameters: dict[str, Any] = {
-        "consumption_expansion_quantile": 0.0,
+        "down_payment_fraction": 1.0,
     }
 
 
@@ -106,8 +130,7 @@ class WealthFunction(BaseModel):
     path_name: str = "wealth"
     name: Literal["DefaultWealthSetter"] = "DefaultWealthSetter"
     parameters: dict[str, Any] = {
-        "other_real_assets_depreciation_rate": 0.00,
-        "independents": ["Income", "Debt"],
+        "other_real_assets_depreciation_rate": 0.05,
     }
 
 
@@ -135,6 +158,7 @@ class HouseholdsFunctions(BaseModel):
     wealth: WealthFunction = WealthFunction()
     social_transfers: SocialTransfersFunction = SocialTransfersFunction()
     saving_rates: SavingRatesFunction = SavingRatesFunction()
+    investment: InvestmentFunction = InvestmentFunction()
 
 
 class HouseholdsConfiguration(BaseModel):
@@ -144,4 +168,4 @@ class HouseholdsConfiguration(BaseModel):
 
     functions: HouseholdsFunctions = HouseholdsFunctions()
     parameters: HouseholdsParameters = HouseholdsParameters()
-    use_consumption_weights_by_income: bool = False
+    take_consumption_weights_by_income_quantile: bool = False

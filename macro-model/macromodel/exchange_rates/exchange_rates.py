@@ -62,3 +62,5 @@ class ExchangeRates:
                 if self.exchange_rates_model[country_name] is None:
                     raise ValueError("Exchange rates model is not provided")
                 return self.exchange_rates_model[country_name].predict(np.array([prev_inflation, prev_growth]))
+            case _:
+                raise ValueError("Unknown Exchange Rates Type")
