@@ -48,8 +48,10 @@ class Economy:
         initial_sentiment: float,
     ):
         initial_firm_prices = firms.ts.current("price")
-        initial_firm_total_sales = firms.ts.current("total_sales").sum()
-        initial_sectoral_firm_sales = np.bincount(firms.states["Industry"], weights=firms.ts.current("total_sales"), minlength=firms.n_industries)
+        initial_total_output = (firms.ts.current("price") * firms.ts.current("production")).sum()
+        initial_sectoral_firm_sales = np.bincount(
+            firms.states["Industry"], weights=firms.ts.current("total_sales"), minlength=firms.n_industries
+        )
         initial_firm_total_used_ii = firms.ts.current("used_intermediate_inputs_costs").sum()
         initial_sectoral_firm_used_ii = np.bincount(
             firms.states["Industry"],
@@ -64,12 +66,12 @@ class Economy:
             - firms.ts.current("used_intermediate_inputs_costs").sum()
             # + firms.ts.current("total_capital_inputs_bought_costs").sum()  # TODO: NB -> Removed in Sam's code
         )
-        initial_gross_fixed_capital_formation = firms.ts.current(
-            "total_capital_inputs_bought_costs"
-        ).sum() + (1 + central_government.states["Capital Formation Tax"]) * households.ts.current("initial_investment").sum()
-        initial_total_operating_surplus = (
-            firms.ts.current("gross_operating_surplus_mixed_income").sum()
+        initial_gross_fixed_capital_formation = (
+            firms.ts.current("total_capital_inputs_bought_costs").sum()
+            + (1 + central_government.states["Capital Formation Tax"])
+            * households.ts.current("initial_investment").sum()
         )
+        initial_total_operating_surplus = firms.ts.current("gross_operating_surplus_mixed_income").sum()
         initial_total_wages = firms.ts.current("total_wage").sum()
 
         all_other_countries = [c for c in all_country_names if c != country_name]
@@ -77,32 +79,31 @@ class Economy:
         initial_individual_activity = individuals.states["Activity Status"]
         initial_cpi_inflation = exogenous.ts.initial("cpi_inflation")[0]
         initial_ppi_inflation = exogenous.ts.initial("ppi_inflation")[0]
-        initial_hpi_inflation = exogenous.ts.initial("hpi_inflation")[0]  # Nominal House Price Index Growth is saved as hpi_inflation
+        initial_hpi_inflation = exogenous.ts.initial("hpi_inflation")[
+            0
+        ]  # Nominal House Price Index Growth is saved as hpi_inflation
         initial_real_rent_paid = households.ts.current("rent")
         initial_imp_rent_paid = households.ts.current("rent_imputed")
         initial_hh_rental_income = households.ts.current("income_rental")
         initial_hh_consumption = households.ts.current("total_consumption")[0]
-        initial_hh_consumption_before_vat = households.ts.current(
-            "total_consumption_before_vat"
-        )[0]
+        initial_hh_consumption_before_vat = households.ts.current("total_consumption_before_vat")[0]
         initial_gov_consumption = government_entities.ts.current("total_consumption")[0]
         initial_cg_rent_received = central_government.ts.current("total_rent_received")[0]
         initial_cg_taxes_rental_income = central_government.ts.current("taxes_rental_income")[0]
         # initial_sectoral_growth = exogenous.ts.initial("sectoral_growth")
-        #initial_total_growth = exogenous.ts.initial("total_growth")[0]
+        # initial_total_growth = exogenous.ts.initial("total_growth")[0]
 
         # TODO: again, this is hard-coded in Sam's code (default_initial_growth is a default value of _init_countries)
         #  We need to decide what to do with this, and where to put it.
 
         default_initial_growth: float = 0.01
         initial_total_growth = (
-                    default_initial_growth
-                    if "Real Gross Output (Growth)"
-                    not in exogenous.national_accounts_during.columns
-                    else exogenous.national_accounts_during[
-                        "Real Gross Output (Growth)"
-                    ].values[0]
-                ),
+            (
+                default_initial_growth
+                if "Real Gross Output (Growth)" not in exogenous.national_accounts_during.columns
+                else exogenous.national_accounts_during["Real Gross Output (Growth)"].values[0]
+            ),
+        )
 
         # initial_imports = exogenous.ts.initial("sectoral_imports")
         # initial_imports_by_country = {
@@ -132,8 +133,8 @@ class Economy:
             country_name=country_name,
             all_country_names=all_country_names,
             n_industries=firms.n_industries,
-            initial_firm_prices=initial_firm_prices, #.mean(),
-            initial_firm_total_sales=initial_firm_total_sales,
+            initial_firm_prices=initial_firm_prices,  # .mean(),
+            initial_firm_total_sales=initial_total_output,
             initial_sectoral_firm_sales=initial_sectoral_firm_sales,
             initial_firm_total_used_ii=initial_firm_total_used_ii,
             initial_sectoral_firm_used_ii=initial_sectoral_firm_used_ii,
@@ -161,7 +162,7 @@ class Economy:
             initial_imports_by_country=initial_imports_by_country,
             initial_exports=initial_exports,
             initial_exports_by_country=initial_exports_by_country,
-            initial_total_growth=initial_total_growth,
+            initial_total_growth=initial_total_growth[0],
             export_taxes=export_taxes,
             initial_npl_ratio=initial_npl_ratio,
         )
