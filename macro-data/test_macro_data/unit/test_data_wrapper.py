@@ -30,6 +30,8 @@ class TestCreator:
 
         check_country_credit(creator.synthetic_countries["FRA"])
 
+        check_country_gdp(creator.synthetic_countries["FRA"])
+
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             tmp_file = tmp / "creator.pkl"
@@ -138,6 +140,14 @@ class TestCreator:
 
         assert creator.synthetic_countries.keys() == {"FRA", "USA", "CAN"}
 
+        check_country_gdp(creator.synthetic_countries["FRA"])
+        check_country_gdp(creator.synthetic_countries["USA"])
+        check_country_gdp(creator.synthetic_countries["CAN"])
+
+        check_country_credit(creator.synthetic_countries["FRA"])
+        check_country_credit(creator.synthetic_countries["USA"])
+        check_country_credit(creator.synthetic_countries["CAN"])
+
         for country_name in [france, united_states, canada]:
             exch_rate = multic_readers.exchange_rates.from_usd_to_lcu(country_name, 2014)
             usd_consumption = multic_readers.icio[2014].get_hh_consumption(country_name)
@@ -221,3 +231,12 @@ def check_country_credit(country: SyntheticCountry):
     # deposits match deposits in bank
     assert firm_deposits == firm_deposits_in_bank
     assert household_deposits == household_deposits_in_bank
+
+
+def check_country_gdp(country: SyntheticCountry):
+    gdp_output = country.gdp_output
+    gdp_income = country.gdp_income
+    gdp_expenditure = country.gdp_expenditure
+
+    assert gdp_output == pytest.approx(gdp_income, rel=1e-4)
+    assert gdp_output == pytest.approx(gdp_expenditure, rel=1e-4)

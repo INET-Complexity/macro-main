@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 
 from macro_data.configuration import CountryDataConfiguration
@@ -675,3 +676,90 @@ class SyntheticCountry:
 
         self.credit_market = credit_market
         self.housing_market = housing_market
+
+    @property
+    def gdp_output(self) -> float:
+        total_sales = (self.firms.firm_data["Production"] * self.firms.firm_data["Price"]).sum()
+        used_intermediate_inputs = self.firms.used_intermediate_inputs
+        used_intermediate_inputs_costs = np.matmul(self.firms.firm_data["Price"].values, used_intermediate_inputs).sum()
+
+        total_taxes_on_products = self.central_government.central_gov_data["Taxes on Products"].values[0]
+        total_taxes_on_production = self.central_government.central_gov_data["Taxes on Production"].values[0]
+
+        rent = self.population.household_data["Rent Paid"].sum()
+        imputed_rent = self.population.household_data["Rent Imputed"].sum()
+
+        return (
+            total_sales
+            - used_intermediate_inputs_costs
+            + total_taxes_on_products
+            - total_taxes_on_production
+            + rent
+            + imputed_rent
+        )
+
+    @property
+    def gdp_expenditure(self) -> float:
+        used_capital_inputs = self.firms.used_capital_inputs
+        used_capital_inputs_costs = np.matmul(used_capital_inputs.T, self.firms.firm_data["Price"].values).sum()
+
+        investment_rate = self.population.household_data["Investment Rate"].values
+        investment_weights = self.industry_data["industry_vectors"]["Household Capital Inputs in LCU"]
+        investment_weights = investment_weights.values / investment_weights.values.sum()
+
+        income = self.population.household_data["Income"].values
+
+        gross_hh_investment = np.outer(investment_weights, investment_rate * income).T
+
+        capital_formation = used_capital_inputs_costs + gross_hh_investment.sum()
+
+        hh_consumption = self.industry_data["industry_vectors"]["Household Consumption in LCU"].sum() * (
+            1 + self.tax_data.value_added_tax
+        )
+
+        gov_consumption = self.government_entities.gov_entity_data["Consumption in LCU"].sum()
+
+        exports = self.industry_data["industry_vectors"]["Exports in LCU"].sum() * (1 + self.tax_data.export_tax)
+
+        imports = self.industry_data["industry_vectors"]["Imports in LCU"].sum()
+
+        rent = self.population.household_data["Rent Paid"].sum()
+        imputed_rent = self.population.household_data["Rent Imputed"].sum()
+
+        return capital_formation + hh_consumption + gov_consumption + exports - imports + rent + imputed_rent
+
+    @property
+    def gdp_income(self) -> 0:
+        total_sales = (self.firms.firm_data["Production"] * self.firms.firm_data["Price"]).sum()
+        used_intermediate_inputs = self.firms.used_intermediate_inputs
+        used_intermediate_inputs_costs = np.matmul(
+            used_intermediate_inputs.T, self.firms.firm_data["Price"].values
+        ).sum()
+
+        wages = self.firms.firm_data["Total Wages Paid"].sum()
+
+        taxes_on_production = self.firms.firm_data["Taxes paid on Production"].sum()
+
+        operating_surplus = total_sales - wages - used_intermediate_inputs_costs - taxes_on_production
+
+        # taxes_on_production_gov = self.central_government.central_gov_data["Taxes on Production"].values[0]
+
+        taxes_on_products_gov = self.central_government.central_gov_data["Taxes on Products"].values[0]
+
+        cg_rent_received = self.central_government.central_gov_data["Total Social Housing Rent"].values[0]
+
+        cg_taxes_rental_income = self.central_government.central_gov_data["Rental Income Taxes"].values[0]
+
+        rent_imputed = self.population.household_data["Rent Imputed"].sum()
+
+        hh_rental_income = self.population.household_data["Rental Income from Real Estate"].sum()
+
+        return (
+            operating_surplus
+            + wages
+            + taxes_on_products_gov
+            + cg_taxes_rental_income
+            + cg_rent_received
+            + rent_imputed
+            + hh_rental_income
+        )
