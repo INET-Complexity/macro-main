@@ -1,6 +1,6 @@
 import numpy as np
 
-from inet_macromodel.timeseries import TimeSeries
+from macromodel.timeseries import TimeSeries
 
 from abc import abstractmethod, ABC
 
@@ -10,13 +10,10 @@ from typing import Tuple, Optional, Any
 class WealthSetter(ABC):
     def __init__(
         self,
-        independents: list[str],
         other_real_assets_depreciation_rate: float,
     ):
-        self.independents = independents
-        self.other_real_assets_depreciation_rate = (
-            other_real_assets_depreciation_rate
-        )
+        self.other_real_assets_depreciation_rate = other_real_assets_depreciation_rate
+        self.independents = ["Income", "Debt"]
 
     @abstractmethod
     def distribute_new_wealth(
@@ -92,10 +89,8 @@ class SimpleWealthSetter(WealthSetter):
         current_investment_in_other_real_assets: np.ndarray,
     ) -> np.ndarray:
         return (
-            (1 - self.other_real_assets_depreciation_rate)
-            * current_wealth_in_other_real_assets
-            + current_investment_in_other_real_assets
-        )
+            1 - self.other_real_assets_depreciation_rate
+        ) * current_wealth_in_other_real_assets + current_investment_in_other_real_assets
 
     def compute_wealth_in_other_financial_assets(
         self,
@@ -162,9 +157,7 @@ class DefaultWealthSetter(WealthSetter):
         current_wealth_in_deposits: np.ndarray,
         current_wealth_in_other_financial_assets: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray]:
-        used_up_wealth_in_other_financial_assets = np.minimum(
-            current_wealth_in_other_financial_assets, used_up_wealth
-        )
+        used_up_wealth_in_other_financial_assets = np.minimum(current_wealth_in_other_financial_assets, used_up_wealth)
         used_up_wealth_in_deposits = np.minimum(
             current_wealth_in_deposits,
             used_up_wealth - used_up_wealth_in_other_financial_assets,
@@ -180,10 +173,8 @@ class DefaultWealthSetter(WealthSetter):
         current_investment_in_other_real_assets: np.ndarray,
     ) -> np.ndarray:
         return (
-            (1 - self.other_real_assets_depreciation_rate)
-            * current_wealth_in_other_real_assets
-            + current_investment_in_other_real_assets
-        )
+            1 - self.other_real_assets_depreciation_rate
+        ) * current_wealth_in_other_real_assets + current_investment_in_other_real_assets
 
     def compute_wealth_in_other_financial_assets(
         self,

@@ -14,6 +14,7 @@ def create_banks_timeseries(bank_data: pd.DataFrame, long_term_ir: float, scale:
         deposits=bank_data["Deposits"].values,
         deposits_histogram=get_histogram(bank_data["Deposits"].values, scale),
         profits=bank_data["Profits"].values,
+        expected_profits=bank_data["Profits"].values,
         profits_histogram=get_histogram(bank_data["Profits"].values, scale),
         market_share=bank_data["Market Share"].values,
         market_share_histogram=get_histogram(bank_data["Market Share"].values, None),
@@ -73,4 +74,38 @@ def create_banks_timeseries(bank_data: pd.DataFrame, long_term_ir: float, scale:
         average_overdraft_rate_on_household_deposits=[bank_data["Overdraft Rate on Household Deposits"].values.mean()],
         #
         interest_rate_on_government_debt=np.array([long_term_ir]),
+        new_loans_fraction_firms=np.divide(
+            bank_data["Loans to Firms"].values,
+            bank_data["Loans to Firms"].values
+            + bank_data["Consumption Loans to Households"].values
+            + bank_data["Mortgages to Households"].values,
+            out=np.zeros(bank_data["Loans to Firms"].values.shape),
+            where=bank_data["Loans to Firms"].values
+            + bank_data["Consumption Loans to Households"].values
+            + bank_data["Mortgages to Households"].values
+            != 0.0,
+        ),
+        new_loans_fraction_hh_cons=np.divide(
+            bank_data["Consumption Loans to Households"].values,
+            bank_data["Loans to Firms"].values
+            + bank_data["Consumption Loans to Households"].values
+            + bank_data["Mortgages to Households"].values,
+            out=np.zeros(bank_data["Consumption Loans to Households"].values.shape),
+            where=bank_data["Loans to Firms"].values
+            + bank_data["Consumption Loans to Households"].values
+            + bank_data["Mortgages to Households"].values
+            != 0.0,
+        ),
+        new_loans_fraction_mortgages=np.divide(
+            bank_data["Mortgages to Households"].values,
+            bank_data["Loans to Firms"].values
+            + bank_data["Consumption Loans to Households"].values
+            + bank_data["Mortgages to Households"].values,
+            out=np.zeros(bank_data["Mortgages to Households"].values.shape),
+            where=bank_data["Loans to Firms"].values
+            + bank_data["Consumption Loans to Households"].values
+            + bank_data["Mortgages to Households"].values
+            != 0.0,
+        ),
+        #
     )

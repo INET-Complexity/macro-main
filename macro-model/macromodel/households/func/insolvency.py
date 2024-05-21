@@ -1,9 +1,9 @@
 import numpy as np
 
 from abc import abstractmethod, ABC
-from inet_macromodel.banks.banks import Banks
-from inet_macromodel.households.households import Households
-from inet_macromodel.credit_market.credit_market import CreditMarket
+from macromodel.banks.banks import Banks
+from macromodel.households.households import Households
+from macromodel.credit_market.credit_market import CreditMarket
 
 from typing import Tuple
 
@@ -32,32 +32,18 @@ class DefaultHouseholdInsolvencyHandler(HouseholdInsolvencyHandler):
                 households.ts.current("wealth_deposits") < 0,
             )
         )[0]
-        bad_hh_cons_loans, bad_mortgages = (
-            credit_market.remove_loans_to_households(insolvent_households)
-        )
+        bad_hh_cons_loans, bad_mortgages = credit_market.remove_loans_to_households(insolvent_households)
 
         # Calculate NPL ratios
-        total_cons_loans = credit_market.ts.current(
-            "total_outstanding_loans_granted_households_consumption"
-        )[0]
+        total_cons_loans = credit_market.ts.current("total_outstanding_loans_granted_households_consumption")[0]
         if total_cons_loans == 0.0:
             npl_hh_cons_loans = 0.0
         else:
             npl_hh_cons_loans = bad_hh_cons_loans / total_cons_loans
-        if (
-            credit_market.ts.current(
-                "total_outstanding_loans_granted_mortgages"
-            )[0]
-            == 0.0
-        ):
+        if credit_market.ts.current("total_outstanding_loans_granted_mortgages")[0] == 0.0:
             npl_mortgages = 0.0
         else:
-            npl_mortgages = (
-                bad_mortgages
-                / credit_market.ts.current(
-                    "total_outstanding_loans_granted_mortgages"
-                )[0]
-            )
+            npl_mortgages = bad_mortgages / credit_market.ts.current("total_outstanding_loans_granted_mortgages")[0]
 
         return (
             len(insolvent_households) / households.ts.current("n_households"),

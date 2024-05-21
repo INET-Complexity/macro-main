@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from macro_data import SyntheticCountry
 
+from macromodel.agents.agent import Agent
 from macromodel.banks.banks import Banks
 from macromodel.central_bank.central_bank import CentralBank
 from macromodel.central_government.central_government import CentralGovernment
@@ -19,6 +20,7 @@ from macromodel.housing_market.housing_market import HousingMarket
 from macromodel.individuals.individual_properties import ActivityStatus
 from macromodel.individuals.individuals import Individuals
 from macromodel.labour_market.labour_market import LabourMarket
+from macromodel.rest_of_the_world import RestOfTheWorld
 from macromodel.util.get_histogram import get_histogram
 
 
@@ -205,7 +207,6 @@ class Country:
             government_entities=government_entities,
             households=households,
             industry_vectors=synthetic_country.industry_data["industry_vectors"],
-            initial_sentiment=(country_configuration.economy.functions.sentiment.parameters["value"]),
             exogenous=exogenous,
         )
 
@@ -466,7 +467,6 @@ class Country:
         self.households.ts.expected_income_social_transfers.append(
             self.households.compute_expected_social_transfer_income(
                 total_other_social_transfers=self.central_government.ts.current("total_other_benefits")[0],
-                central_government_init=self.central_government.functions_config,
                 cpi=self.economy.ts.current("cpi")[0],
                 expected_inflation=self.economy.ts.current("estimated_cpi_inflation")[0],
             )
@@ -524,7 +524,7 @@ class Country:
             observed_fraction_value_price=self.housing_market.ts.current("observed_fraction_value_price"),
             observed_fraction_rent_value=self.housing_market.ts.current("observed_fraction_rent_value"),
             expected_hpi_growth=self.economy.ts.current("estimated_hpi_inflation")[0],
-            assumed_mortgage_maturity=self.banks.parameters["mortgage_maturity"]["value"],
+            assumed_mortgage_maturity=self.banks.parameters.mortgage_maturity,
             rental_income_taxes=self.central_government.states["Income Tax"],
         )
 
@@ -889,7 +889,6 @@ class Country:
         self.households.ts.income_social_transfers.append(
             self.households.compute_social_transfer_income(
                 total_other_social_transfers=self.central_government.ts.current("total_other_benefits")[0],
-                central_government_init=self.central_government.functions_config,
                 cpi=self.economy.ts.current("cpi")[0],
             )
         )
@@ -1054,6 +1053,9 @@ class Country:
 
     def update_population_structure(self) -> None:
         self.individuals.update_demography()
+
+    def get_goods_market_participants(self) -> list[Agent | RestOfTheWorld]:
+        return [self.firms, self.households, self.government_entities]
 
     def save_to_h5(self, h5_file: h5py.File):
         group = h5_file.create_group(self.country_name)

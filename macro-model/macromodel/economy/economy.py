@@ -45,7 +45,6 @@ class Economy:
         central_government: CentralGovernment,
         exogenous: Exogenous,
         industry_vectors: pd.DataFrame,
-        initial_sentiment: float,
     ):
         initial_firm_prices = firms.ts.current("price")
         initial_total_output = (firms.ts.current("price") * firms.ts.current("production")).sum()
@@ -68,8 +67,7 @@ class Economy:
         )
         initial_gross_fixed_capital_formation = (
             firms.ts.current("total_capital_inputs_bought_costs").sum()
-            + (1 + central_government.states["Capital Formation Tax"])
-            * households.ts.current("initial_investment").sum()
+            + (1 + central_government.states["Capital Formation Tax"]) * households.ts.current("investment").sum()
         )
         initial_total_operating_surplus = firms.ts.current("gross_operating_surplus_mixed_income").sum()
         initial_total_wages = firms.ts.current("total_wage").sum()

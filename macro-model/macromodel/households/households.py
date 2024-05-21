@@ -29,6 +29,7 @@ class Households(Agent):
         states: dict[str, float | np.ndarray | list[np.ndarray]],
         consumption_weights: np.ndarray,
         consumption_weights_by_income: np.ndarray,
+        investment_weights: np.ndarray,
         use_consumption_weights_by_income: bool,
         independents: list[str],
     ):
@@ -51,15 +52,17 @@ class Households(Agent):
 
         self.functions = functions
 
+        self.independents = independents
+
         # Set initial values
         self.ts["saving_rates_histogram"] = get_histogram(self.get_saving_rates_by_household(), None)
 
         self.consumption_weights = consumption_weights
         self.consumption_weights_by_income = consumption_weights_by_income
 
-        self.use_consumption_weights_by_income = use_consumption_weights_by_income
+        self.investment_weights = investment_weights
 
-        self.independents = independents
+        self.use_consumption_weights_by_income = use_consumption_weights_by_income
 
     @classmethod
     def from_pickled_agent(
@@ -103,6 +106,8 @@ class Households(Agent):
 
         consumption_weights_by_income = synthetic_population.consumption_weights_by_income.T
 
+        investment_weights = synthetic_population.investment_weights
+
         # Additional states
         states: dict[str, float | np.ndarray | list[np.ndarray] | Any] = {
             "saving_rates_model": synthetic_population.saving_rates_model,
@@ -110,6 +115,7 @@ class Households(Agent):
             "wealth_distribution_model": synthetic_population.wealth_distribution_model,
             "average_saving_rate": synthetic_population.household_data["Saving Rate"].mean(),
             "coefficient_fa_income": synthetic_population.coefficient_fa_income,
+            "investment_rate": synthetic_population.household_data["Investment Rate"].values,
         }
 
         # Additional states
@@ -135,8 +141,8 @@ class Households(Agent):
         #  In general, we should think of where to put the piece of code below.
 
         investment_rate = synthetic_population.household_data["Investment Rate"].values
-        investment_weights = synthetic_country.industry_data["industry_vectors"]["Household Capital Inputs in LCU"]
-        investment_weights = investment_weights.values / investment_weights.values.sum()
+        # investment_weights = synthetic_country.industry_data["industry_vectors"]["Household Capital Inputs in LCU"]
+        # investment_weights = investment_weights.values / investment_weights.values.sum()
         tau_cf = synthetic_country.tax_data.capital_formation_tax
         income = synthetic_population.household_data["Income"].values  # Income is different from Sam's
 
@@ -146,13 +152,19 @@ class Households(Agent):
             columns=pd.Index(synthetic_country.industries, name="Industry"),
         )
 
+        tau_vat = synthetic_country.tax_data.value_added_tax
+
+        consumption_by_industry_hh = 1 / (1 + tau_vat) * synthetic_population.industry_consumption_before_vat
+
         ts = create_households_timeseries(
             data=hh_data,
             initial_consumption_by_industry=initial_consumption_by_industry,
-            initial_investment=initial_investment.values,
+            initial_hh_investment=initial_investment.values,
+            initial_investment_by_industry=synthetic_population.investment,
             scale=scale,
             vat=value_added_tax,
             tau_cf=tau_cf,
+            initial_hh_consumption=consumption_by_industry_hh,
         )
 
         # Update the household type
@@ -187,6 +199,7 @@ class Households(Agent):
             states,
             consumption_weights,
             consumption_weights_by_income,
+            investment_weights,
             use_consumption_weights_by_income,
             independents,
         )
@@ -205,11 +218,10 @@ class Households(Agent):
     def compute_expected_social_transfer_income(
         self,
         total_other_social_transfers: float,
-        central_government_init: dict[str, Any],
         cpi: float,
         expected_inflation: float,
     ) -> np.ndarray:
-        inds = central_government_init["household_social_transfers"]["parameters"]["independents"]["value"]
+        inds = self.independents
         return (
             (1 + expected_inflation)
             * cpi
@@ -239,10 +251,9 @@ class Households(Agent):
     def compute_social_transfer_income(
         self,
         total_other_social_transfers: float,
-        central_government_init: dict[str, Any],
         cpi: float,
     ) -> np.ndarray:
-        inds = central_government_init["household_social_transfers"]["parameters"]["independents"]["value"]
+        inds = self.independents
         return cpi * self.functions["social_transfers"].get_social_transfers(
             n_households=self.ts.current("n_households"),
             total_other_social_transfers=total_other_social_transfers,
@@ -366,8 +377,8 @@ class Households(Agent):
                 income=self.ts.current("expected_income"),
                 household_benefits=self.states["Number of Adults"] * per_capita_unemployment_benefits
                 + self.ts.current("expected_income_social_transfers"),
-                consumption_weights=self.states["consumption_weights_data"],
-                consumption_weights_by_income=self.states["consumption_weights_by_income_data"],
+                consumption_weights=self.consumption_weights,
+                consumption_weights_by_income=self.consumption_weights_by_income,
                 exogenous_total_consumption=exogenous_total_consumption,
                 current_time=len(self.ts.historic("total_consumption")),
                 take_consumption_weights_by_income_quantile=self.use_consumption_weights_by_income,
@@ -393,7 +404,7 @@ class Households(Agent):
                 income=self.ts.current("expected_income"),
                 exogenous_total_investment=exogenous_total_investment,
                 current_time=len(self.ts.historic("total_investment")),
-                investment_weights=self.states["investment_weights_data"],
+                investment_weights=self.investment_weights,
                 investment_rate=self.states["investment_rate"],
                 tau_cf=tau_cf,
             )

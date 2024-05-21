@@ -94,9 +94,10 @@ class Simulation:
 
         goods_market = GoodsMarket.from_data(
             n_industries=datawrapper.n_industries,
-            trade_proportions=datawrapper.trade_proportions,
             configuration=simulation_configuration.goods_market_configuration,
             goods_market_participants=goods_market_participants,
+            origin_trade_proportions=datawrapper.origin_trade_proportions.values,
+            destin_trade_proportions=datawrapper.destination_trade_proportions.values,
         )
 
         if simulation_configuration.seed:
@@ -122,11 +123,17 @@ class Simulation:
         return self.configuration.seed
 
     def iterate(self):
-        self.exchange_rates.set_current_exchange_rates(current_year=self.timestep.year)
+        # self.exchange_rates.set_current_exchange_rates(current_year=self.timestep.year)
 
         for ind, country in enumerate(self.countries.values()):
+            exchange_rate = self.exchange_rates.get_current_exchange_rates_from_usd_to_lcu(
+                country_name=country.country_name,
+                current_year=self.timestep.year,
+                prev_inflation=country.economy.ts.current("ppi_inflation")[0],
+                prev_growth=country.economy.ts.current("total_growth")[0],
+            )
             logging.info("Country: %s", country.country_name)
-            country.initialisation_phase(exchange_rate_usd_to_lcu=self.exchange_rates.ts.current("exchange_rates")[ind])
+            country.initialisation_phase(exchange_rate_usd_to_lcu=exchange_rate)
             country.estimation_phase()
             country.target_setting_phase()
             country.clear_labour_market()

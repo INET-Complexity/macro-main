@@ -1,5 +1,6 @@
-import numpy as np
 from abc import abstractmethod, ABC
+
+import numpy as np
 
 from macromodel.individuals.individual_properties import ActivityStatus
 
@@ -12,18 +13,6 @@ class IndividualLabourInputsSetter(ABC):
         current_individuals_activity: np.ndarray,
     ) -> np.ndarray:
         pass
-
-
-class ConstantIndividualsLabourInputsSetter(IndividualLabourInputsSetter):
-    def __init__(self):
-        pass
-
-    def update_labour_inputs(
-        self,
-        previous_individuals_labour_inputs: np.ndarray,
-        current_individuals_activity: np.ndarray,
-    ) -> np.ndarray:
-        return previous_individuals_labour_inputs
 
 
 class ScaledIndividualsProductivitySetter(IndividualLabourInputsSetter):

@@ -1,7 +1,7 @@
 import h5py
 import numpy as np
 from macro_data import SyntheticGovernmentEntities
-from typing import Any
+from typing import Any, Optional
 
 from macromodel.configurations import GovernmentEntitiesConfiguration
 from macromodel.agents.agent import Agent
@@ -69,22 +69,58 @@ class GovernmentEntities(Agent):
             states=states,
         )
 
-    def prepare_buying_goods(self) -> None:
-        self.ts.desired_consumption_in_lcu.append(
-            (
-                self.functions["consumption"].compute_target_consumption(
-                    previous_desired_government_consumption=self.ts.current("desired_consumption_in_lcu"),
-                    model=self.states["government_consumption_model"],
+    def prepare_buying_goods(
+        self,
+        exogenous_gov_consumption_before: Optional[np.ndarray],
+        exogenous_gov_consumption_during: Optional[np.ndarray],
+        initial_good_prices: np.ndarray,
+        current_good_prices: np.ndarray,
+        historic_ppi: np.ndarray,
+        expected_growth: float,
+        expected_inflation: float,
+        forecasting_window: int,
+        assume_zero_growth: bool,
+        assume_zero_noise: bool,
+    ) -> None:
+        if exogenous_gov_consumption_before is None:
+            historic_total_consumption = np.array(self.ts.historic("total_consumption")).flatten() / historic_ppi
+        else:
+            historic_total_consumption = np.concatenate(
+                (
+                    exogenous_gov_consumption_before[-forecasting_window:],
+                    np.array(self.ts.historic("total_consumption")).flatten() / historic_ppi,
                 )
             )
-        )
+        if assume_zero_growth:
+            self.ts.desired_consumption_in_lcu.append(self.ts.initial("consumption_in_lcu"))
+        else:
+            self.ts.desired_consumption_in_lcu.append(
+                (
+                    self.functions["consumption"].compute_target_consumption(
+                        previous_desired_government_consumption=self.ts.current("desired_consumption_in_lcu"),
+                        model=self.states["government_consumption_model"],
+                        historic_total_consumption=historic_total_consumption,
+                        initial_good_prices=initial_good_prices,
+                        current_good_prices=current_good_prices,
+                        expected_growth=expected_growth,
+                        expected_inflation=expected_inflation,
+                        current_time=len(self.ts.historic("consumption_in_usd")),
+                        exogenous_total_consumption=exogenous_gov_consumption_during,
+                        forecasting_window=forecasting_window,
+                        assume_zero_noise=assume_zero_noise,
+                    )
+                )
+            )
         self.ts.desired_consumption_in_usd.append(
             1.0 / self.exchange_rate_usd_to_lcu * self.ts.current("desired_consumption_in_lcu")
         )
         single_entity_consumption = self.ts.current("desired_consumption_in_usd") / self.ts.current(
             "n_government_entities"
         )
-        all_entity_consumption = np.tile(single_entity_consumption, (self.ts.current("n_government_entities"), 1))
+        all_entity_consumption = np.tile(
+            single_entity_consumption,
+            (self.ts.current("n_government_entities"), 1),
+        )
         self.set_goods_to_buy(all_entity_consumption)
 
     def prepare_selling_goods(self, n_industries: int) -> None:
@@ -95,9 +131,30 @@ class GovernmentEntities(Agent):
         self,
         n_industries: int,
         exchange_rate_usd_to_lcu: float,
+        exogenous_gov_consumption_before: Optional[np.ndarray],
+        exogenous_gov_consumption_during: Optional[np.ndarray],
+        initial_good_prices: np.ndarray,
+        current_good_prices: np.ndarray,
+        historic_ppi: np.ndarray,
+        expected_growth: float,
+        expected_inflation: float,
+        forecasting_window: int,
+        assume_zero_growth: bool,
+        assume_zero_noise: bool,
     ) -> None:
         self.set_exchange_rate(exchange_rate_usd_to_lcu)
-        self.prepare_buying_goods()
+        self.prepare_buying_goods(
+            exogenous_gov_consumption_before=exogenous_gov_consumption_before,
+            exogenous_gov_consumption_during=exogenous_gov_consumption_during,
+            initial_good_prices=initial_good_prices,
+            current_good_prices=current_good_prices,
+            historic_ppi=historic_ppi,
+            expected_growth=expected_growth,
+            expected_inflation=expected_inflation,
+            forecasting_window=forecasting_window,
+            assume_zero_growth=assume_zero_growth,
+            assume_zero_noise=assume_zero_noise,
+        )
         self.prepare_selling_goods(n_industries)
 
     def record_consumption(self) -> None:

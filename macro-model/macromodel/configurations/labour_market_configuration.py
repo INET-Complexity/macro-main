@@ -7,8 +7,12 @@ class Clearing(BaseModel):
     The function for clearing the labour market.
     """
 
-    name: Literal["NoLabourMarketClearer", "DefaultLabourMarketClearer"] = "DefaultLabourMarketClearer"
+    name: Literal["NoLabourMarketClearer", "DefaultLabourMarketClearer", "PolednaLabourMarketClearer"] = (
+        "PolednaLabourMarketClearer"
+    )
     parameters: dict[str, Any] = {
+        "compare_with_normalised_inputs": True,
+        "round_target_employment": True,
         "allow_switching_industries": True,
         "consider_reservation_wages": True,
         "firing_cost_fraction": 0.0,

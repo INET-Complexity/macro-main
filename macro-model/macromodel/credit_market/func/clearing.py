@@ -673,7 +673,7 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
         if self.consider_loan_type_fractions:
             max_car = np.maximum(
                 0.0,
-                banks.ts.current("equity") / banks.parameters["capital_adequacy_ratio"]["value"]
+                banks.ts.current("equity") / banks.parameters.capital_adequacy_ratio
                 - banks.ts.current("total_outstanding_loans")
                 - new_credit_by_bank,
             )
@@ -774,19 +774,19 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
     ) -> np.ndarray:
         # Select loan properties and target credit
         if loan_type == LoanTypes.FIRM_SHORT_TERM_LOAN:
-            loan_maturity = banks.parameters["short_term_firm_loan_maturity"]["value"]
+            loan_maturity = banks.parameters.short_term_firm_loan_maturity
             banks_ir = banks.ts.current("interest_rates_on_short_term_firm_loans")
             target_credit = firms.ts.current("target_short_term_credit")
         elif loan_type == LoanTypes.FIRM_LONG_TERM_LOAN:
-            loan_maturity = banks.parameters["long_term_firm_loan_maturity"]["value"]
+            loan_maturity = banks.parameters.long_term_firm_loan_maturity
             banks_ir = banks.ts.current("interest_rates_on_long_term_firm_loans")
             target_credit = firms.ts.current("target_long_term_credit")
         elif loan_type == LoanTypes.HOUSEHOLD_CONSUMPTION_LOAN:
-            loan_maturity = banks.parameters["household_consumption_loan_maturity"]["value"]
+            loan_maturity = banks.parameters.household_consumption_loan_maturity
             banks_ir = banks.ts.current("interest_rates_on_household_consumption_loans")
             target_credit = households.ts.current("target_consumption_loans")
         elif loan_type == LoanTypes.MORTGAGE:
-            loan_maturity = banks.parameters["mortgage_maturity"]["value"]
+            loan_maturity = banks.parameters.mortgage_maturity
             banks_ir = banks.ts.current("interest_rates_on_mortgages")
             target_credit = households.ts.current("target_mortgage")
         else:
@@ -802,7 +802,7 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
         # Determine capacities
         if loan_type == LoanTypes.FIRM_SHORT_TERM_LOAN or loan_type == LoanTypes.FIRM_LONG_TERM_LOAN:
             debt_to_equity_restrictions = (
-                banks.parameters["firm_loans_debt_to_equity_ratio"]["value"]
+                banks.parameters.firm_loans_debt_to_equity_ratio
                 * firms.ts.current("capital_inputs_stock_value")[agents_with_demand]
                 - firms.ts.current("debt")[agents_with_demand]
                 - new_credit_by_firm[agents_with_demand]
@@ -814,7 +814,7 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 - firms.ts.current("debt")[agents_with_demand]
                 - new_credit_by_firm[agents_with_demand]
                 - firms.ts.current("expected_profits")[agents_with_demand]
-                / banks.parameters["firm_loans_return_on_equity_ratio"]["value"]
+                / banks.parameters.firm_loans_return_on_equity_ratio
             )
             return_on_assets_restrictions = np.zeros(agents_with_demand.shape)
             return_on_assets_restrictions[
@@ -823,7 +823,7 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                     1.0,
                     firms.ts.current("capital_inputs_stock_value")[agents_with_demand],
                 )
-                >= banks.parameters["firm_loans_return_on_assets_ratio"]["value"]
+                >= banks.parameters.firm_loans_return_on_assets_ratio
             ] = np.inf
             credit_restrictions = np.minimum(
                 np.minimum(debt_to_equity_restrictions, return_on_equity_restrictions),
@@ -831,7 +831,7 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
             )
         elif loan_type == LoanTypes.HOUSEHOLD_CONSUMPTION_LOAN:
             loan_to_income_restrictions = (
-                banks.parameters["household_consumption_loans_loan_to_income_ratio"]["value"]
+                banks.parameters.household_consumption_loans_loan_to_income_ratio
                 * 0.5
                 * (
                     households.ts.prev("income")[agents_with_demand]
@@ -843,7 +843,7 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
             credit_restrictions = loan_to_income_restrictions
         elif loan_type == LoanTypes.MORTGAGE:
             loan_to_income_restrictions = (
-                banks.parameters["mortgage_loan_to_income_ratio"]["value"]
+                banks.parameters.mortgage_loan_to_income_ratio
                 * 0.5
                 * (
                     households.ts.prev("income")[agents_with_demand]
@@ -853,8 +853,8 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 - new_credit_by_household[agents_with_demand]
             )
             loan_to_value_restrictions = (
-                banks.parameters["mortgage_loan_to_value_ratio"]["value"]
-                / (1 - banks.parameters["mortgage_loan_to_value_ratio"]["value"])
+                banks.parameters.mortgage_loan_to_value_ratio
+                / (1 - banks.parameters.mortgage_loan_to_value_ratio)
                 * households.ts.current("wealth_financial_assets")[agents_with_demand]
             )
 
@@ -884,7 +884,7 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
         supply = np.maximum(
             0.0,
             np.minimum(
-                banks.ts.current("equity") / banks.parameters["capital_adequacy_ratio"]["value"]
+                banks.ts.current("equity") / banks.parameters.capital_adequacy_ratio
                 - banks.ts.current("total_outstanding_loans")
                 - new_credit_by_bank,
                 max_supply_based_on_preferences - new_credit_by_bank,

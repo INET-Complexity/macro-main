@@ -107,6 +107,8 @@ class Firms(Agent):
         states["is_insolvent"] = np.full(data.shape[0], False)
         states["Excess Demand"] = np.zeros(data.shape[0])
 
+        states["Labour Productivity by Industry"] = synthetic_firms.labour_productivity_by_industry
+
         return cls(
             country_name,
             all_country_names,
@@ -175,22 +177,22 @@ class Firms(Agent):
     ) -> None:
         self.ts.limiting_intermediate_inputs.append(
             self.functions["production"].compute_limiting_intermediate_inputs_stock(
-                intermediate_inputs_productivity_matrix=self.states["Intermediate Inputs Productivity Matrix"][
+                intermediate_inputs_productivity_matrix=self.intermediate_inputs_productivity_matrix[
                     :, self.states["Industry"]
                 ].T,
                 intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
                 intermediate_inputs_utilisation_rate=self.intermediate_inputs_utilisation_rate,
-                goods_criticality_matrix=self.states["Goods Criticality Matrix"],
+                goods_criticality_matrix=self.goods_criticality_matrix,
             )
         )
         self.ts.limiting_capital_inputs.append(
             self.functions["production"].compute_limiting_capital_inputs_stock(
-                capital_inputs_productivity_matrix=self.states["Capital Inputs Productivity Matrix"][
+                capital_inputs_productivity_matrix=self.capital_inputs_productivity_matrix[
                     :, self.states["Industry"]
                 ].T,
                 capital_inputs_stock=self.ts.current("capital_inputs_stock"),
                 capital_inputs_utilisation_rate=self.capital_inputs_utilisation_rate,
-                goods_criticality_matrix=self.states["Goods Criticality Matrix"],
+                goods_criticality_matrix=self.goods_criticality_matrix,
             )
         )
         self.ts.target_production.append(
@@ -443,7 +445,7 @@ class Firms(Agent):
     ) -> np.ndarray:
         return self.functions["target_intermediate_inputs"].compute_unconstrained_target_intermediate_inputs(
             current_target_production=self.ts.current("target_intermediate_inputs_production"),
-            intermediate_inputs_productivity_matrix=self.states["Intermediate Inputs Productivity Matrix"][
+            intermediate_inputs_productivity_matrix=self.intermediate_inputs_productivity_matrix[
                 :, self.states["Industry"]
             ].T,
             prev_intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
@@ -461,9 +463,7 @@ class Firms(Agent):
     def compute_unconstrained_demand_for_capital_inputs(self) -> np.ndarray:
         return self.functions["target_capital_inputs"].compute_unconstrained_target_capital_inputs(
             current_target_production=self.ts.current("target_capital_inputs_production"),
-            capital_inputs_depreciation_matrix=self.states["Capital Inputs Depreciation Matrix"][
-                :, self.states["Industry"]
-            ].T,
+            capital_inputs_depreciation_matrix=self.capital_inputs_depreciation_matrix[:, self.states["Industry"]].T,
             prev_capital_inputs_stock=self.ts.current("capital_inputs_stock"),
             initial_capital_inputs_stock=self.ts.initial("capital_inputs_stock"),
             prev_production=self.ts.current("production"),

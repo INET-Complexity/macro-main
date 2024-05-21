@@ -1,4 +1,3 @@
-import logging
 import numpy as np
 import pandas as pd
 from typing import Any, Tuple, Optional
@@ -10,7 +9,7 @@ from macromodel.timeseries import TimeSeries
 from macromodel.util.function_mapping import functions_from_model
 
 
-SupplyChain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]]
+SupplyChain = dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]]
 
 
 class GoodsMarket:
@@ -18,7 +17,6 @@ class GoodsMarket:
         self,
         n_industries: int,
         functions: dict[str, Any],
-        trade_proportions: pd.DataFrame,
         ts: TimeSeries,
         goods_market_participants: dict[str, list[Agent]],
         states: dict[str, Any],
@@ -27,7 +25,6 @@ class GoodsMarket:
     ):
         self.n_industries = n_industries
         self.functions = functions
-        self.trade_proportions = trade_proportions.fillna(0.0)
         self.ts = ts
         self.goods_market_participants = goods_market_participants
         self.states = states
@@ -38,7 +35,6 @@ class GoodsMarket:
     def from_data(
         cls,
         n_industries: int,
-        trade_proportions: pd.DataFrame,
         configuration: GoodsMarketConfiguration,
         goods_market_participants: dict[str, list[Agent]],
         origin_trade_proportions: np.ndarray,
@@ -83,7 +79,6 @@ class GoodsMarket:
         return cls(
             n_industries,
             functions,
-            trade_proportions,
             ts,
             goods_market_participants,
             states=states,

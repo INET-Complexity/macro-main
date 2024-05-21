@@ -52,7 +52,7 @@ class ExchangeRates:
         current_year: int,
         prev_inflation: float,
         prev_growth: float,
-    ) -> list[float]:
+    ) -> float:
         match self.exchange_rate_type:
             case "constant":
                 return self.historic_exchange_rate_data.loc[country_name, str(self.initial_year)]

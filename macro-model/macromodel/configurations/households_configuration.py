@@ -12,7 +12,7 @@ class FinancialAssetsFunction(BaseModel):
     """
 
     path_name: str = "financial_assets"
-    name: Literal["ConstantFinancialAssets", "DefaultFinancialAssets"] = "ConstantFinancialAssets"
+    name: Literal["DefaultFinancialAssets"] = "DefaultFinancialAssets"
     parameters: dict[str, Any] = {"income_from_fa_noise_std": 0.0}
 
 
@@ -65,7 +65,6 @@ class PropertyFunction(BaseModel):
         "probability_stay_in_owned_property": 0.5,
         "probability_stay_in_rented_property": 0.5,
         "psychological_pressure_of_renting": 0.1,
-        "rental_yield_btl_temperature": 1.0,
         "price_initial_markup": 0.0,
         "price_decrease_probability": 0.0,
         "price_decrease_mean": 0.0,
@@ -78,7 +77,7 @@ class PropertyFunction(BaseModel):
         "maximum_rent_income_coefficient": 0.2,
         "maximum_rent_income_exponent": 0.0,
         "partial_rent_inflation_indexation": 0.0,
-        "partial_rent_inflation_delay": 1.0,
+        "partial_rent_inflation_delay": 1,
     }
 
 

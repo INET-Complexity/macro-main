@@ -137,7 +137,6 @@ class Prices(BaseModel):
     path_name: str = "prices"
     parameters: dict[str, Any] = {
         "price_setting_noise_std": 0.05,
-        "price_setting_speed": 1.0,
         "price_setting_speed_gf": 1.0,
         "price_setting_speed_dp": 0.0,
         "price_setting_speed_cp": 0.0,
@@ -161,9 +160,7 @@ class TargetCapitalInputs(BaseModel):
     Options: UnconstrainedTargetCapitalInputsSetter, FinancialTargetCapitalInputsSetter
     """
 
-    name: Literal["UnconstrainedTargetCapitalInputsSetter", "FinancialTargetCapitalInputsSetter"] = (
-        "UnconstrainedTargetCapitalInputsSetter"
-    )
+    name: Literal["FinancialTargetCapitalInputsSetter"] = "FinancialTargetCapitalInputsSetter"
     path_name: str = "target_capital_inputs"
     parameters: dict[str, Any] = {"target_capital_inputs_fraction": 0.0, "credit_gap_fraction": 0.0}
 
@@ -185,9 +182,7 @@ class TargetIntermediateInputs(BaseModel):
     Options: UnconstrainedTargetIntermediateInputsSetter, FinancialTargetIntermediateInputsSetter
     """
 
-    name: Literal["UnconstrainedTargetIntermediateInputsSetter", "FinancialTargetIntermediateInputsSetter"] = (
-        "UnconstrainedTargetIntermediateInputsSetter"
-    )
+    name: Literal["FinancialTargetIntermediateInputsSetter"] = "FinancialTargetIntermediateInputsSetter"
     path_name: str = "target_intermediate_inputs"
     parameters: dict[str, Any] = {"target_intermediate_inputs_fraction": 0.0, "credit_gap_fraction": 0.0}
 
@@ -216,10 +211,8 @@ class TargetProduction(BaseModel):
     name: Literal["DefaultTargetProductionSetter"] = "DefaultTargetProductionSetter"
     path_name: str = "target_production"
     parameters: dict[str, Any] = {
-        "consider_financials": False,
         "existing_inventory_fraction": 0.0,
         "maximum_debt_to_equity_ratio": 2.0,
-        "maximum_growth_rate": 0.1,
         "target_inventory_to_production_fraction": 0.0,
         "financial_constrains_fraction": 0.0,
         "intermediate_inputs_target_considers_labour_inputs": False,
