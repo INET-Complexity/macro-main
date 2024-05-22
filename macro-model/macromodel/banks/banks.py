@@ -57,7 +57,6 @@ class Banks(Agent):
         data = synthetic_banks.bank_data.drop(columns=["Corresponding Firms ID", "Corresponding Households ID"])
         ts = create_banks_timeseries(
             bank_data=data,
-            long_term_ir=long_term_ir,
             scale=scale,
         )
 

@@ -198,36 +198,6 @@ class Agent:
                 self.transactor_buyer_states["Real Amount bought from " + country_name]
             )
 
-    # def reset(
-    #     self,
-    #     config: Optional[dict[str, Any]] = None,
-    #     config_init: Optional[dict[str, Any]] = None,
-    # ) -> None:
-    #     if config is not None and config_init is not None:
-    #         agent_name = self.functions_loc[16:]
-    #         if agent_name == "rest_of_the_world":
-    #             agent_name = "ROW"
-    #         self.parameters = {}
-    #         merge(
-    #             self.parameters,
-    #             config[self.country_name][agent_name]["parameters"],
-    #             config_init[self.country_name][agent_name]["parameters"],
-    #         )
-    #         self.functions_config = {}
-    #         merge(
-    #             self.functions_config,
-    #             config[self.country_name][agent_name]["functions"],
-    #             config_init[self.country_name][agent_name]["functions"],
-    #         )
-    #         self.functions = get_functions(
-    #             self.functions_config,
-    #             loc=self.functions_loc,
-    #             func_dir=self.functions_dir,
-    #         )
-    #
-    #     self.ts.reset()
-    #     self.states = deepcopy(self.initial_states)
-
 
 @njit
 def round_pos(x: np.ndarray, decimals: int = 16) -> np.ndarray:

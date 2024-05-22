@@ -3,11 +3,13 @@ from typing import Literal
 
 
 class Consumption(BaseModel):
-    name: Literal["ConstantGovernmentConsumptionSetter", "DefaultGovernmentConsumptionSetter"] = (
-        "DefaultGovernmentConsumptionSetter"
-    )
+    name: Literal[
+        "AutoregressiveGovernmentConsumptionSetter",
+        "ConstantGrowthGovernmentConsumptionSetter",
+        "ExogenousGovernmentConsumptionSetter",
+    ] = "AutoregressiveGovernmentConsumptionSetter"
     path_name: str = "consumption"
-    parameters: dict = {}
+    parameters: dict = {"consistency": 1.0}
 
 
 class GovernmentFunctions(BaseModel):

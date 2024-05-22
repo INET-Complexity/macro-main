@@ -671,11 +671,11 @@ class Firms(Agent):
     def compute_used_intermediate_inputs(self):
         return self.functions["production"].compute_intermediate_inputs_used(
             realised_production=self.ts.current("production"),
-            intermediate_inputs_productivity_matrix=self.states["Intermediate Inputs Productivity Matrix"][
+            intermediate_inputs_productivity_matrix=self.intermediate_inputs_productivity_matrix[
                 :, self.states["Industry"]
             ].T,
             intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
-            goods_criticality_matrix=self.states["Goods Criticality Matrix"],
+            goods_criticality_matrix=self.goods_criticality_matrix,
         )
 
     def compute_used_intermediate_inputs_costs(self, current_good_prices: np.ndarray) -> np.ndarray:
@@ -695,11 +695,9 @@ class Firms(Agent):
     def compute_used_capital_inputs(self):
         return self.functions["production"].compute_capital_inputs_used(
             realised_production=self.ts.current("production"),
-            capital_inputs_depreciation_matrix=self.states["Capital Inputs Depreciation Matrix"][
-                :, self.states["Industry"]
-            ].T,
+            capital_inputs_depreciation_matrix=self.capital_inputs_depreciation_matrix[:, self.states["Industry"]].T,
             capital_inputs_stock=self.ts.current("capital_inputs_stock"),
-            goods_criticality_matrix=self.states["Goods Criticality Matrix"],
+            goods_criticality_matrix=self.goods_criticality_matrix,
         )
 
     def compute_used_capital_inputs_costs(self, current_good_prices: np.ndarray) -> np.ndarray:

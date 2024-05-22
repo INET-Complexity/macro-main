@@ -64,11 +64,11 @@ class CreditMarket:
         )
 
         states = {
-            "shortterm_loans": shortterm_loans,
-            "longterm_loans": longterm_loans,
+            "st_loans": shortterm_loans,
+            "lt_loans": longterm_loans,
             "payday_loans": payday_loans,
-            "consumption_expansion_loans": consumption_expansion_loans,
-            "mortgage_loans": mortgage_loans,
+            "cons_loans": consumption_expansion_loans,
+            "mort_loans": mortgage_loans,
         }
 
         initial_states = deepcopy(states)

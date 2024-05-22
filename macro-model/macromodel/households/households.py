@@ -810,11 +810,8 @@ class Households(Agent):
     def total_consumption(self) -> np.ndarray:
         return self.ts.get_aggregate("total_consumption")
 
-    def payday_loan_debt(self) -> np.ndarray:
-        return self.ts.get_aggregate("payday_loan_debt")
-
-    def consumption_expansion_loan_debt(self) -> np.ndarray:
-        return self.ts.get_aggregate("consumption_expansion_loan_debt")
+    def consumption_loan_debt(self) -> np.ndarray:
+        return self.ts.get_aggregate("consumption_loan_debt")
 
     def mortgage_debt(self) -> np.ndarray:
         return self.ts.get_aggregate("mortgage_debt")

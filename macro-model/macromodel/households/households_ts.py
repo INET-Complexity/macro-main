@@ -19,7 +19,7 @@ def create_households_timeseries(
     return TimeSeries(
         n_households=len(data),
         #
-        target_consumption_loans=initial_hh_consumption,
+        target_consumption_loans=np.full(len(data), np.nan),
         total_target_consumption_loans=[0.0],
         target_consumption=np.full((len(data), n_industries), np.nan),
         amount_bought=np.full(len(data), np.nan),

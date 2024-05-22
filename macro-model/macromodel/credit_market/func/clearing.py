@@ -104,7 +104,7 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
         if self.consider_loan_type_fractions:
             max_car = np.maximum(
                 0.0,
-                banks.ts.current("equity") / banks.parameters["capital_adequacy_ratio"]["value"]
+                banks.ts.current("equity") / banks.parameters.capital_adequacy_ratio
                 - banks.ts.current("total_outstanding_loans")
                 - new_credit_by_bank,
             )
@@ -212,9 +212,9 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
 
         # Select loan maturity
         if loan_type == LoanTypes.FIRM_SHORT_TERM_LOAN:
-            loan_maturity = banks.parameters["short_term_firm_loan_maturity"]["value"]
+            loan_maturity = banks.parameters.short_term_firm_loan_maturity
         else:
-            loan_maturity = banks.parameters["long_term_firm_loan_maturity"]["value"]
+            loan_maturity = banks.parameters.long_term_firm_loan_maturity
 
         # Get bank interest rates
         if loan_type == LoanTypes.FIRM_SHORT_TERM_LOAN:
@@ -247,21 +247,18 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
 
                 # Supply
                 total_credit_supply = (
-                    banks.ts.current("equity")[bank_id] / banks.parameters["capital_adequacy_ratio"]["value"]
+                    banks.ts.current("equity")[bank_id] / banks.parameters.capital_adequacy_ratio
                     - banks.ts.current("total_outstanding_loans")[bank_id]
                     - new_credit_by_bank[bank_id]
                 )
 
                 # Debt to equity
                 debt_to_equity_restrictions = (
-                    banks.parameters["firm_loans_debt_to_equity_ratio"]["value"]
+                    banks.parameters.firm_loans_debt_to_equity_ratio
                     * firms.ts.current("capital_inputs_stock_value")[firm_id]
                     - firms.ts.current("debt")[firm_id]
                     - new_credit_by_firm[firm_id]
-                    + min(0.0, firms.ts.current("deposits")[firm_id])
-                    + banks.ts.current("overdraft_rate_on_firm_deposits")[bank_id]
-                    * min(0.0, firms.ts.current("deposits")[firm_id])
-                    - firms.ts.current("interest_paid_on_loans")[firm_id]
+                    + min(0, firms.ts.current("deposits")[firm_id])
                 )
 
                 # Return on equity
@@ -270,16 +267,15 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
                     + firms.ts.current("deposits")[firm_id]
                     - firms.ts.current("debt")[firm_id]
                     - new_credit_by_firm[firm_id]
-                    - firms.ts.current("expected_profits")[firm_id]
-                    / banks.parameters["firm_loans_return_on_equity_ratio"]["value"]
+                    - firms.ts.current("expected_profits")[firm_id] / banks.parameters.firm_loans_return_on_equity_ratio
                 )
 
                 # Return on assets
                 return_on_assets_restrictions = (
                     np.inf
                     if firms.ts.current("expected_profits")[firm_id]
-                    / (firms.ts.current("debt")[firm_id] + firms.ts.current("equity")[firm_id])
-                    >= banks.parameters["firm_loans_return_on_assets_ratio"]["value"]
+                    / firms.ts.current("capital_inputs_stock_value")[firm_id]
+                    >= banks.parameters.firm_loans_return_on_assets_ratio
                     else 0.0
                 )
 
@@ -337,7 +333,7 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
         new_loan_recipient_id = []
 
         # Loan maturity
-        loan_maturity = banks.parameters["household_consumption_loan_maturity"]["value"]
+        loan_maturity = banks.parameters.household_consumption_loan_maturity
 
         # Bank interest rates
         banks_ir = banks.ts.current("interest_rates_on_household_consumption_loans")
@@ -368,14 +364,14 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
 
                 # Supply
                 total_credit_supply = (
-                    banks.ts.current("equity")[bank_id] / banks.parameters["capital_adequacy_ratio"]["value"]
+                    banks.ts.current("equity")[bank_id] / banks.parameters.capital_adequacy_ratio
                     - banks.ts.current("total_outstanding_loans")[bank_id]
                     - new_credit_by_bank[bank_id]
                 )
 
                 # Loan to income
                 loan_to_income_restrictions = (
-                    banks.parameters["household_consumption_loans_loan_to_income_ratio"]["value"]
+                    banks.parameters.household_consumption_loans_loan_to_income_ratio
                     * 0.5
                     * (households.ts.prev("income")[household_id] + households.ts.current("income")[household_id])
                     - households.ts.current("debt")[household_id]
@@ -463,14 +459,14 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
 
                 # Supply
                 total_credit_supply = (
-                    banks.ts.current("equity")[bank_id] / banks.parameters["capital_adequacy_ratio"]["value"]
+                    banks.ts.current("equity")[bank_id] / banks.parameters.capital_adequacy_ratio
                     - banks.ts.current("total_outstanding_loans")[bank_id]
                     - new_credit_by_bank[bank_id]
                 )
 
                 # Loan to income
                 loan_to_income_restrictions = (
-                    banks.parameters["mortgage_loan_to_income_ratio"]["value"]
+                    banks.parameters.mortgage_loan_to_income_ratio
                     * 0.5
                     * (households.ts.prev("income")[household_id] + households.ts.current("income")[household_id])
                     - households.ts.current("debt")[household_id]
@@ -479,16 +475,16 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
 
                 # Loan to value
                 loan_to_value_restrictions = (
-                    banks.parameters["mortgage_loan_to_value_ratio"]["value"]
-                    / (1 - banks.parameters["mortgage_loan_to_value_ratio"]["value"])
+                    banks.parameters.mortgage_loan_to_value_ratio
+                    / (1 - banks.parameters.mortgage_loan_to_value_ratio)
                     * households.ts.current("wealth_financial_assets")[household_id]
                 )
 
                 # Debt service to income
                 debt_service_to_income_restrictions = (
-                    banks.parameters["mortgage_debt_service_to_income_ratio"]["value"]
+                    banks.parameters.mortgage_debt_service_to_income_ratio
                     * households.ts.current("income")[household_id]
-                    * (1 - (1 + banks_ir[bank_id]) ** (-banks.parameters["mortgage_maturity"]["value"]))
+                    * (1 - (1 + banks_ir[bank_id]) ** (-banks.parameters.mortgage_maturity))
                     / banks_ir[bank_id]
                 )
 
@@ -516,7 +512,7 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
                     household_target_credit[household_id] -= value_granted
                     new_loan_types.append(loan_type)
                     new_loan_value.append(value_granted)
-                    new_loan_maturity.append(banks.parameters["mortgage_maturity"]["value"])
+                    new_loan_maturity.append(banks.parameters.mortgage_maturity)
                     new_loan_interest_rate.append(banks_ir[bank_id])
                     new_loan_bank_id.append(bank_id)
                     new_loan_recipient_id.append(household_id)
@@ -543,38 +539,19 @@ class PolednaCreditMarketClearer(CreditMarketClearer):
         current_npl_firm_loans: float,
         current_npl_hh_cons_loans: float,
         current_npl_mortgages: float,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> pd.DataFrame:
         new_credit_by_bank = np.zeros(banks.ts.current("n_banks"))
         new_credit_by_firm = np.zeros(firms.ts.current("n_firms"))
-        new_st_loans = self.clear_firm_loans(
+        new_loans = self.clear_firm_loans(
             banks=banks,
             firms=firms,
             loan_type=LoanTypes.FIRM_SHORT_TERM_LOAN,
             new_credit_by_bank=new_credit_by_bank,
             new_credit_by_firm=new_credit_by_firm,
-        )
-        new_lt_loans = np.zeros((3, banks.ts.current("n_banks"), firms.ts.current("n_firms")))
-        new_cons_loans = np.zeros(
-            (
-                3,
-                banks.ts.current("n_banks"),
-                households.ts.current("n_households"),
-            )
-        )
-        new_mort_loans = np.zeros(
-            (
-                3,
-                banks.ts.current("n_banks"),
-                households.ts.current("n_households"),
-            )
-        )
-
-        return (
-            new_st_loans,
-            new_lt_loans,
-            new_cons_loans,
-            new_mort_loans,
-        )
+        ).reset_index(drop=True)
+        new_loans["loan_bank_id"] = new_loans["loan_bank_id"].astype(int)
+        new_loans["loan_recipient_id"] = new_loans["loan_recipient_id"].astype(int)
+        return new_loans
 
     def clear_firm_loans(
         self,
@@ -582,13 +559,21 @@ class PolednaCreditMarketClearer(CreditMarketClearer):
         firms: Firms,
         loan_type: LoanTypes,
         new_credit_by_bank: np.ndarray,
-        new_credit_by_firm: np.ndarray,  # noqa
-    ) -> np.ndarray:
+        new_credit_by_firm: np.ndarray,
+    ) -> pd.DataFrame:
+        # Data on new loans
+        new_loan_types = []
+        new_loan_value = []
+        new_loan_maturity = []
+        new_loan_interest_rate = []
+        new_loan_bank_id = []
+        new_loan_recipient_id = []
+
         # Select loan maturity
         if loan_type == LoanTypes.FIRM_SHORT_TERM_LOAN:
-            loan_maturity = banks.parameters["short_term_firm_loan_maturity"]["value"]
+            loan_maturity = banks.parameters.short_term_firm_loan_maturity
         else:
-            loan_maturity = banks.parameters["long_term_firm_loan_maturity"]["value"]
+            loan_maturity = banks.parameters.long_term_firm_loan_maturity
 
         # Get bank interest rates
         if loan_type == LoanTypes.FIRM_SHORT_TERM_LOAN:
@@ -596,16 +581,11 @@ class PolednaCreditMarketClearer(CreditMarketClearer):
         else:
             banks_ir = banks.ts.current("interest_rates_on_long_term_firm_loans")
 
-        # Target credit
+        # Iterate over firms with financing needs
         if loan_type == LoanTypes.FIRM_SHORT_TERM_LOAN:
             firm_target_credit = firms.ts.current("target_short_term_credit")
         else:
             firm_target_credit = firms.ts.current("target_long_term_credit")
-
-        # For recording data
-        new_loans = np.zeros((3, banks.ts.current("n_banks"), firm_target_credit.shape[0]))
-
-        # Iterate over firms with financing needs
         firms_with_needs = np.where(firm_target_credit > 0)[0]
         firms_with_needs_shuffled = np.random.choice(
             firms_with_needs,
@@ -628,12 +608,12 @@ class PolednaCreditMarketClearer(CreditMarketClearer):
                 if firm_target_credit[firm_id] == 0:
                     break
                 bank_cap_req = (
-                    banks.ts.current("equity")[bank_id] / banks.parameters["capital_adequacy_ratio"]["value"]
+                    banks.ts.current("equity")[bank_id] / banks.parameters.capital_adequacy_ratio
                     - (1 - 1.0 / loan_maturity) * banks.ts.current("total_outstanding_loans")[bank_id]
                     - new_credit_by_bank[bank_id]
                 )
                 firm_risk_assessment = (
-                    banks.parameters["firm_loans_debt_to_equity_ratio"]["value"]
+                    banks.parameters.firm_loans_debt_to_equity_ratio
                     * firms.ts.current("expected_capital_inputs_stock_value")[firm_id]
                     - (1 - 1.0 / loan_maturity) * firms.ts.current("debt")[firm_id]
                 )
@@ -647,11 +627,28 @@ class PolednaCreditMarketClearer(CreditMarketClearer):
                 )
 
                 # Record the new loans
-                new_loans[0, bank_id, firm_id] += value_granted
-                new_loans[1, bank_id, firm_id] += banks_ir[bank_id] * value_granted
-                new_loans[2, bank_id, firm_id] += 1.0 / loan_maturity * value_granted
+                if value_granted > 0:
+                    new_credit_by_bank[bank_id] += value_granted
+                    new_credit_by_firm[firm_id] += value_granted
+                    firm_target_credit[firm_id] -= value_granted
+                    new_loan_types.append(loan_type)
+                    new_loan_value.append(value_granted)
+                    new_loan_maturity.append(loan_maturity)
+                    new_loan_interest_rate.append(banks_ir[bank_id])
+                    new_loan_bank_id.append(bank_id)
+                    new_loan_recipient_id.append(firm_id)
 
-        return new_loans
+        return pd.DataFrame(
+            data={
+                "loan_type": new_loan_types,
+                "loan_value_initial": new_loan_value,
+                "loan_value": new_loan_value,
+                "loan_maturity": new_loan_maturity,
+                "loan_interest_rate": new_loan_interest_rate,
+                "loan_bank_id": new_loan_bank_id,
+                "loan_recipient_id": new_loan_recipient_id,
+            }
+        )
 
 
 class WaterBucketCreditMarketClearer(CreditMarketClearer):
@@ -819,10 +816,7 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
             return_on_assets_restrictions = np.zeros(agents_with_demand.shape)
             return_on_assets_restrictions[
                 firms.ts.current("expected_profits")[agents_with_demand]
-                / np.maximum(
-                    1.0,
-                    firms.ts.current("capital_inputs_stock_value")[agents_with_demand],
-                )
+                / firms.ts.current("capital_inputs_stock_value")[agents_with_demand]
                 >= banks.parameters.firm_loans_return_on_assets_ratio
             ] = np.inf
             credit_restrictions = np.minimum(
@@ -862,9 +856,9 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
             """
             # Debt service to income
             debt_service_to_income_restrictions = (
-                    banks.parameters["mortgage_debt_service_to_income_ratio"]["value"]
+                    banks.parameters.mortgage_debt_service_to_income_ratio
                     * households.ts.current("income")[agents_with_demand]
-                    * (1 - (1 + banks_ir[bank_id]) ** (-banks.parameters["mortgage_maturity"]["value"]))
+                    * (1 - (1 + banks_ir[bank_id]) ** (-banks.parameters.mortgage_maturity))
                     / banks_ir[bank_id]
             )
             """
@@ -913,10 +907,9 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 priorities=creditor_priorities,
                 minimum_fill=self.creditor_minimum_fill,
             )
-            new_loans[0, :, agents_with_demand] = np.matmul(
-                granted_loans_by_banks[np.newaxis].T,
-                capacities_weights[np.newaxis],
-            )[np.newaxis].T[:, 0, :]
+            new_loans[0, :, agents_with_demand] = np.matmul(granted_loans_by_banks, capacities_weights[np.newaxis])[
+                np.newaxis
+            ].T
         else:
             received_loans_by_debtors = self.fill_buckets(
                 capacities=capacities,
@@ -925,9 +918,9 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 minimum_fill=self.debtor_minimum_fill,
             )
             new_loans[0, :, agents_with_demand] = np.matmul(
-                received_loans_by_debtors[np.newaxis].T,
+                received_loans_by_debtors,
                 supply_weights[np.newaxis],
-            )[np.newaxis].T[:, 0, :]
+            )[np.newaxis].T
         new_loans[1, :, agents_with_demand] = banks_ir[:, np.newaxis] * new_loans[0, :, agents_with_demand]
         new_loans[2, :, agents_with_demand] = 1.0 / loan_maturity * new_loans[0, :, agents_with_demand]
 

@@ -60,7 +60,8 @@ class Country:
         credit_market: CreditMarket,
         housing_market: HousingMarket,
         exogenous: Exogenous,
-        forecasting_window: int = 12,
+        running_multiple_countries: bool,
+        forecasting_window: int = 60,
         assume_zero_growth: bool = False,
         assume_zero_noise: bool = False,
     ):
@@ -96,6 +97,8 @@ class Country:
         self.assume_zero_growth = assume_zero_growth
         self.assume_zero_noise = assume_zero_noise
 
+        self.running_multiple_countries = running_multiple_countries
+
     @classmethod
     def from_pickled_country(
         cls,
@@ -107,6 +110,7 @@ class Country:
         industries: list[str],
         initial_year: int,
         t_max: int,
+        running_multiple_countries: bool,
     ) -> "Country":
         scale = synthetic_country.scale
 
@@ -248,6 +252,7 @@ class Country:
             forecasting_window=country_configuration.forecasting_window,
             assume_zero_growth=country_configuration.assume_zero_growth,
             assume_zero_noise=country_configuration.assume_zero_noise,
+            running_multiple_countries=running_multiple_countries,
         )
 
     def initialisation_phase(self, exchange_rate_usd_to_lcu: float) -> None:
@@ -1099,8 +1104,7 @@ class Country:
             "CFPI": self.economy.total_cfpi_inflation(),
             "Gross Output": self.firms.total_sales() + self.firms.total_taxes_paid_on_production(),
             "Unemployment Rate": self.economy.unemployment_rate(),
-            "Payday Loan Debt": self.households.payday_loan_debt(),
-            "Consumption Expansion Loan Debt": self.households.consumption_expansion_loan_debt(),
+            "Consumption Expansion Loan Debt": self.households.consumption_loan_debt(),
             "Mortgage Debt": self.households.mortgage_debt(),
         }
         return pd.DataFrame(data_dict)
