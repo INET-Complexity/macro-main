@@ -4,8 +4,7 @@ import h5py
 import numpy as np
 import pandas as pd
 from macro_data import SyntheticRestOfTheWorld
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from macromodel.configurations import RestOfTheWorldConfiguration
 from macromodel.agents.agent import Agent
@@ -13,7 +12,7 @@ from macromodel.configurations.row_configuration import RestOfTheWorldParameters
 from macromodel.goods_market.value_type import ValueType
 from macromodel.rest_of_the_world.rest_of_the_world_ts import create_rest_of_the_world_timeseries
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import get_functions, functions_from_model
+from macromodel.util.function_mapping import functions_from_model
 
 
 class RestOfTheWorld(Agent):
@@ -62,7 +61,6 @@ class RestOfTheWorld(Agent):
         n_industries: int,
         synthetic_row: SyntheticRestOfTheWorld,
         configuration: RestOfTheWorldConfiguration,
-        average_ppi_inflation: float,
         calibration_data_before: pd.DataFrame,
         calibration_data_during: pd.DataFrame,
     ) -> "RestOfTheWorld":

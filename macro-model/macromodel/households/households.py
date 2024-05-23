@@ -86,7 +86,6 @@ class Households(Agent):
         corr_renters = corr_renters.rename_axis("Household ID")
 
         corr_owned_houses = synthetic_population.household_data["Corresponding Additionally Owned Houses ID"]
-        corr_owned_houses = corr_owned_houses.rename_axis("Household ID")
 
         functions = functions_from_model(model=configuration.functions, loc="macromodel.households")
 
@@ -164,7 +163,6 @@ class Households(Agent):
             scale=scale,
             vat=value_added_tax,
             tau_cf=tau_cf,
-            initial_hh_consumption=consumption_by_industry_hh,
         )
 
         # Update the household type

@@ -8,10 +8,9 @@ def create_economy_timeseries(
     country_name: str,
     all_country_names: list[str],
     n_industries: int,
-    initial_firm_prices: float,
+    initial_firm_prices: np.ndarray,
     initial_firm_total_sales: float,
     initial_sectoral_firm_sales: np.ndarray,
-    initial_firm_total_used_ii: float,  # initial_sectoral_firm_used_ii
     initial_sectoral_firm_used_ii: np.ndarray,
     initial_total_taxes_on_products: float,
     initial_total_taxes_on_production: float,
@@ -27,12 +26,9 @@ def create_economy_timeseries(
     initial_imp_rent_paid: np.ndarray,
     initial_hh_rental_income: np.ndarray,
     initial_hh_consumption: float,
-    initial_hh_consumption_before_vat: float,  # not used
     initial_gov_consumption: float,
     initial_cg_rent_received: float,  # not used
     initial_cg_taxes_rental_income: float,  # not used
-    # initial_sectoral_growth: np.ndarray,  # disappears
-    # initial_sentiment: float,  # disappears
     initial_imports: np.ndarray,
     initial_imports_by_country: dict[str, np.ndarray],
     initial_exports: np.ndarray,

@@ -180,7 +180,6 @@ class Country:
             policy_rate_markup=synthetic_country.policy_rate_markup,
             country_name=country_name,
             all_country_names=all_country_names,
-            long_term_ir=synthetic_country.long_term_interest_rate,
             n_industries=n_industries,
             scale=scale,
         )

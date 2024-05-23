@@ -10,7 +10,6 @@ def create_households_timeseries(
     initial_consumption_by_industry: np.ndarray,
     initial_hh_investment: np.ndarray,
     initial_investment_by_industry: np.ndarray,
-    initial_hh_consumption: np.ndarray,
     scale: int,
     vat: float,
     tau_cf: float,

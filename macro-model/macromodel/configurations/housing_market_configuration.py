@@ -4,8 +4,10 @@ from typing import Literal, Any
 
 class ClearingFunction(BaseModel):
     path_name: str = "clearing"
-    name: Literal["NoHousingMarketClearer", "DefaultHousingMarketClearer"] = "NoHousingMarketClearer"
-    parameters: dict[str, Any] = {}
+    name: Literal["NoHousingMarketClearer", "DefaultHousingMarketClearer", "AutomaticHousingMarketClearer"] = (
+        "AutomaticHousingMarketClearer"
+    )
+    parameters: dict[str, Any] = {"random_assignment_shock_variance": 0.0}
 
 
 class PropertyValueFunction(BaseModel):

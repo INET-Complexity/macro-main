@@ -61,22 +61,6 @@ class AutoregressiveRoWImportsSetter(RoWImportsSetter):
                 )
             imports = self.fixed_total_imports[current_time]  # check!
 
-            import matplotlib.pyplot as plt
-
-            plt.plot(
-                range(len(historic_total_real_imports[: -current_time - 1])),
-                historic_total_real_imports[: -current_time - 1],
-            )
-            plt.plot(
-                range(
-                    len(historic_total_real_imports[: -current_time - 1]),
-                    len(historic_total_real_imports[: -current_time - 1]) + len(self.fixed_total_imports),
-                ),
-                self.fixed_total_imports,
-            )
-            plt.show()
-            exit()
-
         # Fitting based on historic consumption
         else:
             imports = np.exp(

@@ -56,7 +56,6 @@ class CreditMarket:
         mortgage_loans = synthetic_credit_market.mortgage_loans.stack()
 
         ts = create_credit_market_timeseries(
-            total_payday_loans=payday_loans.sum(),
             total_consumption_expansion_loans=consumption_expansion_loans.sum(),
             total_short_term_loans=shortterm_loans.sum(),
             total_long_term_loans=longterm_loans.sum(),
@@ -81,34 +80,38 @@ class CreditMarket:
             initial_states=initial_states,
         )
 
-    # @classmethod
-    # def from_data(
-    #     cls,
-    #     country_name: str,
-    #     data: pd.DataFrame,
-    #     config: dict[str, Any],
-    # ) -> "CreditMarket":
-    #     # Get corresponding functions and parameters
-    #     functions = get_functions(
-    #         config["functions"],
-    #         loc="macromodel.credit_market",
-    #         func_dir=Path(__file__).parent / "func",
-    #     )
-    #     # Recording the loan_data of all loans
-    #     loan_data = data.copy()
-    #     loan_data["loan_type"] = np.array(map_to_enum(loan_data["loan_type"].values, LoanTypes))
-    #     loan_data["loan_bank_id"] = loan_data["loan_bank_id"].astype(int)
-    #     loan_data["loan_recipient_id"] = loan_data["loan_recipient_id"].astype(int)
-    #
-    #     # Create the corresponding time series object
-    #     ts = create_credit_market_timeseries(loan_data)
-    #
-    #     return cls(
-    #         country_name,
-    #         functions,
-    #         ts,
-    #         loan_data,
-    #     )
+    @classmethod
+    def from_data(
+        cls,
+        country_name: str,
+        st_loans: np.ndarray,
+        lt_loans: np.ndarray,
+        cons_loans: np.ndarray,
+        mort_loans: np.ndarray,
+    ) -> "CreditMarket":
+        # Record the states of all loans
+        states = {
+            "st_loans": st_loans,
+            "lt_loans": lt_loans,
+            "cons_loans": cons_loans,
+            "mort_loans": mort_loans,
+        }
+
+        # Create the corresponding time series object
+        ts = create_credit_market_timeseries(
+            total_short_term_loans=st_loans.sum(),
+            total_long_term_loans=lt_loans.sum(),
+            total_consumption_expansion_loans=cons_loans.sum(),
+            total_mortgage_loans=mort_loans.sum(),
+        )
+
+        return cls(
+            country_name=country_name,
+            functions={},
+            ts=ts,
+            states=states,
+            initial_states=deepcopy(states),
+        )
 
     def clear(
         self,

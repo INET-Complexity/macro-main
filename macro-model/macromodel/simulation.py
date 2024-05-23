@@ -77,17 +77,12 @@ class Simulation:
             for country_name in countries_without_row
         }
 
-        average_ppi_inflation = np.mean(
-            [countries[country_name].economy.ts.current("ppi_inflation")[0] for country_name in countries_without_row]
-        )
-
         rest_of_the_world = RestOfTheWorld.from_pickled_row(
             country_name="ROW",
             all_country_names=countries_with_row,
             n_industries=datawrapper.n_industries,
             synthetic_row=datawrapper.synthetic_rest_of_the_world,
             configuration=simulation_configuration.row_configuration,
-            average_ppi_inflation=average_ppi_inflation,
             calibration_data_before=datawrapper.calibration_before,
             calibration_data_during=datawrapper.calibration_during,
         )

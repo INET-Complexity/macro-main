@@ -29,6 +29,7 @@ class TestCountry:
             industries=datawrapper.configuration.industries,
             initial_year=datawrapper.configuration.year,
             t_max=12,
+            running_multiple_countries=False,
         )
 
         assert country is not None

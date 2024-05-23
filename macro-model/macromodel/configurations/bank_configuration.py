@@ -19,7 +19,6 @@ class BankParameters(BaseModel):
         long_term_firm_loan_maturity (int): The maturity in months of long-term firm loans.
         mortgage_maturity (int): The maturity in months of mortgages.
         short_term_firm_loan_maturity (int): The maturity in months of short-term firm loans.
-        solvency_ratio (float): solvency ratio as the fraction of equity to assets, under which the bank is bankrupt.
     """  # noqa: D301
 
     capital_adequacy_ratio: float = Field(ge=0, le=1, default=0.08)

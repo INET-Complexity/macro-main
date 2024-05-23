@@ -1,14 +1,11 @@
 import numpy as np
-import pandas as pd
 
-from macromodel.credit_market.types_of_loans import LoanTypes
 from macromodel.timeseries import TimeSeries
 
 
 def create_credit_market_timeseries(
     total_short_term_loans: float,
     total_long_term_loans: float,
-    total_payday_loans: float,
     total_consumption_expansion_loans: float,
     total_mortgage_loans: float,
 ) -> TimeSeries:

@@ -15,6 +15,5 @@ class TestEconomy:
             "bank_insolvency_rate",
             "household_insolvency_rate",
             "total_growth",
-            "sectoral_sentiment",
         ]:
             assert ts_key in test_economy.ts.get_keys()

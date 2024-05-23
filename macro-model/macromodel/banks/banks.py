@@ -43,7 +43,6 @@ class Banks(Agent):
         synthetic_banks: SyntheticBanks,
         configuration: BanksConfiguration,
         policy_rate_markup: float,
-        long_term_ir: float,
         n_industries: int,
         scale: int,
         country_name: str,

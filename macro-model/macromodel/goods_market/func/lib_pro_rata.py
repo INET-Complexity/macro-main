@@ -159,12 +159,6 @@ def collect_buyer_info(
                             trade_proportions * transactor.transactor_buyer_states[init_field],
                             transactor.transactor_buyer_states[rem_field],
                         ).sum(axis=0)
-                    """
-                    print("\n")
-                    print("Buyer information for %s", country_name)
-                    print("Transactor %s", transactor)
-                    print("Total remaining goods: %.2e", np.minimum(trade_proportions * transactor.transactor_buyer_states[init_field], transactor.transactor_buyer_states[rem_field]).sum(axis=0))
-                    """
 
     # Calculate sums
     aggr_real_demand = np.stack(list(total_real_demand.values()), axis=0).sum(axis=0)

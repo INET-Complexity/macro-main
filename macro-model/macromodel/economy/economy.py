@@ -51,7 +51,6 @@ class Economy:
         initial_sectoral_firm_sales = np.bincount(
             firms.states["Industry"], weights=firms.ts.current("total_sales"), minlength=firms.n_industries
         )
-        initial_firm_total_used_ii = firms.ts.current("used_intermediate_inputs_costs").sum()
         initial_sectoral_firm_used_ii = np.bincount(
             firms.states["Industry"],
             weights=firms.ts.current("used_intermediate_inputs_costs"),
@@ -72,8 +71,6 @@ class Economy:
         initial_total_operating_surplus = firms.ts.current("gross_operating_surplus_mixed_income").sum()
         initial_total_wages = firms.ts.current("total_wage").sum()
 
-        all_other_countries = [c for c in all_country_names if c != country_name]
-
         initial_individual_activity = individuals.states["Activity Status"]
         initial_cpi_inflation = exogenous.ts.initial("cpi_inflation")[0]
         initial_ppi_inflation = exogenous.ts.initial("ppi_inflation")[0]
@@ -84,7 +81,6 @@ class Economy:
         initial_imp_rent_paid = households.ts.current("rent_imputed")
         initial_hh_rental_income = households.ts.current("income_rental")
         initial_hh_consumption = households.ts.current("total_consumption")[0]
-        initial_hh_consumption_before_vat = households.ts.current("total_consumption_before_vat")[0]
         initial_gov_consumption = government_entities.ts.current("total_consumption")[0]
         initial_cg_rent_received = central_government.ts.current("total_rent_received")[0]
         initial_cg_taxes_rental_income = central_government.ts.current("taxes_rental_income")[0]
@@ -108,7 +104,8 @@ class Economy:
         #     c: exogenous.ts.initial("sectoral_imports_from_" + c) for c in all_other_countries
         # }
         # initial_exports = exogenous.ts.initial("sectoral_exports")
-        # initial_exports_by_country = {c: exogenous.ts.initial("sectoral_exports_to_" + c) for c in all_other_countries}
+        # initial_exports_by_country = {c: exogenous.ts.initial("sectoral_exports_to_" + c)
+        # for c in all_other_countries}
 
         initial_imports = industry_vectors["Imports in LCU"].values.flatten()
         initial_imports_by_country = {
@@ -134,7 +131,6 @@ class Economy:
             initial_firm_prices=initial_firm_prices,  # .mean(),
             initial_firm_total_sales=initial_total_output,
             initial_sectoral_firm_sales=initial_sectoral_firm_sales,
-            initial_firm_total_used_ii=initial_firm_total_used_ii,
             initial_sectoral_firm_used_ii=initial_sectoral_firm_used_ii,
             initial_total_taxes_on_products=initial_total_taxes_on_products,
             initial_total_taxes_on_production=initial_total_taxes_on_production,
@@ -150,12 +146,9 @@ class Economy:
             initial_imp_rent_paid=initial_imp_rent_paid,
             initial_hh_rental_income=initial_hh_rental_income,
             initial_hh_consumption=initial_hh_consumption,
-            initial_hh_consumption_before_vat=initial_hh_consumption_before_vat,
             initial_gov_consumption=initial_gov_consumption,
             initial_cg_rent_received=initial_cg_rent_received,
             initial_cg_taxes_rental_income=initial_cg_taxes_rental_income,
-            # initial_sectoral_growth=initial_sectoral_growth,
-            # initial_sentiment=initial_sentiment,
             initial_imports=initial_imports,
             initial_imports_by_country=initial_imports_by_country,
             initial_exports=initial_exports,
@@ -257,13 +250,6 @@ class Economy:
                 )
                 assert not np.isnan(estimated_ppi_inflation)
                 self.ts.estimated_ppi_inflation.append([estimated_ppi_inflation])
-
-                """
-                import matplotlib.pyplot as plt
-                plt.plot(range(len(historic_ppi_inflation)), historic_ppi_inflation)
-                plt.plot([len(historic_ppi_inflation) - 1, len(historic_ppi_inflation)], [historic_ppi_inflation[-1], estimated_ppi_inflation])
-                plt.show()
-                """
 
         # Forecast growth
         if assume_zero_growth:
@@ -669,8 +655,8 @@ class Economy:
                 - sectoral_intermediate_consumption.sum()
                 - taxes_on_production
                 + taxes_on_products
-                # + rent_paid
-                # + rent_imputed
+                + rent_paid
+                + rent_imputed
             ]
         )
         if self.ts.prev("gdp_output")[0] == 0.0:
