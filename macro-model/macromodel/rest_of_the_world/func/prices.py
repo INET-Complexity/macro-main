@@ -23,6 +23,5 @@ class InflationRoWPriceSetter(RoWPriceSetter):
     ) -> np.ndarray:
         return np.maximum(
             1e-3,
-            (1.0 + adjustment_speed * (aggregate_country_price_index - 1.0))
-            * initial_price,
+            (1.0 + adjustment_speed * (aggregate_country_price_index - 1.0)) * initial_price,
         )

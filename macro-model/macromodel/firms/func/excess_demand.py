@@ -10,13 +10,9 @@ class ExcessDemandSetter(ABC):
         consider_capital_inputs: float,
         consider_labour_inputs: float,
     ):
-        self.consider_intermediate_inputs = max(
-            0.0, min(1.0, consider_intermediate_inputs)
-        )
+        self.consider_intermediate_inputs = max(0.0, min(1.0, consider_intermediate_inputs))
         self.consider_intermediate_inputs = consider_intermediate_inputs
-        self.consider_capital_inputs = max(
-            0.0, min(1.0, consider_capital_inputs)
-        )
+        self.consider_capital_inputs = max(0.0, min(1.0, consider_capital_inputs))
         self.consider_capital_inputs = consider_capital_inputs
         self.consider_labour_inputs = max(0.0, min(1.0, consider_labour_inputs))
         self.consider_labour_inputs = consider_labour_inputs
@@ -45,29 +41,18 @@ class ConstrainedExcessDemandSetter(ExcessDemandSetter):
         target_production = np.minimum(
             target_production,
             target_production
-            + self.consider_labour_inputs
-            * (
-                (limiting_labour_inputs - current_production)
-                - target_production
-            ),
+            + self.consider_labour_inputs * ((limiting_labour_inputs - current_production) - target_production),
         )
         target_production = np.minimum(
             target_production,
             target_production
             + self.consider_intermediate_inputs
-            * (
-                (limiting_intermediate_inputs - current_production)
-                - target_production
-            ),
+            * ((limiting_intermediate_inputs - current_production) - target_production),
         )
         target_production = np.minimum(
             target_production,
             target_production
-            + self.consider_capital_inputs
-            * (
-                (limiting_capital_inputs - current_production)
-                - target_production
-            ),
+            + self.consider_capital_inputs * ((limiting_capital_inputs - current_production) - target_production),
         )
 
         return target_production

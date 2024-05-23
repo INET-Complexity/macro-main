@@ -30,9 +30,7 @@ class EqualSocialTransfersSetter(SocialTransfersSetter):
         initial_independents: np.ndarray,
         model: Optional[Any],
     ) -> np.ndarray:
-        return np.full(
-            n_households, total_other_social_transfers / n_households
-        )
+        return np.full(n_households, total_other_social_transfers / n_households)
 
 
 class ConstantSocialTransfersSetter(SocialTransfersSetter):

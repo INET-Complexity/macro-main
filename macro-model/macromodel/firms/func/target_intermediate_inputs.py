@@ -9,9 +9,7 @@ class TargetIntermediateInputsSetter(ABC):
         target_intermediate_inputs_fraction: float,
         credit_gap_fraction: float,
     ):
-        self.target_intermediate_inputs_fraction = (
-            target_intermediate_inputs_fraction
-        )
+        self.target_intermediate_inputs_fraction = target_intermediate_inputs_fraction
         self.credit_gap_fraction = credit_gap_fraction
 
     @abstractmethod

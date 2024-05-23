@@ -42,9 +42,7 @@ class DefaultHouseholdTargetCredit(HouseholdTargetCredit):
     ) -> np.ndarray:
         return np.maximum(
             0.0,
-            target_consumption.sum(axis=1)
-            - (income - rent)
-            - wealth_in_financial_assets,
+            target_consumption.sum(axis=1) - (income - rent) - wealth_in_financial_assets,
         )
 
     def compute_target_mortgage(
@@ -61,7 +59,6 @@ class DefaultHouseholdTargetCredit(HouseholdTargetCredit):
             - self.down_payment_fraction
             * np.maximum(
                 0.0,
-                wealth_in_financial_assets
-                - (target_consumption.sum(axis=1) - (income - rent)),
+                wealth_in_financial_assets - (target_consumption.sum(axis=1) - (income - rent)),
             ),
         )

@@ -21,6 +21,4 @@ class DefaultFirmProfitsSetter(FirmProfitsSetter):
         estimated_growth: float,
         estimated_inflation: float,
     ) -> np.ndarray:
-        return (
-            (1 + estimated_growth) * (1 + estimated_inflation) * current_profits
-        )
+        return (1 + estimated_growth) * (1 + estimated_inflation) * current_profits

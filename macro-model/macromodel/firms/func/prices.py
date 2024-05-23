@@ -83,9 +83,7 @@ class DefaultPriceSetter(PriceSetter):
             )
             - 1.0
         )
-        demand_pull_inflation = np.maximum(
-            min_inflation, np.minimum(max_inflation, demand_pull_inflation)
-        )
+        demand_pull_inflation = np.maximum(min_inflation, np.minimum(max_inflation, demand_pull_inflation))
 
         # Cost-push inflation
         cost_push_inflation = (
@@ -97,23 +95,13 @@ class DefaultPriceSetter(PriceSetter):
             )
             - 1.0
         )
-        cost_push_inflation = np.maximum(
-            min_inflation, np.minimum(max_inflation, cost_push_inflation)
-        )
+        cost_push_inflation = np.maximum(min_inflation, np.minimum(max_inflation, cost_push_inflation))
 
         return np.maximum(
             1e-2,
             prev_prices
-            * (
-                1
-                + np.random.normal(
-                    0.0, self.price_setting_noise_std, prev_prices.shape
-                )
-            )
-            * (
-                1
-                + self.price_setting_speed_gf * current_estimated_ppi_inflation
-            )
+            * (1 + np.random.normal(0.0, self.price_setting_noise_std, prev_prices.shape))
+            * (1 + self.price_setting_speed_gf * current_estimated_ppi_inflation)
             * (1 + self.price_setting_speed_dp * demand_pull_inflation)
             * (1 + self.price_setting_speed_cp * cost_push_inflation),
         )

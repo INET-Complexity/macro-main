@@ -4,9 +4,7 @@ from abc import abstractmethod, ABC
 
 
 class TargetCapitalInputsSetter(ABC):
-    def __init__(
-        self, target_capital_inputs_fraction: float, credit_gap_fraction: float
-    ):
+    def __init__(self, target_capital_inputs_fraction: float, credit_gap_fraction: float):
         self.target_capital_inputs_fraction = target_capital_inputs_fraction
         self.credit_gap_fraction = credit_gap_fraction
 
