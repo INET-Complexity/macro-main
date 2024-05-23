@@ -594,11 +594,7 @@ class SyntheticCountry:
         )
         population.set_household_saving_rates(independents=independents)
 
-        household_investment = country_industry_data["industry_vectors"]["Household Capital Inputs in LCU"].values
-
-        population.set_household_investment_rates(
-            household_investment=household_investment, capital_formation_taxrate=tax_data.capital_formation_tax
-        )
+        population.set_household_investment_rates(capital_formation_taxrate=tax_data.capital_formation_tax)
         iot_consumption = country_industry_data["industry_vectors"]["Household Consumption in LCU"]
         population.normalise_household_consumption(
             iot_hh_consumption=iot_consumption, vat=tax_data.value_added_tax, independents=independents

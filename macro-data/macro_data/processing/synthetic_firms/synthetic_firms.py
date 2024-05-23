@@ -74,6 +74,7 @@ class SyntheticFirms(ABC):
         capital_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_productivity_matrix: np.ndarray,
         capital_inputs_depreciation_matrix: np.ndarray,
+        labour_productivity_by_industry: np.ndarray,
     ):
         self.country_name = country_name
         self.scale = scale
@@ -96,6 +97,8 @@ class SyntheticFirms(ABC):
         self.capital_inputs_productivity_matrix = capital_inputs_productivity_matrix
         self.intermediate_inputs_productivity_matrix = intermediate_inputs_productivity_matrix
         self.capital_inputs_depreciation_matrix = capital_inputs_depreciation_matrix
+
+        self.labour_productivity_by_industry = labour_productivity_by_industry
 
     @property
     def number_of_firms(self) -> int:

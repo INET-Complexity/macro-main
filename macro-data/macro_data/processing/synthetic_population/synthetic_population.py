@@ -121,6 +121,7 @@ class SyntheticPopulation(ABC):
         coefficient_fa_income: float,
         consumption_weights: np.ndarray,
         consumption_weights_by_income: np.ndarray,
+        investment: np.ndarray,
         saving_rates_model: LinearRegression,
         social_transfers_model: LinearRegression,
         wealth_distribution_model: LinearRegression,
@@ -143,6 +144,8 @@ class SyntheticPopulation(ABC):
         # Household consumption weights and models
         self.consumption_weights = consumption_weights
         self.consumption_weights_by_income = consumption_weights_by_income
+        self.investment = investment
+
         self.saving_rates_model = saving_rates_model
         self.social_transfers_model = social_transfers_model
         self.wealth_distribution_model = wealth_distribution_model
@@ -192,6 +195,20 @@ class SyntheticPopulation(ABC):
                 self.individual_data["Activity Status"] == 3,
                 "Labour Inputs",
             ] = 0.0
+
+    @property
+    def industry_consumption_before_vat(self):
+        return ...
+
+    @property
+    def investment_weights(self) -> np.ndarray:
+        """
+        Returns the investment weights.
+
+        Returns:
+            np.ndarray: The investment weights.
+        """
+        return self.investment / self.investment.sum()
 
     @abstractmethod
     def compute_household_income(
@@ -250,7 +267,6 @@ class SyntheticPopulation(ABC):
 
     def set_household_investment_rates(
         self,
-        household_investment: np.ndarray,
         capital_formation_taxrate: float,
         default_investment_rates: np.ndarray | float = 0.2,
     ) -> None: ...

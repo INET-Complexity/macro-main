@@ -1,5 +1,5 @@
 import logging
-from typing import Self, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -36,6 +36,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
         capital_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_productivity_matrix: np.ndarray,
         capital_inputs_depreciation_matrix: np.ndarray,
+        labour_productivity_by_industry: np.ndarray,
     ):
         super().__init__(
             country_name,
@@ -53,6 +54,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
             capital_inputs_productivity_matrix,
             intermediate_inputs_productivity_matrix,
             capital_inputs_depreciation_matrix,
+            labour_productivity_by_industry,
         )
 
     @classmethod
@@ -122,6 +124,8 @@ class DefaultSyntheticFirms(SyntheticFirms):
         intermediate_inputs_productivity_matrix = industry_data["intermediate_inputs_productivity_matrix"].values
         capital_inputs_depreciation_matrix = industry_data["capital_inputs_depreciation_matrix"].values
 
+        labour_productivity = np.ones_like(n_employees_per_industry).astype(float)
+
         # TODO needs to be updated if function parameters change
 
         (
@@ -161,6 +165,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
             capital_inputs_productivity_matrix=capital_inputs_productivity_matrix,
             intermediate_inputs_productivity_matrix=intermediate_inputs_productivity_matrix,
             capital_inputs_depreciation_matrix=capital_inputs_depreciation_matrix,
+            labour_productivity_by_industry=labour_productivity,
         )
 
     def reset_function_parameters(

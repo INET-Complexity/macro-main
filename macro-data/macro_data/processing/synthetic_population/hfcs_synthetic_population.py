@@ -136,6 +136,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         coefficient_fa_income: float,
         consumption_weights: np.ndarray,
         consumption_weights_by_income: np.ndarray,
+        investment: np.ndarray,
     ):
         saving_rates_model = LinearRegression()
         social_transfers_model = LinearRegression()
@@ -152,6 +153,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             coefficient_fa_income,
             consumption_weights,
             consumption_weights_by_income,
+            investment,
             saving_rates_model,
             social_transfers_model,
             wealth_distribution_model,
@@ -281,6 +283,10 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         for i in range(n_quantiles):
             consumption_weights_by_income[i] = consumption_weights
 
+        household_investment = industry_data["industry_vectors"]["Household Capital Inputs in LCU"].values
+
+        investment = household_investment
+
         individual_data["Corresponding Firm ID"] = np.nan
 
         return cls(
@@ -295,6 +301,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             consumption_weights=consumption_weights,
             consumption_weights_by_income=consumption_weights_by_income,
             coefficient_fa_income=0.0,
+            investment=investment,
         )
 
     def restrict(self) -> None:
@@ -592,9 +599,18 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             + self.household_data["Income from Financial Assets"]
         )
 
+    @property
+    def investment_weights(self) -> np.ndarray:
+        """
+        Returns the investment weights.
+
+        Returns:
+            np.ndarray: The investment weights.
+        """
+        return self.investment / self.investment.sum()
+
     def set_household_investment_rates(
         self,
-        household_investment: np.ndarray,
         capital_formation_taxrate: float,
         default_investment_rates: np.ndarray | float = 0.2,
     ) -> None:
@@ -602,7 +618,6 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         Sets the investment rates for each household based on the given investment rates.
 
         Parameters:
-            household_investment (np.ndarray): The household investment by industry.
             capital_formation_taxrate (float): The capital formation tax rate.
             default_investment_rates (np.ndarray): The investment rates.
 
@@ -611,13 +626,13 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         """
         # self.household_data["Investment Rate"] = default_investment_rates
         income = self.household_data["Income"].values
-        investment_weights = household_investment / household_investment.sum()
+        investment_weights = self.investment_weights
 
         current_investment = np.outer(investment_weights, default_investment_rates * income) / (
             1 + capital_formation_taxrate
         )
 
-        factor = household_investment.sum() / current_investment.sum()
+        factor = self.investment.sum() / current_investment.sum()
 
         self.household_data["Investment Rate"] = factor * default_investment_rates
 
@@ -696,6 +711,8 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
         self.household_data["Investment Rate"] = factor * investment_rate
 
+        self.investment *= factor
+
         # set initial investment
         self.household_data["Investment"] = (self.household_data["Income"] * self.household_data["Investment Rate"]) / (
             1 + tau_cf
@@ -768,6 +785,19 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             dependent="Saving Rate",
             model=self.saving_rates_model,
         )
+
+    @property
+    def industry_consumption_before_vat(self):
+        cons_weights = self.consumption_weights
+        income = self.household_data["Income"].values
+        sr = self.household_data["Saving Rate"].values
+        current_hh_consumption = default_desired_consumption(
+            income_=income,
+            consumption_weights_=cons_weights,
+            saving_rates_=sr,
+            tau_vat_=0,
+        )
+        return current_hh_consumption
 
     def match_consumption_weights_by_income(
         self,

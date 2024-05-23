@@ -5,10 +5,17 @@ import pandas as pd
 
 
 @dataclass
-class LongtermLoans:
+class LoanData:
     principal: np.ndarray
     interest: np.ndarray
     installments: np.ndarray
+
+    def stack(self):
+        return np.stack([self.principal, self.interest, self.installments])
+
+
+@dataclass
+class LongtermLoans(LoanData):
 
     @classmethod
     def from_agent_data(
@@ -33,10 +40,7 @@ class LongtermLoans:
 
 
 @dataclass
-class ShorttermLoans:
-    principal: np.ndarray
-    interest: np.ndarray
-    installments: np.ndarray
+class ShorttermLoans(LoanData):
 
     @classmethod
     def from_agent_data(
@@ -52,10 +56,7 @@ class ShorttermLoans:
 
 
 @dataclass
-class ConsumptionExpansionLoans:
-    principal: np.ndarray
-    interest: np.ndarray
-    installments: np.ndarray
+class ConsumptionExpansionLoans(LoanData):
 
     @classmethod
     def from_agent_data(
@@ -84,10 +85,7 @@ class ConsumptionExpansionLoans:
 
 
 @dataclass
-class PaydayLoans:
-    principal: np.ndarray
-    interest: np.ndarray
-    installments: np.ndarray
+class PaydayLoans(LoanData):
 
     @classmethod
     def from_agent_data(
@@ -101,10 +99,7 @@ class PaydayLoans:
 
 
 @dataclass
-class MortgageLoans:
-    principal: np.ndarray
-    interest: np.ndarray
-    installments: np.ndarray
+class MortgageLoans(LoanData):
 
     @classmethod
     def from_agent_data(cls, bank_data: pd.DataFrame, household_data: pd.DataFrame, mortgage_maturity: int = 120):

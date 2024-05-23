@@ -281,6 +281,22 @@ class DataWrapper:
         with open(path, "wb") as f:
             pkl.dump(self.__dict__, f)
 
+    @property
+    def calibration_before(self):
+        year = self.configuration.year
+        quarter = self.configuration.quarter
+        calibration_index = self.calibration_data.index
+        calibration_before_index = calibration_index[calibration_index < f"{year}-Q{quarter}"]
+        return self.calibration_data.loc[calibration_before_index]
+
+    @property
+    def calibration_during(self):
+        year = self.configuration.year
+        quarter = self.configuration.quarter
+        calibration_index = self.calibration_data.index
+        calibration_during_index = calibration_index[calibration_index == f"{year}-Q{quarter}"]
+        return self.calibration_data.loc[calibration_during_index]
+
 
 def add_row_to_calibration(
     calibration_data: pd.DataFrame, industry_data: dict[str | Country, dict[str, pd.DataFrame]], year: int, quarter: int
