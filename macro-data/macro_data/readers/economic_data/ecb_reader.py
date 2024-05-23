@@ -41,21 +41,21 @@ class ECBReader:
             filepath = path / (f + ".csv")
             self.data[f] = preprocess_df(pd.read_csv(filepath, index_col="DATE", parse_dates=True))
 
-    def get_firm_rates(self, country_name: str) -> Optional[pd.DataFrame]:
+    def get_firm_rates(self, country_name: str) -> Optional[pd.Series]:
         df = self.data["firm_loans"].copy()
         if country_name in df.columns:
             return df[country_name] / 100.0
         else:
             return None
 
-    def get_household_consumption_rates(self, country_name: str) -> Optional[pd.DataFrame]:
+    def get_household_consumption_rates(self, country_name: str) -> Optional[pd.Series]:
         df = self.data["household_loans_for_consumption"].copy()
         if country_name in df.columns:
             return df[country_name] / 100.0
         else:
             return None
 
-    def get_household_mortgage_rates(self, country_name: str) -> Optional[pd.DataFrame]:
+    def get_household_mortgage_rates(self, country_name: str) -> Optional[pd.Series]:
         df = self.data["household_loans_for_mortgages"].copy()
         if country_name in df.columns:
             return df[country_name] / 100.0

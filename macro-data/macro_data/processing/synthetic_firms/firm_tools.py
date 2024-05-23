@@ -96,11 +96,11 @@ def add_number_employees_compustat(
     n_firms_per_industry: np.ndarray | list,
     n_industries: int,
 ):
-    n_firms = n_firms_per_industry.sum()
-    firms_inds = np.random.choice(range(len(compustat_data)), n_firms, replace=True)
-
-    # select firms with those indices
-    compustat_data = compustat_data.iloc[firms_inds]
+    # n_firms = n_firms_per_industry.sum()
+    # firms_inds = np.random.choice(range(len(compustat_data)), n_firms, replace=True)
+    #
+    # # select firms with those indices
+    # compustat_data = compustat_data.iloc[firms_inds]
 
     firm_data["Number of Employees"] = 0
     current_firm_ind = 0
@@ -281,6 +281,11 @@ def initialise_basic_firm_fields_compustat(
         )
     )
 
+    firms_inds = np.random.choice(range(len(compustat_data)), n_firms, replace=True)
+
+    # select firms with those indices
+    compustat_data = compustat_data.iloc[firms_inds]
+
     firm_data = add_number_employees_compustat(
         firm_data, compustat_data, n_employees_per_industry, n_firms_per_industry, n_industries
     )
@@ -299,6 +304,8 @@ def initialise_basic_firm_fields_compustat(
         labour_prod_by_industry = output / n_employees_per_industry
         for industry in range(n_industries):
             firm_data.loc[firm_data["Industry"] == industry, "Labour Productivity"] = labour_prod_by_industry[industry]
+
+    firm_data["Deposits"] = compustat_data["Deposits"].values
 
     return firm_data
 
@@ -416,10 +423,24 @@ def function_parameters_dependent_initialisation(
     ).T.astype(float)
     # TODO : Sam's version with compustat data can have firms with negative deposits, and this doesn't work
 
+    deposits_in_data = "Deposits" in firm_data.columns
+
     if assume_zero_initial_deposits:
         firm_data["Deposits"] = 0.0
     else:
-        firm_data["Deposits"] = firm_data["Production"] / firm_data["Production"].sum() * total_firm_deposits
+        if not deposits_in_data or firm_data["Deposits"].values.sum() == 0.0:
+            firm_data["Deposits"] = np.full(
+                len(firm_data),
+                1.0 / len(firm_data) * total_firm_deposits,
+            )
+        else:
+            if deposits_in_data:
+                firm_data["Deposits"] = np.clip(firm_data["Deposits"], 0, None)
+                weights = firm_data["Deposits"].values / firm_data["Deposits"].values.sum()
+            else:
+                weights = firm_data["Production"].values / firm_data["Production"].values.sum()
+            firm_data["Deposits"] = weights * total_firm_deposits
+    firm_data["Deposits"] = np.maximum(0.0, firm_data["Deposits"])
     if assume_zero_initial_debt:
         firm_data["Debt"] = 0.0
     else:

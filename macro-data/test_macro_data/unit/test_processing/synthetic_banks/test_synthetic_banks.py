@@ -13,7 +13,7 @@ PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 
 
 class TestSyntheticBanks:
-    def test__create(self, readers):
+    def test__create(self, readers, exogenous_data):
         banks_configuration = BanksDataConfiguration()
         banks = DefaultSyntheticBanks.from_readers(
             single_bank=True,
@@ -22,6 +22,8 @@ class TestSyntheticBanks:
             readers=readers,
             scale=10000,
             banks_data_configuration=banks_configuration,
+            quarter=1,
+            inflation_data=exogenous_data.inflation,
         )
         # banks.create(
         #     bank_equity=1000,
@@ -53,6 +55,8 @@ class TestSyntheticBanks:
             "Mortgages to Households",
             "Consumption Loans to Households",
             "Loans to Households",
+            "Interest Rates on Firm Deposits",
+            "Interest Rates on Household Deposits",
         }
 
         assert set(banks.bank_data.columns) == columns

@@ -13,7 +13,9 @@ class TestOECDEconData:
         assert readers.oecd_econ.read_tau_firm("FRA", 2014) == pytest.approx(37.996e-2, abs=1e-4)
 
     def test__tau_inc(self, readers):
-        assert readers.oecd_econ.read_tau_income("FRA", 2014) == pytest.approx(0.28619674, abs=1e-4)
+        # assert readers.oecd_econ.read_tau_income("FRA", 2014) == pytest.approx(0.28619674, abs=1e-4)
+        # Sam's override
+        assert readers.oecd_econ.read_tau_income("FRA", 2014) == pytest.approx(0.09, abs=1e-4)
 
     """
     def test__immediate_interest_rates(self, readers):

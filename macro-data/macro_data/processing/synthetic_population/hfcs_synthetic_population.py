@@ -136,6 +136,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         coefficient_fa_income: float,
         consumption_weights: np.ndarray,
         consumption_weights_by_income: np.ndarray,
+        investment: np.ndarray,
     ):
         saving_rates_model = LinearRegression()
         social_transfers_model = LinearRegression()
@@ -152,6 +153,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             coefficient_fa_income,
             consumption_weights,
             consumption_weights_by_income,
+            investment,
             saving_rates_model,
             social_transfers_model,
             wealth_distribution_model,
@@ -281,6 +283,10 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         for i in range(n_quantiles):
             consumption_weights_by_income[i] = consumption_weights
 
+        household_investment = industry_data["industry_vectors"]["Household Capital Inputs in LCU"].values
+
+        investment = household_investment
+
         individual_data["Corresponding Firm ID"] = np.nan
 
         return cls(
@@ -295,6 +301,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             consumption_weights=consumption_weights,
             consumption_weights_by_income=consumption_weights_by_income,
             coefficient_fa_income=0.0,
+            investment=investment,
         )
 
     def restrict(self) -> None:
@@ -448,26 +455,23 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             + self.household_data["Outstanding Balance of other Non-Mortgage Loans"]
         )
 
-    def set_debt_installments(self, credit_market_data: pd.DataFrame) -> None:
+    def set_debt_installments(
+        self, consumption_installments: np.ndarray, ce_installments: np.ndarray, mortgage_installments: np.ndarray
+    ) -> None:
         """
         Sets the debt installments for each household based on the credit market data.
 
         Args:
-            credit_market_data (DataFrame): The credit market data.
+            consumption_installments (np.ndarray): The consumption loan installments.
+            ce_installments (np.ndarray): The payday loan installments.
+            mortgage_installments (np.ndarray): The mortgage loan installments.
 
         Returns:
             None
         """
-        credit_market_data_household_loans = credit_market_data.loc[credit_market_data["loan_type"].isin([4, 5])]
-        debt_installments = np.zeros(len(self.household_data))
-        for household_id in range(len(self.household_data)):
-            curr_loans = credit_market_data_household_loans[
-                credit_market_data_household_loans["loan_recipient_id"] == household_id
-            ]
-            for loan_id in range(len(curr_loans)):
-                debt_installments[household_id] += float(
-                    curr_loans.iloc[loan_id]["loan_value"] / curr_loans.iloc[loan_id]["loan_maturity"]
-                )
+        debt_installments = (
+            consumption_installments.sum(axis=0) + ce_installments.sum(axis=0) + mortgage_installments.sum(axis=0)
+        )
         self.household_data["Debt Installments"] = debt_installments
 
     def set_household_net_wealth(self) -> None:
@@ -595,17 +599,47 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             + self.household_data["Income from Financial Assets"]
         )
 
-    def set_household_investment_rates(self, investment_rates: np.ndarray | float = 0.2) -> None:
+    @property
+    def investment_weights(self) -> np.ndarray:
+        """
+        Returns the investment weights.
+
+        Returns:
+            np.ndarray: The investment weights.
+        """
+        return self.investment / self.investment.sum()
+
+    def set_household_investment_rates(
+        self,
+        capital_formation_taxrate: float,
+        default_investment_rates: np.ndarray | float = 0.2,
+    ) -> None:
         """
         Sets the investment rates for each household based on the given investment rates.
 
         Parameters:
-            investment_rates (np.ndarray): The investment rates.
+            capital_formation_taxrate (float): The capital formation tax rate.
+            default_investment_rates (np.ndarray): The investment rates.
 
         Returns:
             None
         """
-        self.household_data["Investment Rate"] = investment_rates
+        # self.household_data["Investment Rate"] = default_investment_rates
+        income = self.household_data["Income"].values
+        investment_weights = self.investment_weights
+
+        current_investment = np.outer(investment_weights, default_investment_rates * income) / (
+            1 + capital_formation_taxrate
+        )
+
+        factor = self.investment.sum() / current_investment.sum()
+
+        self.household_data["Investment Rate"] = factor * default_investment_rates
+
+        # set initial investment
+        self.household_data["Investment"] = (self.household_data["Income"] * self.household_data["Investment Rate"]) / (
+            1 + capital_formation_taxrate
+        )
 
     def set_household_saving_rates(self, independents: Optional[list[str]] = None) -> None:
         """
@@ -676,6 +710,8 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         factor = iot_hh_investment.sum() / current_hh_investment.sum()
 
         self.household_data["Investment Rate"] = factor * investment_rate
+
+        self.investment *= factor
 
         # set initial investment
         self.household_data["Investment"] = (self.household_data["Income"] * self.household_data["Investment Rate"]) / (
@@ -749,6 +785,19 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             dependent="Saving Rate",
             model=self.saving_rates_model,
         )
+
+    @property
+    def industry_consumption_before_vat(self):
+        cons_weights = self.consumption_weights
+        income = self.household_data["Income"].values
+        sr = self.household_data["Saving Rate"].values
+        current_hh_consumption = default_desired_consumption(
+            income_=income,
+            consumption_weights_=cons_weights,
+            saving_rates_=sr,
+            tau_vat_=0,
+        )
+        return current_hh_consumption
 
     def match_consumption_weights_by_income(
         self,
@@ -907,3 +956,25 @@ def default_target_investment(
     tau_cf_: float,
 ) -> np.ndarray:
     return 1.0 / (1 + tau_cf_) * np.outer(investment_weights_, investment_rate * income_).T
+
+
+def set_initial_values(household_data: pd.DataFrame, scale: int):
+    household_data.loc[
+        household_data["Value of Household Vehicles"].isna(),
+        "Value of Household Vehicles",
+    ] = 0.0
+    household_data.loc[
+        household_data["Value of Household Valuables"].isna(),
+        "Value of Household Valuables",
+    ] = 0.0
+    household_data.loc[
+        household_data["Value of Self-Employment Businesses"].isna(),
+        "Value of Self-Employment Businesses",
+    ] = 0.0
+
+    household_data["Wealth Other Real Assets"] = (
+        household_data["Value of Household Vehicles"]
+        + household_data["Value of Household Valuables"]
+        + household_data["Value of Self-Employment Businesses"]
+    )
+    household_data.loc[:, "Wealth Other Real Assets"] *= scale

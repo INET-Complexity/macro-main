@@ -102,8 +102,9 @@ class SyntheticCentralGovernment(ABC):
 
         income_tax = employee_income_tax + rental_income_tax + financial_income_tax
 
-        # TODO this looks wrong, it's just a taxrate
         cf_tax = tax_data.capital_formation_tax
+
+        household_gross_capital_inputs = industry_data["industry_vectors"]["Household Capital Inputs in LCU"].sum()
 
         self.set_revenue(
             total_social_housing_rent=total_social_housing_rent,
@@ -117,6 +118,7 @@ class SyntheticCentralGovernment(ABC):
             income_tax=income_tax,
             rental_income_tax=rental_income_tax,
             cf_tax=cf_tax,
+            household_gross_capital_inputs=household_gross_capital_inputs,
         )
 
     def set_revenue(
@@ -131,12 +133,13 @@ class SyntheticCentralGovernment(ABC):
         employee_si_tax: float,
         income_tax: float,
         rental_income_tax: float,
+        household_gross_capital_inputs: float,
         cf_tax: float,
     ) -> None:
         self.central_gov_data["Total Social Housing Rent"] = [total_social_housing_rent]
         self.central_gov_data["Taxes on Production"] = [firm_taxes_and_subsidies]
         self.central_gov_data["VAT"] = [household_vat]
-        self.central_gov_data["Capital Formation Taxes"] = [cf_tax * 0.0]
+        self.central_gov_data["Capital Formation Taxes"] = [cf_tax * household_gross_capital_inputs]
         self.central_gov_data["Export Taxes"] = [export_tax]
         self.central_gov_data["Corporate Taxes"] = [firm_corporate_taxes + bank_corporate_taxes]
         self.central_gov_data["Employer SI Tax"] = [firm_employer_si_tax]
@@ -147,7 +150,7 @@ class SyntheticCentralGovernment(ABC):
             total_social_housing_rent
             + firm_taxes_and_subsidies
             + household_vat
-            + cf_tax * 0.0
+            + cf_tax * household_gross_capital_inputs
             + export_tax
             + firm_corporate_taxes
             + bank_corporate_taxes
@@ -156,5 +159,5 @@ class SyntheticCentralGovernment(ABC):
             + income_tax
         ]
         self.central_gov_data["Taxes on Products"] = [
-            firm_taxes_and_subsidies + household_vat + cf_tax * 0.0 + export_tax
+            firm_taxes_and_subsidies + household_vat + cf_tax * household_gross_capital_inputs + export_tax
         ]

@@ -92,8 +92,10 @@ def match_firms_with_banks_optimal(
 
     firms.firm_data["Corresponding Bank ID"] = corr_banks
 
+    corr_banks = np.array(corr_banks)
+
     banks.bank_data["Corresponding Firms ID"] = [
-        np.where(corr_banks == bank_id) for bank_id in range(banks.number_of_banks)
+        np.where(corr_banks == bank_id)[0] for bank_id in range(banks.number_of_banks)
     ]
 
 

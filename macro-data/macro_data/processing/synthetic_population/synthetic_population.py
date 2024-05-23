@@ -121,6 +121,7 @@ class SyntheticPopulation(ABC):
         coefficient_fa_income: float,
         consumption_weights: np.ndarray,
         consumption_weights_by_income: np.ndarray,
+        investment: np.ndarray,
         saving_rates_model: LinearRegression,
         social_transfers_model: LinearRegression,
         wealth_distribution_model: LinearRegression,
@@ -143,6 +144,8 @@ class SyntheticPopulation(ABC):
         # Household consumption weights and models
         self.consumption_weights = consumption_weights
         self.consumption_weights_by_income = consumption_weights_by_income
+        self.investment = investment
+
         self.saving_rates_model = saving_rates_model
         self.social_transfers_model = social_transfers_model
         self.wealth_distribution_model = wealth_distribution_model
@@ -193,6 +196,20 @@ class SyntheticPopulation(ABC):
                 "Labour Inputs",
             ] = 0.0
 
+    @property
+    def industry_consumption_before_vat(self):
+        return ...
+
+    @property
+    def investment_weights(self) -> np.ndarray:
+        """
+        Returns the investment weights.
+
+        Returns:
+            np.ndarray: The investment weights.
+        """
+        return self.investment / self.investment.sum()
+
     @abstractmethod
     def compute_household_income(
         self,
@@ -222,7 +239,9 @@ class SyntheticPopulation(ABC):
         self.consumption_weights = consumption_weights.copy()
 
     @abstractmethod
-    def set_debt_installments(self, credit_market_data: pd.DataFrame) -> None: ...
+    def set_debt_installments(
+        self, consumption_installments: np.ndarray, ce_installments: np.ndarray, mortgage_installments: np.ndarray
+    ) -> None: ...
 
     @abstractmethod
     def set_household_saving_rates(self, independents: Optional[list[str]] = None) -> None: ...
@@ -246,7 +265,11 @@ class SyntheticPopulation(ABC):
         independents: Optional[list[str]] = None,
     ): ...
 
-    def set_household_investment_rates(self, investment_rates: np.ndarray | float = 0.2) -> None: ...
+    def set_household_investment_rates(
+        self,
+        capital_formation_taxrate: float,
+        default_investment_rates: np.ndarray | float = 0.2,
+    ) -> None: ...
 
     def normalise_household_investment(
         self, tau_cf: float, iot_hh_investment: np.ndarray | pd.Series, positive_investment_rates: bool = True
@@ -259,3 +282,5 @@ class SyntheticPopulation(ABC):
         vat: float,
         consumption_variance: float = 0.1,
     ) -> None: ...
+
+    def set_wealth_distribution_function(self, independents: Optional[list[str]] = None) -> None: ...

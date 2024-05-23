@@ -1,5 +1,5 @@
 import logging
-from typing import Self, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -8,6 +8,7 @@ from macro_data.configuration.countries import Country
 from macro_data.configuration.dataconfiguration import FirmsDataConfiguration
 from macro_data.processing.country_data import TaxData
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
+from macro_data.processing.synthetic_credit_market.loan_data import LongtermLoans, ShorttermLoans
 from macro_data.processing.synthetic_firms.firm_tools import (
     initialise_basic_firm_fields,
     function_parameters_dependent_initialisation,
@@ -35,6 +36,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
         capital_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_productivity_matrix: np.ndarray,
         capital_inputs_depreciation_matrix: np.ndarray,
+        labour_productivity_by_industry: np.ndarray,
     ):
         super().__init__(
             country_name,
@@ -52,6 +54,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
             capital_inputs_productivity_matrix,
             intermediate_inputs_productivity_matrix,
             capital_inputs_depreciation_matrix,
+            labour_productivity_by_industry,
         )
 
     @classmethod
@@ -121,6 +124,8 @@ class DefaultSyntheticFirms(SyntheticFirms):
         intermediate_inputs_productivity_matrix = industry_data["intermediate_inputs_productivity_matrix"].values
         capital_inputs_depreciation_matrix = industry_data["capital_inputs_depreciation_matrix"].values
 
+        labour_productivity = np.ones_like(n_employees_per_industry).astype(float)
+
         # TODO needs to be updated if function parameters change
 
         (
@@ -160,6 +165,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
             capital_inputs_productivity_matrix=capital_inputs_productivity_matrix,
             intermediate_inputs_productivity_matrix=intermediate_inputs_productivity_matrix,
             capital_inputs_depreciation_matrix=capital_inputs_depreciation_matrix,
+            labour_productivity_by_industry=labour_productivity,
         )
 
     def reset_function_parameters(
@@ -206,7 +212,8 @@ class DefaultSyntheticFirms(SyntheticFirms):
         self,
         interest_rate_on_firm_deposits: np.ndarray,
         overdraft_rate_on_firm_deposits: np.ndarray,
-        credit_market_data: pd.DataFrame,
+        short_term_loan_interest: np.ndarray,
+        long_term_loan_interest: np.ndarray,
     ) -> None:
         # Interest on deposits
         self.firm_data["Interest paid on deposits"] = -interest_rate_on_firm_deposits[
@@ -218,14 +225,8 @@ class DefaultSyntheticFirms(SyntheticFirms):
         )
 
         # Interest paid on loans
-        credit_market_data_firm_loans = credit_market_data.loc[credit_market_data["loan_type"] == 2]
-        interest_on_loans = np.zeros(len(self.firm_data))
-        for firm_id in range(len(self.firm_data)):
-            curr_loans = credit_market_data_firm_loans[credit_market_data_firm_loans["loan_recipient_id"] == firm_id]
-            for loan_id in range(len(curr_loans)):
-                interest_on_loans[firm_id] += float(
-                    curr_loans.iloc[loan_id]["loan_interest_rate"] * curr_loans.iloc[loan_id]["loan_value"]
-                )
+        interest_on_loans = short_term_loan_interest.sum(axis=0) + long_term_loan_interest.sum(axis=0)
+
         self.firm_data["Interest paid on loans"] = interest_on_loans
 
         # Total interest paid
@@ -300,22 +301,20 @@ class DefaultSyntheticFirms(SyntheticFirms):
     def set_corporate_taxes_paid(self, tau_firm: float) -> None:
         self.firm_data["Corporate Taxes Paid"] = tau_firm * np.maximum(0.0, self.firm_data["Profits"])
 
-    def set_firm_debt_installments(self, credit_market_data: pd.DataFrame) -> None:
-        credit_market_data_firm_loans = credit_market_data.loc[credit_market_data["loan_type"] == 2]
-        debt_installments = np.zeros(len(self.firm_data))
-        for firm_id in range(len(self.firm_data)):
-            curr_loans = credit_market_data_firm_loans[credit_market_data_firm_loans["loan_recipient_id"] == firm_id]
-            for loan_id in range(len(curr_loans)):
-                debt_installments[firm_id] += float(
-                    curr_loans.iloc[loan_id]["loan_value"] / curr_loans.iloc[loan_id]["loan_maturity"]
-                )
+    def set_firm_debt_installments(
+        self,
+        long_term_installments: np.ndarray,
+        short_term_installments: np.ndarray,
+    ) -> None:
+        debt_installments = long_term_installments.sum(axis=0) + short_term_installments.sum(axis=0)
         self.firm_data["Debt Installments"] = debt_installments
 
     def set_additional_initial_conditions(
         self,
         industry_data: dict[str, pd.DataFrame],
         synthetic_banks: SyntheticBanks,
-        credit_market_data: pd.DataFrame,
+        long_term_loans: LongtermLoans,
+        short_term_loans: ShorttermLoans,
         tax_data: TaxData,
     ) -> None:
         taxes_less_subsidies_rates = industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values
@@ -328,7 +327,8 @@ class DefaultSyntheticFirms(SyntheticFirms):
         self.set_interest_paid(
             interest_rate_on_firm_deposits=interest_rate_on_firm_deposits,
             overdraft_rate_on_firm_deposits=overdraft_rate_on_firm_deposits,
-            credit_market_data=credit_market_data,
+            short_term_loan_interest=short_term_loans.interest,
+            long_term_loan_interest=long_term_loans.interest,
         )
 
         self.set_firm_profits(
@@ -348,5 +348,6 @@ class DefaultSyntheticFirms(SyntheticFirms):
         )
 
         self.set_firm_debt_installments(
-            credit_market_data=credit_market_data,
+            long_term_installments=long_term_loans.installments,
+            short_term_installments=short_term_loans.installments,
         )

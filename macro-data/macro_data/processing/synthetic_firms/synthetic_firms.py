@@ -6,6 +6,7 @@ import pandas as pd
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 
 from macro_data.processing.country_data import TaxData
+from macro_data.processing.synthetic_credit_market.loan_data import LongtermLoans, ShorttermLoans
 
 
 class SyntheticFirms(ABC):
@@ -73,6 +74,7 @@ class SyntheticFirms(ABC):
         capital_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_productivity_matrix: np.ndarray,
         capital_inputs_depreciation_matrix: np.ndarray,
+        labour_productivity_by_industry: np.ndarray,
     ):
         self.country_name = country_name
         self.scale = scale
@@ -95,6 +97,8 @@ class SyntheticFirms(ABC):
         self.capital_inputs_productivity_matrix = capital_inputs_productivity_matrix
         self.intermediate_inputs_productivity_matrix = intermediate_inputs_productivity_matrix
         self.capital_inputs_depreciation_matrix = capital_inputs_depreciation_matrix
+
+        self.labour_productivity_by_industry = labour_productivity_by_industry
 
     @property
     def number_of_firms(self) -> int:
@@ -120,6 +124,7 @@ class SyntheticFirms(ABC):
         self,
         industry_data: dict[str, pd.DataFrame],
         synthetic_banks: SyntheticBanks,
-        credit_market_data: pd.DataFrame,
+        long_term_loans: LongtermLoans,
+        short_term_loans: ShorttermLoans,
         tax_data: TaxData,
     ) -> None: ...

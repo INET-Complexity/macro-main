@@ -376,11 +376,16 @@ class OECDEconData:
         return df.loc["COMB_CIT_RATE", "Value"] / 100.0
 
     def read_tau_income(self, country: Country, year: int) -> float:
-        df = self.data["average_personal_income_tax_by_family_type"]
-        df = df.loc[df["COU"] == country]
-        df = df.loc[df["Year"] == year]
-        df = df.loc[df["ALL_IN"] == "ALL_IN_RATE_SING_NO_CH"]
-        return df["Value"].values[0] / 100.0
+        # df = self.data["average_personal_income_tax_by_family_type"]
+        # df = df.loc[df["COU"] == country]
+        # df = df.loc[df["Year"] == year]
+        # df = df.loc[df["ALL_IN"] == "ALL_IN_RATE_SING_NO_CH"]
+        # return df["Value"].values[0] / 100.0
+
+        if country in force_tau_income:
+            return force_tau_income[country]
+        else:
+            return 0.09  # OECD average
 
     def read_short_term_interest_rates(self, country: Country, year: int) -> float:
         df = self.data["short_term_interest_rates"]
