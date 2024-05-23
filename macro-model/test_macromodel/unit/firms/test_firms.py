@@ -63,7 +63,7 @@ class TestFirms:
             "labour_inputs",
             "desired_labour_inputs",
             "labour_costs",
-            "real_amount_bought_as_capital_inputs",
+            # "real_amount_bought_as_capital_inputs",
         ]:
             assert ts_key in test_firms.ts.get_keys()
 

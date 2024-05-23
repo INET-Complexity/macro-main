@@ -160,6 +160,7 @@ class Households(Agent):
             initial_consumption_by_industry=initial_consumption_by_industry,
             initial_hh_investment=initial_investment.values,
             initial_investment_by_industry=synthetic_population.investment,
+            initial_hh_consumption=consumption_by_industry_hh,
             scale=scale,
             vat=value_added_tax,
             tau_cf=tau_cf,
