@@ -8,9 +8,13 @@ from macromodel.simulation import Simulation, check_compatibility
 from macro_data.configuration.countries import Country as CountryName
 
 
-def test_simulation(datawrapper):
+@pytest.mark.parametrize("seed", [30, 100, 150, 200, 145])
+def test_simulation(datawrapper, seed):
     """Test the simulation."""
     configuration = SimulationConfiguration(country_configurations={"FRA": CountryConfiguration()})
+
+    configuration.seed = seed
+
     simulation = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=configuration)
 
     assert set(simulation.countries.keys()) == {"FRA"}
@@ -24,7 +28,7 @@ def test_simulation(datawrapper):
     # no empty households
     assert all(households_lengths)
 
-    for _ in range(5):
+    for _ in range(10):
         simulation.iterate()
 
     with tempfile.TemporaryDirectory() as tmp:

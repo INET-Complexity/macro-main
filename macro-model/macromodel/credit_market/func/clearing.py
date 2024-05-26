@@ -907,9 +907,10 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 priorities=creditor_priorities,
                 minimum_fill=self.creditor_minimum_fill,
             )
-            new_loans[0, :, agents_with_demand] = np.matmul(granted_loans_by_banks, capacities_weights[np.newaxis])[
-                np.newaxis
-            ].T
+            # new_loans[0, :, agents_with_demand] = np.matmul(granted_loans_by_banks, capacities_weights[np.newaxis])[
+            #     np.newaxis
+            # ].T
+            new_loans[0, :, agents_with_demand] = np.outer(granted_loans_by_banks, capacities_weights)
         else:
             received_loans_by_debtors = self.fill_buckets(
                 capacities=capacities,
@@ -917,10 +918,11 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 priorities=debtor_priorities,
                 minimum_fill=self.debtor_minimum_fill,
             )
-            new_loans[0, :, agents_with_demand] = np.matmul(
-                received_loans_by_debtors,
-                supply_weights[np.newaxis],
-            )[np.newaxis].T
+            # new_loans[0, :, agents_with_demand] = np.matmul(
+            #     received_loans_by_debtors,
+            #     supply_weights[np.newaxis],
+            # )[np.newaxis].T
+            new_loans[0, :, agents_with_demand] = np.outer(received_loans_by_debtors, supply_weights)
         new_loans[1, :, agents_with_demand] = banks_ir[:, np.newaxis] * new_loans[0, :, agents_with_demand]
         new_loans[2, :, agents_with_demand] = 1.0 / loan_maturity * new_loans[0, :, agents_with_demand]
 
