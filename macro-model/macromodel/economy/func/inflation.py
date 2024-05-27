@@ -12,7 +12,7 @@ from macromodel.forecaster.forecaster import (
 
 
 class InflationForecasting(ABC):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.forecaster = None
 
     def forecast_inflation(
@@ -38,32 +38,32 @@ class InflationForecasting(ABC):
 
 
 class InflationForecastingConstant(InflationForecasting):
-    def __init__(self, value: float):
+    def __init__(self, value: float, *args, **kwargs):
         super().__init__()
         self.forecaster = ConstantForecaster(value=value)
 
 
 class InflationForecastingOLS(InflationForecasting):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super().__init__()
         self.forecaster = OLSForecaster()
 
 
 class InflationImplementedForecastingAutoReg(InflationForecasting):
-    def __init__(self, lags: int):
+    def __init__(self, lags: int, *args, **kwargs):
         super().__init__()
         self.forecaster = ImplementedAutoregForecaster(lags)
 
 
 class InflationManualForecastingAutoReg(InflationForecasting):
-    def __init__(self, lags: int):
+    def __init__(self, lags: int, *args, **kwargs):
         assert lags == 1
         super().__init__()
         self.forecaster = ManualAutoregForecaster()
 
 
 class ExogenousInflationForecasting(InflationForecasting):
-    def __init__(self, lags: int):
+    def __init__(self, lags: int, *args, **kwargs):
         super().__init__()
         self.forecaster = None
 

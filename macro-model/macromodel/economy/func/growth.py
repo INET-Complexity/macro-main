@@ -10,7 +10,7 @@ from macromodel.forecaster.forecaster import (
 
 
 class GrowthForecasting(ABC):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.forecaster = None
 
     def forecast_growth(
@@ -25,7 +25,7 @@ class GrowthForecasting(ABC):
 
 
 class GrowthForecastingConstant(GrowthForecasting):
-    def __init__(self, value: float):
+    def __init__(self, value: float, *args, **kwargs):
         super().__init__()
         self.forecaster = ConstantForecaster(value=value)
 
@@ -37,13 +37,13 @@ class GrowthForecastingOLS(GrowthForecasting):
 
 
 class GrowthImplementedForecastingAutoReg(GrowthForecasting):
-    def __init__(self, lags: int):
+    def __init__(self, lags: int, *args, **kwargs):
         super().__init__()
         self.forecaster = ImplementedAutoregForecaster(lags)
 
 
 class GrowthManualForecastingAutoReg(GrowthForecasting):
-    def __init__(self, lags: int):
+    def __init__(self, lags: int, *args, **kwargs):
         assert lags == 1
         super().__init__()
         self.forecaster = ManualAutoregForecaster()

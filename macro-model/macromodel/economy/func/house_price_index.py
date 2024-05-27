@@ -12,7 +12,7 @@ from macromodel.forecaster.forecaster import (
 
 
 class HPIForecasting(ABC):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.forecaster = None
 
     def forecast_hpi_growth(
@@ -36,25 +36,25 @@ class HPIForecasting(ABC):
 
 
 class HPIForecastingConstant(HPIForecasting):
-    def __init__(self, value: float):
+    def __init__(self, value: float, *args, **kwargs):
         super().__init__()
         self.forecaster = ConstantForecaster(value=value)
 
 
 class HPIForecastingOLS(HPIForecasting):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super().__init__()
         self.forecaster = OLSForecaster()
 
 
 class HPIImplementedForecastingAutoReg(HPIForecasting):
-    def __init__(self, lags: int):
+    def __init__(self, lags: int, *args, **kwargs):
         super().__init__()
         self.forecaster = ImplementedAutoregForecaster(lags)
 
 
 class HPIManualForecastingAutoReg(HPIForecasting):
-    def __init__(self, lags: int):
+    def __init__(self, lags: int, *args, **kwargs):
         assert lags == 1
         super().__init__()
         self.forecaster = ManualAutoregForecaster()

@@ -32,6 +32,6 @@ class CountryConfiguration(BaseModel):
     housing_market: HousingMarketConfiguration = HousingMarketConfiguration()
     credit_market: CreditMarketConfiguration = CreditMarketConfiguration()
 
-    forecasting_window: int = 12
+    forecasting_window: int = 60
     assume_zero_growth: bool = False
     assume_zero_noise: bool = False

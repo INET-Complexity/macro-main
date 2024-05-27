@@ -13,8 +13,8 @@ class Growth(BaseModel):
         "GrowthManualForecastingAutoReg",
         "GrowthImplementedForecastingAutoReg",
         "ExogenousGrowthForecasting",
-    ] = "GrowthForecastingConstant"
-    parameters: dict = {"value": 0.0}
+    ] = "GrowthManualForecastingAutoReg"
+    parameters: dict = {"value": 0.0, "lags": 1}
     path_name: str = "growth"
 
 
@@ -28,8 +28,8 @@ class HPI(BaseModel):
         "HPIManualForecastingAutoReg",
         "HPIImplementedForecastingAutoReg",
         "HPIManualForecastingAutoReg",
-    ] = "HPIForecastingConstant"
-    parameters: dict = {"value": 0.0}
+    ] = "HPIManualForecastingAutoReg"
+    parameters: dict = {"value": 0.0, "lags": 1}
     path_name: str = "house_price_index"
 
 
@@ -43,8 +43,8 @@ class Inflation(BaseModel):
         "InflationImplementedForecastingAutoReg",
         "InflationManualForecastingAutoReg",
         "ExogenousInflationForecasting",
-    ] = "InflationForecastingConstant"
-    parameters: dict = {"value": 0.0}
+    ] = "InflationManualForecastingAutoReg"
+    parameters: dict = {"value": 0.0, "lags": 1}
     path_name: str = "inflation"
 
 
