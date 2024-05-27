@@ -8,7 +8,7 @@ from macromodel.simulation import Simulation, check_compatibility
 from macro_data.configuration.countries import Country as CountryName
 
 
-@pytest.mark.parametrize("seed", [30, 100, 150, 200, 145])
+@pytest.mark.parametrize("seed", [0, 100, 150, 200, 145])
 def test_simulation(datawrapper, seed):
     """Test the simulation."""
     configuration = SimulationConfiguration(country_configurations={"FRA": CountryConfiguration()})
