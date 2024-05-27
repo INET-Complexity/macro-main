@@ -124,7 +124,8 @@ class DefaultSyntheticFirms(SyntheticFirms):
         intermediate_inputs_productivity_matrix = industry_data["intermediate_inputs_productivity_matrix"].values
         capital_inputs_depreciation_matrix = industry_data["capital_inputs_depreciation_matrix"].values
 
-        labour_productivity = np.ones_like(n_employees_per_industry).astype(float)
+        output = industry_data["industry_vectors"]["Output in USD"].values
+        labour_productivity = output / n_employees_per_industry
 
         # TODO needs to be updated if function parameters change
 
