@@ -132,7 +132,7 @@ class Households(Agent):
             else:
                 with warnings.catch_warnings():
                     warnings.simplefilter(action="ignore", category=RuntimeWarning)
-                    states[state_name] = hh_data[state_name].values.astype(int).flatten()
+                    states[state_name] = hh_data[state_name].fillna(-1).values.astype(int).flatten()
                     states[state_name][states[state_name] < 0] = -1
 
         # TODO: this is set to 0.2 in Sam's code, and transformed somehow into 0.0945. by the time the data is exported

@@ -87,14 +87,23 @@ class Individuals(Agent):
         states["Offered Wage of Accepted Job"] = np.zeros(len(states["Activity Status"]))
         states["Dividend Payout Ratio"] = 0.0
 
+        def fillnan(x: np.ndarray) -> np.ndarray:
+            return np.where(np.isnan(x), -1, x)
+
         # Cosmetics
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
+            states["Corresponding Household ID"] = fillnan(states["Corresponding Household ID"])
             states["Corresponding Household ID"] = states["Corresponding Household ID"].astype(int)
+            states["Corresponding Firm ID"] = fillnan(states["Corresponding Firm ID"])
             states["Corresponding Firm ID"] = states["Corresponding Firm ID"].astype(int)
             states["Corresponding Firm ID"][states["Corresponding Firm ID"] < 0] = -1
+
+            states["Corresponding Invested Firm"] = fillnan(states["Corresponding Invested Firm"])
             states["Corresponding Invested Firm"] = states["Corresponding Invested Firm"].astype(int)
             states["Corresponding Invested Firm"][states["Corresponding Invested Firm"] < 0] = -1
+
+            states["Corresponding Invested Bank"] = fillnan(states["Corresponding Invested Bank"])
             states["Corresponding Invested Bank"] = states["Corresponding Invested Bank"].astype(int)
             states["Corresponding Invested Bank"][states["Corresponding Invested Bank"] < 0] = -1
 

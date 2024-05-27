@@ -55,14 +55,14 @@ class HousingMarket:
         property_data["Corresponding Inhabitant Household ID"][
             np.isnan(property_data["Corresponding Inhabitant Household ID"])
         ] = -1
-        property_data["House ID"] = property_data["House ID"].astype(int)
-        property_data["Is Owner-Occupied"] = property_data["Is Owner-Occupied"].astype(int)
+        property_data["House ID"] = property_data["House ID"].fillna(-1).astype(int)
+        property_data["Is Owner-Occupied"] = property_data["Is Owner-Occupied"].fillna(-1).astype(int)
         property_data["Corresponding Owner Household ID"] = property_data["Corresponding Owner Household ID"].astype(
             int
         )
-        property_data["Corresponding Inhabitant Household ID"] = property_data[
-            "Corresponding Inhabitant Household ID"
-        ].astype(int)
+        property_data["Corresponding Inhabitant Household ID"] = (
+            property_data["Corresponding Inhabitant Household ID"].fillna(-1).astype(int)
+        )
 
         ts = create_housing_market_timeseries(
             data=property_data,
@@ -103,10 +103,12 @@ class HousingMarket:
         # Recording the states of all homes
         states = data.copy()
         states["Corresponding Inhabitant Household ID"][np.isnan(states["Corresponding Inhabitant Household ID"])] = -1
-        states["House ID"] = states["House ID"].astype(int)
-        states["Is Owner-Occupied"] = states["Is Owner-Occupied"].astype(int)
-        states["Corresponding Owner Household ID"] = states["Corresponding Owner Household ID"].astype(int)
-        states["Corresponding Inhabitant Household ID"] = states["Corresponding Inhabitant Household ID"].astype(int)
+        states["House ID"] = states["House ID"].fillna(-1).astype(int)
+        states["Is Owner-Occupied"] = states["Is Owner-Occupied"].fillna(-1).astype(int)
+        states["Corresponding Owner Household ID"] = states["Corresponding Owner Household ID"].fillna(-1).astype(int)
+        states["Corresponding Inhabitant Household ID"] = (
+            states["Corresponding Inhabitant Household ID"].fillna(-1).astype(int)
+        )
 
         # Create the corresponding time series object
         ts = create_housing_market_timeseries(

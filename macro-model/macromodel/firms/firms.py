@@ -101,7 +101,7 @@ class Firms(Agent):
         ]:
             if state_name not in data.columns:
                 raise ValueError("Missing " + state_name + " from the data for initialising firms.")
-            states[state_name] = data[state_name].values.astype(int)
+            states[state_name] = data[state_name].fillna(-1).values.astype(int)
 
         states["Employments"] = corr_employees
         states["is_insolvent"] = np.full(data.shape[0], False)
