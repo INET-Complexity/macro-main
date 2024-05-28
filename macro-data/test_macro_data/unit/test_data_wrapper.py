@@ -210,6 +210,35 @@ class TestCreator:
 
         assert creator.synthetic_countries.keys() == {"CAN"}
 
+    def test_create_us_only(self, data_config_path):
+        with open(data_config_path, "r") as f:
+            config_dict = yaml.safe_load(f)
+        # not necessary to do the country splitting here
+        # since the fixture used only has one country key
+        configuration = DataConfiguration(**config_dict)
+
+        united_states = Country("USA")
+        france = Country("FRA")
+
+        configuration.country_configs[france].single_firm_per_industry = True
+        configuration.country_configs[france].single_bank = True
+        configuration.country_configs[france].single_government_entity = True
+
+        configuration.country_configs[united_states] = configuration.country_configs[france]
+
+        configuration.country_configs[united_states].eu_proxy_country = france
+
+        del configuration.country_configs[france]
+
+        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
+        creator = DataWrapper.from_config(
+            configuration=configuration,
+            raw_data_path=raw_data_path,
+            single_hfcs_survey=True,
+        )
+
+        assert creator.synthetic_countries.keys() == {"USA"}
+
 
 def check_country_credit(country: SyntheticCountry):
     pop_debt = country.population.household_data["Debt"].sum()

@@ -30,8 +30,8 @@ single_government_entity:
   false
 year:
   2014
-prune_date:
-  "2010-01-01"
+#prune_date:
+#  "2010-01-01"
 seed:
   0
 
