@@ -326,10 +326,11 @@ def clear_water_bucket(
                     minimum_fill=buyer_minimum_fill_macro,
                 )
                 if np.sum(np.isnan(transactor_total_real_supply)) > 0:
-                    print(average_goods_price[g], transactor_total_real_supply)
-                    print(transactor_real_cap)
-                    print(total_real_demand[country_name][g] / aggr_real_demand[g] * aggr_real_supply[g])
-                    exit()
+                    # print(average_goods_price[g], transactor_total_real_supply)
+                    # print(transactor_real_cap)
+                    # print(total_real_demand[country_name][g] / aggr_real_demand[g] * aggr_real_supply[g])
+                    # exit()
+                    raise ValueError("Nan in transactor_total_real_supply")
 
                 # Iterate over buyers
                 for i, transactor in enumerate(goods_market_participants[country_name]):
@@ -349,11 +350,12 @@ def clear_water_bucket(
                         minimum_fill=buyer_minimum_fill_micro,
                     )
                     if np.sum(np.isnan(real_amount_bought)) > 0:
-                        print(average_goods_price[g], real_amount_bought)
-                        print(prop_real)
-                        print(float(transactor_total_real_supply[i]))
-                        print(type(transactor))
-                        exit()
+                        # print(average_goods_price[g], real_amount_bought)
+                        # print(prop_real)
+                        # print(float(transactor_total_real_supply[i]))
+                        # print(type(transactor))
+                        # exit()
+                        raise ValueError("Nan in real_amount_bought")
                     for sell_country in total_real_supply.keys():
                         real_amount_bought_by_country = (
                             real_amount_bought * total_real_supply[sell_country][g] / aggr_real_supply[g]
@@ -365,8 +367,9 @@ def clear_water_bucket(
                             :, g
                         ] += (average_goods_price[g] * real_amount_bought_by_country)
                     if np.isnan(average_goods_price[g]) or np.sum(np.isnan(real_amount_bought)) > 0:
-                        print(average_goods_price[g], real_amount_bought)
-                        exit()
+                        # print(average_goods_price[g], real_amount_bought)
+                        # exit()
+                        raise ValueError("Nan in average_goods_price or real_amount_bought")
                     transactor.transactor_buyer_states["Nominal Amount spent"][:, g] += (
                         average_goods_price[g] * real_amount_bought
                     )
