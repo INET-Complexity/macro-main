@@ -93,12 +93,15 @@ class Simulation:
 
         goods_market_participants["ROW"] = [rest_of_the_world]
 
+        row_index = sorted(countries_with_row).index("ROW")
+
         goods_market = GoodsMarket.from_data(
             n_industries=datawrapper.n_industries,
             configuration=simulation_configuration.goods_market_configuration,
             goods_market_participants=goods_market_participants,
             origin_trade_proportions=datawrapper.origin_trade_proportions.values,
             destin_trade_proportions=datawrapper.destination_trade_proportions.values,
+            row_index=row_index,
         )
 
         if simulation_configuration.seed:

@@ -16,6 +16,7 @@ def get_trade_proportions(
     average_prices_by_country: np.ndarray,
     temperature: float,
     real_country_prioritisation: float,
+    row_index: int = -1,
 ) -> Tuple[np.ndarray, np.ndarray]:
     # Origin trade proportions
     origin_trade_proportions = np.zeros_like(default_origin_trade_proportions)
@@ -33,9 +34,9 @@ def get_trade_proportions(
 
     # Destin trade proportions
     destin_trade_proportions = default_destin_trade_proportions.copy()
-    destin_trade_proportions[:, -1] = (
+    destin_trade_proportions[:, row_index] = (
         1 - max(0.0, min(1.0, real_country_prioritisation))
-    ) * default_destin_trade_proportions[:, -1]
+    ) * default_destin_trade_proportions[:, row_index]
     for c1 in range(n_countries):
         destin_trade_proportions[c1] /= np.sum(destin_trade_proportions[c1], axis=0)
 

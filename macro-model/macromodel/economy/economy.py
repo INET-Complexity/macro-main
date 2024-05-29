@@ -969,3 +969,9 @@ class Economy:
 
     def unemployment_rate(self):
         return self.ts.get_aggregate("unemployment_rate")
+
+    def gdp_expenditure(self):
+        return self.ts.get_aggregate("gdp_expenditure")
+
+    def gdp_output(self):
+        return self.ts.get_aggregate("gdp_output")

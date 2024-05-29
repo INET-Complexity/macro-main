@@ -22,6 +22,7 @@ class GoodsMarket:
         states: dict[str, Any],
         buyer_priorities: dict[str, np.ndarray],
         seller_priorities: dict[str, np.ndarray],
+        row_index: int,
     ):
         self.n_industries = n_industries
         self.functions = functions
@@ -30,6 +31,7 @@ class GoodsMarket:
         self.states = states
         self.buyer_priorities = buyer_priorities
         self.seller_priorities = seller_priorities
+        self.row_index = row_index
 
     @classmethod
     def from_data(
@@ -40,6 +42,7 @@ class GoodsMarket:
         origin_trade_proportions: np.ndarray,
         destin_trade_proportions: np.ndarray,
         initial_supply_chain: Optional[SupplyChain] = None,
+        row_index: int = -1,
     ) -> "GoodsMarket":
         # Get corresponding functions
         functions = functions_from_model(configuration.functions, loc="macromodel.goods_market")
@@ -84,6 +87,7 @@ class GoodsMarket:
             states=states,
             buyer_priorities=buyer_priorities,
             seller_priorities=seller_priorities,
+            row_index=row_index,
         )
 
     def prepare(self, collect_sd: bool = True) -> None:
@@ -114,6 +118,7 @@ class GoodsMarket:
             buyer_priorities=self.buyer_priorities,
             previous_supply_chain=self.states["previous_supply_chain"],
             current_supply_chain=self.states["current_supply_chain"],
+            row_index=self.row_index,
         )
 
     def record(self) -> None:

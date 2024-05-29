@@ -98,6 +98,7 @@ class GoodsMarketClearer(ABC):
         buyer_priorities: dict[str, np.ndarray],
         previous_supply_chain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]],
         current_supply_chain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]],
+        row_index: int = -1,
     ) -> None:
         pass
 
@@ -118,6 +119,7 @@ class NoGoodsMarketClearer(GoodsMarketClearer):
         buyer_priorities: dict[str, np.ndarray],
         previous_supply_chain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]],
         current_supply_chain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]],
+        row_index: int = -1,
     ) -> None:
         pass
 
@@ -132,6 +134,7 @@ class DefaultGoodsMarketClearer(GoodsMarketClearer):
         buyer_priorities: dict[str, np.ndarray],
         previous_supply_chain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]],
         current_supply_chain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]],
+        row_index: int = -1,
     ) -> None:
         for g in range(n_industries):
             # Check if there are any buyers or sellers left
@@ -280,6 +283,7 @@ class WaterBucketGoodsMarketClearer(GoodsMarketClearer):
         buyer_priorities: dict[str, np.ndarray],
         previous_supply_chain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]],
         current_supply_chain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]],
+        row_index: int = -1,
     ) -> None:
         n_countries = len(goods_market_participants.keys())
 
@@ -311,6 +315,7 @@ class WaterBucketGoodsMarketClearer(GoodsMarketClearer):
                 average_prices_by_country=average_prices_by_country,
                 temperature=self.trade_temperature,
                 real_country_prioritisation=self.real_country_prioritisation,
+                row_index=row_index,
             )
             for c1 in range(n_countries):
                 for c2 in range(n_countries):
