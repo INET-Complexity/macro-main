@@ -19,6 +19,7 @@ from macromodel.configurations import (
     EconomyConfiguration,
     CentralBankConfiguration,
     GoodsMarketConfiguration,
+    RestOfTheWorldConfiguration,
 )
 from macromodel.country import Country
 from macromodel.credit_market.credit_market import CreditMarket
@@ -119,6 +120,7 @@ def test_households(datawrapper):
         initial_consumption_by_industry=initial_consumption_by_industry,
         value_added_tax=country.tax_data.value_added_tax,
         scale=scale,
+        synthetic_country=country,
     )
 
     return households
@@ -203,8 +205,16 @@ def test_central_bank(datawrapper):
 
 @pytest.fixture(scope="module", name="test_economy")
 def test_economy(
-    test_firms, test_households, test_individuals, test_government_entities, test_central_government, test_exogenous
+    test_firms,
+    test_households,
+    test_individuals,
+    test_government_entities,
+    test_central_government,
+    test_exogenous,
+    datawrapper,
 ):
+    synthetic_country = datawrapper.synthetic_countries["FRA"]
+
     return Economy.from_agents(
         country_name="FRA",
         all_country_names=["FRA", "ROW"],
@@ -215,30 +225,26 @@ def test_economy(
         government_entities=test_government_entities,
         central_government=test_central_government,
         exogenous=test_exogenous,
-        initial_sentiment=0.0,
+        industry_vectors=synthetic_country.industry_data["industry_vectors"],
     )
 
 
 @pytest.fixture(scope="module", name="test_row")
-def test_row(test_industries, test_config):
-    return RestOfTheWorld.from_data(
+def test_row(datawrapper):
+    countries_with_row = datawrapper.all_country_names
+
+    row_configuration = RestOfTheWorldConfiguration()
+    rest_of_the_world = RestOfTheWorld.from_pickled_row(
         country_name="ROW",
-        all_country_names=["FRA", "ROW"],
-        n_industries=len(test_industries),
-        data=pd.DataFrame(
-            {
-                "Exports": np.full(18, 0.2),
-                "Imports in USD": np.full(18, 0.1),
-                "Imports in LCU": np.full(18, 0.1),
-                "Price in USD": np.full(18, 1.0),
-                "Price in LCU": np.full(18, 1.0),
-            }
-        ),
-        config=test_config["ROW"]["ROW"],
-        row_exports_model=None,
-        row_imports_model=None,
-        average_country_ppi_inflation=0.0,
+        all_country_names=countries_with_row,
+        n_industries=datawrapper.n_industries,
+        synthetic_row=datawrapper.synthetic_rest_of_the_world,
+        configuration=row_configuration,
+        calibration_data_before=datawrapper.calibration_before,
+        calibration_data_during=datawrapper.calibration_during,
     )
+
+    return rest_of_the_world
 
 
 @pytest.fixture(scope="module", name="test_labour_market")
@@ -255,16 +261,11 @@ def test_labour_market(test_config):
 @pytest.fixture(scope="module", name="test_credit_market")
 def test_credit_market(test_industries, test_config):
     return CreditMarket.from_data(
-        country_name="ROW",
-        data=pd.DataFrame(
-            {
-                "loan_type": [],
-                "loan_value": [],
-                "loan_bank_id": [],
-                "loan_recipient_id": [],
-            }
-        ),
-        config=test_config["FRA"]["credit_market"],
+        country_name="FRA",
+        st_loans=np.zeros((3, 1, 18)),
+        lt_loans=np.zeros((3, 1, 18)),
+        cons_loans=np.zeros((3, 1, 18)),
+        mort_loans=np.zeros((3, 1, 18)),
     )
 
 
@@ -295,7 +296,6 @@ def test_banks(datawrapper):
         synthetic_banks=synthetic_banks,
         configuration=BanksConfiguration(),
         policy_rate_markup=0.1,
-        long_term_ir=0.1,
         n_industries=18,
         country_name="FRA",
         scale=10000,
@@ -306,23 +306,23 @@ def test_banks(datawrapper):
     return test_banks
 
 
-@pytest.fixture(scope="module", name="test_default_goods_market")
-def test_default_goods_market(
-    test_firms,
-    test_households,
-    test_row,
-    test_config,
-):
-    goods_market = GoodsMarket.from_data(
-        n_industries=len(test_config["model"]["industries"]["value"]),
-        trade_proportions=pd.DataFrame(),
-        configuration=GoodsMarketConfiguration(),
-        goods_market_participants={
-            "FRA": [test_firms, test_households],
-            "ROW": [test_row],
-        },
-    )
-    return goods_market
+# @pytest.fixture(scope="module", name="test_default_goods_market")
+# def test_default_goods_market(
+#     test_firms,
+#     test_households,
+#     test_row,
+#     test_config,
+# ):
+#     goods_market = GoodsMarket.from_data(
+#         n_industries=len(test_config["model"]["industries"]["value"]),
+#         trade_proportions=pd.DataFrame(),
+#         configuration=GoodsMarketConfiguration(),
+#         goods_market_participants={
+#             "FRA": [test_firms, test_households],
+#             "ROW": [test_row],
+#         },
+#     )
+#     return goods_market
 
 
 @pytest.fixture(scope="module", name="test_goods_market")
@@ -331,15 +331,17 @@ def test_goods_market(
     test_households,
     test_row,
     test_config,
+    datawrapper,
 ):
     goods_market = GoodsMarket.from_data(
         n_industries=len(test_config["model"]["industries"]["value"]),
         configuration=GoodsMarketConfiguration(),
-        trade_proportions=pd.DataFrame(),
         goods_market_participants={
             "FRA": [test_firms, test_households],
             "ROW": [test_row],
         },
+        origin_trade_proportions=datawrapper.origin_trade_proportions.values,
+        destin_trade_proportions=datawrapper.destination_trade_proportions.values,
     )
 
     return goods_market
@@ -367,7 +369,6 @@ def test_exogenous(datawrapper):
         synthetic_country=country,
         exchange_rates=exchange_rates,
         country_name="FRA",
-        all_country_names=["FRA", "ROW"],
         initial_year=2014,
         t_max=t_max,
     )
@@ -405,6 +406,7 @@ def test_country(
         credit_market=test_credit_market,
         housing_market=test_housing_market,
         exogenous=test_exogenous,
+        running_multiple_countries=False,
     )
 
 

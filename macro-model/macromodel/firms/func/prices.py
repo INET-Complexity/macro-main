@@ -4,10 +4,20 @@ from abc import abstractmethod, ABC
 
 
 class PriceSetter(ABC):
-    def __init__(self, price_setting_noise_std: float, price_setting_speed: float, enforce_minimum: float = 1e-9):
+    def __init__(
+        self,
+        price_setting_noise_std: float,
+        price_setting_speed_gf: float,
+        price_setting_speed_dp: float,
+        price_setting_speed_cp: float,
+    ):
         self.price_setting_noise_std = price_setting_noise_std
-        self.price_setting_speed = price_setting_speed
-        self.enforce_minimum = enforce_minimum
+        self.price_setting_speed_gf = max(0.0, min(1.0, price_setting_speed_gf))
+        self.price_setting_speed_gf = price_setting_speed_gf
+        self.price_setting_speed_dp = max(0.0, min(1.0, price_setting_speed_dp))
+        self.price_setting_speed_dp = price_setting_speed_dp
+        self.price_setting_speed_cp = max(0.0, min(1.0, price_setting_speed_cp))
+        self.price_setting_speed_cp = price_setting_speed_cp
 
     @abstractmethod
     def compute_price(
@@ -24,11 +34,13 @@ class PriceSetter(ABC):
         current_firm_sectors: np.ndarray,
         curr_unit_costs: np.ndarray,
         prev_unit_costs: np.ndarray,
+        ppi_during: np.ndarray,
+        current_time: int,
     ) -> np.ndarray:
         pass
 
 
-class ConstantPriceSetter(PriceSetter):
+class DefaultPriceSetter(PriceSetter):
     def compute_price(
         self,
         prev_prices: np.ndarray,
@@ -43,80 +55,23 @@ class ConstantPriceSetter(PriceSetter):
         current_firm_sectors: np.ndarray,
         curr_unit_costs: np.ndarray,
         prev_unit_costs: np.ndarray,
+        ppi_during: np.ndarray,
+        current_time: int,
+        min_inflation: float = -0.1,
+        max_inflation: float = 0.1,
     ) -> np.ndarray:
-        return np.ones_like(prev_prices)
+        average_price_by_firm = prev_average_good_prices[current_firm_sectors]
 
-
-class SupplyDemandPriceSetter(PriceSetter):
-    def compute_price(
-        self,
-        prev_prices: np.ndarray,
-        current_estimated_ppi_inflation: float,
-        excess_demand: np.ndarray,
-        inventories: np.ndarray,
-        production: np.ndarray,
-        prev_average_good_prices: np.ndarray,
-        prev_firm_prices: np.ndarray,
-        prev_supply: np.ndarray,
-        prev_demand: np.ndarray,
-        current_firm_sectors: np.ndarray,
-        curr_unit_costs: np.ndarray,
-        prev_unit_costs: np.ndarray,
-    ) -> np.ndarray:
-        new_prices = np.zeros_like(prev_prices)
-        for firm_id in range(prev_prices.shape[0]):
-            if excess_demand[firm_id] > 0:
-                if inventories[firm_id] + production[firm_id] == 0.0:
-                    new_prices[firm_id] = prev_prices[firm_id] * (
-                        1 + np.random.normal(0.0, self.price_setting_noise_std)
-                    )
-                else:
-                    new_prices[firm_id] = prev_prices[firm_id] * (
-                        1
-                        + (excess_demand[firm_id] / (inventories[firm_id] + production[firm_id]))
-                        * (1 + np.random.normal(0.0, self.price_setting_noise_std))
-                    )
-            elif inventories[firm_id] > 0:
-                if inventories[firm_id] + production[firm_id] == 0.0:
-                    new_prices[firm_id] = prev_prices[firm_id] * (
-                        1 + np.random.normal(0.0, self.price_setting_noise_std)
-                    )
-                else:
-                    new_prices[firm_id] = prev_prices[firm_id] * (
-                        1
-                        - (inventories[firm_id] / (inventories[firm_id] + production[firm_id]))
-                        * (1 + np.random.normal(0.0, self.price_setting_noise_std))
-                    )
-            else:
-                new_prices[firm_id] = prev_prices[firm_id] * (1 + np.random.normal(0.0, self.price_setting_noise_std))
-
-        return np.maximum(self.enforce_minimum, (1 + current_estimated_ppi_inflation) * new_prices)
-
-
-class CANVASPriceSetter(PriceSetter):
-    def compute_price(
-        self,
-        prev_prices: np.ndarray,
-        current_estimated_ppi_inflation: float,
-        excess_demand: np.ndarray,
-        inventories: np.ndarray,
-        production: np.ndarray,
-        prev_average_good_prices: np.ndarray,
-        prev_firm_prices: np.ndarray,
-        prev_supply: np.ndarray,
-        prev_demand: np.ndarray,
-        current_firm_sectors: np.ndarray,
-        curr_unit_costs: np.ndarray,
-        prev_unit_costs: np.ndarray,
-    ) -> np.ndarray:
         # Demand-pull inflation
         demand_pull_inflation = np.zeros_like(prev_firm_prices)
         ind_canvas = np.logical_or(
             np.logical_and(
-                prev_supply <= prev_demand, prev_firm_prices < prev_average_good_prices[current_firm_sectors]
+                prev_supply <= prev_demand,
+                prev_firm_prices < average_price_by_firm,
             ),
             np.logical_and(
-                prev_supply > prev_demand, prev_firm_prices >= prev_average_good_prices[current_firm_sectors]
+                prev_supply > prev_demand,
+                prev_firm_prices >= average_price_by_firm,
             ),
         )
         demand_pull_inflation[ind_canvas] = (
@@ -128,17 +83,48 @@ class CANVASPriceSetter(PriceSetter):
             )
             - 1.0
         )
+        demand_pull_inflation = np.maximum(min_inflation, np.minimum(max_inflation, demand_pull_inflation))
 
         # Cost-push inflation
         cost_push_inflation = (
-            np.divide(curr_unit_costs, prev_unit_costs, out=np.ones_like(curr_unit_costs), where=prev_unit_costs != 0.0)
+            np.divide(
+                curr_unit_costs,
+                average_price_by_firm,
+                out=np.ones_like(curr_unit_costs),
+                where=average_price_by_firm != 0.0,
+            )
             - 1.0
         )
+        cost_push_inflation = np.maximum(min_inflation, np.minimum(max_inflation, cost_push_inflation))
 
         return np.maximum(
-            self.enforce_minimum,
+            1e-2,
             prev_prices
-            * (1 + self.price_setting_speed * current_estimated_ppi_inflation)
-            * (1 + self.price_setting_speed * demand_pull_inflation)
-            * (1 + self.price_setting_speed * cost_push_inflation),
+            * (1 + np.random.normal(0.0, self.price_setting_noise_std, prev_prices.shape))
+            * (1 + self.price_setting_speed_gf * current_estimated_ppi_inflation)
+            * (1 + self.price_setting_speed_dp * demand_pull_inflation)
+            * (1 + self.price_setting_speed_cp * cost_push_inflation),
         )
+
+
+class ExogenousPriceSetter(PriceSetter):
+    def compute_price(
+        self,
+        prev_prices: np.ndarray,
+        current_estimated_ppi_inflation: float,
+        excess_demand: np.ndarray,
+        inventories: np.ndarray,
+        production: np.ndarray,
+        prev_average_good_prices: np.ndarray,
+        prev_firm_prices: np.ndarray,
+        prev_supply: np.ndarray,
+        prev_demand: np.ndarray,
+        current_firm_sectors: np.ndarray,
+        curr_unit_costs: np.ndarray,
+        prev_unit_costs: np.ndarray,
+        ppi_during: np.ndarray,
+        current_time: int,
+        min_inflation: float = -0.1,
+        max_inflation: float = 0.1,
+    ) -> np.ndarray:
+        return ppi_during[current_time]

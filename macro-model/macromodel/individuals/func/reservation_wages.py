@@ -1,10 +1,17 @@
 import numpy as np
-from abc import abstractmethod, ABC
 
 from macromodel.individuals.individual_properties import ActivityStatus
 
+from abc import abstractmethod, ABC
+
 
 class ReservationWageSetter(ABC):
+    def __init__(
+        self,
+        unemployed_reservation_wage_timespan: int,
+    ):
+        self.unemployed_reservation_wage_timespan = int(unemployed_reservation_wage_timespan)
+
     @abstractmethod
     def compute_reservation_wages(
         self,
@@ -16,12 +23,6 @@ class ReservationWageSetter(ABC):
 
 
 class DefaultReservationWageSetter(ReservationWageSetter):
-    def __init__(
-        self,
-        unemployed_reservation_wage_timespan: int,
-    ):
-        self.unemployed_reservation_wage_timespan = unemployed_reservation_wage_timespan
-
     def compute_reservation_wages(
         self,
         historic_wages: np.ndarray,
@@ -41,11 +42,13 @@ class DefaultReservationWageSetter(ReservationWageSetter):
                 current_unemployment_benefits_by_individual
             )
         else:
-            reservation_wages[current_individuals_activity == ActivityStatus.UNEMPLOYED] = np.maximum(
-                current_unemployment_benefits_by_individual,
-                np.array(historic_wages[-self.unemployed_reservation_wage_timespan :])[
-                    :, current_individuals_activity == ActivityStatus.UNEMPLOYED
-                ].mean(axis=0),
-            )
+            if np.sum(current_individuals_activity == ActivityStatus.UNEMPLOYED) > 0:
+                reservation_wages[current_individuals_activity == ActivityStatus.UNEMPLOYED] = np.maximum(
+                    current_unemployment_benefits_by_individual,
+                    np.array(historic_wages[-self.unemployed_reservation_wage_timespan :])[
+                        :,
+                        current_individuals_activity == ActivityStatus.UNEMPLOYED,
+                    ].mean(axis=0),
+                )
 
         return reservation_wages

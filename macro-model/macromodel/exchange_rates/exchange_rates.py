@@ -1,8 +1,13 @@
-import h5py
+from typing import Optional
+
+import numpy as np
 import pandas as pd
+from sklearn.linear_model import LinearRegression
 
 from macromodel.configurations import ExchangeRatesConfiguration
-from macromodel.exchange_rates.exchange_rates_ts import create_exchange_rates_timeseries
+
+
+ModelDict = dict[str, LinearRegression]
 
 
 class ExchangeRates:
@@ -12,16 +17,13 @@ class ExchangeRates:
         initial_year: int,
         country_names: list[str],
         historic_exchange_rate_data: pd.DataFrame,
+        exchange_rates_model: Optional[ModelDict] = None,
     ):
         self.exchange_rate_type = exchange_rate_type
         self.initial_year = initial_year
         self.country_names = country_names
         self.historic_exchange_rate_data = historic_exchange_rate_data
-
-        # Create the corresponding time series object
-        self.ts = create_exchange_rates_timeseries(
-            initial_exchange_rates=self.get_current_exchange_rates_from_usd_to_lcu(self.initial_year)
-        )
+        self.exchange_rates_model = exchange_rates_model
 
     @classmethod
     def from_data(
@@ -30,27 +32,35 @@ class ExchangeRates:
         exchange_rate_config: ExchangeRatesConfiguration,
         initial_year: int,
         country_names: list[str],
+        exchange_rates_model: Optional[ModelDict] = None,
     ):
         return cls(
             exchange_rate_type=exchange_rate_config.exchange_rate_type,
             initial_year=initial_year,
             country_names=country_names,
             historic_exchange_rate_data=exchange_rates_data,
+            exchange_rates_model=exchange_rates_model,
         )
 
-    def get_current_exchange_rates_from_usd_to_lcu(self, current_year: int) -> list[float]:
-        if self.exchange_rate_type == "constant":
-            exchange_rate_dict = self.historic_exchange_rate_data[str(self.initial_year)].to_dict()
-        elif self.exchange_rate_type == "exogenous":
-            exchange_rate_dict = self.historic_exchange_rate_data[str(current_year)].to_dict()
-        else:
-            raise ValueError("Unknown Exchange Rates Type")
+    def reset(
+        self,
+    ): ...
 
-        return [exchange_rate_dict[c] for c in self.country_names + ["ROW"]]
-
-    def set_current_exchange_rates(self, current_year: int) -> None:
-        self.ts.exchange_rates.append(self.get_current_exchange_rates_from_usd_to_lcu(current_year))
-
-    def save_to_h5(self, h5_file: h5py.File) -> None:
-        group = h5_file.create_group("EXCH_RATES")
-        self.ts.write_to_h5("EXCH_RATES", group)
+    def get_current_exchange_rates_from_usd_to_lcu(
+        self,
+        country_name: str,
+        current_year: int,
+        prev_inflation: float,
+        prev_growth: float,
+    ) -> float:
+        match self.exchange_rate_type:
+            case "constant":
+                return self.historic_exchange_rate_data.loc[country_name, str(self.initial_year)]
+            case "exogenous":
+                return self.historic_exchange_rate_data.loc[country_name, str(current_year)]
+            case "model":
+                if self.exchange_rates_model[country_name] is None:
+                    raise ValueError("Exchange rates model is not provided")
+                return self.exchange_rates_model[country_name].predict(np.array([prev_inflation, prev_growth]))
+            case _:
+                raise ValueError("Unknown Exchange Rates Type")

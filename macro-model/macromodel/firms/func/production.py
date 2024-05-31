@@ -4,36 +4,48 @@ from abc import abstractmethod, ABC
 
 
 class ProductionSetter(ABC):
-    def __init__(self, production_noise_std: float = 0.0):
-        self.production_noise_std = production_noise_std
-
-    @abstractmethod
-    def compute_limiting_stock(
-        self,
-        intermediate_inputs_productivity_matrix: np.ndarray,
-        intermediate_inputs_stock: np.ndarray,
-        capital_inputs_productivity_matrix: np.ndarray,
-        capital_inputs_stock: np.ndarray,
-        intermediate_inputs_utilisation_rate: float,
-        capital_inputs_utilisation_rate: float,
-        goods_criticality_matrix: np.ndarray,
-    ) -> np.ndarray:
-        pass
-
-    @abstractmethod
     def compute_production(
         self,
         desired_production: np.ndarray,
         current_labour_inputs: np.ndarray,
+        current_limiting_intermediate_inputs: np.ndarray,
+        current_limiting_capital_inputs: np.ndarray,
+    ) -> np.ndarray:
+        limiting_stock = self.compute_limiting_stock(
+            current_limiting_intermediate_inputs,
+            current_limiting_capital_inputs,
+        )
+        return np.amin([desired_production, current_labour_inputs, limiting_stock], axis=0)
+
+    @abstractmethod
+    def compute_limiting_intermediate_inputs_stock(
+        self,
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
+        intermediate_inputs_utilisation_rate: float,
+        goods_criticality_matrix: np.ndarray,
+    ) -> np.ndarray:
+        pass
+
+    @abstractmethod
+    def compute_limiting_capital_inputs_stock(
+        self,
         capital_inputs_productivity_matrix: np.ndarray,
         capital_inputs_stock: np.ndarray,
-        intermediate_inputs_utilisation_rate: float,
         capital_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
         pass
+
+    @staticmethod
+    def compute_limiting_stock(
+        limiting_intermediate_inputs_stock: np.ndarray,
+        limiting_capital_inputs_stock: np.ndarray,
+    ) -> np.ndarray:
+        return np.amin(
+            [limiting_intermediate_inputs_stock, limiting_capital_inputs_stock],
+            axis=0,
+        )
 
     @abstractmethod
     def compute_intermediate_inputs_used(
@@ -57,73 +69,33 @@ class ProductionSetter(ABC):
 
 
 class PureLeontief(ProductionSetter):
-    def compute_limiting_stock(
+    def compute_limiting_intermediate_inputs_stock(
         self,
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
+        intermediate_inputs_utilisation_rate: float,
+        goods_criticality_matrix: np.ndarray,
+    ) -> np.ndarray:
+        return np.multiply(
+            intermediate_inputs_productivity_matrix,
+            intermediate_inputs_stock,
+            out=np.full(intermediate_inputs_productivity_matrix.shape, np.inf),
+            where=intermediate_inputs_productivity_matrix != np.inf,
+        ).min(axis=1)
+
+    def compute_limiting_capital_inputs_stock(
+        self,
         capital_inputs_productivity_matrix: np.ndarray,
         capital_inputs_stock: np.ndarray,
-        intermediate_inputs_utilisation_rate: float,
         capital_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
-        rescaled_intermediate_inputs = intermediate_inputs_utilisation_rate * np.multiply(
-            intermediate_inputs_productivity_matrix,
-            intermediate_inputs_stock,
-            out=np.full(capital_inputs_productivity_matrix.shape, np.inf),
-            where=intermediate_inputs_productivity_matrix != np.inf,
-        )
-        rescaled_capital_inputs = capital_inputs_utilisation_rate * np.multiply(
+        return np.multiply(
             capital_inputs_productivity_matrix,
             capital_inputs_stock,
             out=np.full(capital_inputs_productivity_matrix.shape, np.inf),
             where=capital_inputs_productivity_matrix != np.inf,
-        )
-
-        return np.amin(
-            [
-                rescaled_intermediate_inputs.min(axis=1),
-                rescaled_capital_inputs.min(axis=1),
-            ],
-            axis=0,
-        )
-
-    def compute_production(
-        self,
-        desired_production: np.ndarray,
-        current_labour_inputs: np.ndarray,
-        intermediate_inputs_productivity_matrix: np.ndarray,
-        intermediate_inputs_stock: np.ndarray,
-        capital_inputs_productivity_matrix: np.ndarray,
-        capital_inputs_stock: np.ndarray,
-        intermediate_inputs_utilisation_rate: float,
-        capital_inputs_utilisation_rate: float,
-        goods_criticality_matrix: np.ndarray,
-    ) -> np.ndarray:
-        limiting_stock = self.compute_limiting_stock(
-            intermediate_inputs_productivity_matrix,
-            intermediate_inputs_stock,
-            capital_inputs_productivity_matrix,
-            capital_inputs_stock,
-            intermediate_inputs_utilisation_rate,
-            capital_inputs_utilisation_rate,
-            goods_criticality_matrix,
-        )
-
-        # Leontief in the main inputs
-        noise = np.random.normal(
-            0,
-            self.production_noise_std,
-            size=desired_production.shape,
-        )
-        return (1 + noise) * np.amin(
-            [
-                desired_production,
-                current_labour_inputs,
-                limiting_stock,
-            ],
-            axis=0,
-        )
+        ).min(axis=1)
 
     def compute_intermediate_inputs_used(
         self,
@@ -153,71 +125,37 @@ class PureLeontief(ProductionSetter):
 
 
 class CriticalAndImportantLeontief(ProductionSetter):
-    def compute_limiting_stock(
+    def compute_limiting_intermediate_inputs_stock(
         self,
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
-        capital_inputs_productivity_matrix: np.ndarray,
-        capital_inputs_stock: np.ndarray,
         intermediate_inputs_utilisation_rate: float,
-        capital_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
-        rescaled_intermediate_inputs = intermediate_inputs_utilisation_rate * np.multiply(
+        rescaled_intermediate_inputs = np.multiply(
             intermediate_inputs_productivity_matrix,
             intermediate_inputs_stock,
-            out=np.full(capital_inputs_productivity_matrix.shape, np.inf),
+            out=np.full(intermediate_inputs_productivity_matrix.shape, np.inf),
             where=intermediate_inputs_productivity_matrix != np.inf,
         )
         rescaled_intermediate_inputs[goods_criticality_matrix == 0.0] = np.inf
-        rescaled_capital_inputs = capital_inputs_utilisation_rate * np.multiply(
+        return rescaled_intermediate_inputs.min(axis=1)
+
+    def compute_limiting_capital_inputs_stock(
+        self,
+        capital_inputs_productivity_matrix: np.ndarray,
+        capital_inputs_stock: np.ndarray,
+        capital_inputs_utilisation_rate: float,
+        goods_criticality_matrix: np.ndarray,
+    ) -> np.ndarray:
+        rescaled_capital_inputs = np.multiply(
             capital_inputs_productivity_matrix,
             capital_inputs_stock,
             out=np.full(capital_inputs_productivity_matrix.shape, np.inf),
             where=capital_inputs_productivity_matrix != np.inf,
         )
         rescaled_capital_inputs[goods_criticality_matrix == 0.0] = np.inf
-
-        return np.amin(
-            [
-                rescaled_intermediate_inputs.min(axis=1),
-                rescaled_capital_inputs.min(axis=1),
-            ],
-            axis=0,
-        )
-
-    def compute_production(
-        self,
-        desired_production: np.ndarray,
-        current_labour_inputs: np.ndarray,
-        intermediate_inputs_productivity_matrix: np.ndarray,
-        intermediate_inputs_stock: np.ndarray,
-        capital_inputs_productivity_matrix: np.ndarray,
-        capital_inputs_stock: np.ndarray,
-        intermediate_inputs_utilisation_rate: float,
-        capital_inputs_utilisation_rate: float,
-        goods_criticality_matrix: np.ndarray,
-    ) -> np.ndarray:
-        limiting_stock = self.compute_limiting_stock(
-            intermediate_inputs_productivity_matrix,
-            intermediate_inputs_stock,
-            capital_inputs_productivity_matrix,
-            capital_inputs_stock,
-            intermediate_inputs_utilisation_rate,
-            capital_inputs_utilisation_rate,
-            goods_criticality_matrix,
-        )
-
-        # Leontief in the main inputs
-        noise = np.random.normal(
-            0,
-            self.production_noise_std,
-            size=desired_production.shape,
-        )
-        return (1 + noise) * np.amin(
-            [desired_production, current_labour_inputs, limiting_stock],
-            axis=0,
-        )
+        return rescaled_capital_inputs.min(axis=1)
 
     def compute_intermediate_inputs_used(
         self,
@@ -250,71 +188,37 @@ class CriticalAndImportantLeontief(ProductionSetter):
 
 
 class CriticalLeontief(ProductionSetter):
-    def compute_limiting_stock(
+    def compute_limiting_intermediate_inputs_stock(
         self,
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
-        capital_inputs_productivity_matrix: np.ndarray,
-        capital_inputs_stock: np.ndarray,
         intermediate_inputs_utilisation_rate: float,
-        capital_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
-        rescaled_intermediate_inputs = intermediate_inputs_utilisation_rate * np.multiply(
+        rescaled_intermediate_inputs = np.multiply(
             intermediate_inputs_productivity_matrix,
             intermediate_inputs_stock,
-            out=np.full(capital_inputs_productivity_matrix.shape, np.inf),
+            out=np.full(intermediate_inputs_productivity_matrix.shape, np.inf),
             where=intermediate_inputs_productivity_matrix != np.inf,
         )
         rescaled_intermediate_inputs[goods_criticality_matrix < 1.0] = np.inf
-        rescaled_capital_inputs = capital_inputs_utilisation_rate * np.multiply(
+        return rescaled_intermediate_inputs.min(axis=1)
+
+    def compute_limiting_capital_inputs_stock(
+        self,
+        capital_inputs_productivity_matrix: np.ndarray,
+        capital_inputs_stock: np.ndarray,
+        capital_inputs_utilisation_rate: float,
+        goods_criticality_matrix: np.ndarray,
+    ) -> np.ndarray:
+        rescaled_capital_inputs = np.multiply(
             capital_inputs_productivity_matrix,
             capital_inputs_stock,
             out=np.full(capital_inputs_productivity_matrix.shape, np.inf),
             where=capital_inputs_productivity_matrix != np.inf,
         )
         rescaled_capital_inputs[goods_criticality_matrix < 1.0] = np.inf
-
-        return np.amin(
-            [
-                rescaled_intermediate_inputs.min(axis=1),
-                rescaled_capital_inputs.min(axis=1),
-            ],
-            axis=0,
-        )
-
-    def compute_production(
-        self,
-        desired_production: np.ndarray,
-        current_labour_inputs: np.ndarray,
-        intermediate_inputs_productivity_matrix: np.ndarray,
-        intermediate_inputs_stock: np.ndarray,
-        capital_inputs_productivity_matrix: np.ndarray,
-        capital_inputs_stock: np.ndarray,
-        intermediate_inputs_utilisation_rate: float,
-        capital_inputs_utilisation_rate: float,
-        goods_criticality_matrix: np.ndarray,
-    ) -> np.ndarray:
-        limiting_stock = self.compute_limiting_stock(
-            intermediate_inputs_productivity_matrix,
-            intermediate_inputs_stock,
-            capital_inputs_productivity_matrix,
-            capital_inputs_stock,
-            intermediate_inputs_utilisation_rate,
-            capital_inputs_utilisation_rate,
-            goods_criticality_matrix,
-        )
-
-        # Leontief in the main inputs
-        noise = np.random.normal(
-            0,
-            self.production_noise_std,
-            size=desired_production.shape,
-        )
-        return (1 + noise) * np.amin(
-            [desired_production, current_labour_inputs, limiting_stock],
-            axis=0,
-        )
+        return rescaled_capital_inputs.min(axis=1)
 
     def compute_intermediate_inputs_used(
         self,
@@ -347,69 +251,33 @@ class CriticalLeontief(ProductionSetter):
 
 
 class Linear(ProductionSetter):
-    def compute_limiting_stock(
+    def compute_limiting_intermediate_inputs_stock(
         self,
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
+        intermediate_inputs_utilisation_rate: float,
+        goods_criticality_matrix: np.ndarray,
+    ) -> np.ndarray:
+        return np.multiply(
+            intermediate_inputs_productivity_matrix,
+            intermediate_inputs_stock,
+            out=np.zeros_like(intermediate_inputs_productivity_matrix),
+            where=intermediate_inputs_productivity_matrix != np.inf,
+        ).sum(axis=1)
+
+    def compute_limiting_capital_inputs_stock(
+        self,
         capital_inputs_productivity_matrix: np.ndarray,
         capital_inputs_stock: np.ndarray,
-        intermediate_inputs_utilisation_rate: float,
         capital_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
-        rescaled_intermediate_inputs = intermediate_inputs_utilisation_rate * np.multiply(
-            intermediate_inputs_productivity_matrix,
-            intermediate_inputs_stock,
-            out=np.zeros_like(capital_inputs_productivity_matrix),
-            where=intermediate_inputs_productivity_matrix != np.inf,
-        )
-        rescaled_capital_inputs = capital_inputs_utilisation_rate * np.multiply(
+        return np.multiply(
             capital_inputs_productivity_matrix,
             capital_inputs_stock,
             out=np.zeros_like(capital_inputs_productivity_matrix),
             where=capital_inputs_productivity_matrix != np.inf,
-        )
-
-        return np.amin(
-            [
-                rescaled_intermediate_inputs.sum(axis=1),
-                rescaled_capital_inputs.sum(axis=1),
-            ],
-            axis=0,
-        )
-
-    def compute_production(
-        self,
-        desired_production: np.ndarray,
-        current_labour_inputs: np.ndarray,
-        intermediate_inputs_productivity_matrix: np.ndarray,
-        intermediate_inputs_stock: np.ndarray,
-        capital_inputs_productivity_matrix: np.ndarray,
-        capital_inputs_stock: np.ndarray,
-        intermediate_inputs_utilisation_rate: float,
-        capital_inputs_utilisation_rate: float,
-        goods_criticality_matrix: np.ndarray,
-    ) -> np.ndarray:
-        limiting_stock = self.compute_limiting_stock(
-            intermediate_inputs_productivity_matrix,
-            intermediate_inputs_stock,
-            capital_inputs_productivity_matrix,
-            capital_inputs_stock,
-            intermediate_inputs_utilisation_rate,
-            capital_inputs_utilisation_rate,
-            goods_criticality_matrix,
-        )
-
-        # Leontief in the main inputs
-        noise = np.random.normal(
-            0,
-            self.production_noise_std,
-            size=desired_production.shape,
-        )
-        return (1 + noise) * np.amin(
-            [desired_production, current_labour_inputs, limiting_stock],
-            axis=0,
-        )
+        ).sum(axis=1)
 
     def compute_intermediate_inputs_used(
         self,
@@ -423,11 +291,12 @@ class Linear(ProductionSetter):
             intermediate_inputs_productivity_matrix,
             out=np.zeros_like(intermediate_inputs_productivity_matrix),
             where=intermediate_inputs_productivity_matrix != 0.0,
-        ).sum(axis=1)
-        used_intermediate_inputs = (
-            total_used_intermediate_inputs[:, None] * intermediate_inputs_stock / intermediate_inputs_stock.sum(axis=1)
         )
-
+        used_intermediate_inputs = (
+            total_used_intermediate_inputs.sum(axis=1)[:, None]
+            * intermediate_inputs_stock
+            / intermediate_inputs_stock.sum(axis=1, keepdims=True)
+        )
         return used_intermediate_inputs
 
     def compute_capital_inputs_used(
@@ -440,9 +309,66 @@ class Linear(ProductionSetter):
         used_capital_inputs = realised_production[:, None] * capital_inputs_depreciation_matrix
         used_capital_inputs[used_capital_inputs == np.inf] = 0.0
         used_capital_inputs[used_capital_inputs == -np.inf] = 0.0
-        total_used_capital_inputs = used_capital_inputs.sum(axis=1)
         used_capital_inputs = (
-            total_used_capital_inputs[:, None] * capital_inputs_stock / capital_inputs_stock.sum(axis=1)
+            used_capital_inputs.sum(axis=1)[:, None]
+            * capital_inputs_stock
+            / capital_inputs_stock.sum(axis=1, keepdims=True)
         )
-
         return used_capital_inputs
+
+
+class UnconstrainedProduction(ProductionSetter):
+    def compute_limiting_intermediate_inputs_stock(
+        self,
+        intermediate_inputs_productivity_matrix: np.ndarray,
+        intermediate_inputs_stock: np.ndarray,
+        intermediate_inputs_utilisation_rate: float,
+        goods_criticality_matrix: np.ndarray,
+    ) -> np.ndarray:
+        return np.multiply(
+            intermediate_inputs_productivity_matrix,
+            intermediate_inputs_stock,
+            out=np.full(intermediate_inputs_productivity_matrix.shape, np.inf),
+            where=intermediate_inputs_productivity_matrix != np.inf,
+        ).min(axis=1)
+
+    def compute_limiting_capital_inputs_stock(
+        self,
+        capital_inputs_productivity_matrix: np.ndarray,
+        capital_inputs_stock: np.ndarray,
+        capital_inputs_utilisation_rate: float,
+        goods_criticality_matrix: np.ndarray,
+    ) -> np.ndarray:
+        return np.multiply(
+            capital_inputs_productivity_matrix,
+            capital_inputs_stock,
+            out=np.full(capital_inputs_productivity_matrix.shape, np.inf),
+            where=capital_inputs_productivity_matrix != np.inf,
+        ).min(axis=1)
+
+    def compute_intermediate_inputs_used(
+        self,
+        realised_production: np.ndarray,
+        intermediate_inputs_productivity_matrix: np.ndarray,
+        intermediate_inputs_stock: np.ndarray,
+        goods_criticality_matrix: np.ndarray,
+    ) -> np.ndarray:
+        return np.zeros(intermediate_inputs_stock.shape)
+
+    def compute_capital_inputs_used(
+        self,
+        realised_production: np.ndarray,
+        capital_inputs_depreciation_matrix: np.ndarray,
+        capital_inputs_stock: np.ndarray,
+        goods_criticality_matrix: np.ndarray,
+    ) -> np.ndarray:
+        return np.zeros(capital_inputs_stock.shape)
+
+    def compute_production(
+        self,
+        desired_production: np.ndarray,
+        current_labour_inputs: np.ndarray,
+        current_limiting_intermediate_inputs: np.ndarray,
+        current_limiting_capital_inputs: np.ndarray,
+    ) -> np.ndarray:
+        return desired_production

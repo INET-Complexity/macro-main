@@ -1,7 +1,6 @@
 import numpy as np
 
 from macromodel.rest_of_the_world.func.prices import (
-    ConstantRoWPriceSetter,
     InflationRoWPriceSetter,
 )
 
@@ -9,10 +8,10 @@ from macromodel.rest_of_the_world.func.prices import (
 class TestRoWPriceSetter:
     def test__compute_price(self):
         assert np.allclose(
-            ConstantRoWPriceSetter().compute_price(previous_price=np.array([1.0, 2.0]), previous_row_inflation=0.01),
-            np.array([1.0, 2.0]),
-        )
-        assert np.allclose(
-            InflationRoWPriceSetter().compute_price(previous_price=np.array([1.0, 2.0]), previous_row_inflation=0.01),
+            InflationRoWPriceSetter().compute_price(
+                initial_price=np.array([1.0, 2.0]),
+                aggregate_country_price_index=1.01,
+                adjustment_speed=1.0,
+            ),
             np.array([1.01, 2.02]),
         )

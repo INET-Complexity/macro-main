@@ -2,6 +2,7 @@ import numpy as np
 from typing import Any, Optional
 
 from macromodel.timeseries import TimeSeries
+from numba import njit
 
 
 class Agent:
@@ -67,6 +68,9 @@ class Agent:
     def set_goods_to_sell(self, sell_init: np.ndarray) -> None:
         self.transactor_seller_states["Initial Goods"] = sell_init
 
+    def set_maximum_excess_demand(self, max_excess_demand: np.ndarray) -> None:
+        self.transactor_seller_states["Remaining Excess Goods"] = max_excess_demand
+
     def set_prices(self, sell_price: np.ndarray) -> None:
         self.transactor_seller_states["Prices"] = sell_price
 
@@ -88,43 +92,38 @@ class Agent:
         self.transactor_seller_states["Remaining Goods"] = self.transactor_seller_states["Initial Goods"].copy()
 
         # Amount sold
-        self.transactor_seller_states["Real Amount sold"] = np.zeros_like(
-            self.transactor_seller_states["Initial Goods"]
+        self.transactor_seller_states["Real Amount sold"] = np.zeros(
+            self.transactor_seller_states["Initial Goods"].shape
         )
         for country_name in self.all_country_names:
-            self.transactor_seller_states["Real Amount sold to " + country_name] = np.zeros_like(
-                self.transactor_seller_states["Initial Goods"]
+            self.transactor_seller_states["Real Amount sold to " + country_name] = np.zeros(
+                self.transactor_seller_states["Initial Goods"].shape
             )
 
         # Amount spent
-        self.transactor_buyer_states["Nominal Amount spent"] = np.zeros_like(
-            self.transactor_buyer_states["Initial Goods"]
+        self.transactor_buyer_states["Nominal Amount spent"] = np.zeros(
+            self.transactor_buyer_states["Initial Goods"].shape
         )
         for country_name in self.all_country_names:
-            self.transactor_buyer_states["Nominal Amount spent on Goods from " + country_name] = np.zeros_like(
-                self.transactor_buyer_states["Initial Goods"]
+            self.transactor_buyer_states["Nominal Amount spent on Goods from " + country_name] = np.zeros(
+                self.transactor_buyer_states["Initial Goods"].shape
             )
 
         # Amount bought
-        self.transactor_buyer_states["Real Amount bought"] = np.zeros_like(
-            self.transactor_buyer_states["Initial Goods"]
+        self.transactor_buyer_states["Real Amount bought"] = np.zeros(
+            self.transactor_buyer_states["Initial Goods"].shape
         )
         for country_name in self.all_country_names:
-            self.transactor_buyer_states["Real Amount bought from " + country_name] = np.zeros_like(
-                self.transactor_buyer_states["Initial Goods"]
+            self.transactor_buyer_states["Real Amount bought from " + country_name] = np.zeros(
+                self.transactor_buyer_states["Initial Goods"].shape
             )
 
-        # Real excess demand
-        self.transactor_seller_states["Real Excess Demand"] = np.zeros_like(
-            self.transactor_seller_states["Initial Goods"]
+        # Excess demand
+        self.transactor_seller_states["Real Excess Demand"] = np.zeros(
+            self.transactor_seller_states["Initial Goods"].shape
         )
 
-    def record(self, decimals: int = 4) -> None:
-        def round_pos(x: np.ndarray) -> np.ndarray:
-            r = np.round(x, decimals)
-            r[r < 0] = 0.0
-            return r
-
+    def record(self) -> None:
         # Round
         self.transactor_seller_states["Real Amount sold"] = round_pos(self.transactor_seller_states["Real Amount sold"])
         for country_name in self.all_country_names:
@@ -198,3 +197,9 @@ class Agent:
             self.ts.dicts["real_amount_bought_from_" + country_name].append(
                 self.transactor_buyer_states["Real Amount bought from " + country_name]
             )
+
+
+@njit
+def round_pos(x: np.ndarray, decimals: int = 16) -> np.ndarray:
+    r = np.round(x, decimals)
+    return np.maximum(0.0, r)

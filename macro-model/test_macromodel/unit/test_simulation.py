@@ -1,19 +1,34 @@
 import tempfile
 from pathlib import Path
 
+import pytest
+
 from macromodel.configurations import SimulationConfiguration, CountryConfiguration
 from macromodel.simulation import Simulation, check_compatibility
 from macro_data.configuration.countries import Country as CountryName
 
 
-def test_simulation(datawrapper):
+@pytest.mark.parametrize("seed", [0, 100, 150, 200, 145])
+def test_simulation(datawrapper, seed):
     """Test the simulation."""
     configuration = SimulationConfiguration(country_configurations={"FRA": CountryConfiguration()})
+
+    configuration.seed = seed
+
     simulation = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=configuration)
 
     assert set(simulation.countries.keys()) == {"FRA"}
 
-    for _ in range(5):
+    households = simulation.countries["FRA"].households
+    individuals = simulation.countries["FRA"].individuals
+
+    n_individuals = individuals.n_individuals
+    households_lengths = [len(corr_ind) for corr_ind in households.states["corr_individuals"]]
+    assert n_individuals == sum(households_lengths)
+    # no empty households
+    assert all(households_lengths)
+
+    for _ in range(10):
         simulation.iterate()
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -22,6 +37,20 @@ def test_simulation(datawrapper):
         simulation.shallow_hdf_save(save_dir=tmp, file_name="simulation.h5")
         dicts = simulation.shallow_df_dict()
         assert "FRA" in dicts
+
+    france = simulation.countries[CountryName("FRA")]
+
+    shallow_output = france.shallow_output()
+
+    gross_output = shallow_output["Gross Output"]
+
+    france_datawrapper = datawrapper.synthetic_countries[CountryName("FRA")]
+    france_datawrapper_firms = france_datawrapper.firms
+
+    firm_data = france_datawrapper_firms.firm_data
+    firms_output_lcu = firm_data.groupby("Industry").apply(lambda x: (x["Production"] * x["Price"]).sum())
+
+    assert gross_output.loc[0] == pytest.approx(firms_output_lcu.sum(), rel=1e-4)
 
     assert True
 

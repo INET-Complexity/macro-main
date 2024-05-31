@@ -31,3 +31,7 @@ class CountryConfiguration(BaseModel):
     labour_market: LabourMarketConfiguration = LabourMarketConfiguration()
     housing_market: HousingMarketConfiguration = HousingMarketConfiguration()
     credit_market: CreditMarketConfiguration = CreditMarketConfiguration()
+
+    forecasting_window: int = 60
+    assume_zero_growth: bool = False
+    assume_zero_noise: bool = False

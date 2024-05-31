@@ -30,6 +30,14 @@ class TestIncomeSetter:
                         2.0,
                     ]
                 ),
+                firm_profits=np.array([]),
+                bank_profits=np.array([]),
+                corr_invested_banks=np.array([np.nan, np.nan, np.nan]),
+                corr_invested_firms=np.array([np.nan, np.nan, np.nan]),
+                cpi=1.0,
+                dividend_payout_ratio=0.1,
+                income_taxes=0.3,
+                tau_firm=0.4,
             )
             .astype(float),
             np.array([12.0, 22.0, 2.0]),

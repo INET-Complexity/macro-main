@@ -5,6 +5,8 @@ class ActivityStatus(Enum):
     EMPLOYED = 1
     UNEMPLOYED = 2
     NOT_ECONOMICALLY_ACTIVE = 3
+    FIRM_INVESTOR = 4
+    BANK_INVESTOR = 5
 
 
 class Gender(Enum):

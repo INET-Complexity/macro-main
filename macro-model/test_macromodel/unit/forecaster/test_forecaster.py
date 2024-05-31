@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from macromodel.forecaster.forecaster import check_len, OLSForecaster, AutoregForecaster
+from macromodel.forecaster.forecaster import check_len, OLSForecaster, ManualAutoregForecaster
 
 
 def test__check_len():
@@ -24,6 +24,6 @@ class TestOLS:
 
 class TestAutoreg:
     def test__forecast(self):
-        forecaster = AutoregForecaster(lags=1)
+        forecaster = ManualAutoregForecaster()
         data = np.ones(10)
         assert forecaster.forecast(data=data) == pytest.approx(1)

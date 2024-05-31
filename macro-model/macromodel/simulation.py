@@ -23,6 +23,7 @@ class Simulation:
     exchange_rates: ExchangeRates
     timestep: Timestep
     configuration: SimulationConfiguration
+    aggregate_country_price_index: float = 1.0
 
     @classmethod
     def from_datawrapper(
@@ -38,7 +39,7 @@ class Simulation:
                 )
             if not check_compatibility(data_configuration.country_configs[country], country_sim_conf):  # type: ignore
                 datawrapper.synthetic_countries[country].reset_firm_function_dependent(
-                    **country_sim_conf.firms_configuration.reset_params,
+                    **country_sim_conf.firms.reset_params,
                     zero_initial_debt=False,
                     zero_initial_deposits=False,
                 )
@@ -46,11 +47,19 @@ class Simulation:
         countries_without_row = list(set(datawrapper.all_country_names) - {"ROW"})
         countries_with_row = datawrapper.all_country_names
 
+        running_multi_country = len(countries_without_row) > 1
+
+        model_dict = {
+            country_name: country.synthetic_goods_market.exchange_rates_model
+            for country_name, country in datawrapper.synthetic_countries.items()
+        }
+
         exchange_rates = ExchangeRates.from_data(
             exchange_rates_data=datawrapper.exchange_rates,
             exchange_rate_config=simulation_configuration.exchange_rates_configuration,
             initial_year=datawrapper.configuration.year,
             country_names=countries_without_row,
+            exchange_rates_model=model_dict,
         )
 
         countries = {
@@ -63,13 +72,10 @@ class Simulation:
                 industries=datawrapper.configuration.industries,
                 initial_year=datawrapper.configuration.year,
                 t_max=simulation_configuration.t_max,
+                running_multiple_countries=running_multi_country,
             )
             for country_name in countries_without_row
         }
-
-        average_ppi_inflation = np.mean(
-            [countries[country_name].economy.ts.current("ppi_inflation")[0] for country_name in countries_without_row]
-        )
 
         rest_of_the_world = RestOfTheWorld.from_pickled_row(
             country_name="ROW",
@@ -77,7 +83,8 @@ class Simulation:
             n_industries=datawrapper.n_industries,
             synthetic_row=datawrapper.synthetic_rest_of_the_world,
             configuration=simulation_configuration.row_configuration,
-            average_ppi_inflation=average_ppi_inflation,
+            calibration_data_before=datawrapper.calibration_before,
+            calibration_data_during=datawrapper.calibration_during,
         )
 
         goods_market_participants = {
@@ -86,11 +93,15 @@ class Simulation:
 
         goods_market_participants["ROW"] = [rest_of_the_world]
 
+        row_index = sorted(countries_with_row).index("ROW")
+
         goods_market = GoodsMarket.from_data(
             n_industries=datawrapper.n_industries,
-            trade_proportions=datawrapper.trade_proportions,
             configuration=simulation_configuration.goods_market_configuration,
             goods_market_participants=goods_market_participants,
+            origin_trade_proportions=datawrapper.origin_trade_proportions.values,
+            destin_trade_proportions=datawrapper.destination_trade_proportions.values,
+            row_index=row_index,
         )
 
         if simulation_configuration.seed:
@@ -116,11 +127,17 @@ class Simulation:
         return self.configuration.seed
 
     def iterate(self):
-        self.exchange_rates.set_current_exchange_rates(current_year=self.timestep.year)
+        # self.exchange_rates.set_current_exchange_rates(current_year=self.timestep.year)
 
         for ind, country in enumerate(self.countries.values()):
+            exchange_rate = self.exchange_rates.get_current_exchange_rates_from_usd_to_lcu(
+                country_name=country.country_name,
+                current_year=self.timestep.year,
+                prev_inflation=country.economy.ts.current("ppi_inflation")[0],
+                prev_growth=country.economy.ts.current("total_growth")[0],
+            )
             logging.info("Country: %s", country.country_name)
-            country.initialisation_phase(exchange_rate_usd_to_lcu=self.exchange_rates.ts.current("exchange_rates")[ind])
+            country.initialisation_phase(exchange_rate_usd_to_lcu=exchange_rate)
             country.estimation_phase()
             country.target_setting_phase()
             country.clear_labour_market()
@@ -141,10 +158,15 @@ class Simulation:
 
         # Prepare goods market clearing
         logging.info("Prepare goods market clearing (ROW)")
+
+        # Prepare goods market clearing
+        aggregate_country_production_index = self.production_price_index
+        total_real_production = self.total_real_production
+        if total_real_production > 0:
+            self.aggregate_country_price_index = self.aggregate_nominal_production / total_real_production
         self.rest_of_the_world.update_planning_metrics(
-            average_country_ppi_inflation=np.mean(
-                [self.countries[c].economy.ts.current("ppi_inflation")[0] for c in self.countries.keys()]
-            ),
+            aggregate_country_production_index=aggregate_country_production_index,
+            aggregate_country_price_index=self.aggregate_country_price_index,
         )
 
         logging.info("Clearing the goods market")
@@ -162,6 +184,34 @@ class Simulation:
 
         # Next month
         self.timestep.step()
+
+    @property
+    def aggregate_nominal_production(self) -> float:
+        return np.sum(
+            [
+                (
+                    self.countries[c].firms.ts.current("price")
+                    / self.countries[c].firms.ts.initial("price")
+                    * (self.countries[c].firms.ts.current("production") + self.countries[c].firms.ts.prev("inventory"))
+                ).sum()
+                for c in self.countries.keys()
+            ]
+        )
+
+    @property
+    def total_real_production(self) -> float:
+        return np.sum(
+            [
+                (self.countries[c].firms.ts.current("production") + self.countries[c].firms.ts.prev("inventory")).sum()
+                for c in self.countries.keys()
+            ]
+        )
+
+    @property
+    def production_price_index(self) -> float:
+        current_production = [self.countries[c].firms.ts.current("production").sum() for c in self.countries.keys()]
+        initial_production = [self.countries[c].firms.ts.initial("production").sum() for c in self.countries.keys()]
+        return np.sum(current_production) / np.sum(initial_production)
 
     def run(self):
         for _ in range(self.t_max):
@@ -183,7 +233,7 @@ class Simulation:
         with h5py.File(save_dir / file_name, "w") as f:
             self.save_random_seed(f)
             self.save_configuration(f)
-            self.exchange_rates.save_to_h5(f)
+            # self.exchange_rates.save_to_h5(f)
             self.rest_of_the_world.save_to_h5(f)
             self.goods_market.save_to_h5(f)
             for country in self.countries.values():
@@ -199,6 +249,9 @@ class Simulation:
         for country_name, country in self.countries.items():
             df = country.shallow_output()
             df.to_hdf(save_dir / file_name, key=country_name, mode="a")
+
+    def get_country_shallow_output(self, country: str):
+        return self.countries[country].shallow_output()
 
 
 def check_compatibility(

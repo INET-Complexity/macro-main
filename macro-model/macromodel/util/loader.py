@@ -10,8 +10,7 @@ from typing import Optional
 class Loader:
     def __init__(self, path: Path | str):
         self.file = h5py.File(path, "r")
-        self.config = yaml.safe_load(self.file["config"].attrs["config_data"])
-        self.industries = self.config["model"]["industries"]["value"]
+        self.config = yaml.safe_load(self.file.attrs["configuration"])
 
     def get_country_agent_field_dataframe(
         self,
@@ -34,16 +33,20 @@ class Loader:
             raise ValueError("Unsupported dataset shape", dataset.shape)
 
         # Create index
-        if len(data) != self.config["model"]["t_max"]["value"] and agent_name != "exogenous":
+        if len(data) != self.config["t_max"] and agent_name != "exogenous":
             logging.warning("Time series length does not match")
             logging.warning("Country %s, agent %s, field %s", country_name, agent_name, field)
             logging.warning("Time series length: %d", len(data))
-            logging.warning("t_max: %d", self.config["model"]["t_max"]["value"])
+            logging.warning("t_max: %d", self.config["t_max"])
             logging.warning(f"Data: {data}")
         dates = []
+
+        # TODO shoudln't be hardcoded
+        init_year = 2014
+
         for year in range(
-            self.config["model"]["year"]["value"],
-            self.config["model"]["year"]["value"] + 1 + int(np.floor(self.config["model"]["t_max"]["value"] / 12)),
+            init_year,
+            init_year + 1 + int(np.floor(self.config["t_max"] / 12)),
         ):
             for month in range(1, 13):
                 dates.append(pd.Timestamp(year=year, month=month, day=1))

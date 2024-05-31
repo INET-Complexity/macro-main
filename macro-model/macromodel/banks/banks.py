@@ -43,7 +43,6 @@ class Banks(Agent):
         synthetic_banks: SyntheticBanks,
         configuration: BanksConfiguration,
         policy_rate_markup: float,
-        long_term_ir: float,
         n_industries: int,
         scale: int,
         country_name: str,
@@ -57,7 +56,6 @@ class Banks(Agent):
         data = synthetic_banks.bank_data.drop(columns=["Corresponding Firms ID", "Corresponding Households ID"])
         ts = create_banks_timeseries(
             bank_data=data,
-            long_term_ir=long_term_ir,
             scale=scale,
         )
 
@@ -65,6 +63,12 @@ class Banks(Agent):
             "corr_firms": [corr_firms_id.values[i][0] for i in range(corr_firms_id.shape[0])],
             "corr_households": [corr_households_id.values[i][0] for i in range(corr_households_id.shape[0])],
             "is_insolvent": np.full(ts.current("n_banks"), False),
+            "Firm Pass Through": synthetic_banks.firm_passthrough,
+            "Firm ECT": synthetic_banks.firm_ect,
+            "Household Consumption Pass Through": synthetic_banks.hh_consumption_passthrough,
+            "Household Consumption ECT": synthetic_banks.hh_consumption_ect,
+            "Household Mortgage Pass Through": synthetic_banks.hh_mortgage_passthrough,
+            "Household Mortgage ECT": synthetic_banks.hh_mortgage_ect,
         }
 
         return cls(
@@ -132,49 +136,67 @@ class Banks(Agent):
     #         states,
     #     )
 
+    def compute_estimated_profits(self, estimated_growth: float, estimated_inflation: float) -> np.ndarray:
+        return self.functions["profit_estimator"].compute_estimated_profits(
+            current_profits=self.ts.current("profits"),
+            estimated_growth=estimated_growth,
+            estimated_inflation=estimated_inflation,
+        )
+
     def set_interest_rates(self, central_bank_policy_rate: float) -> None:
         # On loans
-        self.states["interest_rate_on_firm_short_term_loans_function"] = self.functions[
-            "interest_rates"
-        ].get_interest_rate_on_firm_short_term_loans_function(
-            central_bank_policy_rate=central_bank_policy_rate,
-            bank_markup_interest_rate_loans=np.full(self.ts.current("n_banks"), self.policy_rate_markup),
+        self.ts.interest_rates_on_short_term_firm_loans.append(
+            self.functions["interest_rates"].get_interest_rates_on_short_term_firm_loans(
+                central_bank_policy_rate=central_bank_policy_rate,
+                prev_interest_rates_on_short_term_firm_loans=self.ts.current("interest_rates_on_short_term_firm_loans"),
+                firm_pt=self.states["Firm Pass Through"],
+                firm_ect=self.states["Firm ECT"],
+            )
         )
-        self.states["interest_rate_on_firm_long_term_loans_function"] = self.functions[
-            "interest_rates"
-        ].get_interest_rate_on_firm_long_term_loans_function(
-            central_bank_policy_rate=central_bank_policy_rate,
-            bank_markup_interest_rate_loans=np.full(self.ts.current("n_banks"), self.policy_rate_markup),
+        self.ts.average_interest_rates_on_short_term_firm_loans.append(
+            [self.ts.current("interest_rates_on_short_term_firm_loans").mean()]
         )
-        self.states["interest_rate_on_household_payday_loans_function"] = self.functions[
-            "interest_rates"
-        ].get_interest_rate_on_household_payday_loans_function(
-            central_bank_policy_rate=central_bank_policy_rate,
-            bank_markup_interest_rate_loans=np.full(self.ts.current("n_banks"), self.policy_rate_markup),
+        self.ts.interest_rates_on_long_term_firm_loans.append(
+            self.functions["interest_rates"].get_interest_rates_on_long_term_firm_loans(
+                central_bank_policy_rate=central_bank_policy_rate,
+                prev_interest_rates_on_long_term_firm_loans=self.ts.current("interest_rates_on_long_term_firm_loans"),
+                firm_pt=self.states["Firm Pass Through"],
+                firm_ect=self.states["Firm ECT"],
+            )
         )
-        self.states["interest_rate_on_household_consumption_expansion_loans_function"] = self.functions[
-            "interest_rates"
-        ].get_interest_rate_on_household_consumption_expansion_loans_function(
-            central_bank_policy_rate=central_bank_policy_rate,
-            bank_markup_interest_rate_loans=np.full(
-                self.ts.current("n_banks"),
-                self.parameters.initial_markup_interest_rate_household_consumption_loans,
-            ),
+        self.ts.average_interest_rates_on_long_term_firm_loans.append(
+            [self.ts.current("interest_rates_on_long_term_firm_loans").mean()]
         )
-        self.states["interest_rate_on_mortgages_function"] = self.functions[
-            "interest_rates"
-        ].get_interest_rate_on_mortgages_function(
-            central_bank_policy_rate=central_bank_policy_rate,
-            bank_markup_interest_rate_loans=np.full(
-                self.ts.current("n_banks"), self.parameters.initial_markup_mortgage_interest_rate
-            ),
+        self.ts.interest_rates_on_household_consumption_loans.append(
+            self.functions["interest_rates"].get_interest_rates_on_household_consumption_loans(
+                central_bank_policy_rate=central_bank_policy_rate,
+                prev_interest_rate_on_hh_consumption_loans=self.ts.current(
+                    "interest_rates_on_household_consumption_loans"
+                ),
+                hh_cons_pt=self.states["Household Consumption Pass Through"],
+                hh_cons_ect=self.states["Household Consumption ECT"],
+            )
         )
+        self.ts.average_interest_rates_on_household_consumption_loans.append(
+            [self.ts.current("interest_rates_on_household_consumption_loans").mean()]
+        )
+        self.ts.interest_rates_on_mortgages.append(
+            self.functions["interest_rates"].get_interest_rate_on_mortgages(
+                central_bank_policy_rate=central_bank_policy_rate,
+                prev_interest_rate_on_mortgages=self.ts.current("interest_rates_on_mortgages"),
+                hh_mortgage_pt=self.states["Household Mortgage Pass Through"],
+                hh_mortgage_ect=self.states["Household Mortgage ECT"],
+            )
+        )
+        self.ts.average_interest_rates_on_mortgages.append([self.ts.current("interest_rates_on_mortgages").mean()])
 
         # On deposits
         self.ts.interest_rate_on_firm_deposits.append(
-            self.functions["interest_rates"].compute_interest_rate_on_firms_deposits(
+            self.functions["interest_rates"].compute_interest_rate_on_firm_deposits(
                 central_bank_policy_rate=central_bank_policy_rate,
-                n_banks=self.ts.current("n_banks"),
+                prev_interest_rate_on_firm_deposits=self.ts.current("interest_rate_on_firm_deposits"),
+                firm_pt=self.states["Firm Pass Through"],
+                firm_ect=self.states["Firm ECT"],
             )
         )
         self.ts.average_interest_rate_on_firm_deposits.append(
@@ -183,7 +205,9 @@ class Banks(Agent):
         self.ts.overdraft_rate_on_firm_deposits.append(
             self.functions["interest_rates"].compute_overdraft_rate_on_firm_deposits(
                 central_bank_policy_rate=central_bank_policy_rate,
-                bank_markup_interest_rate_overdraft_firm=np.full(self.ts.current("n_banks"), self.policy_rate_markup),
+                prev_overdraft_rate_on_firm_deposits=self.ts.current("overdraft_rate_on_firm_deposits"),
+                firm_pt=self.states["Firm Pass Through"],
+                firm_ect=self.states["Firm ECT"],
             )
         )
         self.ts.average_overdraft_rate_on_firm_deposits.append(
@@ -192,7 +216,9 @@ class Banks(Agent):
         self.ts.interest_rate_on_household_deposits.append(
             self.functions["interest_rates"].compute_interest_rate_on_household_deposits(
                 central_bank_policy_rate=central_bank_policy_rate,
-                n_banks=self.ts.current("n_banks"),
+                prev_interest_rate_on_hh_deposits=self.ts.current("interest_rate_on_household_deposits"),
+                hh_cons_pt=self.states["Household Consumption Pass Through"],
+                hh_cons_ect=self.states["Household Consumption ECT"],
             )
         )
         self.ts.average_interest_rate_on_household_deposits.append(
@@ -201,23 +227,13 @@ class Banks(Agent):
         self.ts.overdraft_rate_on_household_deposits.append(
             self.functions["interest_rates"].compute_overdraft_rate_on_household_deposits(
                 central_bank_policy_rate=central_bank_policy_rate,
-                bank_markup_interest_rate_overdraft_household=np.full(
-                    self.ts.current("n_banks"),
-                    self.parameters.initial_markup_interest_rate_overdraft_households,
-                ),
+                prev_overdraft_rate_on_hh_deposits=self.ts.current("overdraft_rate_on_household_deposits"),
+                hh_cons_pt=self.states["Household Consumption Pass Through"],
+                hh_cons_ect=self.states["Household Consumption ECT"],
             )
         )
         self.ts.average_overdraft_rate_on_household_deposits.append(
             [self.ts.current("overdraft_rate_on_household_deposits").mean()]
-        )
-
-        # On government debt
-        self.ts.interest_rate_on_government_debt.append(
-            [
-                self.functions["interest_rates"].compute_interest_rate_on_government_debt(
-                    central_bank_policy_rate=central_bank_policy_rate,
-                )
-            ]
         )
 
     def compute_interest_received_on_deposits(self, central_bank_policy_rate: float) -> np.ndarray:
@@ -244,9 +260,15 @@ class Banks(Agent):
         firm_corresponding_bank: np.ndarray,
         households_corresponding_bank: np.ndarray,
     ) -> None:
-        current_deposits_from_firms = np.bincount(firm_corresponding_bank, weights=current_firm_deposits)
+        current_deposits_from_firms = np.bincount(
+            firm_corresponding_bank,
+            weights=current_firm_deposits,
+            minlength=self.ts.current("n_banks"),
+        )
         current_deposits_from_households = np.bincount(
-            households_corresponding_bank, weights=current_household_deposits
+            households_corresponding_bank,
+            weights=current_household_deposits,
+            minlength=self.ts.current("n_banks"),
         )
         self.ts.deposits_from_firms.append(current_deposits_from_firms)
         self.ts.total_deposits_from_firms.append([current_deposits_from_firms.sum()])
@@ -254,33 +276,17 @@ class Banks(Agent):
         self.ts.total_deposits_from_households.append([current_deposits_from_households.sum()])
 
     def update_loans(self, credit_market: CreditMarket) -> None:
-        self.ts.short_term_loans_to_firms.append(
-            credit_market.compute_outstanding_short_term_firm_loans_by_bank(n_banks=self.ts.current("n_banks"))
-        )
+        self.ts.short_term_loans_to_firms.append(credit_market.compute_outstanding_short_term_firm_loans_by_bank())
         self.ts.total_short_term_loans_to_firms.append([self.ts.current("short_term_loans_to_firms").sum()])
-        self.ts.long_term_loans_to_firms.append(
-            credit_market.compute_outstanding_long_term_firm_loans_by_bank(n_banks=self.ts.current("n_banks"))
-        )
+        self.ts.long_term_loans_to_firms.append(credit_market.compute_outstanding_long_term_firm_loans_by_bank())
         self.ts.total_long_term_loans_to_firms.append([self.ts.current("long_term_loans_to_firms").sum()])
-
-        self.ts.payday_loans_to_households.append(
-            credit_market.compute_outstanding_household_payday_loans_by_bank(n_banks=self.ts.current("n_banks"))
+        self.ts.consumption_loans_to_households.append(
+            credit_market.compute_outstanding_household_consumption_loans_by_bank()
         )
-        self.ts.total_payday_loans_to_households.append([self.ts.current("payday_loans_to_households").sum()])
-
-        self.ts.consumption_expansion_loans_to_households.append(
-            credit_market.compute_outstanding_household_ce_loans_by_bank(n_banks=self.ts.current("n_banks"))
-        )
-        self.ts.total_consumption_expansion_loans_to_households.append(
-            [self.ts.current("consumption_expansion_loans_to_households").sum()]
-        )
-        self.ts.mortgages_to_households.append(
-            credit_market.compute_outstanding_mortgages_by_bank(n_banks=self.ts.current("n_banks"))
-        )
+        self.ts.total_consumption_loans_to_households.append([self.ts.current("consumption_loans_to_households").sum()])
+        self.ts.mortgages_to_households.append(credit_market.compute_outstanding_mortgages_by_bank())
         self.ts.total_mortgages_to_households.append([self.ts.current("mortgages_to_households").sum()])
-        self.ts.total_outstanding_loans.append(
-            credit_market.compute_outstanding_loans_by_bank(n_banks=self.ts.current("n_banks"))
-        )
+        self.ts.total_outstanding_loans.append(credit_market.compute_outstanding_loans_by_bank())
 
     def compute_market_share(self) -> np.ndarray:
         total_amount_of_loans_and_deposits = (
@@ -321,13 +327,30 @@ class Banks(Agent):
         )
 
     def handle_insolvency(self, credit_market: CreditMarket) -> float:
-        for bank_id in np.where(self.states["is_insolvent"])[0]:
-            credit_market.remove_loans_by_bank(bank_id)
-        return self.functions["demography"].handle_bank_insolvency(
+        equity_injection, average_equity = self.functions["demography"].handle_bank_insolvency(
             current_bank_equity=self.ts.current("equity"),
+            current_bank_loans=self.ts.current("total_outstanding_loans"),
             current_bank_deposits=self.ts.current("deposits"),
             is_insolvent=self.states["is_insolvent"],
         )
+
+        # Remove loans
+        for bank_id in np.where(self.states["is_insolvent"])[0]:
+            credit_market.remove_loans_by_bank(bank_id)
+
+        # Update deposits
+        new_firm_deposits = self.ts.current("deposits")
+        new_firm_deposits[self.states["is_insolvent"]] = 0.0
+        self.ts.deposits.pop()
+        self.ts.deposits.append(new_firm_deposits)
+
+        # Update equity
+        new_firm_equity = self.ts.current("equity")
+        new_firm_equity[self.states["is_insolvent"]] = average_equity
+        self.ts.equity.pop()
+        self.ts.equity.append(new_firm_equity)
+
+        return equity_injection
 
     def compute_insolvency_rate(self) -> float:
         insolvency_rate = self.states["is_insolvent"].mean()

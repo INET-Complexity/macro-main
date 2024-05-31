@@ -23,6 +23,8 @@ class TimeSeries:
         return self.dicts[item][-1]
 
     def prev(self, item):
+        if len(self.dicts[item]) == 1:
+            return self.dicts[item][-1]
         return self.dicts[item][-2]
 
     def historic(self, item):

@@ -1,4 +1,5 @@
 import h5py
+import numpy as np
 import pandas as pd
 from macro_data import SyntheticCountry
 
@@ -10,120 +11,96 @@ class Exogenous:
     def __init__(
         self,
         country_name: str,
-        all_country_names: list[str],
         initial_year: int,
+        initial_quarter: int,
         t_max: int,
-        log_inflation: pd.DataFrame,
-        sectoral_growth: pd.DataFrame,
+        inflation: pd.DataFrame,
+        national_accounts: pd.DataFrame,
         unemployment_rate: pd.DataFrame,
         vacancy_rate: pd.DataFrame,
         house_price_index: pd.DataFrame,
-        total_firm_deposits_and_debt: pd.DataFrame,
-        iot_industry_data: pd.DataFrame,
         exchange_rates_data: pd.DataFrame,
     ):
         self.country_name = country_name
-        self.log_inflation = log_inflation
-        self.sectoral_growth = sectoral_growth
+        self.inflation = inflation
+        self.national_accounts = national_accounts
         self.unemployment_rate = unemployment_rate
         self.vacancy_rate = vacancy_rate
         self.house_price_index = house_price_index
-        self.total_firm_deposits_and_debt = total_firm_deposits_and_debt
-        self.iot_industry_data = iot_industry_data
         self.exchange_rates_data = exchange_rates_data
 
         offset = 0
 
         # Cutting off inflation
+        start_ind = np.where(self.inflation.index == str(initial_year) + "-Q" + str(initial_quarter))[0][0]
+        self.inflation_before = self.inflation.iloc[0:start_ind]
+        self.inflation_during = self.inflation.iloc[start_ind : start_ind + t_max - offset]
 
-        initial_year = pd.to_datetime(f"{initial_year}-01-01")
-
-        year_before = initial_year - pd.DateOffset(days=1)
-
-        end_date = initial_year + pd.DateOffset(months=t_max)
-
-        self.log_inflation_before = self.log_inflation.loc[:year_before]
-        self.log_inflation_during = self.log_inflation.loc[initial_year:end_date]
-
-        # Cutting off growth
-        self.sectoral_growth_before = self.sectoral_growth.loc[:year_before]
-        self.sectoral_growth_during = self.sectoral_growth.loc[initial_year:end_date]
+        # Cutting off GDP decomp
+        if len(self.national_accounts) > 0:
+            self.national_accounts_before = self.national_accounts.loc[
+                self.national_accounts.index < pd.Timestamp(initial_year, 3 * initial_quarter - 2, 1)
+            ]
+            self.national_accounts_during = self.national_accounts.loc[
+                self.national_accounts.index >= pd.Timestamp(initial_year, 3 * initial_quarter - 2, 1)
+            ]
+        else:
+            self.national_accounts_before = pd.DataFrame()
+            self.national_accounts_during = pd.DataFrame()
 
         # Cutting off unemployment rate
-        self.unemployment_rate_before = self.unemployment_rate.loc[:year_before]
-        self.unemployment_rate_during = self.unemployment_rate.loc[initial_year:end_date]
+        start_ind = np.where(self.unemployment_rate.index == str(initial_year) + "-Q" + str(initial_quarter))[0][0]
+        self.unemployment_rate_before = self.unemployment_rate.iloc[0:start_ind]
+        self.unemployment_rate_during = self.unemployment_rate.iloc[start_ind : start_ind + t_max - offset]
 
         # Cutting off vacancy rate
-        self.vacancy_rate_before = self.vacancy_rate.loc[:year_before]
-        self.vacancy_rate_during = self.vacancy_rate.loc[initial_year:end_date]
+        start_ind = np.where(self.vacancy_rate.index == str(initial_year) + "-Q" + str(initial_quarter))[0][0]
+        self.vacancy_rate_before = self.vacancy_rate.iloc[0:start_ind]
+        self.vacancy_rate_during = self.vacancy_rate.iloc[start_ind : start_ind + t_max - offset]
 
         # Cutting off the housing price index
-        self.house_price_index_before = self.house_price_index.loc[:year_before]
-        self.house_price_index_during = self.house_price_index.loc[initial_year:end_date]
-
-        # Cutting off total firm deposits and debt
-        self.total_firm_deposits_and_debt_before = self.total_firm_deposits_and_debt.loc[:year_before]
-        self.total_firm_deposits_and_debt_during = self.total_firm_deposits_and_debt.loc[initial_year:end_date]
-
-        # Cutting off industry-level data
-
-        self.iot_industry_data_before = self.iot_industry_data.loc[:year_before]
-        self.iot_industry_data_during = self.iot_industry_data.loc[initial_year:end_date]
+        start_ind = np.where(self.house_price_index.index == str(initial_year) + "-Q" + str(initial_quarter))[0][0]
+        self.house_price_index_before = self.house_price_index.iloc[0:start_ind]
+        self.house_price_index_during = self.house_price_index.iloc[start_ind : start_ind + t_max - offset]
 
         # Cutting-off exchange rates
         self.exchange_rates_data = self.exchange_rates_data.T
-        self.exchange_rates_data.index = pd.to_datetime(self.exchange_rates_data.index, format="%Y")
-
-        self.exchange_rates_data_before = self.exchange_rates_data.loc[:year_before]
-        self.exchange_rates_data_during = self.exchange_rates_data.loc[initial_year:end_date]
-
-        # Impute missing values for inflation
-        self.log_inflation_before.loc[:, "Real CPI Inflation"] = self.log_inflation_before["Real CPI Inflation"].fillna(
-            self.log_inflation["Real CPI Inflation"].mean()
-        )
-        self.log_inflation_before.loc[:, "Real PPI Inflation"] = self.log_inflation_before["Real PPI Inflation"].fillna(
-            self.log_inflation["Real PPI Inflation"].mean()
-        )
-
-        # Impute missing values for growth
-        for g in self.sectoral_growth_before.columns:
-            self.sectoral_growth_before.loc[:, g] = self.sectoral_growth_before[g].fillna(
-                self.sectoral_growth[g].mean()
-            )
-        self.sectoral_growth_before.columns = range(len(self.sectoral_growth_before.columns))
-
-        # Impute missing values for the house price index
-        self.house_price_index_before.loc[:, "Real House Price Index Growth"] = self.house_price_index_before[
-            "Real House Price Index Growth"
-        ].fillna(self.house_price_index["Real House Price Index Growth"].mean())
-        self.house_price_index_before.loc[:, "Nominal House Price Index Growth"] = self.house_price_index_before[
-            "Nominal House Price Index Growth"
-        ].fillna(self.house_price_index["Nominal House Price Index Growth"].mean())
-
-        # Impute missing values for the industry-level data
-
-        # if len(self.iot_industry_data) > 0:
-        #     for col in self.iot_industry_data_before.columns:
-        #         self.iot_industry_data_before.loc[:, col] = self.iot_industry_data_before[col].fillna(
-        #             self.iot_industry_data[col].mean()
-        #         )
+        self.exchange_rates_data = self.exchange_rates_data.loc[:, country_name]
+        self.exchange_rates_data.index = [ind for ind in self.exchange_rates_data.index]
+        self.exchange_rates_data.index = pd.PeriodIndex(self.exchange_rates_data.index, freq="Q").to_timestamp()
+        self.exchange_rates_data.columns = ["Exchange Rate"]
+        self.exchange_rates_data_before = self.exchange_rates_data.loc[
+            self.exchange_rates_data.index < pd.Timestamp(initial_year, 3 * initial_quarter - 2, 1)
+        ]
+        self.exchange_rates_data_during = self.exchange_rates_data.loc[
+            self.exchange_rates_data.index >= pd.Timestamp(initial_year, 3 * initial_quarter - 2, 1)
+        ]
 
         # Put it all together in a time series object
         self.ts = create_exogenous_timeseries(
-            country_name=country_name,
-            all_country_names=all_country_names,
-            log_inflation_during=self.log_inflation_during,
-            sectoral_growth_during=self.sectoral_growth_during,
+            inflation_during=self.inflation_during,
+            national_accounts_during=self.national_accounts_during,
             unemployment_rate_during=self.unemployment_rate_during,
             vacancy_rate_during=self.vacancy_rate_during,
             house_price_index_during=self.house_price_index_during,
-            total_firm_deposits_and_debt_during=self.total_firm_deposits_and_debt_during,
-            iot_industry_data_during=self.iot_industry_data_during,
             exchange_rates_data_during=self.exchange_rates_data_during,
         )
 
-        # # Compile historic data
-        # self.compiled_historic_data = self.compile_historic_data()
+        # Compile historic data
+        self.compiled_historic_data = pd.concat(
+            [
+                self.inflation_before,
+                self.national_accounts_before,
+                self.unemployment_rate_before,
+                self.vacancy_rate_before,
+                self.house_price_index_before,
+                self.exchange_rates_data_before,
+            ],
+            axis=1,
+        )
+        self.compiled_historic_data.columns = [
+            field.replace(" ", "_").upper() for field in self.compiled_historic_data.columns
+        ]
 
     @classmethod
     def from_pickled_agent(
@@ -131,24 +108,21 @@ class Exogenous:
         synthetic_country: SyntheticCountry,
         exchange_rates: ExchangeRates,
         country_name: str,
-        all_country_names: list[str],
         initial_year: int,
         t_max: int,
     ):
         exogenous_data = synthetic_country.exogenous_data
         return cls(
-            country_name,
-            all_country_names,
-            initial_year,
-            t_max,
-            log_inflation=exogenous_data.log_inflation,
-            sectoral_growth=exogenous_data.sectoral_growth,
-            unemployment_rate=exogenous_data.unemployment_rate,
-            vacancy_rate=exogenous_data.vacancy_rate,
+            country_name=country_name,
+            exchange_rates_data=exchange_rates.historic_exchange_rate_data,
+            inflation=exogenous_data.inflation,
+            national_accounts=exogenous_data.national_accounts,
+            unemployment_rate=exogenous_data.labour_stats[["Unemployment Rate (Value)"]],
+            vacancy_rate=exogenous_data.labour_stats[["Vacancy Rate (Value)"]],
             house_price_index=exogenous_data.house_price_index,
-            total_firm_deposits_and_debt=exogenous_data.total_firm_deposits_and_debt,
-            iot_industry_data=exogenous_data.iot_industry_data,
-            exchange_rates_data=exchange_rates.historic_exchange_rate_data.loc[[country_name]],
+            initial_year=initial_year,
+            initial_quarter=1,
+            t_max=t_max,
         )
 
     def save_to_h5(self, group: h5py.Group):

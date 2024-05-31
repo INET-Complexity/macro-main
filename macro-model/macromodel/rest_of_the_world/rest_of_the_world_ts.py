@@ -6,18 +6,16 @@ from macromodel.timeseries import TimeSeries
 
 def create_rest_of_the_world_timeseries(
     data: pd.DataFrame,
-    initial_inflation: float,
     n_industries: int,
 ) -> TimeSeries:
     return TimeSeries(
-        #
-        inflation=[initial_inflation],
-        #
         exports_real=data["Exports"].values,
+        total_exports=[data["Exports"].values.sum()],
         desired_exports_real=data["Exports"].values,
         #
         imports_in_usd=data["Imports in USD"].values,
         imports_in_lcu=data["Imports in LCU"].values,
+        total_imports=[data["Imports in USD"].values.sum()],
         desired_imports_in_usd=data["Imports in USD"].values,
         desired_imports_in_lcu=data["Imports in LCU"].values,
         #
