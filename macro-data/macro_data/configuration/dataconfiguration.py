@@ -127,7 +127,7 @@ class DataConfiguration(BaseModel):
     industries: list[str]
     year: int
     quarter: int = 1
-    prune_date: date
+    prune_date: Optional[date] = None
     country_configs: dict[Country, CountryDataConfiguration]
     row_data_config: ROWDataConfiguration = ROWDataConfiguration()
     purpose: str = ""
