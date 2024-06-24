@@ -67,6 +67,24 @@ def test_check_compatibility(datawrapper):
     assert not check_compatibility(country_data_configuration, country_sim_configuration)
 
 
+def test_reset(datawrapper):
+    configuration = SimulationConfiguration(country_configurations={"FRA": CountryConfiguration()})
+
+    simulation = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=configuration)
+
+    for i in range(3):
+        simulation.iterate()
+
+    new_configuration = simulation.configuration
+
+    # edit France config
+    new_configuration.country_configurations["FRA"].firms.parameters.capital_inputs_utilisation_rate = 0.5
+
+    simulation.reset(new_configuration)
+
+    assert len(simulation.countries["FRA"].firms.ts.historic("price")) == 1
+
+
 def test_reset_params(datawrapper):
     """Test the reset params."""
     country_sim_configuration = CountryConfiguration()
