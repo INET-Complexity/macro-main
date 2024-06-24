@@ -3,7 +3,6 @@ from copy import deepcopy
 import numpy as np
 from typing import Any, Optional
 
-from macromodel.firms.firm_ts import FirmTimeSeries
 from macromodel.timeseries import TimeSeries
 from numba import njit
 
@@ -16,7 +15,7 @@ class Agent:
         n_industries: int,
         n_transactors_sell: int,
         n_transactors_buy: int,
-        ts: TimeSeries | FirmTimeSeries,
+        ts: TimeSeries,
         states: dict[str, Any],
         transactor_settings: Optional[dict[str, Any]] = None,
     ):

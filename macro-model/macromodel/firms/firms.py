@@ -29,6 +29,7 @@ class Firms(Agent):
         capital_inputs_utilisation_rate: float,
         depreciation_rates: np.ndarray,
         capital_inputs_delay: np.ndarray,
+        average_initial_price: np.ndarray,
     ):
         n_transactors = ts.current("n_firms")
         super().__init__(
@@ -56,6 +57,8 @@ class Firms(Agent):
         self.capital_inputs_utilisation_rate = capital_inputs_utilisation_rate
         self.capital_inputs_delay = capital_inputs_delay
         self.depreciation_rates = depreciation_rates
+
+        self.average_initial_price = average_initial_price
 
     @classmethod
     def from_pickled_agent(
@@ -123,6 +126,7 @@ class Firms(Agent):
             configuration.parameters.capital_inputs_utilisation_rate,
             np.array(configuration.parameters.depreciation_rates),
             np.array(configuration.parameters.capital_inputs_delay),
+            average_initial_price,
         )
 
     def reset(self, configuration: FirmsConfiguration) -> None:
@@ -135,16 +139,16 @@ class Firms(Agent):
         )
 
         industries = self.states["Industry"]
-        initial_good_prices = self.states["Industry Vectors"]["Average Initial Price"].values.flatten()
+        initial_good_prices = self.average_initial_price
 
         inter_inputs_stock = (
             1.0
             / configuration.parameters.intermediate_inputs_utilisation_rate
             * np.divide(
                 self.ts.current("production"),
-                self.states["Intermediate Inputs Productivity Matrix"][:, industries],
-                out=np.zeros(self.states["Intermediate Inputs Productivity Matrix"][:, industries].shape),
-                where=self.states["Intermediate Inputs Productivity Matrix"][:, industries] != 0.0,
+                self.intermediate_inputs_productivity_matrix[:, industries],
+                out=np.zeros(self.intermediate_inputs_productivity_matrix[:, industries].shape),
+                where=self.intermediate_inputs_productivity_matrix[:, industries] != 0.0,
             ).T
         )
 
@@ -153,9 +157,9 @@ class Firms(Agent):
             / configuration.parameters.capital_inputs_utilisation_rate
             * np.divide(
                 self.ts.current("production"),
-                self.states["Capital Inputs Productivity Matrix"][:, industries],
-                out=np.zeros(self.states["Capital Inputs Productivity Matrix"][:, industries].shape),
-                where=self.states["Capital Inputs Productivity Matrix"][:, industries] != 0.0,
+                self.capital_inputs_productivity_matrix[:, industries],
+                out=np.zeros(self.capital_inputs_productivity_matrix[:, industries].shape),
+                where=self.capital_inputs_productivity_matrix[:, industries] != 0.0,
             ).T
         )
 
