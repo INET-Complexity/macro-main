@@ -118,6 +118,18 @@ class Simulation:
             configuration=simulation_configuration,
         )
 
+    def reset(self, configuration: SimulationConfiguration) -> None:
+        self.timestep = Timestep(year=configuration.year, month=1)
+
+        self.rest_of_the_world.reset(configuration.row_configuration)
+
+        self.goods_market.reset(configuration.goods_market_configuration)
+
+        self.exchange_rates.reset()
+
+        for country in self.countries.values():
+            country.reset(configuration.country_configurations[country.country_name])
+
     @property
     def t_max(self):
         return self.configuration.t_max

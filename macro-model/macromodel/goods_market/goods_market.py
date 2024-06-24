@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 from typing import Any, Tuple, Optional
@@ -29,6 +31,7 @@ class GoodsMarket:
         self.ts = ts
         self.goods_market_participants = goods_market_participants
         self.states = states
+        self.initial_states = deepcopy(states)
         self.buyer_priorities = buyer_priorities
         self.seller_priorities = seller_priorities
         self.row_index = row_index
@@ -89,6 +92,11 @@ class GoodsMarket:
             seller_priorities=seller_priorities,
             row_index=row_index,
         )
+
+    def reset(self, configuration: GoodsMarketConfiguration):
+        self.functions = functions_from_model(configuration.functions, loc="macromodel.goods_market")
+        self.ts.reset()
+        self.states = deepcopy(self.initial_states)
 
     def prepare(self, collect_sd: bool = True) -> None:
         # Prepare agents

@@ -80,6 +80,11 @@ class CreditMarket:
             initial_states=initial_states,
         )
 
+    def reset(self, configuration: CreditMarketConfiguration) -> None:
+        self.states = deepcopy(self.initial_states)
+        self.ts.reset()
+        self.functions = functions_from_model(configuration.functions, loc="macromodel.credit_market")
+
     @classmethod
     def from_data(
         cls,

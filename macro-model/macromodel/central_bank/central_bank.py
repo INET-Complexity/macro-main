@@ -67,6 +67,10 @@ class CentralBank(Agent):
             states,
         )
 
+    def reset(self, configuration: CentralBankConfiguration) -> None:
+        self.gen_reset()
+        self.functions = functions_from_model(model=configuration.functions, loc="macromodel.central_bank")
+
     def compute_rate(self, inflation: float, growth: float) -> float:
         return self.functions["policy_rate"].compute_rate(
             prev_rate=self.ts.current("policy_rate")[0],

@@ -170,6 +170,10 @@ class Economy:
             ts,
         )
 
+    def reset(self, configuration: EconomyConfiguration) -> None:
+        self.ts.reset()
+        self.functions = functions_from_model(configuration.functions, loc="macromodel.economy")
+
     def set_estimates(
         self,
         exogenous_growth: np.ndarray,

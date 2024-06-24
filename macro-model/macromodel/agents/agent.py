@@ -1,6 +1,9 @@
+from copy import deepcopy
+
 import numpy as np
 from typing import Any, Optional
 
+from macromodel.firms.firm_ts import FirmTimeSeries
 from macromodel.timeseries import TimeSeries
 from numba import njit
 
@@ -13,7 +16,7 @@ class Agent:
         n_industries: int,
         n_transactors_sell: int,
         n_transactors_buy: int,
-        ts: TimeSeries,
+        ts: TimeSeries | FirmTimeSeries,
         states: dict[str, Any],
         transactor_settings: Optional[dict[str, Any]] = None,
     ):
@@ -23,6 +26,9 @@ class Agent:
         self.n_transactors_sell = n_transactors_sell
         self.n_transactors_buy = n_transactors_buy
         self.states = states
+
+        self.initial_states = deepcopy(states)
+
         self.transactor_settings = transactor_settings if transactor_settings else {}
 
         self.transactor_buyer_states = {}
@@ -197,6 +203,10 @@ class Agent:
             self.ts.dicts["real_amount_bought_from_" + country_name].append(
                 self.transactor_buyer_states["Real Amount bought from " + country_name]
             )
+
+    def gen_reset(self) -> None:
+        self.states = deepcopy(self.initial_states)
+        self.ts.reset()
 
 
 @njit

@@ -91,6 +91,10 @@ class LabourMarket:
             ts,
         )
 
+    def reset(self, configuration: LabourMarketConfiguration):
+        self.functions = functions_from_model(configuration.functions, loc="macromodel.labour_market")
+        self.ts.reset()
+
     def clear(
         self,
         firms: Firms,

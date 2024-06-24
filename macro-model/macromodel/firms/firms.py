@@ -2,14 +2,13 @@ import h5py
 import numpy as np
 import pandas as pd
 from macro_data import SyntheticFirms
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from macromodel.configurations import FirmsConfiguration
 from macromodel.agents.agent import Agent
 from macromodel.credit_market.credit_market import CreditMarket
-from macromodel.firms.firm_ts import create_firms_timeseries
+from macromodel.firms.firm_ts import FirmTimeSeries
 from macromodel.goods_market.value_type import ValueType
-from macromodel.timeseries import TimeSeries
 from macromodel.util.function_mapping import functions_from_model
 
 
@@ -20,7 +19,7 @@ class Firms(Agent):
         all_country_names: list[str],
         n_industries: int,
         functions: dict[str, Callable],
-        ts: TimeSeries,
+        ts: FirmTimeSeries,
         states: dict[str, np.ndarray],
         intermediate_inputs_productivity_matrix: np.ndarray,
         capital_inputs_productivity_matrix: np.ndarray,
@@ -82,7 +81,7 @@ class Firms(Agent):
 
         data = synthetic_firms.firm_data.drop(columns=["Employees ID"]).astype(float).rename_axis("Firm ID")
 
-        ts = create_firms_timeseries(
+        ts = FirmTimeSeries.from_data(
             data=data,
             intermediate_inputs_stock=synthetic_firms.intermediate_inputs_stock,
             used_intermediate_inputs=synthetic_firms.used_intermediate_inputs,
@@ -124,6 +123,47 @@ class Firms(Agent):
             configuration.parameters.capital_inputs_utilisation_rate,
             np.array(configuration.parameters.depreciation_rates),
             np.array(configuration.parameters.capital_inputs_delay),
+        )
+
+    def reset(self, configuration: FirmsConfiguration) -> None:
+        self.gen_reset()
+        self.functions = functions_from_model(model=configuration.functions, loc="macromodel.firms")
+
+        current_inv = (
+            self.ts.current("production")
+            * configuration.functions.target_production.parameters["target_inventory_to_production_fraction"]
+        )
+
+        industries = self.states["Industry"]
+        initial_good_prices = self.states["Industry Vectors"]["Average Initial Price"].values.flatten()
+
+        inter_inputs_stock = (
+            1.0
+            / configuration.parameters.intermediate_inputs_utilisation_rate
+            * np.divide(
+                self.ts.current("production"),
+                self.states["Intermediate Inputs Productivity Matrix"][:, industries],
+                out=np.zeros(self.states["Intermediate Inputs Productivity Matrix"][:, industries].shape),
+                where=self.states["Intermediate Inputs Productivity Matrix"][:, industries] != 0.0,
+            ).T
+        )
+
+        cap_inputs_stock = (
+            1.0
+            / configuration.parameters.capital_inputs_utilisation_rate
+            * np.divide(
+                self.ts.current("production"),
+                self.states["Capital Inputs Productivity Matrix"][:, industries],
+                out=np.zeros(self.states["Capital Inputs Productivity Matrix"][:, industries].shape),
+                where=self.states["Capital Inputs Productivity Matrix"][:, industries] != 0.0,
+            ).T
+        )
+
+        self.ts.reset_values(
+            inventory=current_inv,
+            initial_good_prices=initial_good_prices,
+            intermediate_inputs_stock=inter_inputs_stock,
+            capital_inputs_stock=cap_inputs_stock,
         )
 
     def update_number_of_firms(self) -> None:
@@ -841,15 +881,6 @@ class Firms(Agent):
 
     def compute_total_deposits(self) -> float:
         return self.ts.current("deposits").sum()
-
-    def reset(
-        self,
-        config: Optional[dict[str, Any]] = None,
-        config_init: Optional[dict[str, Any]] = None,
-    ) -> None:
-        ...
-        # super().reset(config, config_init)
-        # self.initialise_stocks()
 
     def save_to_h5(self, group: h5py.Group):
         self.ts.write_to_h5("firms", group)

@@ -254,6 +254,28 @@ class Country:
             running_multiple_countries=running_multiple_countries,
         )
 
+    def reset(self, configuration: CountryConfiguration) -> None:
+
+        self.forecasting_window = configuration.forecasting_window
+        self.assume_zero_growth = configuration.assume_zero_growth
+        self.assume_zero_noise = configuration.assume_zero_noise
+
+        self.individuals.reset(configuration=configuration.individuals)
+        self.households.reset(configuration=configuration.households)
+        self.firms.reset(configuration=configuration.firms)
+        self.central_government.reset(configuration=configuration.central_government)
+        self.government_entities.reset(configuration=configuration.government_entities)
+        self.banks.reset(configuration=configuration.banks)
+        self.central_bank.reset(configuration=configuration.central_bank)
+
+        self.economy.reset(configuration=configuration.economy)
+
+        self.labour_market.reset(configuration=configuration.labour_market)
+        self.credit_market.reset(configuration=configuration.credit_market)
+        self.housing_market.reset(configuration=configuration.housing_market)
+
+        self.exogenous.reset()
+
     def initialisation_phase(self, exchange_rate_usd_to_lcu: float) -> None:
         self.exchange_rate_usd_to_lcu = exchange_rate_usd_to_lcu
         self.firms.update_number_of_firms()

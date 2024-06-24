@@ -125,6 +125,9 @@ class Exogenous:
             t_max=t_max,
         )
 
+    def reset(self) -> None:
+        self.ts.reset()
+
     def save_to_h5(self, group: h5py.Group):
         self.ts.write_to_h5("exogenous", group)
 

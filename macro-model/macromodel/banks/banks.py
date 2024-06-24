@@ -82,59 +82,10 @@ class Banks(Agent):
             states,
         )
 
-    # @classmethod
-    # def from_data(
-    #     cls,
-    #     country_name: str,
-    #     all_country_names: list[str],
-    #     year: int,
-    #     t_max: int,
-    #     n_industries: int,
-    #     scale: int,
-    #     data: pd.DataFrame,
-    #     corr_firms: pd.DataFrame,
-    #     corr_households: pd.DataFrame,
-    #     policy_rate_markup: float,
-    #     long_term_ir: float,
-    #     config: dict[str, Any],
-    #     init_config: dict[str, Any],
-    # ) -> "Banks":
-    #     parameters = {}
-    #     merge(parameters, config["parameters"], init_config["parameters"])
-    #
-    #     # Get corresponding functions and parameters
-    #     functions = get_functions(
-    #         config["functions"],
-    #         loc="macromodel.banks",
-    #         func_dir=Path(__file__).parent / "func",
-    #     )
-    #     parameters["policy_rate_markup"] = policy_rate_markup
-    #
-    #     # Create the corresponding time series object
-    #     ts = create_banks_timeseries(
-    #         bank_data=data,
-    #         long_term_ir=long_term_ir,
-    #         scale=scale,
-    #     )
-    #
-    #     # Additional states
-    #     states: dict[str, float | np.ndarray | list[np.ndarray]] = {
-    #         "corr_firms": [corr_firms.values[i][0] for i in range(len(corr_firms.values))],
-    #         "corr_households": [corr_households.values[i][0] for i in range(len(corr_households.values))],
-    #         "is_insolvent": np.full(ts.current("n_banks"), False),
-    #     }
-    #
-    #     return cls(
-    #         country_name,
-    #         all_country_names,
-    #         year,
-    #         t_max,
-    #         n_industries,
-    #         functions,
-    #         parameters,
-    #         ts,
-    #         states,
-    #     )
+    def reset(self, configuration: BanksConfiguration) -> None:
+        self.gen_reset()
+        self.parameters = configuration.parameters
+        self.functions = functions_from_model(model=configuration.functions, loc="macromodel.banks")
 
     def compute_estimated_profits(self, estimated_growth: float, estimated_inflation: float) -> np.ndarray:
         return self.functions["profit_estimator"].compute_estimated_profits(

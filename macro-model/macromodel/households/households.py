@@ -203,6 +203,10 @@ class Households(Agent):
             independents,
         )
 
+    def reset(self, configuration: HouseholdsConfiguration) -> None:
+        self.gen_reset()
+        self.functions = functions_from_model(model=configuration.functions, loc="macromodel.households")
+
     def compute_employee_income(
         self,
         individual_income: np.ndarray,

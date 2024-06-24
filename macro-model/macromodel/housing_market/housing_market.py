@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import h5py
 import numpy as np
 import pandas as pd
@@ -27,6 +29,7 @@ class HousingMarket:
         self.functions = functions
         self.ts = ts
         self.states = states
+        self.initial_states = deepcopy(states)
         self.current_sales: pd.DataFrame = pd.DataFrame()
 
     @classmethod
@@ -87,6 +90,11 @@ class HousingMarket:
             ts,
             states,
         )
+
+    def reset(self, configuration: HousingMarketConfiguration) -> None:
+        self.ts.reset()
+        self.functions = functions_from_model(configuration.functions, loc="macromodel.housing_market")
+        self.states = deepcopy(self.initial_states)
 
     @classmethod
     def from_data(
