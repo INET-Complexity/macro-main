@@ -92,5 +92,9 @@ class TimeSeries:
             names=["Agent ID", "Industry"],
         )
 
+    def reset(self):
+        for field in self.get_keys():
+            self.dicts[field] = [self.dicts[field][0]]
+
     def get_aggregate(self, name: str):
         return np.array(self.historic(name)).sum(axis=1)

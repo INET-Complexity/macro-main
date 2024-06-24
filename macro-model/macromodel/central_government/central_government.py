@@ -78,6 +78,10 @@ class CentralGovernment(Agent):
             states,
         )
 
+    def reset(self, configuration: CentralGovernmentConfiguration):
+        self.gen_reset()
+        self.functions = functions_from_model(model=configuration.functions, loc="macromodel.central_government")
+
     def update_benefits(
         self,
         historic_ppi_inflation: list[np.ndarray],

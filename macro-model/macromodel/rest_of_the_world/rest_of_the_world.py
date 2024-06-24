@@ -112,6 +112,14 @@ class RestOfTheWorld(Agent):
             assume_zero_noise=configuration.assume_zero_noise,
         )
 
+    def reset(self, configuration: RestOfTheWorldConfiguration):
+        self.gen_reset()
+        self.functions = functions_from_model(model=configuration.functions, loc="macromodel.rest_of_the_world")
+        self.parameters = configuration.parameters
+        self.forecasting_window = configuration.forecasting_window
+        self.assume_zero_growth = configuration.assume_zero_growth
+        self.assume_zero_noise = configuration.assume_zero_noise
+
     # @classmethod
     # def from_data(
     #     cls,

@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 from typing import Any, Optional
 
@@ -23,6 +25,9 @@ class Agent:
         self.n_transactors_sell = n_transactors_sell
         self.n_transactors_buy = n_transactors_buy
         self.states = states
+
+        self.initial_states = deepcopy(states)
+
         self.transactor_settings = transactor_settings if transactor_settings else {}
 
         self.transactor_buyer_states = {}
@@ -197,6 +202,10 @@ class Agent:
             self.ts.dicts["real_amount_bought_from_" + country_name].append(
                 self.transactor_buyer_states["Real Amount bought from " + country_name]
             )
+
+    def gen_reset(self) -> None:
+        self.states = deepcopy(self.initial_states)
+        self.ts.reset()
 
 
 @njit

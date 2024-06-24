@@ -69,6 +69,10 @@ class GovernmentEntities(Agent):
             states=states,
         )
 
+    def reset(self, configuration: GovernmentEntitiesConfiguration):
+        self.gen_reset()
+        self.functions = functions_from_model(model=configuration.functions, loc="macromodel.government_entities")
+
     def prepare_buying_goods(
         self,
         exogenous_gov_consumption_before: Optional[np.ndarray],
