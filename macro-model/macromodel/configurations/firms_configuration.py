@@ -22,9 +22,9 @@ class ExcessDemand(BaseModel):
     name: Literal["ConstrainedExcessDemandSetter",] = "ConstrainedExcessDemandSetter"
     path_name: str = "excess_demand"
     parameters: dict[str, Any] = {
-        "consider_intermediate_inputs": False,
-        "consider_capital_inputs": True,
-        "consider_labour_inputs": False,
+        "consider_intermediate_inputs": 0.0,
+        "consider_capital_inputs": 1.0,
+        "consider_labour_inputs": 0.0,
     }
 
 
@@ -101,7 +101,7 @@ class DesiredLabour(BaseModel):
     path_name: str = "desired_labour"
     parameters: dict[str, Any] = {
         "consider_intermediate_inputs": False,
-        "consider_capital_inputs": True,
+        "consider_capital_inputs": 1.0,
     }
 
 
