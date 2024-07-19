@@ -12,7 +12,7 @@ from macromodel.configurations.row_configuration import RestOfTheWorldParameters
 from macromodel.goods_market.value_type import ValueType
 from macromodel.rest_of_the_world.rest_of_the_world_ts import create_rest_of_the_world_timeseries
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import functions_from_model
+from macromodel.util.function_mapping import functions_from_model, update_functions
 
 
 class RestOfTheWorld(Agent):
@@ -30,6 +30,7 @@ class RestOfTheWorld(Agent):
         forecasting_window: int,
         assume_zero_growth: bool,
         assume_zero_noise: bool,
+        configuration: RestOfTheWorldConfiguration,
     ):
         super().__init__(
             country_name=country_name,
@@ -52,6 +53,8 @@ class RestOfTheWorld(Agent):
         self.forecasting_window = forecasting_window
         self.assume_zero_growth = assume_zero_growth
         self.assume_zero_noise = assume_zero_noise
+
+        self.configuration = configuration
 
     @classmethod
     def from_pickled_row(
@@ -110,15 +113,20 @@ class RestOfTheWorld(Agent):
             forecasting_window=configuration.forecasting_window,
             assume_zero_growth=configuration.assume_zero_growth,
             assume_zero_noise=configuration.assume_zero_noise,
+            configuration=configuration,
         )
 
-    def reset(self, configuration: RestOfTheWorldConfiguration):
+    def reset(self, configuration: RestOfTheWorldConfiguration, reset_params: bool = False) -> None:
         self.gen_reset()
-        self.functions = functions_from_model(model=configuration.functions, loc="macromodel.rest_of_the_world")
-        self.parameters = configuration.parameters
-        self.forecasting_window = configuration.forecasting_window
-        self.assume_zero_growth = configuration.assume_zero_growth
-        self.assume_zero_noise = configuration.assume_zero_noise
+        if reset_params:
+            update_functions(
+                model=configuration.functions, loc="macromodel.rest_of_the_world", functions=self.functions
+            )
+            self.parameters = configuration.parameters
+            self.forecasting_window = configuration.forecasting_window
+            self.assume_zero_growth = configuration.assume_zero_growth
+            self.assume_zero_noise = configuration.assume_zero_noise
+        self.configuration = configuration
 
     # @classmethod
     # def from_data(

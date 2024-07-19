@@ -10,7 +10,7 @@ from macromodel.individuals.individual_properties import ActivityStatus
 from macromodel.individuals.individuals import Individuals
 from macromodel.labour_market.labour_market_ts import create_labour_market_timeseries
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import get_functions, functions_from_model
+from macromodel.util.function_mapping import get_functions, functions_from_model, update_functions
 
 
 class LabourMarket:
@@ -92,7 +92,7 @@ class LabourMarket:
         )
 
     def reset(self, configuration: LabourMarketConfiguration):
-        self.functions = functions_from_model(configuration.functions, loc="macromodel.labour_market")
+        update_functions(model=configuration.functions, loc="macromodel.labour_market", functions=self.functions)
         self.ts.reset()
 
     def clear(

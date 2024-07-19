@@ -8,7 +8,7 @@ from macromodel.banks.banks_ts import create_banks_timeseries
 from macromodel.configurations import BankParameters, BanksConfiguration
 from macromodel.credit_market.credit_market import CreditMarket
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import functions_from_model
+from macromodel.util.function_mapping import functions_from_model, update_functions
 
 
 class Banks(Agent):
@@ -85,7 +85,7 @@ class Banks(Agent):
     def reset(self, configuration: BanksConfiguration) -> None:
         self.gen_reset()
         self.parameters = configuration.parameters
-        self.functions = functions_from_model(model=configuration.functions, loc="macromodel.banks")
+        update_functions(model=configuration.functions, loc="macromodel.banks", functions=self.functions)
 
     def compute_estimated_profits(self, estimated_growth: float, estimated_inflation: float) -> np.ndarray:
         return self.functions["profit_estimator"].compute_estimated_profits(

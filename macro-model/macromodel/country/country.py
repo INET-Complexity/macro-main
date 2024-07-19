@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import h5py
 import logging
 import numpy as np
@@ -43,6 +45,7 @@ class Country:
     forecasting_window: int
     assume_zero_growth: bool
     assume_zero_noise: bool
+    configuration: CountryConfiguration
 
     def __init__(
         self,
@@ -61,6 +64,7 @@ class Country:
         housing_market: HousingMarket,
         exogenous: Exogenous,
         running_multiple_countries: bool,
+        configuration: CountryConfiguration = CountryConfiguration(),
         forecasting_window: int = 60,
         assume_zero_growth: bool = False,
         assume_zero_noise: bool = False,
@@ -98,6 +102,8 @@ class Country:
         self.assume_zero_noise = assume_zero_noise
 
         self.running_multiple_countries = running_multiple_countries
+
+        self.configuration = configuration
 
     @classmethod
     def from_pickled_country(
@@ -252,29 +258,33 @@ class Country:
             assume_zero_growth=country_configuration.assume_zero_growth,
             assume_zero_noise=country_configuration.assume_zero_noise,
             running_multiple_countries=running_multiple_countries,
+            configuration=country_configuration,
         )
 
     def reset(self, configuration: CountryConfiguration) -> None:
 
-        self.forecasting_window = configuration.forecasting_window
-        self.assume_zero_growth = configuration.assume_zero_growth
-        self.assume_zero_noise = configuration.assume_zero_noise
+        if configuration != self.configuration:
+            self.forecasting_window = configuration.forecasting_window
+            self.assume_zero_growth = configuration.assume_zero_growth
+            self.assume_zero_noise = configuration.assume_zero_noise
 
-        self.individuals.reset(configuration=configuration.individuals)
-        self.households.reset(configuration=configuration.households)
-        self.firms.reset(configuration=configuration.firms)
-        self.central_government.reset(configuration=configuration.central_government)
-        self.government_entities.reset(configuration=configuration.government_entities)
-        self.banks.reset(configuration=configuration.banks)
-        self.central_bank.reset(configuration=configuration.central_bank)
+            self.individuals.reset(configuration=configuration.individuals)
+            self.households.reset(configuration=configuration.households)
+            self.firms.reset(configuration=configuration.firms)
+            self.central_government.reset(configuration=configuration.central_government)
+            self.government_entities.reset(configuration=configuration.government_entities)
+            self.banks.reset(configuration=configuration.banks)
+            self.central_bank.reset(configuration=configuration.central_bank)
 
-        self.economy.reset(configuration=configuration.economy)
+            self.economy.reset(configuration=configuration.economy)
 
-        self.labour_market.reset(configuration=configuration.labour_market)
-        self.credit_market.reset(configuration=configuration.credit_market)
-        self.housing_market.reset(configuration=configuration.housing_market)
+            self.labour_market.reset(configuration=configuration.labour_market)
+            self.credit_market.reset(configuration=configuration.credit_market)
+            self.housing_market.reset(configuration=configuration.housing_market)
 
-        self.exogenous.reset()
+            self.exogenous.reset()
+
+            self.configuration = deepcopy(configuration)
 
     def initialisation_phase(self, exchange_rate_usd_to_lcu: float) -> None:
         self.exchange_rate_usd_to_lcu = exchange_rate_usd_to_lcu

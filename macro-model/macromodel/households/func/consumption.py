@@ -1,6 +1,6 @@
 import numpy as np
 
-from numba import njit
+from numba import njit, float64, boolean, int64
 
 from abc import abstractmethod, ABC
 
@@ -68,7 +68,22 @@ class DefaultHouseholdConsumption(HouseholdConsumption):
         )
 
     @staticmethod
-    @njit
+    @njit(
+        float64[:, :](
+            float64[:, :],  # historic_consumption_sum
+            float64[:],  # saving_rates
+            float64[:],  # income
+            float64[:],  # household_benefits
+            float64[:],  # consumption_weights
+            float64[:, :],  # consumption_weights_by_income
+            boolean,  # take_consumption_weights_by_income_quantile
+            float64,  # tau_vat
+            int64,  # consumption_smoothing_window
+            float64,  # consumption_smoothing_fraction
+            float64,  # minimum_consumption_fraction
+        ),
+        cache=True,
+    )
     def _compute_target_consumption(
         historic_consumption_sum: np.ndarray,
         saving_rates: np.ndarray,
@@ -83,53 +98,53 @@ class DefaultHouseholdConsumption(HouseholdConsumption):
         minimum_consumption_fraction: float,
     ) -> np.ndarray:
         smoothing_window = min(consumption_smoothing_window, len(historic_consumption_sum))
-        target_consumption = np.zeros((len(income), len(consumption_weights)))
-        if take_consumption_weights_by_income_quantile:
-            pass
-            """
-            quintiles = partition_into_quintiles(income)
-            historic_consumption_sum = np.array(historic_consumption)[1:][-smoothing_window:].sum(axis=0)
-            for q in range(5):
-                cons = (
-                    consumption_weights_by_income[:, q]
-                    if take_consumption_weights_by_income_quantile
-                    else consumption_weights
-                )
-                ind = np.where(quintiles == q)[0]
-                target_consumption[ind] = (
-                    1.0
-                    / (1 + tau_vat)
-                    * np.outer(
-                        cons,
-                        np.maximum(
-                            minimum_consumption_fraction * (1 - saving_rates[ind]) * household_benefits[ind],
-                            (1 - saving_rates[ind]) * income[ind],
-                            consumption_smoothing_fraction
-                            * (1 + tau_vat)
-                            * (1 / smoothing_window)
-                            * historic_consumption_sum[ind],
-                        ),
-                    ).T
-                )
-            return np.maximum(0.0, target_consumption)
-            """
-        else:
-            target_consumption = (
-                1.0
-                / (1 + tau_vat)
-                * np.outer(
-                    consumption_weights,
-                    np.maximum(
-                        minimum_consumption_fraction * (1 - saving_rates) * household_benefits,
-                        (1 - saving_rates) * income,
-                        consumption_smoothing_fraction
-                        * (1 + tau_vat)
-                        * (1 / smoothing_window)
-                        * historic_consumption_sum[1:][-smoothing_window:].sum(axis=0),
-                    ),
-                ).T
-            )
-            return np.maximum(0.0, target_consumption)
+        # target_consumption = np.zeros((len(income), len(consumption_weights)))
+        # if take_consumption_weights_by_income_quantile:
+        #     pass
+        #     """
+        #     quintiles = partition_into_quintiles(income)
+        #     historic_consumption_sum = np.array(historic_consumption)[1:][-smoothing_window:].sum(axis=0)
+        #     for q in range(5):
+        #         cons = (
+        #             consumption_weights_by_income[:, q]
+        #             if take_consumption_weights_by_income_quantile
+        #             else consumption_weights
+        #         )
+        #         ind = np.where(quintiles == q)[0]
+        #         target_consumption[ind] = (
+        #             1.0
+        #             / (1 + tau_vat)
+        #             * np.outer(
+        #                 cons,
+        #                 np.maximum(
+        #                     minimum_consumption_fraction * (1 - saving_rates[ind]) * household_benefits[ind],
+        #                     (1 - saving_rates[ind]) * income[ind],
+        #                     consumption_smoothing_fraction
+        #                     * (1 + tau_vat)
+        #                     * (1 / smoothing_window)
+        #                     * historic_consumption_sum[ind],
+        #                 ),
+        #             ).T
+        #         )
+        #     return np.maximum(0.0, target_consumption)
+        #     """
+        # else:
+        target_consumption = (
+            1.0
+            / (1 + tau_vat)
+            * np.outer(
+                consumption_weights,
+                np.maximum(
+                    minimum_consumption_fraction * (1 - saving_rates) * household_benefits,
+                    (1 - saving_rates) * income,
+                    consumption_smoothing_fraction
+                    * (1 + tau_vat)
+                    * (1 / smoothing_window)
+                    * historic_consumption_sum[1:][-smoothing_window:].sum(axis=0),
+                ),
+            ).T
+        )
+        return np.maximum(0.0, target_consumption)
 
 
 class ExogenousHouseholdConsumption(HouseholdConsumption):

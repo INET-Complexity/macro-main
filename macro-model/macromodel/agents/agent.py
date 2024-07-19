@@ -4,7 +4,7 @@ import numpy as np
 from typing import Any, Optional
 
 from macromodel.timeseries import TimeSeries
-from numba import njit
+from numba import njit, int64, float64
 
 
 class Agent:
@@ -128,29 +128,31 @@ class Agent:
             self.transactor_seller_states["Initial Goods"].shape
         )
 
-    def record(self) -> None:
+    def record(self, rounding: int = 16) -> None:
         # Round
-        self.transactor_seller_states["Real Amount sold"] = round_pos(self.transactor_seller_states["Real Amount sold"])
+        self.transactor_seller_states["Real Amount sold"] = round_pos(
+            self.transactor_seller_states["Real Amount sold"], rounding
+        )
         for country_name in self.all_country_names:
             self.transactor_seller_states["Real Amount sold to " + country_name] = round_pos(
-                self.transactor_seller_states["Real Amount sold to " + country_name]
+                self.transactor_seller_states["Real Amount sold to " + country_name], rounding
             )
         self.transactor_seller_states["Real Excess Demand"] = round_pos(
-            self.transactor_seller_states["Real Excess Demand"]
+            self.transactor_seller_states["Real Excess Demand"], rounding
         )
-        self.transactor_buyer_states["Nominal Amount spent"] = round_pos(
-            self.transactor_buyer_states["Nominal Amount spent"]
+        self.transactor_buyer_states["Nominal Amount spent"] = round_pos2(
+            self.transactor_buyer_states["Nominal Amount spent"], rounding
         )
         for country_name in self.all_country_names:
-            self.transactor_buyer_states["Nominal Amount spent on Goods from " + country_name] = round_pos(
-                self.transactor_buyer_states["Nominal Amount spent on Goods from " + country_name]
+            self.transactor_buyer_states["Nominal Amount spent on Goods from " + country_name] = round_pos2(
+                self.transactor_buyer_states["Nominal Amount spent on Goods from " + country_name], rounding
             )
-        self.transactor_buyer_states["Real Amount bought"] = round_pos(
-            self.transactor_buyer_states["Real Amount bought"]
+        self.transactor_buyer_states["Real Amount bought"] = round_pos2(
+            self.transactor_buyer_states["Real Amount bought"], rounding
         )
         for country_name in self.all_country_names:
-            self.transactor_buyer_states["Real Amount bought from " + country_name] = round_pos(
-                self.transactor_buyer_states["Real Amount bought from " + country_name]
+            self.transactor_buyer_states["Real Amount bought from " + country_name] = round_pos2(
+                self.transactor_buyer_states["Real Amount bought from " + country_name], rounding
             )
 
         # Update time series for sellers
@@ -208,7 +210,13 @@ class Agent:
         self.ts.reset()
 
 
-@njit
-def round_pos(x: np.ndarray, decimals: int = 16) -> np.ndarray:
+@njit(float64[:](float64[:], int64), cache=True)
+def round_pos(x: np.ndarray, decimals: int) -> np.ndarray:
+    r = np.round(x, decimals)
+    return np.maximum(0.0, r)
+
+
+@njit(float64[:, :](float64[:, :], int64), cache=True)
+def round_pos2(x: np.ndarray, decimals: int) -> np.ndarray:
     r = np.round(x, decimals)
     return np.maximum(0.0, r)

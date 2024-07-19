@@ -49,3 +49,21 @@ def functions_from_model(model: BaseModel, loc: str) -> dict[str, Any]:
         loaded_classes[path_name] = cls(**parameters)
 
     return loaded_classes
+
+
+def update_functions(model: BaseModel, loc: str, functions: dict[str, Any]) -> None:
+    for func_name, new_func_config in model.__dict__.items():
+        existing_func = functions.get(func_name, None)
+        if existing_func is None:
+            raise ValueError(f"Function {func_name} not found in functions dictionary")
+
+        # Check if function needs to be reinstantiated
+        if existing_func is None or existing_func.__class__.__name__ != new_func_config.name:  # noqa
+            # Different class or no existing function, need to reinstantiate
+            module = __import__(f"{loc}.func.{new_func_config.path_name}", fromlist=[new_func_config.name])
+            cls = getattr(module, new_func_config.name)
+            setattr(functions, func_name, cls(**new_func_config.parameters))
+        else:
+            # Same class, just update parameters
+            for param, value in new_func_config.parameters.items():
+                setattr(existing_func, param, value)

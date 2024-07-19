@@ -11,7 +11,7 @@ from macromodel.central_government.central_government_ts import (
 )
 from macromodel.individuals.individual_properties import ActivityStatus
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import functions_from_model
+from macromodel.util.function_mapping import functions_from_model, update_functions
 
 
 class CentralGovernment(Agent):
@@ -80,7 +80,7 @@ class CentralGovernment(Agent):
 
     def reset(self, configuration: CentralGovernmentConfiguration):
         self.gen_reset()
-        self.functions = functions_from_model(model=configuration.functions, loc="macromodel.central_government")
+        update_functions(model=configuration.functions, loc="macromodel.central_government", functions=self.functions)
 
     def update_benefits(
         self,

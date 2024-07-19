@@ -10,7 +10,7 @@ from typing import Any, TYPE_CHECKING, Tuple
 from macromodel.configurations import CreditMarketConfiguration
 from macromodel.credit_market.credit_market_ts import create_credit_market_timeseries
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import functions_from_model
+from macromodel.util.function_mapping import functions_from_model, update_functions
 
 if TYPE_CHECKING:
     from macromodel.firms.firms import Firms
@@ -83,7 +83,7 @@ class CreditMarket:
     def reset(self, configuration: CreditMarketConfiguration) -> None:
         self.states = deepcopy(self.initial_states)
         self.ts.reset()
-        self.functions = functions_from_model(configuration.functions, loc="macromodel.credit_market")
+        update_functions(model=configuration.functions, loc="macromodel.credit_market", functions=self.functions)
 
     @classmethod
     def from_data(

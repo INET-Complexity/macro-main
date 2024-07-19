@@ -8,8 +8,7 @@ from macromodel.agents.agent import Agent
 from macromodel.configurations import GoodsMarketConfiguration
 from macromodel.goods_market.goods_market_ts import create_goods_market_timeseries
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import functions_from_model
-
+from macromodel.util.function_mapping import functions_from_model, update_functions
 
 SupplyChain = dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]]
 
@@ -93,10 +92,10 @@ class GoodsMarket:
             row_index=row_index,
         )
 
-    def reset(self, configuration: GoodsMarketConfiguration):
-        self.functions = functions_from_model(configuration.functions, loc="macromodel.goods_market")
+    def reset(self, configuration: GoodsMarketConfiguration, reset_params: bool = False):
         self.ts.reset()
         self.states = deepcopy(self.initial_states)
+        update_functions(model=configuration.functions, loc="macromodel.goods_market", functions=self.functions)
 
     def prepare(self, collect_sd: bool = True) -> None:
         # Prepare agents
