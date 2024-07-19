@@ -87,7 +87,34 @@ def test_reset(datawrapper):
     assert len(simulation.countries["FRA"].firms.ts.historic("price")) == 1
 
 
-def test_reset_params(datawrapper):
+def test_reset_row_params(datawrapper):
+    """Test the reset params."""
+    country_sim_configuration = CountryConfiguration()
+
+    sim_configuration = SimulationConfiguration(country_configurations={"FRA": country_sim_configuration})
+    simulation = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=sim_configuration)
+
+    for _ in range(5):
+        simulation.iterate()
+
+    values = [0.0, 1.0]
+
+    for x in values:
+        new_row_conf = deepcopy(sim_configuration.row_configuration)
+        new_row_conf.functions.exports.parameters["consistency"] = x
+        sim_configuration.row_configuration = new_row_conf
+
+        simulation.reset(sim_configuration)
+        row = simulation.rest_of_the_world
+        func = row.functions["exports"]
+
+        param = func.consistency
+
+        assert param == x
+        simulation.iterate()
+
+
+def test_reset_firm_params(datawrapper):
     """Test the reset params."""
     country_sim_configuration = CountryConfiguration()
 

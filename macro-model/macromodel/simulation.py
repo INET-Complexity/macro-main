@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import h5py
 import logging
 import numpy as np
@@ -116,23 +118,28 @@ class Simulation:
             goods_market=goods_market,
             exchange_rates=exchange_rates,
             timestep=timestep,
-            configuration=simulation_configuration,
+            configuration=deepcopy(simulation_configuration),
             initial_year=datawrapper.configuration.year,
         )
 
     def reset(self, configuration: SimulationConfiguration) -> None:
-        self.configuration = configuration
 
         self.timestep = Timestep(year=self.initial_year, month=1)
 
-        self.rest_of_the_world.reset(configuration.row_configuration)
+        reset_row_params = configuration.row_configuration != self.configuration.row_configuration
+        self.rest_of_the_world.reset(configuration.row_configuration, reset_row_params)
 
-        self.goods_market.reset(configuration.goods_market_configuration)
+        reset_good_market_params = (
+            configuration.goods_market_configuration != self.configuration.goods_market_configuration
+        )
+        self.goods_market.reset(configuration.goods_market_configuration, reset_good_market_params)
 
         self.exchange_rates.reset()
 
         for country in self.countries.values():
             country.reset(configuration.country_configurations[country.country_name])
+
+        self.configuration = deepcopy(configuration)
 
     @property
     def t_max(self):

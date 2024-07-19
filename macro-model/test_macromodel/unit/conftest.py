@@ -20,6 +20,7 @@ from macromodel.configurations import (
     CentralBankConfiguration,
     GoodsMarketConfiguration,
     RestOfTheWorldConfiguration,
+    CountryConfiguration,
 )
 from macromodel.country import Country
 from macromodel.credit_market.credit_market import CreditMarket

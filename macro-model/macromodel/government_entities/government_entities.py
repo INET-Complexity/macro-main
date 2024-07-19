@@ -10,7 +10,7 @@ from macromodel.government_entities.government_entities_ts import (
     create_government_entities_timeseries,
 )
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import functions_from_model
+from macromodel.util.function_mapping import functions_from_model, update_functions
 
 
 class GovernmentEntities(Agent):
@@ -71,7 +71,7 @@ class GovernmentEntities(Agent):
 
     def reset(self, configuration: GovernmentEntitiesConfiguration):
         self.gen_reset()
-        self.functions = functions_from_model(model=configuration.functions, loc="macromodel.government_entities")
+        update_functions(model=configuration.functions, loc="macromodel.government_entities", functions=self.functions)
 
     def prepare_buying_goods(
         self,

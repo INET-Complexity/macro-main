@@ -13,7 +13,7 @@ from macromodel.households.households import Households
 from macromodel.individuals.individual_properties import ActivityStatus
 from macromodel.individuals.individuals import Individuals
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import functions_from_model
+from macromodel.util.function_mapping import functions_from_model, update_functions
 
 
 class Economy:
@@ -172,7 +172,7 @@ class Economy:
 
     def reset(self, configuration: EconomyConfiguration) -> None:
         self.ts.reset()
-        self.functions = functions_from_model(configuration.functions, loc="macromodel.economy")
+        update_functions(model=configuration.functions, functions=self.functions, loc="macromodel.economy")
 
     def set_estimates(
         self,

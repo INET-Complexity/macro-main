@@ -13,7 +13,7 @@ from macromodel.individuals.individual_properties import (
 )
 from macromodel.individuals.individuals_ts import create_individuals_timeseries
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import functions_from_model
+from macromodel.util.function_mapping import functions_from_model, update_functions
 from macromodel.util.property_mapping import map_to_enum
 
 
@@ -111,7 +111,7 @@ class Individuals(Agent):
 
     def reset(self, configuration: IndividualsConfiguration):
         self.gen_reset()
-        self.functions = functions_from_model(model=configuration.functions, loc="macromodel.individuals")
+        update_functions(functions=self.functions, model=configuration.functions, loc="macromodel.individuals")
 
     def compute_labour_inputs(self) -> np.ndarray:
         return self.functions["labour_inputs"].update_labour_inputs(

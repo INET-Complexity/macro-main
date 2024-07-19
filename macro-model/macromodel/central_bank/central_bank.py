@@ -7,7 +7,7 @@ from macromodel.configurations import CentralBankConfiguration
 from macromodel.agents.agent import Agent
 from macromodel.central_bank.central_bank_ts import create_central_bank_timeseries
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import functions_from_model
+from macromodel.util.function_mapping import functions_from_model, update_functions
 
 
 class CentralBank(Agent):
@@ -69,7 +69,7 @@ class CentralBank(Agent):
 
     def reset(self, configuration: CentralBankConfiguration) -> None:
         self.gen_reset()
-        self.functions = functions_from_model(model=configuration.functions, loc="macromodel.central_bank")
+        update_functions(model=configuration.functions, loc="macromodel.central_bank", functions=self.functions)
 
     def compute_rate(self, inflation: float, growth: float) -> float:
         return self.functions["policy_rate"].compute_rate(

@@ -17,7 +17,7 @@ class CentralBankFunctions(BaseModel):
     The functions used by the central bank.
     """
 
-    policy: CentralBankPolicy = CentralBankPolicy()
+    policy_rate: CentralBankPolicy = CentralBankPolicy()
 
 
 class CentralBankConfiguration(BaseModel):

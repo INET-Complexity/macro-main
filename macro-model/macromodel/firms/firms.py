@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import h5py
 import numpy as np
 import pandas as pd
@@ -9,7 +11,7 @@ from macromodel.agents.agent import Agent
 from macromodel.credit_market.credit_market import CreditMarket
 from macromodel.firms.firm_ts import FirmTimeSeries
 from macromodel.goods_market.value_type import ValueType
-from macromodel.util.function_mapping import functions_from_model
+from macromodel.util.function_mapping import functions_from_model, update_functions
 
 
 class Firms(Agent):
@@ -30,6 +32,7 @@ class Firms(Agent):
         depreciation_rates: np.ndarray,
         capital_inputs_delay: np.ndarray,
         average_initial_price: np.ndarray,
+        configuration: FirmsConfiguration,
     ):
         n_transactors = ts.current("n_firms")
         super().__init__(
@@ -59,6 +62,8 @@ class Firms(Agent):
         self.depreciation_rates = depreciation_rates
 
         self.average_initial_price = average_initial_price
+
+        self.configuration = configuration
 
     @classmethod
     def from_pickled_agent(
@@ -127,11 +132,12 @@ class Firms(Agent):
             np.array(configuration.parameters.depreciation_rates),
             np.array(configuration.parameters.capital_inputs_delay),
             average_initial_price,
+            configuration=configuration,
         )
 
     def reset(self, configuration: FirmsConfiguration) -> None:
         self.gen_reset()
-        self.functions = functions_from_model(model=configuration.functions, loc="macromodel.firms")
+        update_functions(model=configuration.functions, loc="macromodel.firms", functions=self.functions)
 
         current_inv = (
             self.ts.current("production")
@@ -169,6 +175,8 @@ class Firms(Agent):
             intermediate_inputs_stock=inter_inputs_stock,
             capital_inputs_stock=cap_inputs_stock,
         )
+
+        self.configuration = deepcopy(configuration)
 
     def update_number_of_firms(self) -> None:
         self.ts.n_firms.append(self.ts.current("n_firms"))
