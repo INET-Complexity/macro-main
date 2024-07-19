@@ -1,6 +1,6 @@
 import numpy as np
 
-from numba import njit, prange
+from numba import njit, prange, float64, int64
 
 from macromodel.agents.agent import Agent
 from macromodel.goods_market.value_type import ValueType
@@ -8,8 +8,8 @@ from macromodel.goods_market.value_type import ValueType
 from typing import Tuple, Optional
 
 
-@njit(parallel=True)
-def get_split_sum(val: np.ndarray, groups: np.ndarray, n_industries) -> np.ndarray:
+@njit(float64[:](float64[:], int64[:], int64), parallel=True, cache=True)
+def get_split_sum(val: np.ndarray, groups: np.ndarray, n_industries: int) -> np.ndarray:
     split_sum = np.zeros(n_industries)
     for _g in prange(n_industries):
         split_sum[_g] = val[groups == _g].sum()

@@ -215,12 +215,12 @@ class TargetProduction(BaseModel):
         "maximum_debt_to_equity_ratio": 2.0,
         "target_inventory_to_production_fraction": 0.0,
         "financial_constrains_fraction": 0.0,
-        "intermediate_inputs_target_considers_labour_inputs": False,
-        "intermediate_inputs_target_considers_intermediate_inputs": False,
-        "intermediate_inputs_target_considers_capital_inputs": True,
-        "capital_inputs_target_considers_labour_inputs": False,
-        "capital_inputs_target_considers_intermediate_inputs": False,
-        "capital_inputs_target_considers_capital_inputs": True,
+        "intermediate_inputs_target_considers_labour_inputs": 0.0,
+        "intermediate_inputs_target_considers_intermediate_inputs": 0.0,
+        "intermediate_inputs_target_considers_capital_inputs": 1.0,
+        "capital_inputs_target_considers_labour_inputs": 0.0,
+        "capital_inputs_target_considers_intermediate_inputs": 0.0,
+        "capital_inputs_target_considers_capital_inputs": 1.0,
     }
 
 

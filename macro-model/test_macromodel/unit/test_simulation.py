@@ -1,6 +1,8 @@
 import tempfile
+from copy import deepcopy
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from macromodel.configurations import SimulationConfiguration, CountryConfiguration
@@ -89,6 +91,16 @@ def test_reset_params(datawrapper):
     """Test the reset params."""
     country_sim_configuration = CountryConfiguration()
 
+    def redo_configuration(
+        country_conf: CountryConfiguration,
+        target_inputs_capital_: float,
+    ):
+        new_country_conf_ = deepcopy(country_conf)
+        new_country_conf_.firms.functions.target_production.parameters[
+            "intermediate_inputs_target_considers_capital_inputs"
+        ] = target_inputs_capital_
+        return new_country_conf_
+
     country_sim_configuration.firms.reset_params["capital_inputs_utilisation_rate"] = 0.1
     country_sim_configuration.firms.reset_params["intermediate_inputs_utilisation_rate"] = 0.1
 
@@ -97,4 +109,18 @@ def test_reset_params(datawrapper):
 
     for _ in range(5):
         simulation.iterate()
-    assert True
+
+    values = np.linspace(0, 1, 10)
+
+    for x in values:
+        new_country_conf = redo_configuration(country_sim_configuration, x)
+        sim_configuration.country_configurations["FRA"] = new_country_conf
+
+        simulation.reset(sim_configuration)
+        firms = simulation.countries["FRA"].firms
+        func = firms.functions["target_production"]
+
+        param = func.intermediate_inputs_target_considers_capital_inputs
+
+        assert param == x
+        simulation.iterate()

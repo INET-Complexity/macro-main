@@ -1,6 +1,6 @@
 import numpy as np
 
-from numba import njit
+from numba import njit, float64, int32, types, int64, boolean
 
 from macromodel.firms.firms import Firms
 from macromodel.households.households import Households
@@ -615,7 +615,20 @@ class PolednaLabourMarketClearer(LabourMarketClearer):
         )
 
 
-@njit
+@njit(
+    types.Tuple((float64[:], int64))(
+        int64[:],  # individuals_corresponding_firm
+        float64[:],  # prev_individuals_productivity
+        float64[:],  # desired_labour_inputs
+        float64[:],  # prev_labour_inputs
+        float64[:],  # current_individual_wages
+        int64[:],  # firm_industries
+        float64[:],  # average_industry_productivity
+        float64,  # firing_speed
+        float64,  # firing_cost_fraction
+    ),
+    cache=True,
+)
 def firing(
     individuals_corresponding_firm: np.ndarray,
     prev_individuals_productivity: np.ndarray,
@@ -650,7 +663,24 @@ def firing(
     return firing_costs, int(excess_employees.sum())  # noqa
 
 
-@njit
+@njit(
+    types.Tuple((float64[:], int64))(
+        int64[:],  # firm industries
+        float64[:],  # current individuals industry
+        int64[:],  # individuals corresponding firm
+        float64[:],  # prev individuals productivity
+        boolean[:],  # current individuals activity
+        float64[:],  # desired labour inputs
+        float64[:],  # prev labour inputs
+        float64[:],  # offered wage
+        float64[:],  # individual reservation wages
+        float64[:],  # current individual wages
+        float64[:],  # average industry productivity
+        float64,  # hiring speed
+        float64,  # hiring cost fraction
+    ),
+    cache=True,
+)
 def hiring(
     firm_industries: np.ndarray,
     current_individuals_industry: np.ndarray,

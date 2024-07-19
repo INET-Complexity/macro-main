@@ -3,6 +3,10 @@ import numpy as np
 from abc import abstractmethod, ABC
 
 
+def clip(x: float) -> float:
+    return max(0.0, min(1.0, x))
+
+
 class TargetProductionSetter(ABC):
     def __init__(
         self,
@@ -22,33 +26,28 @@ class TargetProductionSetter(ABC):
         self.financial_constrains_fraction = financial_constrains_fraction
         self.maximum_debt_to_equity_ratio = maximum_debt_to_equity_ratio
 
-        self.intermediate_inputs_target_considers_labour_inputs = max(
-            0.0, min(1.0, intermediate_inputs_target_considers_labour_inputs)
+        self.intermediate_inputs_target_considers_labour_inputs = clip(
+            intermediate_inputs_target_considers_labour_inputs
         )
         self.intermediate_inputs_target_considers_labour_inputs = intermediate_inputs_target_considers_labour_inputs
-        self.intermediate_inputs_target_considers_intermediate_inputs = max(
-            0.0,
-            min(1.0, intermediate_inputs_target_considers_intermediate_inputs),
+        self.intermediate_inputs_target_considers_intermediate_inputs = clip(
+            intermediate_inputs_target_considers_intermediate_inputs
         )
         self.intermediate_inputs_target_considers_intermediate_inputs = (
             intermediate_inputs_target_considers_intermediate_inputs
         )
-        self.intermediate_inputs_target_considers_capital_inputs = max(
-            0.0, min(1.0, intermediate_inputs_target_considers_capital_inputs)
+        self.intermediate_inputs_target_considers_capital_inputs = clip(
+            intermediate_inputs_target_considers_capital_inputs
         )
         self.intermediate_inputs_target_considers_capital_inputs = intermediate_inputs_target_considers_capital_inputs
 
-        self.capital_inputs_target_considers_labour_inputs = max(
-            0.0, min(1.0, capital_inputs_target_considers_labour_inputs)
-        )
+        self.capital_inputs_target_considers_labour_inputs = clip(capital_inputs_target_considers_labour_inputs)
         self.capital_inputs_target_considers_labour_inputs = capital_inputs_target_considers_labour_inputs
-        self.capital_inputs_target_considers_intermediate_inputs = max(
-            0.0, min(1.0, capital_inputs_target_considers_intermediate_inputs)
+        self.capital_inputs_target_considers_intermediate_inputs = clip(
+            capital_inputs_target_considers_intermediate_inputs
         )
         self.capital_inputs_target_considers_intermediate_inputs = capital_inputs_target_considers_intermediate_inputs
-        self.capital_inputs_target_considers_capital_inputs = max(
-            0.0, min(1.0, capital_inputs_target_considers_capital_inputs)
-        )
+        self.capital_inputs_target_considers_capital_inputs = clip(capital_inputs_target_considers_capital_inputs)
         self.capital_inputs_target_considers_capital_inputs = capital_inputs_target_considers_capital_inputs
 
     @abstractmethod

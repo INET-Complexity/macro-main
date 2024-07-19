@@ -1,6 +1,6 @@
 import numpy as np
 
-from numba import njit
+from numba import njit, int64, float64, boolean, types
 
 from macromodel.agents.agent import Agent
 from macromodel.goods_market.value_type import ValueType
@@ -8,7 +8,18 @@ from macromodel.goods_market.value_type import ValueType
 from typing import Optional, Tuple
 
 
-@njit
+@njit(
+    types.Tuple((float64[:, :, :], float64[:, :, :]))(
+        int64,  # n_countries,
+        float64[:, :, :],  # default_origin_trade_proportions,
+        float64[:, :, :],  # default_destin_trade_proportions,
+        float64[:, :],  # average_prices_by_country,
+        float64,  # temperature,
+        float64,  # real_country_prioritisation,
+        int64,  # row_index,
+    ),
+    cache=True,
+)
 def get_trade_proportions(
     n_countries: int,
     default_origin_trade_proportions: np.ndarray,
@@ -16,7 +27,7 @@ def get_trade_proportions(
     average_prices_by_country: np.ndarray,
     temperature: float,
     real_country_prioritisation: float,
-    row_index: int = -1,
+    row_index: int,
 ) -> Tuple[np.ndarray, np.ndarray]:
     # Origin trade proportions
     origin_trade_proportions = np.zeros_like(default_origin_trade_proportions)
@@ -43,14 +54,14 @@ def get_trade_proportions(
     return origin_trade_proportions, destin_trade_proportions
 
 
-@njit
+@njit(int64[:](int64[:]), cache=True)
 def invert_permutation(p: np.ndarray) -> np.ndarray:
     s = np.empty_like(p)
     s[p] = np.arange(p.size)
     return s
 
 
-@njit
+@njit(float64[:](float64[:], float64, int64[:], float64), cache=True)
 def fill_buckets(
     capacities: np.ndarray,
     fill_amount: float,
@@ -108,7 +119,7 @@ def get_seller_priorities_stochastic(
     return distribution, np.random.choice(len(distribution), len(distribution), replace=False, p=distribution)
 
 
-@njit
+@njit(types.Tuple((float64[:], int64[:]))(float64[:], float64[:], float64, types.unicode_type), cache=True)
 def get_seller_priorities_deterministic(
     productions: np.ndarray,
     prices: np.ndarray,
@@ -135,12 +146,12 @@ def get_seller_priorities_deterministic(
     return distribution, np.argsort(distribution)[::-1]
 
 
-@njit
+@njit(int64[:](int64), cache=True)
 def get_buyer_priorities(n_buyers: int) -> np.ndarray:
     return np.random.choice(n_buyers, n_buyers, replace=False)
 
 
-@njit
+@njit(int64[:](int64[:], boolean), cache=True)
 def get_transactor_buyer_priorities(priorities: np.ndarray, prioritise: bool) -> np.ndarray:
     if prioritise:
         high_prio, low_prio = (
