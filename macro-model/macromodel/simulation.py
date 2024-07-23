@@ -1,4 +1,5 @@
 from copy import deepcopy
+from typing import Optional
 
 import h5py
 import logging
@@ -122,7 +123,10 @@ class Simulation:
             initial_year=datawrapper.configuration.year,
         )
 
-    def reset(self, configuration: SimulationConfiguration) -> None:
+    def reset(self, configuration: SimulationConfiguration, seed: Optional[int] = None) -> None:
+
+        if seed:
+            np.random.seed(seed)
 
         self.timestep = Timestep(year=self.initial_year, month=1)
 
