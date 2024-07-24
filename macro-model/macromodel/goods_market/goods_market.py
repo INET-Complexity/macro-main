@@ -92,7 +92,7 @@ class GoodsMarket:
             row_index=row_index,
         )
 
-    def reset(self, configuration: GoodsMarketConfiguration, reset_params: bool = False):
+    def reset(self, configuration: GoodsMarketConfiguration):
         self.ts.reset()
         self.states = deepcopy(self.initial_states)
         update_functions(model=configuration.functions, loc="macromodel.goods_market", functions=self.functions)

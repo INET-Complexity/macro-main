@@ -116,16 +116,13 @@ class RestOfTheWorld(Agent):
             configuration=configuration,
         )
 
-    def reset(self, configuration: RestOfTheWorldConfiguration, reset_params: bool = False) -> None:
+    def reset(self, configuration: RestOfTheWorldConfiguration) -> None:
         self.gen_reset()
-        if reset_params:
-            update_functions(
-                model=configuration.functions, loc="macromodel.rest_of_the_world", functions=self.functions
-            )
-            self.parameters = configuration.parameters
-            self.forecasting_window = configuration.forecasting_window
-            self.assume_zero_growth = configuration.assume_zero_growth
-            self.assume_zero_noise = configuration.assume_zero_noise
+        update_functions(model=configuration.functions, loc="macromodel.rest_of_the_world", functions=self.functions)
+        self.parameters = configuration.parameters
+        self.forecasting_window = configuration.forecasting_window
+        self.assume_zero_growth = configuration.assume_zero_growth
+        self.assume_zero_noise = configuration.assume_zero_noise
         self.configuration = configuration
 
     # @classmethod
