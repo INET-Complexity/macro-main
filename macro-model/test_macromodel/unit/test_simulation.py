@@ -69,15 +69,67 @@ def test_check_compatibility(datawrapper):
     assert not check_compatibility(country_data_configuration, country_sim_configuration)
 
 
-def test_reset(datawrapper):
+def test_random_seed(datawrapper):
     configuration = SimulationConfiguration(country_configurations={"FRA": CountryConfiguration()})
+
+    configuration.seed = 0
 
     simulation = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=configuration)
 
     for i in range(3):
         simulation.iterate()
 
-    new_configuration = simulation.configuration
+    gdp1 = np.stack(simulation.countries["FRA"].economy.ts.historic("gdp_output")).flatten()
+
+    simulation_bis = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=configuration)
+
+    for i in range(3):
+        simulation_bis.iterate()
+
+    gdp_bis = np.stack(simulation_bis.countries["FRA"].economy.ts.historic("gdp_output")).flatten()
+
+    assert np.allclose(gdp1, gdp_bis)
+
+
+def test_reset(datawrapper):
+    configuration = SimulationConfiguration(country_configurations={"FRA": CountryConfiguration()})
+
+    configuration.seed = 0
+
+    simulation = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=configuration)
+
+    for i in range(3):
+        simulation.iterate()
+
+    gdp1 = np.stack(simulation.countries["FRA"].economy.ts.historic("gdp_output")).flatten()
+
+    simulation.reset()
+
+    assert len(simulation.countries["FRA"].firms.ts.historic("price")) == 1
+
+    for i in range(3):
+        simulation.iterate()
+
+    gdp2 = np.stack(simulation.countries["FRA"].economy.ts.historic("gdp_output")).flatten()
+
+    assert np.allclose(gdp1, gdp2)
+
+
+def test_change_config(datawrapper):
+    configuration = SimulationConfiguration(country_configurations={"FRA": CountryConfiguration()})
+
+    configuration.seed = 0
+
+    simulation = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=configuration)
+
+    for i in range(3):
+        simulation.iterate()
+
+    gdp1 = np.stack(simulation.countries["FRA"].economy.ts.historic("gdp_output")).flatten()
+    new_configuration = deepcopy(simulation.configuration)
+
+    # edit France config
+    new_configuration.country_configurations["FRA"].firms.parameters.capital_inputs_utilisation_rate = 0.5
 
     # edit France config
     new_configuration.country_configurations["FRA"].firms.parameters.capital_inputs_utilisation_rate = 0.5
@@ -85,6 +137,13 @@ def test_reset(datawrapper):
     simulation.reset(new_configuration)
 
     assert len(simulation.countries["FRA"].firms.ts.historic("price")) == 1
+
+    for i in range(3):
+        simulation.iterate()
+
+    gdp3 = np.stack(simulation.countries["FRA"].economy.ts.historic("gdp_output")).flatten()
+
+    assert np.sum(gdp1 - gdp3) != 0
 
 
 def test_reset_row_params(datawrapper):
