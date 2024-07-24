@@ -96,5 +96,13 @@ class TimeSeries:
         for field in self.get_keys():
             self.dicts[field] = [self.dicts[field][0]]
 
+    def __eq__(self, other: "TimeSeries"):
+        for field in self.get_keys():
+            this_field = np.array(self.historic(field))
+            other_field = np.array(other.historic(field))
+            if not np.array_equal(this_field, other_field):
+                return False
+        return True
+
     def get_aggregate(self, name: str):
         return np.array(self.historic(name)).sum(axis=1)
