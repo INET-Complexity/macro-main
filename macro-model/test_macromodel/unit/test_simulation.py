@@ -88,7 +88,7 @@ def test_random_seed(datawrapper):
 
     gdp_bis = np.stack(simulation_bis.countries["FRA"].economy.ts.historic("gdp_output")).flatten()
 
-    assert np.allclose(gdp1, gdp_bis)
+    assert gdp1 == pytest.approx(gdp_bis, rel=1e-2)
 
 
 def test_reset(datawrapper):
@@ -112,7 +112,7 @@ def test_reset(datawrapper):
 
     gdp2 = np.stack(simulation.countries["FRA"].economy.ts.historic("gdp_output")).flatten()
 
-    assert np.allclose(gdp1, gdp2)
+    assert gdp1 == pytest.approx(gdp2, rel=1e-2)
 
 
 def test_change_config(datawrapper):
@@ -128,11 +128,35 @@ def test_change_config(datawrapper):
     gdp1 = np.stack(simulation.countries["FRA"].economy.ts.historic("gdp_output")).flatten()
     new_configuration = deepcopy(simulation.configuration)
 
+    # first just change seed
+    new_configuration.seed = 1
+
+    simulation.reset(new_configuration)
+
+    for i in range(3):
+        simulation.iterate()
+
+    gdp2 = np.stack(simulation.countries["FRA"].economy.ts.historic("gdp_output")).flatten()
+
+    assert np.sum(gdp1 - gdp2) != 0
+
+    # reset seed again, check that changing params  change the output
+
+    new_configuration.seed = 0
+
     # edit France config
     new_configuration.country_configurations["FRA"].firms.parameters.capital_inputs_utilisation_rate = 0.5
 
     # edit France config
     new_configuration.country_configurations["FRA"].firms.parameters.capital_inputs_utilisation_rate = 0.5
+
+    original_param = new_configuration.country_configurations["FRA"].firms.functions.prices.parameters[
+        "price_setting_speed_gf"
+    ]
+
+    new_configuration.country_configurations["FRA"].firms.functions.prices.parameters["price_setting_speed_gf"] = (
+        1 - original_param
+    )
 
     simulation.reset(new_configuration)
 

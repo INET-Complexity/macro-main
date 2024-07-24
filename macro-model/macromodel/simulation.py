@@ -38,9 +38,6 @@ class Simulation:
         datawrapper: DataWrapper,
         simulation_configuration: SimulationConfiguration,
     ):
-        if simulation_configuration.seed is not None:
-            np.random.seed(simulation_configuration.seed)
-            set_seed(simulation_configuration.seed)
 
         data_configuration = datawrapper.configuration
         for country, country_sim_conf in simulation_configuration.country_configurations.items():
@@ -117,6 +114,10 @@ class Simulation:
 
         timestep = Timestep(year=datawrapper.configuration.year, month=1)
 
+        if simulation_configuration.seed is not None:
+            np.random.seed(simulation_configuration.seed)
+            set_seed(simulation_configuration.seed)
+
         return cls(
             countries=countries,
             rest_of_the_world=rest_of_the_world,
@@ -132,10 +133,6 @@ class Simulation:
         if configuration is None:
             configuration = self.configuration
 
-        if configuration.seed is not None:
-            np.random.seed(configuration.seed)
-            set_seed(configuration.seed)
-
         self.timestep = Timestep(year=self.initial_year, month=1)
 
         self.rest_of_the_world.reset(configuration.row_configuration)
@@ -147,6 +144,10 @@ class Simulation:
             country.reset(configuration.country_configurations[country.country_name])
 
         self.configuration = deepcopy(configuration)
+
+        if configuration.seed is not None:
+            np.random.seed(configuration.seed)
+            set_seed(configuration.seed)
 
     @property
     def t_max(self):
