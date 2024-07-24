@@ -18,6 +18,9 @@ from macromodel.rest_of_the_world import RestOfTheWorld
 from macromodel.timestep import Timestep
 
 
+from numba import njit
+
+
 @dataclass
 class Simulation:
     countries: dict[str, Country]
@@ -35,6 +38,10 @@ class Simulation:
         datawrapper: DataWrapper,
         simulation_configuration: SimulationConfiguration,
     ):
+        if simulation_configuration.seed is not None:
+            np.random.seed(simulation_configuration.seed)
+            set_seed(simulation_configuration.seed)
+
         data_configuration = datawrapper.configuration
         for country, country_sim_conf in simulation_configuration.country_configurations.items():
             if country not in data_configuration.country_configs:
@@ -108,9 +115,6 @@ class Simulation:
             row_index=row_index,
         )
 
-        if simulation_configuration.seed:
-            np.random.seed(simulation_configuration.seed)
-
         timestep = Timestep(year=datawrapper.configuration.year, month=1)
 
         return cls(
@@ -123,20 +127,19 @@ class Simulation:
             initial_year=datawrapper.configuration.year,
         )
 
-    def reset(self, configuration: SimulationConfiguration, seed: Optional[int] = None) -> None:
+    def reset(self, configuration: Optional[SimulationConfiguration] = None) -> None:
 
-        if seed:
-            np.random.seed(seed)
+        if configuration is None:
+            configuration = self.configuration
+
+        if configuration.seed is not None:
+            np.random.seed(configuration.seed)
+            set_seed(configuration.seed)
 
         self.timestep = Timestep(year=self.initial_year, month=1)
 
-        reset_row_params = configuration.row_configuration != self.configuration.row_configuration
-        self.rest_of_the_world.reset(configuration.row_configuration, reset_row_params)
-
-        reset_good_market_params = (
-            configuration.goods_market_configuration != self.configuration.goods_market_configuration
-        )
-        self.goods_market.reset(configuration.goods_market_configuration, reset_good_market_params)
+        self.rest_of_the_world.reset(configuration.row_configuration)
+        self.goods_market.reset(configuration.goods_market_configuration)
 
         self.exchange_rates.reset()
 
@@ -307,3 +310,8 @@ def check_compatibility(
     ]
 
     return all(test_cases)
+
+
+@njit
+def set_seed(seed: int):
+    np.random.seed(seed)
