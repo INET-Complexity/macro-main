@@ -118,7 +118,12 @@ class RestOfTheWorld(Agent):
 
     def reset(self, configuration: RestOfTheWorldConfiguration) -> None:
         self.gen_reset()
-        update_functions(model=configuration.functions, loc="macromodel.rest_of_the_world", functions=self.functions)
+        update_functions(
+            model=configuration.functions,
+            loc="macromodel.rest_of_the_world",
+            functions=self.functions,
+            force_reset=["imports", "exports"],
+        )
         self.parameters = configuration.parameters
         self.forecasting_window = configuration.forecasting_window
         self.assume_zero_growth = configuration.assume_zero_growth

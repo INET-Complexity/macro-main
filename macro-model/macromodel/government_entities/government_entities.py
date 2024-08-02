@@ -71,7 +71,12 @@ class GovernmentEntities(Agent):
 
     def reset(self, configuration: GovernmentEntitiesConfiguration):
         self.gen_reset()
-        update_functions(model=configuration.functions, loc="macromodel.government_entities", functions=self.functions)
+        update_functions(
+            model=configuration.functions,
+            loc="macromodel.government_entities",
+            functions=self.functions,
+            force_reset=["consumption"],
+        )
 
     def prepare_buying_goods(
         self,
