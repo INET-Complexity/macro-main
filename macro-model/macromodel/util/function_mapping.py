@@ -1,6 +1,6 @@
 from pathlib import Path
 from pydantic import BaseModel
-from typing import Any
+from typing import Any, Optional
 
 
 def get_functions(
@@ -51,18 +51,28 @@ def functions_from_model(model: BaseModel, loc: str) -> dict[str, Any]:
     return loaded_classes
 
 
-def update_functions(model: BaseModel, loc: str, functions: dict[str, Any]) -> None:
+def update_functions(
+    model: BaseModel, loc: str, functions: dict[str, Any], force_reset: Optional[list[str]] = None
+) -> None:
+    if force_reset is None:
+        force_reset = []
     for func_name, new_func_config in model.__dict__.items():
         existing_func = functions.get(func_name, None)
         if existing_func is None:
             raise ValueError(f"Function {func_name} not found in functions dictionary")
 
         # Check if function needs to be reinstantiated
-        if existing_func is None or existing_func.__class__.__name__ != new_func_config.name:  # noqa
-            # Different class or no existing function, need to reinstantiate
+        if (
+            existing_func is None
+            or func_name in force_reset
+            or existing_func.__class__.__name__ != new_func_config.name  # noqa
+        ):
+            # Different class or no existing function, or we want to force rest, so we
+            # need to reinstantiate
             module = __import__(f"{loc}.func.{new_func_config.path_name}", fromlist=[new_func_config.name])
             cls = getattr(module, new_func_config.name)
-            setattr(functions, func_name, cls(**new_func_config.parameters))
+            # setattr(functions, func_name, cls(**new_func_config.parameters))
+            functions[func_name] = cls(**new_func_config.parameters)
         else:
             # Same class, just update parameters
             for param, value in new_func_config.parameters.items():

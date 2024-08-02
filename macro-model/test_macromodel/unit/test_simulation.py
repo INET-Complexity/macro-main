@@ -115,6 +115,19 @@ def test_reset(datawrapper):
     assert gdp1 == pytest.approx(gdp2, rel=1e-2)
 
 
+def test_longrun(datawrapper):
+    """Test the longrun."""
+    configuration = SimulationConfiguration(country_configurations={"FRA": CountryConfiguration()}, t_max=200)
+
+    configuration.seed = 0
+
+    simulation = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=configuration)
+
+    simulation.run()
+
+    assert True
+
+
 def test_change_config(datawrapper):
     configuration = SimulationConfiguration(country_configurations={"FRA": CountryConfiguration()})
 

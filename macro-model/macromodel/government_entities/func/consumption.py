@@ -21,6 +21,7 @@ class GovernmentConsumptionSetter(ABC):
         self.consistency = consistency
         self.default_growth = default_growth
         self.fixed_total_government_consumption = None
+        self.buffer = 20
 
     @abstractmethod
     def compute_target_consumption(
@@ -61,19 +62,22 @@ class AutoregressiveGovernmentConsumptionSetter(GovernmentConsumptionSetter):
 
         # Fitting based on target consumption
         if self.consistency == 1.0:
-            if self.fixed_total_government_consumption is None:
+            if (
+                self.fixed_total_government_consumption is None
+                or len(self.fixed_total_government_consumption) < current_time
+            ):
                 if log_it:
                     self.fixed_total_government_consumption = np.exp(
                         ManualAutoregForecaster().forecast(
                             data=np.log(historic_total_consumption),
-                            t=max(20, current_time),
+                            t=max(current_time + self.buffer, current_time),
                             assume_zero_noise=assume_zero_noise,
                         )
                     )
                 else:
                     self.fixed_total_government_consumption = ManualAutoregForecaster().forecast(
                         data=historic_total_consumption,
-                        t=max(20, current_time),
+                        t=max(current_time + self.buffer, current_time),
                         assume_zero_noise=assume_zero_noise,
                     )
             consumption = self.fixed_total_government_consumption[current_time - 1]

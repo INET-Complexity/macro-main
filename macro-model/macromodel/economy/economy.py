@@ -172,7 +172,12 @@ class Economy:
 
     def reset(self, configuration: EconomyConfiguration) -> None:
         self.ts.reset()
-        update_functions(model=configuration.functions, functions=self.functions, loc="macromodel.economy")
+        update_functions(
+            model=configuration.functions,
+            functions=self.functions,
+            loc="macromodel.economy",
+            force_reset=["growth", "house_price_index", "inflation"],
+        )
 
     def set_estimates(
         self,
