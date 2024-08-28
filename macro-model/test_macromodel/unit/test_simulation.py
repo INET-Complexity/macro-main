@@ -259,7 +259,9 @@ def test_alternative_labour(datawrapper):
     # random_firing_probability
     country_sim_configuration.labour_market.functions.clearing.parameters["random_firing_probability"] = 0.02
 
-    sim_configuration = SimulationConfiguration(country_configurations={"FRA": country_sim_configuration}, seed=0)
+    sim_configuration = SimulationConfiguration(
+        country_configurations={"FRA": country_sim_configuration}, seed=0, t_max=5
+    )
 
     simulation = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=sim_configuration)
 
