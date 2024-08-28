@@ -424,20 +424,9 @@ def random_firing(
 ) -> tuple[np.ndarray, int]:
     firing_costs = np.zeros(number_of_firms)
     num_newly_randomly_fired = 0
-    check = check_employed_in_list(
-        activity_array=current_individuals_activity,
-        corresponding_firm=individuals_corresponding_firm,
-        firm_employments=firm_employments,
-    )
-    assert check
     if random_firing_probability == 0.0:
         return firing_costs, num_newly_randomly_fired
     for ind_id in np.where(current_individuals_activity == ActivityStatus.EMPLOYED)[0]:
-        assert check_employed_in_list(
-            activity_array=current_individuals_activity,
-            corresponding_firm=individuals_corresponding_firm,
-            firm_employments=firm_employments,
-        )
         if len(firm_employments[individuals_corresponding_firm[ind_id]]) == 1:
             continue
         if np.random.random() <= random_firing_probability:
@@ -457,12 +446,6 @@ def random_firing(
             # Count
             num_newly_randomly_fired += 1
 
-            assert check_employed_in_list(
-                activity_array=current_individuals_activity,
-                corresponding_firm=individuals_corresponding_firm,
-                firm_employments=firm_employments,
-            )
-
     return firing_costs, num_newly_randomly_fired
 
 
@@ -476,25 +459,26 @@ def random_quitting(
     individuals_quitting_temperature: float,
 ) -> int:
     num_newly_randomly_quit = 0
-    for ind_id in np.where(current_individuals_activity == ActivityStatus.EMPLOYED)[0]:
-        if len(firm_employments[individuals_corresponding_firm[ind_id]]) == 1:
-            continue
-        quitting_probability = 1 - np.exp(
-            -individuals_quitting_temperature
-            * current_individual_wages[ind_id]
-            / current_household_wealth[individuals_corresponding_household[ind_id]]
-        )
-        if np.random.random() <= quitting_probability:
-            # Fire the individual
-            fire_individual(
-                individual_id=ind_id,
-                current_individuals_activity=current_individuals_activity,
-                individuals_corresponding_firm=individuals_corresponding_firm,
-                firm_employments=firm_employments,
-            )
+    employed_individuals: np.ndarray = current_individuals_activity == ActivityStatus.EMPLOYED  # noqa
+    individual_indices = np.arange(employed_individuals.shape[0])
 
-            # Count
-            num_newly_randomly_quit += 1
+    household_wealth = current_household_wealth[individuals_corresponding_household]
+
+    exponentials = np.exp(-individuals_quitting_temperature * current_individual_wages / household_wealth)
+
+    random_quit = np.random.random(employed_individuals.sum()) <= 1 - exponentials[employed_individuals]
+
+    num_newly_randomly_quit = random_quit.sum()
+
+    for ind_id in individual_indices[employed_individuals][random_quit]:
+        # Fire the individual
+        fire_individual(
+            individual_id=ind_id,
+            current_individuals_activity=current_individuals_activity,
+            individuals_corresponding_firm=individuals_corresponding_firm,
+            firm_employments=firm_employments,
+        )
+
     return num_newly_randomly_quit
 
 
