@@ -247,3 +247,22 @@ def test_reset_firm_params(datawrapper):
 
         assert param == x
         simulation.iterate()
+
+
+def test_alternative_labour(datawrapper):
+    """Test the alternative labour."""
+    country_sim_configuration = CountryConfiguration()
+
+    country_sim_configuration.labour_market.functions.clearing.parameters["firing_speed"] = 0.8
+    country_sim_configuration.labour_market.functions.clearing.parameters["hiring_speed"] = 0.8
+    country_sim_configuration.labour_market.functions.clearing.parameters["individuals_quitting"] = 0.8
+    # random_firing_probability
+    country_sim_configuration.labour_market.functions.clearing.parameters["random_firing_probability"] = 0.02
+
+    sim_configuration = SimulationConfiguration(country_configurations={"FRA": country_sim_configuration}, seed=0)
+
+    simulation = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=sim_configuration)
+
+    simulation.run()
+
+    assert True
