@@ -1,6 +1,8 @@
 import numpy as np
 
-from numba import njit, float64, int32, types, int64, boolean
+from numba import njit, float64, types, int64, boolean, types
+from numba.typed import List
+
 
 from macromodel.firms.firms import Firms
 from macromodel.households.households import Households
@@ -424,25 +426,27 @@ def random_firing(
     num_newly_randomly_fired = 0
     if random_firing_probability == 0.0:
         return firing_costs, num_newly_randomly_fired
-    for ind_id in np.where(current_individuals_activity == ActivityStatus.EMPLOYED)[0]:
-        if len(firm_employments[individuals_corresponding_firm[ind_id]]) == 1:
-            continue
-        if np.random.random() <= random_firing_probability:
-            # Account for costs
-            firing_costs[individuals_corresponding_firm[ind_id]] += (
-                firing_cost_fraction * current_individual_wages[ind_id]
-            )
 
-            # Fire the individual
-            fire_individual(
-                individual_id=ind_id,
-                current_individuals_activity=current_individuals_activity,
-                individuals_corresponding_firm=individuals_corresponding_firm,
-                firm_employments=firm_employments,
-            )
+    employed: np.ndarray = current_individuals_activity == ActivityStatus.EMPLOYED  # noqa
 
-            # Count
-            num_newly_randomly_fired += 1
+    is_fired = np.random.random(employed.sum()) <= random_firing_probability
+
+    individual_indices = np.arange(current_individuals_activity.shape[0])
+
+    for ind_id in individual_indices[employed][is_fired]:
+        # Account for costs
+        firing_costs[individuals_corresponding_firm[ind_id]] += firing_cost_fraction * current_individual_wages[ind_id]
+
+        # Fire the individual
+        fire_individual(
+            individual_id=ind_id,
+            current_individuals_activity=current_individuals_activity,
+            individuals_corresponding_firm=individuals_corresponding_firm,
+            firm_employments=firm_employments,
+        )
+
+        # Count
+        num_newly_randomly_fired += 1
 
     return firing_costs, num_newly_randomly_fired
 
@@ -457,25 +461,25 @@ def random_quitting(
     individuals_quitting_temperature: float,
 ) -> int:
     num_newly_randomly_quit = 0
-    for ind_id in np.where(current_individuals_activity == ActivityStatus.EMPLOYED)[0]:
-        if len(firm_employments[individuals_corresponding_firm[ind_id]]) == 1:
-            continue
-        quitting_probability = 1 - np.exp(
-            -individuals_quitting_temperature
-            * current_individual_wages[ind_id]
-            / current_household_wealth[individuals_corresponding_household[ind_id]]
-        )
-        if np.random.random() <= quitting_probability:
-            # Fire the individual
-            fire_individual(
-                individual_id=ind_id,
-                current_individuals_activity=current_individuals_activity,
-                individuals_corresponding_firm=individuals_corresponding_firm,
-                firm_employments=firm_employments,
-            )
+    employed_individuals: np.ndarray = current_individuals_activity == ActivityStatus.EMPLOYED  # noqa
+    individual_indices = np.arange(employed_individuals.shape[0])
 
-            # Count
-            num_newly_randomly_quit += 1
+    household_wealth = current_household_wealth[individuals_corresponding_household]
+
+    exponentials = np.exp(-individuals_quitting_temperature * current_individual_wages / household_wealth)
+
+    random_quit = np.random.random(employed_individuals.sum()) <= 1 - exponentials[employed_individuals]
+
+    num_newly_randomly_quit = random_quit.sum()
+
+    for ind_id in individual_indices[employed_individuals][random_quit]:
+        # Fire the individual
+        fire_individual(
+            individual_id=ind_id,
+            current_individuals_activity=current_individuals_activity,
+            individuals_corresponding_firm=individuals_corresponding_firm,
+            firm_employments=firm_employments,
+        )
 
     return num_newly_randomly_quit
 
@@ -488,7 +492,10 @@ def fire_individual(
 ) -> None:
     current_individuals_activity[individual_id] = ActivityStatus.UNEMPLOYED
     corresponding_firm = individuals_corresponding_firm[individual_id]
-    firm_employments[corresponding_firm].remove(individual_id)
+    try:
+        firm_employments[corresponding_firm].remove(individual_id)
+    except ValueError:
+        pass
     individuals_corresponding_firm[individual_id] = -1
 
 
@@ -506,6 +513,44 @@ def hire_individual(
     individuals_corresponding_firm[ind_chosen] = firm_id
     current_individuals_industry[ind_chosen] = firm_industry
     firm_employments[firm_id].append(ind_chosen)
+
+
+def check_employed_correspondence(activity_array: np.ndarray, firm_employments: list):
+    all_employments = np.concatenate(firm_employments)
+    all_employments = np.sort(all_employments)
+
+    employed = activity_array == ActivityStatus.EMPLOYED
+    ind_indices = np.arange(activity_array.shape[0])
+    emp_indices = ind_indices[employed]
+
+    size_matches = len(all_employments) == len(emp_indices)
+
+    return size_matches and np.all(all_employments == emp_indices)
+
+
+def check_employed_in_list(activity_array: np.ndarray, corresponding_firm: np.ndarray, firm_employments: list):
+    employed = activity_array == ActivityStatus.EMPLOYED
+    ind_indices = np.arange(activity_array.shape[0])
+    emp_indices = ind_indices[employed]
+
+    def try_index(employed_index: int) -> bool:
+        firm_idx = corresponding_firm[employed_index]
+        return employed_index in firm_employments[firm_idx]
+
+    employees_match = np.all([try_index(i) for i in emp_indices])
+
+    firms_match = True
+    for i, employments in enumerate(firm_employments):
+        # Check if all employed individuals are in the list
+        for employee in employments:
+            if corresponding_firm[employee] != i:
+                firms_match = False
+                break
+            if employee not in emp_indices:
+                firms_match = False
+                break
+
+    return employees_match and firms_match
 
 
 class PolednaLabourMarketClearer(LabourMarketClearer):
@@ -554,6 +599,7 @@ class PolednaLabourMarketClearer(LabourMarketClearer):
                 individuals_corresponding_household=individuals_corresponding_household,
                 individuals_quitting_temperature=self.individuals_quitting_temperature,
             )
+
         else:
             num_newly_randomly_quit = 0
 
@@ -569,10 +615,9 @@ class PolednaLabourMarketClearer(LabourMarketClearer):
             firing_speed=self.firing_speed,
             firing_cost_fraction=self.firing_cost_fraction,
         )
-
         # Hiring
         individuals.states["Offered Wage of Accepted Job"] = np.zeros(len(current_individuals_activity))
-        hiring_costs_regular, num_newly_joining = hiring(
+        hiring_costs_regular, num_newly_joining, new_hires = hiring(
             firm_industries=firm_industries,
             current_individuals_industry=current_individuals_industry,
             individuals_corresponding_firm=individuals_corresponding_firm,
@@ -587,6 +632,10 @@ class PolednaLabourMarketClearer(LabourMarketClearer):
             hiring_speed=self.hiring_speed,
             hiring_cost_fraction=self.hiring_cost_fraction,
         )
+
+        for employment, hires in zip(firm_employments, new_hires):
+            employment.extend(hires)
+            current_individuals_activity[hires] = ActivityStatus.EMPLOYED
 
         # Sanity check
         assert np.all(
@@ -663,24 +712,25 @@ def firing(
     return firing_costs, int(excess_employees.sum())  # noqa
 
 
-@njit(
-    types.Tuple((float64[:], int64))(
-        int64[:],  # firm industries
-        float64[:],  # current individuals industry
-        int64[:],  # individuals corresponding firm
-        float64[:],  # prev individuals productivity
-        boolean[:],  # current individuals activity
-        float64[:],  # desired labour inputs
-        float64[:],  # prev labour inputs
-        float64[:],  # offered wage
-        float64[:],  # individual reservation wages
-        float64[:],  # current individual wages
-        float64[:],  # average industry productivity
-        float64,  # hiring speed
-        float64,  # hiring cost fraction
-    ),
-    cache=True,
-)
+# @njit(
+#     types.Tuple((float64[:], int64, List(List(int64))))(
+#         int64[:],  # firm industries
+#         float64[:],  # current individuals industry
+#         int64[:],  # individuals corresponding firm
+#         float64[:],  # prev individuals productivity
+#         boolean[:],  # current individuals activity
+#         float64[:],  # desired labour inputs
+#         float64[:],  # prev labour inputs
+#         float64[:],  # offered wage
+#         float64[:],  # individual reservation wages
+#         float64[:],  # current individual wages
+#         float64[:],  # average industry productivity
+#         float64,  # hiring speed
+#         float64,  # hiring cost fraction
+#     ),
+#     cache=True,
+# )
+@njit(cache=True)
 def hiring(
     firm_industries: np.ndarray,
     current_individuals_industry: np.ndarray,
@@ -695,7 +745,7 @@ def hiring(
     average_industry_productivity: np.ndarray,
     hiring_speed: float,
     hiring_cost_fraction: float,
-) -> Tuple[np.ndarray, int]:
+) -> Tuple[np.ndarray, int, list]:
     hiring_costs, num_newly_joining = (
         np.zeros_like(desired_labour_inputs, np.float64),
         0,
@@ -703,11 +753,19 @@ def hiring(
     extra_employees = np.floor(
         hiring_speed * (desired_labour_inputs - prev_labour_inputs) / average_industry_productivity[firm_industries]
     )
-    for firm_id in np.where(extra_employees > 0)[0]:
-        ind_unemployed = np.where(np.logical_and(individuals_corresponding_firm == -1, current_ind_ea))[0]
-        n_hiring = int(min(extra_employees[firm_id], len(ind_unemployed)))
-        ind_hiring = np.random.choice(ind_unemployed, n_hiring, replace=False)
-        individuals_corresponding_firm[ind_hiring] = firm_id
-        hiring_costs[firm_id] += hiring_cost_fraction * offered_wage[ind_hiring].sum()
-        num_newly_joining += n_hiring
-    return hiring_costs, num_newly_joining
+
+    new_hires = List()
+    for _ in range(len(extra_employees)):
+        new_hires.append(List.empty_list(int64))
+
+    for firm_id in range(len(extra_employees)):
+        if extra_employees[firm_id] > 0:
+            ind_unemployed = np.where(np.logical_and(individuals_corresponding_firm == -1, current_ind_ea))[0]
+            n_hiring = int(min(extra_employees[firm_id], len(ind_unemployed)))
+            ind_hiring = np.random.choice(ind_unemployed, n_hiring, replace=False)
+            individuals_corresponding_firm[ind_hiring] = firm_id
+            for ind in ind_hiring:
+                new_hires[firm_id].append(ind)
+            hiring_costs[firm_id] += hiring_cost_fraction * offered_wage[ind_hiring].sum()
+            num_newly_joining += n_hiring
+    return hiring_costs, num_newly_joining, new_hires
