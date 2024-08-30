@@ -255,7 +255,7 @@ def test_alternative_labour(datawrapper):
 
     country_sim_configuration.labour_market.functions.clearing.parameters["firing_speed"] = 0.8
     country_sim_configuration.labour_market.functions.clearing.parameters["hiring_speed"] = 0.8
-    country_sim_configuration.labour_market.functions.clearing.parameters["individuals_quitting"] = 0.8
+    country_sim_configuration.labour_market.functions.clearing.parameters["individuals_quitting"] = True
     # random_firing_probability
     country_sim_configuration.labour_market.functions.clearing.parameters["random_firing_probability"] = 0.02
 

@@ -426,25 +426,27 @@ def random_firing(
     num_newly_randomly_fired = 0
     if random_firing_probability == 0.0:
         return firing_costs, num_newly_randomly_fired
-    for ind_id in np.where(current_individuals_activity == ActivityStatus.EMPLOYED)[0]:
-        if len(firm_employments[individuals_corresponding_firm[ind_id]]) == 1:
-            continue
-        if np.random.random() <= random_firing_probability:
-            # Account for costs
-            firing_costs[individuals_corresponding_firm[ind_id]] += (
-                firing_cost_fraction * current_individual_wages[ind_id]
-            )
 
-            # Fire the individual
-            fire_individual(
-                individual_id=ind_id,
-                current_individuals_activity=current_individuals_activity,
-                individuals_corresponding_firm=individuals_corresponding_firm,
-                firm_employments=firm_employments,
-            )
+    employed: np.ndarray = current_individuals_activity == ActivityStatus.EMPLOYED  # noqa
 
-            # Count
-            num_newly_randomly_fired += 1
+    is_fired = np.random.random(employed.sum()) <= random_firing_probability
+
+    individual_indices = np.arange(current_individuals_activity.shape[0])
+
+    for ind_id in individual_indices[employed][is_fired]:
+        # Account for costs
+        firing_costs[individuals_corresponding_firm[ind_id]] += firing_cost_fraction * current_individual_wages[ind_id]
+
+        # Fire the individual
+        fire_individual(
+            individual_id=ind_id,
+            current_individuals_activity=current_individuals_activity,
+            individuals_corresponding_firm=individuals_corresponding_firm,
+            firm_employments=firm_employments,
+        )
+
+        # Count
+        num_newly_randomly_fired += 1
 
     return firing_costs, num_newly_randomly_fired
 
@@ -711,7 +713,7 @@ def firing(
 
 
 # @njit(
-#     types.Tuple((float64[:], int64))(
+#     types.Tuple((float64[:], int64, List(List(int64))))(
 #         int64[:],  # firm industries
 #         float64[:],  # current individuals industry
 #         int64[:],  # individuals corresponding firm
@@ -725,7 +727,6 @@ def firing(
 #         float64[:],  # average industry productivity
 #         float64,  # hiring speed
 #         float64,  # hiring cost fraction
-#         types.List(types.List(int64)),  # firm employments
 #     ),
 #     cache=True,
 # )
