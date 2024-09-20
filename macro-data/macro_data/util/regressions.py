@@ -33,6 +33,7 @@ def fit_linear(
     dependent_data = data[dependent].values
     x = data[independents].values
     imp_mean = SimpleImputer(missing_values=np.nan, strategy="mean")
+    np.seterr(under="ignore")
     x = imp_mean.fit_transform(x)
     if len(independents) == 0:
         return dependent_data.mean()
