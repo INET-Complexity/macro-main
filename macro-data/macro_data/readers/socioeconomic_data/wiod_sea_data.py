@@ -49,7 +49,7 @@ class WIODSEAReader:
         country_names: list[str],
         industries: list,
         exchange_rates: ExchangeRatesReader,
-        value_added_dict: dict[str, np.ndarray],
+        value_added_dict: dict[str, pd.Series],
     ) -> "WIODSEAReader":
         """
         Aggregate socioeconomic data from a CSV file. Aggregation is done using a JSON file that maps sectors to aggregated sectors.
@@ -92,6 +92,22 @@ class WIODSEAReader:
 
         # Cosmetics
         sea = sea.loc[sea.index.get_level_values(0).isin(country_names)]
+
+        sea_industries = sea.index.get_level_values(1).unique()
+        not_present_industries = [industry for industry in sea_industries if industry not in industries]
+
+        industry_to_fix = [
+            any([ind.startswith(sea_ind[0]) for ind in industries]) for sea_ind in not_present_industries
+        ]
+
+        for sea_industry, should_fix in zip(not_present_industries, industry_to_fix):
+            sub_industries = [ind for ind in industries if ind.startswith(sea_industry[0])]
+            for country in country_names:
+                factors = value_added_dict[country].loc[sub_industries].values
+                factors /= factors.sum()
+                for sub_industry, factor in zip(sub_industries, factors):
+                    sea.loc[(country, sub_industry), :] = sea.loc[(country, sea_industry), :] * factor
+
         sea = sea.loc[sea.index.get_level_values(1).isin(industries)]
 
         sea.index.names = ["Country", "Industry"]
@@ -109,9 +125,9 @@ class WIODSEAReader:
 
         # rescale
         for country in country_names:
-            scale = value_added_dict[country] / sea.loc[country, "Value Added"].values
+            scale = value_added_dict[country] / sea.loc[country, "Value Added"]
             for field in ["Value Added", "Labour Compensation", "Capital Compensation", "Capital Stock"]:
-                sea.loc[country, field] = sea.loc[country, field].values * scale
+                sea.loc[country, field] = sea.loc[country, field] * scale
 
         return cls(
             df=sea,

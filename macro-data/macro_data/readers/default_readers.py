@@ -79,6 +79,13 @@ class DataPaths:
             compustat_banks_path=raw_data_path / "compustat" / "banks.csv",
         )
 
+    @classmethod
+    def all_industries(cls, raw_data_path: Path, icio_years: Iterable[int]):
+        paths = cls.default_paths(raw_data_path, icio_years)
+        paths.icio_agg_path = raw_data_path / "icio" / "mappings_all_industries.json"
+        paths.wiod_sea_agg_path = raw_data_path / "wiod_sea" / "mappings_all_industries.json"
+        return paths
+
 
 @dataclass
 class DataReaders:
@@ -105,6 +112,7 @@ class DataReaders:
         simulation_year: int,
         scale_dict: dict[Country, int],
         industries: list[str],
+        aggregate_industries: bool = True,
         imputed_rent_year: int = 2014,
         exog_data_range: Tuple[int, int] = (2010, 2018),
         prune_date: Optional[date] = None,
@@ -122,7 +130,11 @@ class DataReaders:
             all_years = [simulation_year]
         else:
             all_years = range(exog_data_range[0], exog_data_range[1] + 1)
-        datapaths = DataPaths.default_paths(raw_data_path, all_years)
+
+        if aggregate_industries:
+            datapaths = DataPaths.default_paths(raw_data_path, all_years)
+        else:
+            datapaths = DataPaths.all_industries(raw_data_path, all_years)
 
         goods_criticality = GoodsCriticalityReader.from_csv(path=datapaths.goods_criticality_path)
         exchange_rates = ExchangeRatesReader.from_csv(path=datapaths.exchange_rates_path)
@@ -154,20 +166,21 @@ class DataReaders:
             year: ICIOReader.agg_from_csv(
                 path=datapaths.icio_paths[year],
                 pivot_path=datapaths.icio_pivot_paths[year],
-                year=year,
-                aggregation_path=datapaths.icio_agg_path,
                 considered_countries=country_names,
                 industries=industries,
+                year=year,
                 exchange_rates=exchange_rates,
                 imputed_rent_fraction=eurostat.get_imputed_rent_fraction(eu_only, imputed_rent_year),
                 investment_fractions=get_investment_year(year),
                 proxy_country_dict=proxy_country_dict,
+                aggregation_path=datapaths.icio_agg_path,
             )
             for year in all_years
         }
 
         value_added_dict = {
-            country_name: icio[simulation_year].get_value_added(country_name) * icio[simulation_year].yearly_factor
+            country_name: icio[simulation_year].get_value_added_series(country_name)
+            * icio[simulation_year].yearly_factor
             for country_name in country_names
         }
 

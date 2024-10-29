@@ -103,7 +103,6 @@ class ICIOReader:
         path: Path,
         pivot_path: Path,
         considered_countries: list[str] | list[Country | str],
-        aggregation_path: Path,
         industries: list[str],
         year: int,
         exchange_rates: ExchangeRatesReader,
@@ -111,6 +110,7 @@ class ICIOReader:
         investment_fractions: dict[Country | str, dict[str, float]],
         yearly_factor: float = 4.0,
         proxy_country_dict: Optional[dict[str | Country, str | Country]] = None,
+        aggregation_path: Optional[Path] = None,
     ) -> "ICIOReader":
         if proxy_country_dict is None:
             proxy_country_dict = {}
@@ -133,7 +133,10 @@ class ICIOReader:
             value_added[c] = max(0.0, va_df.xs(c).sum())
 
         # Aggregate the IOT
-        aggregation = json.load(open(aggregation_path))
+        if aggregation_path is not None:
+            aggregation = json.load(open(aggregation_path))
+        else:
+            aggregation = None
         agg_df = cls.aggregate_io(considered_countries, df, aggregation)
 
         # Isolate-out imputed rents
@@ -211,7 +214,7 @@ class ICIOReader:
     def aggregate_io(
         considered_countries: list[str],
         df: pd.DataFrame,
-        aggregation: dict[str, list[str]],
+        aggregation: Optional[dict[str, list[str]]] = None,
     ) -> pd.DataFrame:
         """
         Take an input output table and aggregate it.
@@ -237,6 +240,8 @@ class ICIOReader:
         """
 
         # Build the aggregation dictionary
+        if aggregation is None:
+            aggregation = default_no_agg_dict(df)
         col_level_0 = df.columns.get_level_values(0).unique()
         keep_level_0 = considered_countries + ["ROW", "TOTAL"]
         discard_level_0 = [c for c in col_level_0 if c not in keep_level_0]
@@ -473,6 +478,12 @@ class ICIOReader:
     def get_value_added(self, country_name: str) -> np.ndarray:
         return (
             self.iot.xs(country_name, axis=1, level=0).loc[("TOTAL", "Value Added"), self.industries].values
+            / self.yearly_factor
+        )
+
+    def get_value_added_series(self, country_name: str) -> pd.Series:
+        return (
+            self.iot.xs(country_name, axis=1, level=0).loc[("TOTAL", "Value Added"), self.industries]
             / self.yearly_factor
         )
 
@@ -728,3 +739,11 @@ def normalise_iot(
     iot.sort_index(axis=1, inplace=True)
 
     return iot
+
+
+def default_no_agg_dict(df: pd.DataFrame) -> dict[str, list[str]]:
+    ind_cols = df.columns.get_level_values(1).unique()
+    ind_rows = df.index.get_level_values(1).unique()
+
+    names = set(ind_rows).union(set(ind_cols))
+    return {c: [c] for c in names}
