@@ -1,7 +1,8 @@
-import yaml
-from macro_data.configuration import DataConfiguration, split_country_configs
 import pytest
+import yaml
 from pydantic import ValidationError
+
+from macro_data.configuration import DataConfiguration, split_country_configs
 
 
 def test_read_config(gen_data_config_path):

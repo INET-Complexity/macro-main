@@ -1,16 +1,13 @@
 import numpy as np
 import pandas as pd
+from statsmodels.tsa.api import ARDL
 
+from macro_data.configuration.dataconfiguration import CentralBankDataConfiguration
 from macro_data.processing.synthetic_central_bank.synthetic_central_bank import (
     SyntheticCentralBank,
 )
-from statsmodels.tsa.api import ARDL
-
-
 from macro_data.readers.default_readers import DataReaders
 from macro_data.readers.exogenous_data import ExogenousCountryData
-
-from macro_data.configuration.dataconfiguration import CentralBankDataConfiguration
 
 
 class DefaultSyntheticCentralBank(SyntheticCentralBank):

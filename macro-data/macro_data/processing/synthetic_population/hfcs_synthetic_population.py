@@ -10,20 +10,21 @@ from sklearn.linear_model import LinearRegression
 
 from macro_data.configuration.countries import Country
 from macro_data.processing.synthetic_population.hfcs_household_tools import (
-    set_household_types,
     set_household_housing_data,
+    set_household_types,
 )
-from macro_data.processing.synthetic_population.hfcs_individual_tools import process_individual_data
+from macro_data.processing.synthetic_population.hfcs_individual_tools import (
+    process_individual_data,
+)
 from macro_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
 )
 from macro_data.readers.default_readers import DataReaders
 from macro_data.readers.exogenous_data import ExogenousCountryData
+from macro_data.readers.io_tables.industries import ALL_INDUSTRIES
 from macro_data.util.clean_data import remove_outliers
 from macro_data.util.imputation import apply_iterative_imputer
 from macro_data.util.regressions import fit_linear
-
-from macro_data.readers.io_tables.industries import ALL_INDUSTRIES
 
 RESTRICT_COLS = [
     "Type",
@@ -214,7 +215,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         hfcs_households_data = readers.hfcs[country_name].households_df
 
         if set(industries).issubset(ALL_INDUSTRIES):
-            output_shares = readers.icio[year].get_output_shares(country_name)
+            output_shares = readers.icio[year].get_output_shares_dict(country_name)
         else:
             output_shares = None
 
@@ -968,6 +969,11 @@ def reassign_industries(individuals_df: pd.DataFrame, output_shares: dict[str, p
         pd.DataFrame: The DataFrame containing the individuals with reassigned industries.
     """
 
+    # put employment industry "R" or "S" or "T" into "R_S"
+    individuals_df["Employment Industry"] = individuals_df["Employment Industry"].apply(
+        lambda x: "R_S" if x in ["R", "S", "T", "U"] else x
+    )
+
     # create a temporary column called "Disaggregated Employment Industry"
     individuals_df["Disaggregated Employment Industry"] = individuals_df["Employment Industry"]
 
@@ -1033,7 +1039,11 @@ def reassign_industries(individuals_df: pd.DataFrame, output_shares: dict[str, p
             individuals_df.loc[selected_indices, "Disaggregated Industry"] = sub_sector_code
             start_idx = end_idx
 
-    individuals_df["Employment Industry"] = individuals_df["Disaggregated Industry"]
+    individuals_df["Employment Industry"] = np.where(
+        individuals_df["Disaggregated Industry"].isna(),
+        individuals_df["Employment Industry"],
+        individuals_df["Disaggregated Industry"],
+    )
     individuals_df.drop(columns=["Disaggregated Industry"], inplace=True)
     return individuals_df
 

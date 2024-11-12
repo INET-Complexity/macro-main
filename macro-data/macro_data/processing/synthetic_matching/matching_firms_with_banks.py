@@ -1,6 +1,5 @@
 import numpy as np
 import scipy as sp
-
 from scipy.optimize import linear_sum_assignment as lsa
 
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks

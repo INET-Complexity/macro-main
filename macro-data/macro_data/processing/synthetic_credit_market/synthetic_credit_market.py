@@ -2,16 +2,16 @@ from dataclasses import dataclass
 
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 from macro_data.processing.synthetic_credit_market.loan_data import (
-    LongtermLoans,
-    ShorttermLoans,
     ConsumptionExpansionLoans,
-    PaydayLoans,
+    LongtermLoans,
     MortgageLoans,
+    PaydayLoans,
+    ShorttermLoans,
 )
-
-from macro_data.processing.synthetic_population.synthetic_population import SyntheticPopulation
-
 from macro_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
+from macro_data.processing.synthetic_population.synthetic_population import (
+    SyntheticPopulation,
+)
 
 
 @dataclass

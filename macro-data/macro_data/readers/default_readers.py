@@ -2,7 +2,7 @@ import warnings
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
-from typing import Iterable, Tuple, Any, Optional
+from typing import Any, Iterable, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -20,8 +20,14 @@ from macro_data.readers.economic_data.ons_reader import ONSReader
 from macro_data.readers.economic_data.policy_rates import PolicyRatesReader
 from macro_data.readers.economic_data.world_bank_reader import WorldBankReader
 from macro_data.readers.io_tables.icio_reader import ICIOReader
-from macro_data.readers.population_data.compustat_banks_reader import CompustatBanksReader
-from macro_data.readers.population_data.compustat_firms_reader import CompustatFirmsReader
+from macro_data.readers.io_tables.industries import AGGREGATED_INDUSTRIES
+from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE
+from macro_data.readers.population_data.compustat_banks_reader import (
+    CompustatBanksReader,
+)
+from macro_data.readers.population_data.compustat_firms_reader import (
+    CompustatFirmsReader,
+)
 from macro_data.readers.population_data.hfcs_reader import HFCSReader
 from macro_data.readers.socioeconomic_data.wiod_sea_data import WIODSEAReader
 from macro_data.readers.util.prune_util import DataFilterWarning
@@ -367,6 +373,32 @@ class DataReaders:
         merged = pd.merge_asof(imf_growth, oecd_growth, left_index=True, right_index=True)
         merged = merged.loc[imf_growth.index]
         return merged
+
+    def expand_weights_by_income(self, year: int, country: str | Country):
+        weights_by_income = self.oecd_econ.get_household_consumption_by_income_quantile(country=country, year=year)
+        weights_by_income.index = AGGREGATED_INDUSTRIES
+        consumption_shares = self.icio[year].get_consumption_shares_series(country)
+
+        weights_by_income_all = pd.DataFrame(index=consumption_shares.index, columns=weights_by_income.columns)
+
+        for aggregate_industry in AGGREGATED_INDUSTRIES:
+            sub_industries = ICIO_AGGREGATE.get(aggregate_industry, [])
+            if not sub_industries:
+                continue
+
+            sub_industries = [s_ind for s_ind in sub_industries if s_ind in consumption_shares.index]
+
+            shares = consumption_shares.loc[sub_industries]
+            shares /= shares.sum()
+            agg_weights = weights_by_income.loc[aggregate_industry]
+            sub_weights = pd.DataFrame(
+                np.outer(shares.values, agg_weights.values), index=sub_industries, columns=weights_by_income.columns
+            )
+            weights_by_income_all.loc[sub_industries] = sub_weights
+
+        weights_by_income_all.index = range(weights_by_income_all.shape[0])
+        weights_by_income = weights_by_income_all
+        return weights_by_income
 
 
 def prune_icio_dict(icio_dict: dict[int, Any], prune_date: date):

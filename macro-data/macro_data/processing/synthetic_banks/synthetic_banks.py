@@ -3,7 +3,9 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
 
-from macro_data.processing.synthetic_population.synthetic_population import SyntheticPopulation
+from macro_data.processing.synthetic_population.synthetic_population import (
+    SyntheticPopulation,
+)
 
 
 class SyntheticBanks(ABC):

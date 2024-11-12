@@ -1,11 +1,9 @@
 import warnings
 from pathlib import Path
+from warnings import simplefilter
 
 import numpy as np
 import pandas as pd
-
-from warnings import simplefilter
-
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.experimental import enable_iterative_imputer  # noqa
 from sklearn.impute import IterativeImputer  # noqa

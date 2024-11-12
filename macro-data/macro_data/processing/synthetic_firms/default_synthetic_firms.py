@@ -8,10 +8,13 @@ from macro_data.configuration.countries import Country
 from macro_data.configuration.dataconfiguration import FirmsDataConfiguration
 from macro_data.processing.country_data import TaxData
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
-from macro_data.processing.synthetic_credit_market.loan_data import LongtermLoans, ShorttermLoans
+from macro_data.processing.synthetic_credit_market.loan_data import (
+    LongtermLoans,
+    ShorttermLoans,
+)
 from macro_data.processing.synthetic_firms.firm_tools import (
-    initialise_basic_firm_fields,
     function_parameters_dependent_initialisation,
+    initialise_basic_firm_fields,
     initialise_basic_firm_fields_compustat,
 )
 from macro_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
@@ -72,6 +75,8 @@ class DefaultSyntheticFirms(SyntheticFirms):
         proxy_country: Optional[Country] = None,
     ) -> "DefaultSyntheticFirms":
         n_firms_per_industry = industry_data["industry_vectors"]["Number of Firms"].values
+        # number of firms per industry is at most the number of employees per industry
+        n_firms_per_industry = np.minimum(n_firms_per_industry, n_employees_per_industry)
         n_firms = n_firms_per_industry.sum()
 
         firm_data = pd.DataFrame(index=range(n_firms))

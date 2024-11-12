@@ -1,18 +1,15 @@
-from .data_wrapper import DataWrapper
 from .configuration import DataConfiguration
-
+from .data_wrapper import DataWrapper
 from .processing import (
-    SyntheticPopulation,
-    SyntheticFirms,
-    SyntheticCreditMarket,
     SyntheticBanks,
     SyntheticCentralBank,
     SyntheticCentralGovernment,
+    SyntheticCountry,
+    SyntheticCreditMarket,
+    SyntheticFirms,
     SyntheticGovernmentEntities,
     SyntheticHousingMarket,
-    SyntheticCountry,
+    SyntheticPopulation,
     SyntheticRestOfTheWorld,
 )
-
-
 from .util.create_code import create_code

@@ -1,20 +1,26 @@
 import pickle as pkl
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import time
 
 from macro_data.configuration import DataConfiguration
 from macro_data.configuration.countries import Country
-
 from macro_data.processing.synthetic_country import SyntheticCountry
 from macro_data.processing.synthetic_rest_of_the_world.default_synthetic_rest_of_the_world import (
     DefaultSyntheticRestOfTheWorld,
 )
-from macro_data.processing.synthetic_rest_of_the_world.synthetic_rest_of_the_world import SyntheticRestOfTheWorld
-from macro_data.readers import DataReaders, compile_industry_data, ALL_INDUSTRIES, AGGREGATED_INDUSTRIES
+from macro_data.processing.synthetic_rest_of_the_world.synthetic_rest_of_the_world import (
+    SyntheticRestOfTheWorld,
+)
+from macro_data.readers import (
+    AGGREGATED_INDUSTRIES,
+    ALL_INDUSTRIES,
+    DataReaders,
+    compile_industry_data,
+)
 from macro_data.readers.exogenous_data import ExogenousCountryData
 
 

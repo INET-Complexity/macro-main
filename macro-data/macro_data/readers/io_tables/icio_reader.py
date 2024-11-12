@@ -1,15 +1,23 @@
 import os
 from functools import reduce
 from pathlib import Path
-from typing import Optional, Literal
+from typing import Literal, Optional
 
 import numpy as np
 import pandas as pd
 
 from macro_data.configuration.countries import Country
-from macro_data.readers.io_tables.industries import ALL_INDUSTRIES, AGGREGATED_INDUSTRIES
 from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
-from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE, ICIO_ALL, ICIO_AGGREGATE_INV, ICIO_ALL_INV
+from macro_data.readers.io_tables.industries import (
+    AGGREGATED_INDUSTRIES,
+    ALL_INDUSTRIES,
+)
+from macro_data.readers.io_tables.mappings import (
+    ICIO_AGGREGATE,
+    ICIO_AGGREGATE_INV,
+    ICIO_ALL,
+    ICIO_ALL_INV,
+)
 from macro_data.readers.io_tables.util import aggregate_df
 
 
@@ -276,7 +284,7 @@ class ICIOReader:
     def get_total_output_series(self, country_name: str) -> pd.Series:
         return self.iot[("TOTAL", "Output")].xs(country_name, axis=0, level=0).loc[self.industries] / self.yearly_factor
 
-    def get_output_shares(self, country_name: str) -> dict[str, pd.Series]:
+    def get_output_shares_dict(self, country_name: str) -> dict[str, pd.Series]:
         if not set(ALL_INDUSTRIES) == set(self.industries):
             raise ValueError("Industries are already aggregated")
         output_shares_dict = {}
@@ -289,6 +297,24 @@ class ICIOReader:
             output_shares_dict[agg_sector] = sub_sector_outputs / total_output
 
         return output_shares_dict
+
+    def get_consumption_shares_series(self, country_name: str) -> pd.Series:
+        hh_cons = self.get_hh_consumption_series(country_name)
+
+        df = hh_cons.reset_index()
+        df.columns = ["Industry", "Consumption"]
+
+        # Step 3: Map each sub-sector to its aggregate sector
+        df["AggregateSector"] = df["Industry"].map(ICIO_AGGREGATE_INV)
+
+        # Step 4: Calculate total output per aggregate sector
+        agg_cons = df.groupby("AggregateSector")["Consumption"].sum().reset_index()
+        agg_cons.columns = ["AggregateSector", "AggregateConsumption"]
+
+        # Step 5: Calculate the consumption share
+        df = df.merge(agg_cons, on="AggregateSector", how="left")
+        df["ConsumptionShare"] = df["Consumption"] / df["AggregateConsumption"]
+        return df.set_index("Industry")["ConsumptionShare"]
 
     def get_intermediate_inputs_use(self, country_name: str) -> np.ndarray:
         return (
@@ -361,6 +387,9 @@ class ICIOReader:
 
     def get_hh_consumption(self, country_name: str) -> np.ndarray:
         return self.column_allc(country_name, "Household Consumption").values / self.yearly_factor
+
+    def get_hh_consumption_series(self, country_name: str) -> pd.Series:
+        return self.column_allc(country_name, "Household Consumption") / self.yearly_factor
 
     def get_hh_consumption_domestic(self, country_name: str) -> np.ndarray:
         return self.iot.loc[country_name, (country_name, "Household Consumption")].values / self.yearly_factor

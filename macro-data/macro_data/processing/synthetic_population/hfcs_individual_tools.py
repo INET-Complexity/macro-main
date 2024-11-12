@@ -407,9 +407,12 @@ def fill_individual_nace(
     # Assumption
     individual_data.loc[individual_data["Activity Status"] == 3, "Employment Industry"] = np.nan
 
-    n_employees_by_sector = (
-        individual_data.groupby("Employment Industry").apply(lambda x: (x["Activity Status"] == 1).sum()).values
+    n_employees_by_sector_series = individual_data.groupby("Employment Industry").apply(
+        lambda x: (x["Activity Status"] == 1).sum()
     )
+    n_employees_by_sector_series = n_employees_by_sector_series.reindex(range(43)).fillna(0).astype("int")
+
+    n_employees_by_sector = n_employees_by_sector_series.values
 
     for ind in range(len(industries)):
         individual_data, n_employees_by_sector = reassign_industry(
