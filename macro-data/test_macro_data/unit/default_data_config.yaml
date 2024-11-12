@@ -1,25 +1,25 @@
 purpose: "Default unit test config"
 author: "INET/Macrocosm"
 
-industries:
-  - A
-  - B
-  - C
-  - D
-  - E
-  - F
-  - G
-  - H
-  - I
-  - J
-  - K
-  - L
-  - M
-  - N
-  - O
-  - P
-  - Q
-  - R_S
+#industries:
+#  - A
+#  - B
+#  - C
+#  - D
+#  - E
+#  - F
+#  - G
+#  - H
+#  - I
+#  - J
+#  - K
+#  - L
+#  - M
+#  - N
+#  - O
+#  - P
+#  - Q
+#  - R_S
 scale:
   10000
 single_bank:
@@ -34,6 +34,8 @@ year:
 #  "2010-01-01"
 seed:
   0
+aggregate_industries:
+  true
 
 country_configs:
   FRA:

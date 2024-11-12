@@ -2,13 +2,14 @@ import json
 import os
 from functools import reduce
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Literal
 
 import numpy as np
 import pandas as pd
 
 from macro_data.configuration.countries import Country
 from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
+from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE, ICIO_ALL
 from macro_data.readers.io_tables.util import aggregate_df
 
 
@@ -110,7 +111,7 @@ class ICIOReader:
         investment_fractions: dict[Country | str, dict[str, float]],
         yearly_factor: float = 4.0,
         proxy_country_dict: Optional[dict[str | Country, str | Country]] = None,
-        aggregation_path: Optional[Path] = None,
+        aggregation_path: Optional[Literal["All", "Aggregate"]] = None,
     ) -> "ICIOReader":
         if proxy_country_dict is None:
             proxy_country_dict = {}
@@ -134,7 +135,7 @@ class ICIOReader:
 
         # Aggregate the IOT
         if aggregation_path is not None:
-            aggregation = json.load(open(aggregation_path))
+            aggregation = ICIO_AGGREGATE if aggregation_path == "Aggregate" else ICIO_ALL
         else:
             aggregation = None
         agg_df = cls.aggregate_io(considered_countries, df, aggregation)

@@ -1,11 +1,12 @@
-import json
 from datetime import datetime, date
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 
 from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
+from macro_data.readers.io_tables.mappings import WIOD_AGGREGATE, WIOD_ALL
 from macro_data.readers.util.prune_util import prune_index
 
 
@@ -44,7 +45,7 @@ class WIODSEAReader:
     def agg_from_csv(
         cls,
         path: Path | str,
-        aggregation_path: Path,
+        aggregation_type: Literal["All", "Aggregate"],
         year: int,
         country_names: list[str],
         industries: list,
@@ -56,7 +57,7 @@ class WIODSEAReader:
 
         Args:
             path (Path | str): The path to the CSV file.
-            aggregation_path (Path): The path to the aggregation JSON file.
+            aggregation_type (Literal["All", "Aggregate"]): The industry level aggregation.
             year (int): The year of the data.
             country_names (list[str]): The list of country names to include in the aggregation.
             industries (list): The list of industries to include in the aggregation.
@@ -68,7 +69,8 @@ class WIODSEAReader:
         """
         # Aggregate industries
         raw_df = pd.read_csv(path, thousands=",", index_col=[0, 1, 2, 3])
-        aggregation = json.load(open(aggregation_path))
+        # aggregation = json.load(open(aggregation_path))
+        aggregation = WIOD_AGGREGATE if aggregation_type == "Aggregate" else WIOD_ALL
         agg_dict_full = {}
         for key, values in aggregation.items():
             for value in values:
@@ -126,8 +128,9 @@ class WIODSEAReader:
         # rescale
         for country in country_names:
             scale = value_added_dict[country] / sea.loc[country, "Value Added"]
+            scale = np.copy(scale.values)
             for field in ["Value Added", "Labour Compensation", "Capital Compensation", "Capital Stock"]:
-                sea.loc[country, field] = sea.loc[country, field] * scale
+                sea.loc[country, field] = (sea.loc[country, field] * scale).values
 
         return cls(
             df=sea,

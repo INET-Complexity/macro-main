@@ -60,7 +60,7 @@ def readers(data_path):
 @pytest.fixture(scope="module", name="all_industries_readers")
 def all_industries_readers(data_path):
     france = Country("FRA")
-    readers = DataReaders.from_raw_data(
+    all_industries_readers = DataReaders.from_raw_data(
         raw_data_path=data_path,
         country_names=[Country("FRA")],
         simulation_year=2014,
@@ -70,7 +70,7 @@ def all_industries_readers(data_path):
         single_icio_survey=True,
         aggregate_industries=False,
     )
-    return readers
+    return all_industries_readers
 
 
 @pytest.fixture(scope="module", name="multic_readers")

@@ -124,7 +124,7 @@ class DataConfiguration(BaseModel):
         author (str): Author of this simulation.
     """
 
-    industries: list[str]
+    # industries: list[str]
     year: int
     quarter: int = 1
     prune_date: Optional[date] = None
@@ -132,6 +132,7 @@ class DataConfiguration(BaseModel):
     row_data_config: ROWDataConfiguration = ROWDataConfiguration()
     purpose: str = ""
     author: str = "INET"
+    aggregate_industries: bool = False
     seed: Optional[int] = None
 
     def model_post_init(self, __context: Any) -> None:
