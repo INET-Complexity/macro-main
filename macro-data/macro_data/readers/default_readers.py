@@ -173,7 +173,7 @@ class DataReaders:
                 imputed_rent_fraction=eurostat.get_imputed_rent_fraction(eu_only, imputed_rent_year),
                 investment_fractions=get_investment_year(year),
                 proxy_country_dict=proxy_country_dict,
-                aggregation_path=datapaths.icio_agg_path,
+                aggregation_type="Aggregate" if aggregate_industries else "All",
             )
             for year in all_years
         }
@@ -189,9 +189,9 @@ class DataReaders:
             year=simulation_year,
             industries=industries,
             exchange_rates=exchange_rates,
-            aggregation_path=datapaths.wiod_sea_agg_path,
             country_names=country_names,
             value_added_dict=value_added_dict,
+            aggregation_type="Aggregate" if aggregate_industries else "All",
         )
 
         add_investment_matrix_to_icio(

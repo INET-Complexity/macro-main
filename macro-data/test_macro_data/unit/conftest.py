@@ -57,6 +57,22 @@ def readers(data_path):
     return readers
 
 
+@pytest.fixture(scope="module", name="all_readers")
+def all_readers(data_path):
+    france = Country("FRA")
+    all_readers = DataReaders.from_raw_data(
+        raw_data_path=data_path,
+        country_names=[Country("FRA")],
+        simulation_year=2014,
+        scale_dict={france: 100000},
+        industries=ALL_INDUSTRIES,
+        force_single_hfcs_survey=True,
+        single_icio_survey=True,
+        aggregate_industries=False,
+    )
+    return all_readers
+
+
 @pytest.fixture(scope="module", name="all_industries_readers")
 def all_industries_readers(data_path):
     france = Country("FRA")

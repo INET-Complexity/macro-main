@@ -1,3 +1,11 @@
+def sub_to_aggregate(dictio: dict[str, list[str]]) -> dict[str, str]:
+    new_dict = {}
+    for aggregate_sector, sub_sectors in dictio.items():
+        for sub_sector in sub_sectors:
+            new_dict[sub_sector] = aggregate_sector
+    return new_dict
+
+
 WIOD_AGGREGATE = {
     "A": ["A01", "A02", "A03"],
     "B": ["B"],
@@ -52,6 +60,8 @@ WIOD_AGGREGATE = {
     "IntTTM": ["IntTTM"],
 }
 
+WIOD_AGGREGATE_INV = sub_to_aggregate(WIOD_AGGREGATE)
+
 WIOD_ALL = {
     "A01": ["A01"],
     "A03": ["A03"],
@@ -101,6 +111,8 @@ WIOD_ALL = {
     "U": ["U"],
 }
 
+WIOD_ALL_INV = sub_to_aggregate(WIOD_ALL)
+
 ICIO_AGGREGATE = {
     "A": ["A01", "A03"],
     "B": ["B05", "B07", "B09"],
@@ -137,7 +149,7 @@ ICIO_AGGREGATE = {
     "O": ["O"],
     "P": ["P"],
     "Q": ["Q"],
-    "R_S": ["R", "S", "T"],
+    "R_S": ["R", "S", "T", "R_S"],
     "Fixed Capital Formation": ["GFCF", "INVNT"],
     "Government Consumption": ["GGFC"],
     "Household Consumption": ["HFCE", "NPISH", "DPABR"],
@@ -145,6 +157,8 @@ ICIO_AGGREGATE = {
     "Value Added": ["VA"],
     "Gross Output": ["OUT"],
 }
+
+ICIO_AGGREGATE_INV = sub_to_aggregate(ICIO_AGGREGATE)
 
 ICIO_ALL = {
     "A01": ["A01"],
@@ -197,3 +211,5 @@ ICIO_ALL = {
     "Value Added": ["VA"],
     "Gross Output": ["OUT"],
 }
+
+ICIO_ALL_INV = sub_to_aggregate(ICIO_ALL)

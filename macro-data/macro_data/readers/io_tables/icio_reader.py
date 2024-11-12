@@ -1,4 +1,3 @@
-import json
 import os
 from functools import reduce
 from pathlib import Path
@@ -8,8 +7,9 @@ import numpy as np
 import pandas as pd
 
 from macro_data.configuration.countries import Country
+from macro_data.readers.io_tables.industries import ALL_INDUSTRIES, AGGREGATED_INDUSTRIES
 from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
-from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE, ICIO_ALL
+from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE, ICIO_ALL, ICIO_AGGREGATE_INV, ICIO_ALL_INV
 from macro_data.readers.io_tables.util import aggregate_df
 
 
@@ -111,7 +111,7 @@ class ICIOReader:
         investment_fractions: dict[Country | str, dict[str, float]],
         yearly_factor: float = 4.0,
         proxy_country_dict: Optional[dict[str | Country, str | Country]] = None,
-        aggregation_path: Optional[Literal["All", "Aggregate"]] = None,
+        aggregation_type: Optional[Literal["All", "Aggregate"]] = None,
     ) -> "ICIOReader":
         if proxy_country_dict is None:
             proxy_country_dict = {}
@@ -134,8 +134,8 @@ class ICIOReader:
             value_added[c] = max(0.0, va_df.xs(c).sum())
 
         # Aggregate the IOT
-        if aggregation_path is not None:
-            aggregation = ICIO_AGGREGATE if aggregation_path == "Aggregate" else ICIO_ALL
+        if aggregation_type is not None:
+            aggregation = ICIO_AGGREGATE if aggregation_type == "Aggregate" else ICIO_ALL
         else:
             aggregation = None
         agg_df = cls.aggregate_io(considered_countries, df, aggregation)
@@ -263,160 +263,6 @@ class ICIOReader:
 
         return aggregated
 
-    # def normalise_iot(self) -> None:
-    #     """
-    #     Normalises the IOT by adjusting value-added.
-    #     """
-    #     # Remove aggregates
-    #     self.iot = self.iot.loc[self.iot.index != ("TOTAL", "Gross Output")]
-    #     self.iot = self.iot.loc[:, self.iot.columns.get_level_values(1) != "Gross Output"]
-    #     self.iot = self.iot.loc[:, self.iot.columns.get_level_values(0) != "TOTAL"]
-    #
-    #     # Remove aggregates from non-industry columns
-    #     self.iot.loc[
-    #         self.iot.index.get_level_values(0) == "TOTAL",
-    #         np.logical_not(self.iot.columns.get_level_values(1).isin(self.industries)),
-    #     ] = np.nan
-    #
-    #     # Remove sectors with negative VA
-    #     neg_va_sec = self.iot.columns[np.where(self.iot.loc[("TOTAL", "Value Added")] <= 0.0)].values
-    #     neg_va_sec = np.array([list(i) for i in neg_va_sec if list(i)[1] in self.industries])
-    #     self.iot.loc[neg_va_sec] = 0.0
-    #     self.iot.loc[:, neg_va_sec] = 0.0
-    #
-    #     # Force positive values
-    #     self.iot.loc[self.iot.index.get_level_values(1) != "Taxes Less Subsidies"] = np.maximum(
-    #         0.0,
-    #         self.iot.loc[self.iot.index.get_level_values(1) != "Taxes Less Subsidies"],
-    #     )
-    #
-    #     # Sums-up intermediate inputs into a new row
-    #     self.iot.loc[
-    #         ("TOTAL", "Intermediate Inputs"),
-    #         self.iot.columns.get_level_values(1).isin(self.industries),
-    #     ] = self.iot.loc[
-    #         (self.iot.index != ("TOTAL", "Value Added"))
-    #         & (self.iot.index.get_level_values(1) != "Taxes Less Subsidies"),
-    #         self.iot.columns.get_level_values(1).isin(self.industries),
-    #     ].sum(
-    #         axis=0
-    #     )
-    #
-    #     # Sums-up taxes-less-subsidies into a new row
-    #     self.iot.loc[
-    #         ("TOTAL", "Taxes Less Subsidies"),
-    #         self.iot.columns.get_level_values(1).isin(self.industries),
-    #     ] = self.iot.loc[
-    #         self.iot.index.get_level_values(1) == "Taxes Less Subsidies",
-    #         self.iot.columns.get_level_values(1).isin(self.industries),
-    #     ].sum(
-    #         axis=0
-    #     )
-    #     self.iot = self.iot.loc[
-    #         np.logical_not(
-    #             (self.iot.index.get_level_values(0) != "TOTAL")
-    #             & (self.iot.index.get_level_values(1) == "Taxes Less Subsidies")
-    #         )
-    #     ].copy()
-    #
-    #     # Adds total output
-    #     output = self.iot.loc[self.iot.index.get_level_values(1).isin(self.industries)].sum(axis=1)
-    #     self.iot.loc[:, ("TOTAL", "Output")] = np.nan
-    #     self.iot.loc[
-    #         self.iot.index.get_level_values(1).isin(self.industries),
-    #         ("TOTAL", "Output"),
-    #     ] = output
-    #     self.iot.loc[
-    #         ("TOTAL", "Output"),
-    #         self.iot.columns.get_level_values(1).isin(self.industries),
-    #     ] = output
-    #
-    #     # Adjust value-added
-    #     self.iot.loc[("TOTAL", "Value Added")] = (
-    #         self.iot.loc[("TOTAL", "Output")]
-    #         - self.iot.loc[("TOTAL", "Intermediate Inputs")]
-    #         - self.iot.loc[("TOTAL", "Taxes Less Subsidies")]
-    #     )
-    #     if not np.all(
-    #         self.iot.loc[
-    #             ("TOTAL", "Value Added"),
-    #             self.iot.columns.get_level_values(1).isin(self.industries),
-    #         ].values
-    #         >= 0.0
-    #     ):
-    #         self.iot.loc[("TOTAL", "Value Added")].to_csv("va.csv")
-    #         raise ValueError("Negative VA!")
-    #
-    #     # Split the total GFCF column
-    #     for c in self.considered_countries:
-    #         ind = self.iot.index.get_level_values(1).isin(self.industries)
-    #         self.iot.loc[ind, (c, "Firm Fixed Capital Formation")] = (
-    #             self.investment_fractions[c][0] * self.iot.loc[ind, (c, "Fixed Capital Formation")]
-    #         )
-    #         self.iot.loc[ind, (c, "Household Fixed Capital Formation")] = (
-    #             self.investment_fractions[c][1] * self.iot.loc[ind, (c, "Fixed Capital Formation")]
-    #         )
-    #         self.iot.loc[ind, (c, "Government Consumption")] += (
-    #             self.investment_fractions[c][2] * self.iot.loc[ind, (c, "Fixed Capital Formation")]
-    #         )
-    #         self.iot = self.iot.loc[
-    #             :,
-    #             np.logical_or(
-    #                 self.iot.columns.get_level_values(1) != "Fixed Capital Formation",
-    #                 self.iot.columns.get_level_values(0) != c,
-    #             ),
-    #         ]
-    #     self.iot.sort_index(axis=0, inplace=True)
-    #     self.iot.sort_index(axis=1, inplace=True)
-    #
-    #     # # Sums-up intermediate inputs into a new row
-    #     # self.iot.loc[
-    #     #     ("TOTAL", "Intermediate Inputs"),
-    #     #     self.iot.columns.get_level_values(1).isin(self.industries),
-    #     # ] = self.iot.loc[
-    #     #     (self.iot.index != ("TOTAL", "Value Added"))
-    #     #     & (self.iot.index.get_level_values(1) != "Taxes Less Subsidies"),
-    #     #     self.iot.columns.get_level_values(1).isin(self.industries),
-    #     # ].sum(
-    #     #     axis=0
-    #     # )
-    #     #
-    #     # # Sums-up taxes-less-subsidies into a new row
-    #     # self.iot.loc[
-    #     #     ("TOTAL", "Taxes Less Subsidies"),
-    #     #     self.iot.columns.get_level_values(1).isin(self.industries),
-    #     # ] = self.iot.loc[
-    #     #     self.iot.index.get_level_values(1) == "Taxes Less Subsidies",
-    #     #     self.iot.columns.get_level_values(1).isin(self.industries),
-    #     # ].sum(
-    #     #     axis=0
-    #     # )
-    #     # self.iot = self.iot.loc[
-    #     #     np.logical_not(
-    #     #         (self.iot.index.get_level_values(0) != "TOTAL")
-    #     #         & (self.iot.index.get_level_values(1) == "Taxes Less Subsidies")
-    #     #     )
-    #     # ].copy()
-    #     #
-    #     # # Adds total output
-    #     # output = self.iot.loc[self.iot.index.get_level_values(1).isin(self.industries)].sum(axis=1)
-    #     # self.iot.loc[:, ("TOTAL", "Output")] = np.nan
-    #     # self.iot.loc[
-    #     #     self.iot.index.get_level_values(1).isin(self.industries),
-    #     #     ("TOTAL", "Output"),
-    #     # ] = output
-    #     # self.iot.loc[
-    #     #     ("TOTAL", "Output"),
-    #     #     self.iot.columns.get_level_values(1).isin(self.industries),
-    #     # ] = output
-    #     #
-    #     # # Adjust value-added
-    #     # self.iot.loc[("TOTAL", "Value Added")] = (
-    #     #     self.iot.loc[("TOTAL", "Output")]
-    #     #     - self.iot.loc[("TOTAL", "Intermediate Inputs")]
-    #     #     - self.iot.loc[("TOTAL", "Taxes Less Subsidies")]
-    #     # )
-
     def column_allc(self, country_name: str, symbol: str) -> pd.Series:
         considered_countries_row = self.considered_countries + ["ROW"]
         all_cols = [self.iot.loc[col, (country_name, symbol)].loc[self.industries] for col in considered_countries_row]
@@ -426,6 +272,23 @@ class ICIOReader:
         return (self.iot[("TOTAL", "Output")].xs(country_name, axis=0, level=0).loc[self.industries]).fillna(
             0
         ).values / self.yearly_factor
+
+    def get_total_output_series(self, country_name: str) -> pd.Series:
+        return self.iot[("TOTAL", "Output")].xs(country_name, axis=0, level=0).loc[self.industries] / self.yearly_factor
+
+    def get_output_shares(self, country_name: str) -> dict[str, pd.Series]:
+        if not set(ALL_INDUSTRIES) == set(self.industries):
+            raise ValueError("Industries are already aggregated")
+        output_shares_dict = {}
+        output_series = self.get_total_output_series(country_name)
+
+        for agg_sector in AGGREGATED_INDUSTRIES:
+            sub_sectors = ICIO_AGGREGATE[agg_sector]
+            sub_sector_outputs = output_series.loc[output_series.index.intersection(sub_sectors)]
+            total_output = sub_sector_outputs.sum()
+            output_shares_dict[agg_sector] = sub_sector_outputs / total_output
+
+        return output_shares_dict
 
     def get_intermediate_inputs_use(self, country_name: str) -> np.ndarray:
         return (
@@ -582,22 +445,6 @@ class ICIOReader:
                 trade_proportions["end_country"] += [end_country] * len(self.industries)
                 trade_proportions["industry"] += list(range(len(self.industries)))
         return pd.DataFrame(trade_proportions).set_index(["start_country", "end_country", "industry"]).sort_index()
-
-    # def get_trade_proportions(self) -> pd.DataFrame:
-    #     trade_proportions = {"start_country": [], "end_country": [], "industry": [], "value": []}
-    #     for end_country in self.considered_countries + ["ROW"]:
-    #         if end_country == "ROW":
-    #             imports_total = self.get_imports(end_country)
-    #         else:
-    #             imports_total = self.get_imports(end_country) + self.get_trade(end_country, end_country)
-    #         for start_country in self.considered_countries + ["ROW"]:
-    #             if start_country == end_country == "ROW":
-    #                 continue
-    #             trade_proportions["start_country"] += [start_country] * len(self.industries)
-    #             trade_proportions["end_country"] += [end_country] * len(self.industries)
-    #             trade_proportions["industry"] += list(range(len(self.industries)))
-    #             trade_proportions["value"] += list((self.get_trade(start_country, end_country) / imports_total).values)
-    #     return pd.DataFrame(trade_proportions).set_index(["start_country", "end_country", "industry"])
 
     def get_intermediate_inputs_matrix(self, country_name: str) -> pd.DataFrame:
         total_output = self.get_total_output(country_name)
