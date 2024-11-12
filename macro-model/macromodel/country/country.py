@@ -1136,6 +1136,7 @@ class Country:
             "Unemployment Rate": self.economy.unemployment_rate(),
             "Consumption Expansion Loan Debt": self.households.consumption_loan_debt(),
             "Mortgage Debt": self.households.mortgage_debt(),
+            "Central Bank Policy Rate": self.central_bank.ts.get_aggregate("policy_rate"),
         }
         return pd.DataFrame(data_dict)
 
