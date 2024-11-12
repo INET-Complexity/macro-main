@@ -6,7 +6,6 @@ import pandas as pd
 
 from macro_data.configuration import CountryDataConfiguration
 from macro_data.configuration.countries import Country
-from macro_data.processing import set_housing_df
 from macro_data.processing.country_data import TaxData
 from macro_data.processing.synthetic_banks.default_synthetic_banks import (
     DefaultSyntheticBanks,
@@ -51,6 +50,9 @@ from macro_data.processing.synthetic_matching.matching_firms_with_banks import (
 )
 from macro_data.processing.synthetic_matching.matching_households_with_banks import (
     match_households_with_banks_optimal,
+)
+from macro_data.processing.synthetic_matching.matching_households_with_houses import (
+    set_housing_df,
 )
 from macro_data.processing.synthetic_matching.matching_individuals_with_firms import (
     match_individuals_with_firms_country,

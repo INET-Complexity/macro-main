@@ -8,13 +8,13 @@ from macro_data.processing.synthetic_population.hfcs_synthetic_population import
     SyntheticHFCSPopulation,
     sample_households,
 )
+from macro_data.readers import AGGREGATED_INDUSTRIES
 
 PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 
 
 class TestSyntheticPopulation:
     def test__init(self, readers, configuration, industry_data, exogenous_data):
-        industries = configuration.industries
 
         france = Country("FRA")
 
@@ -24,7 +24,7 @@ class TestSyntheticPopulation:
             year=2014,
             scale=10000,
             country_name_short=france.to_two_letter_code(),
-            industries=industries,
+            industries=AGGREGATED_INDUSTRIES,
             industry_data=industry_data[france],
             rent_as_fraction_of_unemployment_rate=0.5,
             total_unemployment_benefits=1000.0,
@@ -95,7 +95,7 @@ class TestSyntheticPopulation:
 
 @pytest.mark.parametrize("country", [Country("CAN"), Country("USA")])
 def test__household_consumption(multic_readers, multic_industry_data, configuration, country, exogenous_data):
-    industries = configuration.industries
+    industries = AGGREGATED_INDUSTRIES
 
     proxy_country = Country("FRA")
     year = 2014
