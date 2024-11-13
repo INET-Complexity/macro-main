@@ -26,7 +26,7 @@ class TestCountry:
             exchange_rates=exchange_rates,
             country_name="FRA",
             all_country_names=["FRA", "ROW"],
-            industries=datawrapper.configuration.industries,
+            industries=datawrapper.industries,
             initial_year=datawrapper.configuration.year,
             t_max=12,
             running_multiple_countries=False,

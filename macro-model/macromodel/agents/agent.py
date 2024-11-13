@@ -1,10 +1,10 @@
 from copy import deepcopy
-
-import numpy as np
 from typing import Any, Optional
 
+import numpy as np
+from numba import float64, int64, njit
+
 from macromodel.timeseries import TimeSeries
-from numba import njit, int64, float64
 
 
 class Agent:

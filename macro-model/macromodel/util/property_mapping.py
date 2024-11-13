@@ -1,6 +1,6 @@
-import numpy as np
-
 from enum import Enum, EnumMeta
+
+import numpy as np
 
 
 def map_to_enum(values: np.ndarray, property_enum: EnumMeta) -> np.ndarray[Enum]:

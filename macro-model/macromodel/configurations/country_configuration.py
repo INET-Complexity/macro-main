@@ -35,3 +35,9 @@ class CountryConfiguration(BaseModel):
     forecasting_window: int = 60
     assume_zero_growth: bool = False
     assume_zero_noise: bool = False
+
+    @classmethod
+    def n_industry_default(cls, n_industries: int):
+        firms_configuration = FirmsConfiguration.n_industries_default(n_industries=n_industries)
+        # all other variables are default
+        return cls(firms=firms_configuration)

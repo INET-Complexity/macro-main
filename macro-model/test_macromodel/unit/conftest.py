@@ -106,7 +106,7 @@ def test_individuals(datawrapper):
 @pytest.fixture(scope="module", name="test_households")
 def test_households(datawrapper):
     data_config = datawrapper.configuration
-    industries = data_config.industries
+    industries = datawrapper.industries
     country = datawrapper.synthetic_countries["FRA"]
     population = country.population
     initial_consumption_by_industry = country.industry_data["industry_vectors"]["Household Consumption in LCU"]
@@ -154,7 +154,7 @@ def test_central_government(datawrapper, test_individuals):
 
     taxes_less_subsidies = country.industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values
 
-    n_industries = len(datawrapper.configuration.industries)
+    n_industries = datawrapper.n_industries
 
     n_unemployed = np.sum(test_individuals.states["Activity Status"] == ActivityStatus.UNEMPLOYED)
 
@@ -176,7 +176,7 @@ def test_central_government(datawrapper, test_individuals):
 def test_government_entities(datawrapper):
     country = datawrapper.synthetic_countries["FRA"]
 
-    n_industries = len(datawrapper.configuration.industries)
+    n_industries = datawrapper.n_industries
 
     government_entities_config = GovernmentEntitiesConfiguration()
 
@@ -414,4 +414,10 @@ def test_country(
 @pytest.fixture(scope="module", name="datawrapper")
 def read_data() -> DataWrapper:
     pickle_path = Path(__file__).parent.parent / "pickled_data" / "agents.pkl"
+    return DataWrapper.init_from_pickle(pickle_path)
+
+
+@pytest.fixture(scope="module", name="allind_datawrapper")
+def read_data_all() -> DataWrapper:
+    pickle_path = Path(__file__).parent.parent / "pickled_data" / "agents_allind.pkl"
     return DataWrapper.init_from_pickle(pickle_path)

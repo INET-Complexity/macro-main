@@ -1,9 +1,9 @@
+from typing import Optional, Tuple
+
 import numpy as np
 
 from macromodel.agents.agent import Agent
 from macromodel.goods_market.value_type import ValueType
-
-from typing import Tuple, Optional
 
 
 def check_sellers_left(

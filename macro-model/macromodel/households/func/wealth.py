@@ -1,10 +1,9 @@
+from abc import ABC, abstractmethod
+from typing import Any, Optional, Tuple
+
 import numpy as np
 
 from macromodel.timeseries import TimeSeries
-
-from abc import abstractmethod, ABC
-
-from typing import Tuple, Optional, Any
 
 
 class WealthSetter(ABC):

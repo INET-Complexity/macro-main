@@ -1,7 +1,8 @@
+from typing import Any
+
 import h5py
 import numpy as np
 from macro_data import SyntheticBanks
-from typing import Any
 
 from macromodel.agents.agent import Agent
 from macromodel.banks.banks_ts import create_banks_timeseries

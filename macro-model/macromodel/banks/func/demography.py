@@ -1,8 +1,7 @@
+from abc import ABC, abstractmethod
 from typing import Tuple
 
 import numpy as np
-
-from abc import abstractmethod, ABC
 
 
 class BankDemography(ABC):

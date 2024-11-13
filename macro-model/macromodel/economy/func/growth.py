@@ -1,11 +1,12 @@
-import numpy as np
 from abc import ABC
 
+import numpy as np
+
 from macromodel.forecaster.forecaster import (
-    OLSForecaster,
     ConstantForecaster,
     ImplementedAutoregForecaster,
     ManualAutoregForecaster,
+    OLSForecaster,
 )
 
 

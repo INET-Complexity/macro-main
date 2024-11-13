@@ -1,5 +1,6 @@
+from typing import Any, Literal
+
 from pydantic import BaseModel, Field
-from typing import Literal, Any
 
 
 class BoughtGoodsDistributor(BaseModel):
@@ -250,6 +251,15 @@ class FirmsParameters(BaseModel):
     capital_inputs_utilisation_rate: float = Field(1.0, ge=0.0, le=1.0)
     intermediate_inputs_utilisation_rate: float = Field(1.0, ge=0.0, le=1.0)
 
+    @classmethod
+    def disaggregated_industries_default(cls, n_industries: int):
+        return {
+            "capital_inputs_delay": [0 for _ in range(n_industries)],
+            "depreciation_rates": [0.0 for _ in range(n_industries)],
+            "capital_inputs_utilisation_rate": 1.0,
+            "intermediate_inputs_utilisation_rate": 1.0,
+        }
+
 
 class FirmsConfiguration(BaseModel):
     parameters: FirmsParameters = FirmsParameters()
@@ -265,3 +275,11 @@ class FirmsConfiguration(BaseModel):
             "initial_inventory_to_input_fraction": inventory_frac,
         }
         return values
+
+    @classmethod
+    def n_industries_default(cls, n_industries: int):
+        return cls(
+            parameters=FirmsParameters.disaggregated_industries_default(n_industries),
+            functions=FirmsFunctions(),
+            calculate_hill_exponent=True,
+        )

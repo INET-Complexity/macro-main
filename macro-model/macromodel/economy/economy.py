@@ -1,7 +1,8 @@
+from typing import Any, Optional
+
 import h5py
 import numpy as np
 import pandas as pd
-from typing import Any, Optional
 
 from macromodel.central_government.central_government import CentralGovernment
 from macromodel.configurations import EconomyConfiguration

@@ -1,7 +1,8 @@
-import h5py
-import numpy as np
 from pathlib import Path
 from typing import Any
+
+import h5py
+import numpy as np
 
 from macromodel.configurations import LabourMarketConfiguration
 from macromodel.firms.firms import Firms
@@ -10,7 +11,7 @@ from macromodel.individuals.individual_properties import ActivityStatus
 from macromodel.individuals.individuals import Individuals
 from macromodel.labour_market.labour_market_ts import create_labour_market_timeseries
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import get_functions, functions_from_model, update_functions
+from macromodel.util.function_mapping import functions_from_model, get_functions, update_functions
 
 
 class LabourMarket:

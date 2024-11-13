@@ -1,11 +1,10 @@
-import numpy as np
+from typing import Optional, Tuple
 
-from numba import njit, prange, float64, int64
+import numpy as np
+from numba import float64, int64, njit, prange
 
 from macromodel.agents.agent import Agent
 from macromodel.goods_market.value_type import ValueType
-
-from typing import Tuple, Optional
 
 
 @njit(float64[:](float64[:], int64[:], int64), parallel=True, cache=True)

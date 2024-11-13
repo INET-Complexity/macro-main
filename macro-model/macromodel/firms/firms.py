@@ -1,13 +1,13 @@
 from copy import deepcopy
+from typing import Any, Callable
 
 import h5py
 import numpy as np
 import pandas as pd
 from macro_data import SyntheticFirms
-from typing import Any, Callable
 
-from macromodel.configurations import FirmsConfiguration
 from macromodel.agents.agent import Agent
+from macromodel.configurations import FirmsConfiguration
 from macromodel.credit_market.credit_market import CreditMarket
 from macromodel.firms.firm_ts import FirmTimeSeries
 from macromodel.goods_market.value_type import ValueType

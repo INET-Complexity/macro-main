@@ -1,10 +1,9 @@
+from abc import ABC, abstractmethod
+from typing import Literal
+
 import numpy as np
 import statsmodels.api as sm
-
-from abc import ABC, abstractmethod
 from statsmodels.tsa.ar_model import AutoReg
-
-from typing import Literal
 
 
 def check_len(data: np.ndarray):

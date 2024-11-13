@@ -1,12 +1,12 @@
+import warnings
 from copy import deepcopy
+from pathlib import Path
+from typing import Any
 
 import h5py
 import numpy as np
 import pandas as pd
-import warnings
 from macro_data import SyntheticHousingMarket
-from pathlib import Path
-from typing import Any
 
 from macromodel.configurations import HousingMarketConfiguration
 from macromodel.housing_market.housing_market_ts import create_housing_market_timeseries

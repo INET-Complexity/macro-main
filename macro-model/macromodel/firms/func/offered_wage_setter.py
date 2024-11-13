@@ -1,8 +1,7 @@
-import numpy as np
-
-from abc import abstractmethod, ABC
-
+from abc import ABC, abstractmethod
 from typing import Callable
+
+import numpy as np
 
 
 class OfferedWageSetter(ABC):

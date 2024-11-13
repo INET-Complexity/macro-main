@@ -1,9 +1,10 @@
 import ast
 import os
-import pandas as pd
 from copy import deepcopy
 from pathlib import Path
 from typing import Optional
+
+import pandas as pd
 
 
 def check_existing_processed_data(config: dict, data_path: Path) -> Optional[str]:

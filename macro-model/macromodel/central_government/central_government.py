@@ -1,14 +1,13 @@
+from typing import Any
+
 import h5py
 import numpy as np
 from macro_data import SyntheticCentralGovernment
 from macro_data.processing import TaxData
-from typing import Any
 
-from macromodel.configurations import CentralGovernmentConfiguration
 from macromodel.agents.agent import Agent
-from macromodel.central_government.central_government_ts import (
-    create_central_government_timeseries,
-)
+from macromodel.central_government.central_government_ts import create_central_government_timeseries
+from macromodel.configurations import CentralGovernmentConfiguration
 from macromodel.individuals.individual_properties import ActivityStatus
 from macromodel.timeseries import TimeSeries
 from macromodel.util.function_mapping import functions_from_model, update_functions
