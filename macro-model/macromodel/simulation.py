@@ -10,8 +10,7 @@ from macro_data import DataWrapper
 from macro_data.configuration import CountryDataConfiguration
 from numba import njit
 
-from macromodel.configurations import (CountryConfiguration,
-                                       SimulationConfiguration)
+from macromodel.configurations import CountryConfiguration, SimulationConfiguration
 from macromodel.country import Country
 from macromodel.exchange_rates import ExchangeRates
 from macromodel.goods_market import GoodsMarket

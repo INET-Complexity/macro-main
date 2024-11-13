@@ -2,10 +2,12 @@ from abc import ABC
 
 import numpy as np
 
-from macromodel.forecaster.forecaster import (ConstantForecaster,
-                                              ImplementedAutoregForecaster,
-                                              ManualAutoregForecaster,
-                                              OLSForecaster)
+from macromodel.forecaster.forecaster import (
+    ConstantForecaster,
+    ImplementedAutoregForecaster,
+    ManualAutoregForecaster,
+    OLSForecaster,
+)
 
 
 class GrowthForecasting(ABC):

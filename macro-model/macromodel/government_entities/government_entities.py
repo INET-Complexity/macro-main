@@ -7,11 +7,9 @@ from macro_data import SyntheticGovernmentEntities
 from macromodel.agents.agent import Agent
 from macromodel.configurations import GovernmentEntitiesConfiguration
 from macromodel.goods_market.value_type import ValueType
-from macromodel.government_entities.government_entities_ts import \
-    create_government_entities_timeseries
+from macromodel.government_entities.government_entities_ts import create_government_entities_timeseries
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import (functions_from_model,
-                                              update_functions)
+from macromodel.util.function_mapping import functions_from_model, update_functions
 
 
 class GovernmentEntities(Agent):

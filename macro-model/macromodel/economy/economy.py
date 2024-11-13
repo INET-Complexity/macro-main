@@ -9,14 +9,12 @@ from macromodel.configurations import EconomyConfiguration
 from macromodel.economy.economy_ts import create_economy_timeseries
 from macromodel.exogenous.exogenous import Exogenous
 from macromodel.firms.firms import Firms
-from macromodel.government_entities.government_entities import \
-    GovernmentEntities
+from macromodel.government_entities.government_entities import GovernmentEntities
 from macromodel.households.households import Households
 from macromodel.individuals.individual_properties import ActivityStatus
 from macromodel.individuals.individuals import Individuals
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import (functions_from_model,
-                                              update_functions)
+from macromodel.util.function_mapping import functions_from_model, update_functions
 
 
 class Economy:

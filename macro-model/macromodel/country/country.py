@@ -16,8 +16,7 @@ from macromodel.economy.economy import Economy
 from macromodel.exchange_rates import ExchangeRates
 from macromodel.exogenous.exogenous import Exogenous
 from macromodel.firms.firms import Firms
-from macromodel.government_entities.government_entities import \
-    GovernmentEntities
+from macromodel.government_entities.government_entities import GovernmentEntities
 from macromodel.households.households import Households
 from macromodel.housing_market.housing_market import HousingMarket
 from macromodel.individuals.individual_properties import ActivityStatus

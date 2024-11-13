@@ -14,8 +14,7 @@ from macromodel.goods_market.value_type import ValueType
 from macromodel.households.household_properties import HouseholdType
 from macromodel.households.households_ts import create_households_timeseries
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import (functions_from_model,
-                                              update_functions)
+from macromodel.util.function_mapping import functions_from_model, update_functions
 from macromodel.util.get_histogram import get_histogram
 from macromodel.util.property_mapping import map_to_enum
 

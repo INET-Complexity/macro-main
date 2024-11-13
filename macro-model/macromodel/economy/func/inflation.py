@@ -3,10 +3,12 @@ from typing import Optional
 
 import numpy as np
 
-from macromodel.forecaster.forecaster import (ConstantForecaster,
-                                              ImplementedAutoregForecaster,
-                                              ManualAutoregForecaster,
-                                              OLSForecaster)
+from macromodel.forecaster.forecaster import (
+    ConstantForecaster,
+    ImplementedAutoregForecaster,
+    ManualAutoregForecaster,
+    OLSForecaster,
+)
 
 
 class InflationForecasting(ABC):
