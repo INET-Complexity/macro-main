@@ -1,4 +1,4 @@
-from .bank_configuration import BanksConfiguration, BankParameters
+from .bank_configuration import BankParameters, BanksConfiguration
 from .central_bank_configuration import CentralBankConfiguration
 from .central_government_configuration import CentralGovernmentConfiguration
 from .country_configuration import CountryConfiguration

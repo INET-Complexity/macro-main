@@ -1,20 +1,22 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from typing import TYPE_CHECKING, Any, Tuple
 
 import h5py
 import numpy as np
 from macro_data import SyntheticCreditMarket
-from typing import Any, TYPE_CHECKING, Tuple
 
 from macromodel.configurations import CreditMarketConfiguration
-from macromodel.credit_market.credit_market_ts import create_credit_market_timeseries
+from macromodel.credit_market.credit_market_ts import \
+    create_credit_market_timeseries
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import functions_from_model, update_functions
+from macromodel.util.function_mapping import (functions_from_model,
+                                              update_functions)
 
 if TYPE_CHECKING:
-    from macromodel.firms.firms import Firms
     from macromodel.banks.banks import Banks
+    from macromodel.firms.firms import Firms
     from macromodel.households.households import Households
 
 

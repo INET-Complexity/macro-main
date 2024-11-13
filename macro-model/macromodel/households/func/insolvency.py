@@ -1,11 +1,11 @@
+from abc import ABC, abstractmethod
+from typing import Tuple
+
 import numpy as np
 
-from abc import abstractmethod, ABC
 from macromodel.banks.banks import Banks
-from macromodel.households.households import Households
 from macromodel.credit_market.credit_market import CreditMarket
-
-from typing import Tuple
+from macromodel.households.households import Households
 
 
 class HouseholdInsolvencyHandler(ABC):

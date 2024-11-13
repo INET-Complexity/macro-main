@@ -1,15 +1,14 @@
+from abc import ABC, abstractmethod
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
+from numba import float64, int64, njit
 
-from numba import njit, int64, float64
-
-from abc import abstractmethod, ABC
 from macromodel.banks.banks import Banks
+from macromodel.credit_market.types_of_loans import LoanTypes
 from macromodel.firms.firms import Firms
 from macromodel.households.households import Households
-from macromodel.credit_market.types_of_loans import LoanTypes
-
-from typing import Tuple
 
 
 class CreditMarketClearer(ABC):

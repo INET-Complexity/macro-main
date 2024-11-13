@@ -1,6 +1,7 @@
 from pathlib import Path
-from pydantic import BaseModel
 from typing import Any, Optional
+
+from pydantic import BaseModel
 
 
 def get_functions(

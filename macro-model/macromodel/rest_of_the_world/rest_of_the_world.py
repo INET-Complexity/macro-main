@@ -1,18 +1,21 @@
 from functools import reduce
+from typing import Any
 
 import h5py
 import numpy as np
 import pandas as pd
 from macro_data import SyntheticRestOfTheWorld
-from typing import Any
 
-from macromodel.configurations import RestOfTheWorldConfiguration
 from macromodel.agents.agent import Agent
-from macromodel.configurations.row_configuration import RestOfTheWorldParameters
+from macromodel.configurations import RestOfTheWorldConfiguration
+from macromodel.configurations.row_configuration import \
+    RestOfTheWorldParameters
 from macromodel.goods_market.value_type import ValueType
-from macromodel.rest_of_the_world.rest_of_the_world_ts import create_rest_of_the_world_timeseries
+from macromodel.rest_of_the_world.rest_of_the_world_ts import \
+    create_rest_of_the_world_timeseries
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import functions_from_model, update_functions
+from macromodel.util.function_mapping import (functions_from_model,
+                                              update_functions)
 
 
 class RestOfTheWorld(Agent):

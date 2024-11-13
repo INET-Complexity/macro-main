@@ -1,12 +1,10 @@
-import numpy as np
-import scipy as sp
-import pandas as pd
-
-from scipy.optimize import linear_sum_assignment as lsa  # noqa
-
-from abc import abstractmethod, ABC
-
+from abc import ABC, abstractmethod
 from typing import Optional
+
+import numpy as np
+import pandas as pd
+import scipy as sp
+from scipy.optimize import linear_sum_assignment as lsa  # noqa
 
 
 class HousingMarketClearer(ABC):

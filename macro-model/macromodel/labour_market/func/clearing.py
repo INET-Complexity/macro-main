@@ -1,17 +1,14 @@
+from abc import ABC, abstractmethod
+from typing import Callable, Tuple
+
 import numpy as np
-
-from numba import njit, float64, types, int64, boolean, types
+from numba import boolean, float64, int64, njit, types
 from numba.typed import List
-
 
 from macromodel.firms.firms import Firms
 from macromodel.households.households import Households
-from macromodel.individuals.individuals import Individuals
 from macromodel.individuals.individual_properties import ActivityStatus
-
-from abc import abstractmethod, ABC
-
-from typing import Callable, Tuple
+from macromodel.individuals.individuals import Individuals
 
 
 class LabourMarketClearer(ABC):

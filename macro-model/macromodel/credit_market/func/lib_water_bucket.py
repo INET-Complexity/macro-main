@@ -1,11 +1,10 @@
-import numpy as np
+from typing import Optional, Tuple
 
-from numba import njit, types, float64, int64, boolean
+import numpy as np
+from numba import boolean, float64, int64, njit, types
 
 from macromodel.agents.agent import Agent
 from macromodel.goods_market.value_type import ValueType
-
-from typing import Optional, Tuple
 
 
 @njit(

@@ -1,19 +1,21 @@
+import warnings
+from typing import Any, Tuple
+
 import h5py
 import numpy as np
 import pandas as pd
-import warnings
-from macro_data import SyntheticPopulation, SyntheticCountry
-from typing import Any, Tuple
+from macro_data import SyntheticCountry, SyntheticPopulation
 
-from macromodel.configurations import HouseholdsConfiguration
 from macromodel.agents.agent import Agent
 from macromodel.banks.banks import Banks
+from macromodel.configurations import HouseholdsConfiguration
 from macromodel.credit_market.credit_market import CreditMarket
 from macromodel.goods_market.value_type import ValueType
 from macromodel.households.household_properties import HouseholdType
 from macromodel.households.households_ts import create_households_timeseries
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import functions_from_model, update_functions
+from macromodel.util.function_mapping import (functions_from_model,
+                                              update_functions)
 from macromodel.util.get_histogram import get_histogram
 from macromodel.util.property_mapping import map_to_enum
 
@@ -58,7 +60,7 @@ class Households(Agent):
         self.ts["saving_rates_histogram"] = get_histogram(self.get_saving_rates_by_household(), None)
 
         self.consumption_weights = consumption_weights
-        self.consumption_weights_by_income = consumption_weights_by_income
+        self.consumption_weights_by_income = consumption_weights_by_income.astype(float)
 
         self.investment_weights = investment_weights
 

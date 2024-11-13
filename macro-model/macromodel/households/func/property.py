@@ -1,10 +1,9 @@
 import warnings
+from abc import ABC, abstractmethod
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
-
-from abc import abstractmethod, ABC
-
-from typing import Tuple
 
 
 class HouseholdDemandForProperty(ABC):

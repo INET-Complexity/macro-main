@@ -1,6 +1,6 @@
-import numpy as np
+from abc import ABC, abstractmethod
 
-from abc import abstractmethod, ABC
+import numpy as np
 
 
 class DemandEstimator(ABC):

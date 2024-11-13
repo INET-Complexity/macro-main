@@ -1,14 +1,12 @@
+from abc import ABC
 from typing import Optional
 
 import numpy as np
-from abc import ABC
 
-from macromodel.forecaster.forecaster import (
-    OLSForecaster,
-    ConstantForecaster,
-    ImplementedAutoregForecaster,
-    ManualAutoregForecaster,
-)
+from macromodel.forecaster.forecaster import (ConstantForecaster,
+                                              ImplementedAutoregForecaster,
+                                              ManualAutoregForecaster,
+                                              OLSForecaster)
 
 
 class HPIForecasting(ABC):

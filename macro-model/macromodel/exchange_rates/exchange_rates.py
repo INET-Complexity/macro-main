@@ -6,7 +6,6 @@ from sklearn.linear_model import LinearRegression
 
 from macromodel.configurations import ExchangeRatesConfiguration
 
-
 ModelDict = dict[str, LinearRegression]
 
 

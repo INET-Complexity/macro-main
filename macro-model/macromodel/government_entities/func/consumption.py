@@ -1,14 +1,11 @@
+from abc import ABC, abstractmethod
+from typing import Any, Optional
+
 import numpy as np
 
-from abc import abstractmethod, ABC
-
-
-from macromodel.forecaster.forecaster import (
-    ImplementedAutoregForecaster,  # noqa
-    ManualAutoregForecaster,
-)
-
-from typing import Any, Optional
+from macromodel.forecaster.forecaster import \
+    ImplementedAutoregForecaster  # noqa
+from macromodel.forecaster.forecaster import ManualAutoregForecaster
 
 
 class GovernmentConsumptionSetter(ABC):

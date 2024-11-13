@@ -57,6 +57,23 @@ def test_simulation(datawrapper, seed):
     assert True
 
 
+@pytest.mark.parametrize("seed", [0, 100])
+def test_all_industries(allind_datawrapper, seed):
+    n_industries = allind_datawrapper.n_industries
+    configuration = SimulationConfiguration(
+        country_configurations={"FRA": CountryConfiguration.n_industry_default(n_industries=n_industries)}
+    )
+
+    configuration.seed = seed
+
+    simulation = Simulation.from_datawrapper(datawrapper=allind_datawrapper, simulation_configuration=configuration)
+
+    for _ in range(3):
+        simulation.iterate()
+
+    assert True
+
+
 def test_check_compatibility(datawrapper):
     """Test the compatibility check."""
     france = CountryName("FRA")

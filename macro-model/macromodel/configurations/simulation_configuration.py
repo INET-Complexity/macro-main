@@ -1,12 +1,11 @@
-from pydantic import BaseModel
 from typing import Optional
 
-from macromodel.configurations import (
-    CountryConfiguration,
-    RestOfTheWorldConfiguration,
-    GoodsMarketConfiguration,
-    ExchangeRatesConfiguration,
-)
+from pydantic import BaseModel
+
+from macromodel.configurations import (CountryConfiguration,
+                                       ExchangeRatesConfiguration,
+                                       GoodsMarketConfiguration,
+                                       RestOfTheWorldConfiguration)
 
 
 class SimulationConfiguration(BaseModel):

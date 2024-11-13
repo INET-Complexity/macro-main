@@ -1,8 +1,8 @@
+from abc import ABC, abstractmethod
+
 import numpy as np
 
 from macromodel.individuals.individual_properties import ActivityStatus
-
-from abc import abstractmethod, ABC
 
 
 class ReservationWageSetter(ABC):

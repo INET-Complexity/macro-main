@@ -1,14 +1,16 @@
 from copy import deepcopy
+from typing import Any, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-from typing import Any, Tuple, Optional
 
 from macromodel.agents.agent import Agent
 from macromodel.configurations import GoodsMarketConfiguration
-from macromodel.goods_market.goods_market_ts import create_goods_market_timeseries
+from macromodel.goods_market.goods_market_ts import \
+    create_goods_market_timeseries
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import functions_from_model, update_functions
+from macromodel.util.function_mapping import (functions_from_model,
+                                              update_functions)
 
 SupplyChain = dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]]
 

@@ -1,24 +1,22 @@
+import logging
 from copy import deepcopy
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 import h5py
-import logging
 import numpy as np
-from dataclasses import dataclass
 from macro_data import DataWrapper
-from pathlib import Path
-
 from macro_data.configuration import CountryDataConfiguration
+from numba import njit
 
-from macromodel.configurations import SimulationConfiguration, CountryConfiguration
+from macromodel.configurations import (CountryConfiguration,
+                                       SimulationConfiguration)
 from macromodel.country import Country
 from macromodel.exchange_rates import ExchangeRates
 from macromodel.goods_market import GoodsMarket
 from macromodel.rest_of_the_world import RestOfTheWorld
 from macromodel.timestep import Timestep
-
-
-from numba import njit
 
 
 @dataclass
@@ -77,7 +75,7 @@ class Simulation:
                 exchange_rates=exchange_rates,
                 country_name=country_name,
                 all_country_names=countries_with_row,
-                industries=datawrapper.configuration.industries,
+                industries=datawrapper.industries,
                 initial_year=datawrapper.configuration.year,
                 t_max=simulation_configuration.t_max,
                 running_multiple_countries=running_multi_country,

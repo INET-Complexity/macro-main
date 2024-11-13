@@ -1,14 +1,11 @@
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
+from typing import Optional
 
 from macromodel.goods_market.func.lib_default import *
+from macromodel.goods_market.func.lib_pro_rata import (collect_buyer_info,
+                                                       collect_seller_info)
 from macromodel.goods_market.func.lib_water_bucket import *
 from macromodel.goods_market.value_type import ValueType
-from macromodel.goods_market.func.lib_pro_rata import (
-    collect_buyer_info,
-    collect_seller_info,
-)
-
-from typing import Optional
 
 
 class GoodsMarketClearer(ABC):

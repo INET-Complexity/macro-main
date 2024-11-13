@@ -1,14 +1,16 @@
+from typing import Any
+
 import h5py
 import numpy as np
 from macro_data import SyntheticBanks
-from typing import Any
 
 from macromodel.agents.agent import Agent
 from macromodel.banks.banks_ts import create_banks_timeseries
 from macromodel.configurations import BankParameters, BanksConfiguration
 from macromodel.credit_market.credit_market import CreditMarket
 from macromodel.timeseries import TimeSeries
-from macromodel.util.function_mapping import functions_from_model, update_functions
+from macromodel.util.function_mapping import (functions_from_model,
+                                              update_functions)
 
 
 class Banks(Agent):

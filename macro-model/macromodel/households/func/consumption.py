@@ -1,8 +1,7 @@
+from abc import ABC, abstractmethod
+
 import numpy as np
-
-from numba import njit, float64, boolean, int64
-
-from abc import abstractmethod, ABC
+from numba import boolean, float64, int64, njit
 
 
 class HouseholdConsumption(ABC):
