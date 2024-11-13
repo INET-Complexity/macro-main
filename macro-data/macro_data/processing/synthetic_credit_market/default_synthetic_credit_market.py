@@ -2,7 +2,9 @@ import pandas as pd
 
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 from macro_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
-from macro_data.processing.synthetic_population.synthetic_population import SyntheticPopulation
+from macro_data.processing.synthetic_population.synthetic_population import (
+    SyntheticPopulation,
+)
 
 
 def create_firm_loan_df(firms: SyntheticFirms, banks: SyntheticBanks, firm_loan_maturity: int = 60) -> pd.DataFrame:

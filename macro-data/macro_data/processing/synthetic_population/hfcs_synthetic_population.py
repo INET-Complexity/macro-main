@@ -10,15 +10,18 @@ from sklearn.linear_model import LinearRegression
 
 from macro_data.configuration.countries import Country
 from macro_data.processing.synthetic_population.hfcs_household_tools import (
-    set_household_types,
     set_household_housing_data,
+    set_household_types,
 )
-from macro_data.processing.synthetic_population.hfcs_individual_tools import process_individual_data
+from macro_data.processing.synthetic_population.hfcs_individual_tools import (
+    process_individual_data,
+)
 from macro_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
 )
 from macro_data.readers.default_readers import DataReaders
 from macro_data.readers.exogenous_data import ExogenousCountryData
+from macro_data.readers.io_tables.industries import ALL_INDUSTRIES
 from macro_data.util.clean_data import remove_outliers
 from macro_data.util.imputation import apply_iterative_imputer
 from macro_data.util.regressions import fit_linear
@@ -211,7 +214,14 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         hfcs_individuals_data = readers.hfcs[country_name].individuals_df
         hfcs_households_data = readers.hfcs[country_name].households_df
 
-        household_data, individual_data = sample_households(hfcs_households_data, hfcs_individuals_data, n_households)
+        if set(industries).issubset(ALL_INDUSTRIES):
+            output_shares = readers.icio[year].get_output_shares_dict(country_name)
+        else:
+            output_shares = None
+
+        household_data, individual_data = sample_households(
+            hfcs_households_data, hfcs_individuals_data, n_households, output_shares=output_shares
+        )
 
         unemployment_rate = exogenous_data.labour_stats.loc[f"{year}-Q{quarter}", "Unemployment Rate (Value)"].iloc[0]
         participation_rate = exogenous_data.labour_stats.loc[f"{year}-Q{quarter}", "Participation Rate (Value)"].iloc[0]
@@ -879,7 +889,10 @@ def split_array(array_to_split: np.ndarray) -> list[list[int]]:
 
 
 def sample_households(
-    hfcs_households_data: pd.DataFrame, hfcs_individuals_data: pd.DataFrame, n_households: int
+    hfcs_households_data: pd.DataFrame,
+    hfcs_individuals_data: pd.DataFrame,
+    n_households: int,
+    output_shares: Optional[dict[str, pd.Series]] = None,
 ) -> (pd.DataFrame, pd.DataFrame):
     """
     This function samples a specified number of households from the given HFCS households data,
@@ -937,7 +950,102 @@ def sample_households(
 
     individual_selection["Corresponding Household ID"] = individual_selection["New Household ID"]
 
+    if output_shares is not None:
+        individual_selection = reassign_industries(individual_selection, output_shares)
+
     return household_selection, individual_selection
+
+
+def reassign_industries(individuals_df: pd.DataFrame, output_shares: dict[str, pd.Series]) -> pd.DataFrame:
+    """
+    Reassigns the industry of individuals based on the output shares of the disaggregated industries.
+    For example, individuals in "A" will be assigned to "A01" and "A02" depending on the relative shares of outputs
+
+    Args:
+        individuals_df (pd.DataFrame): The DataFrame containing the individuals.
+        output_shares (dict[str, pd.Series]): The output shares of the disaggregated industries.
+
+    Returns:
+        pd.DataFrame: The DataFrame containing the individuals with reassigned industries.
+    """
+
+    # put employment industry "R" or "S" or "T" into "R_S"
+    individuals_df["Employment Industry"] = individuals_df["Employment Industry"].apply(
+        lambda x: "R_S" if x in ["R", "S", "T", "U"] else x
+    )
+
+    # create a temporary column called "Disaggregated Employment Industry"
+    individuals_df["Disaggregated Employment Industry"] = individuals_df["Employment Industry"]
+
+    aggregate_industries = individuals_df["Employment Industry"].dropna().unique()
+
+    for agg_sector in aggregate_industries:
+
+        # don't do anything if the shape of the output shares is not >=2
+
+        indices = individuals_df[individuals_df["Employment Industry"] == agg_sector].index
+        N = len(indices)
+
+        if N == 0:
+            continue
+
+        subsectors = output_shares.get(agg_sector)
+        if subsectors is None or len(subsectors) < 2:
+            continue
+
+        subsector_codes = subsectors.index.to_list()
+        subsector_weights = subsectors.values
+        num_sub_sectors = len(subsector_codes)
+        expected_counts = subsector_weights * N
+
+        # Step 2.2: Initial integer counts by rounding expected counts
+        counts = np.floor(expected_counts).astype(int)
+
+        # Step 2.4: Adjust counts to match the total number of individuals N
+        total_counts = counts.sum()
+
+        # Adjust counts if total_counts != N
+        while total_counts != N:
+            if total_counts < N:
+                # Need to add individuals
+                # Find sub-sectors with the largest fractional remainders
+                remainders = expected_counts - counts
+                # Exclude sub-sectors where counts were increased to 1
+                remainders[counts > expected_counts] = 0
+                # Identify sub-sector(s) with the maximum remainder
+                max_remainder_indices = np.flatnonzero(remainders == remainders.max())
+                # Add one to the counts of these sub-sectors (break ties arbitrarily)
+                counts[max_remainder_indices[0]] += 1
+                total_counts += 1
+            elif total_counts > N:
+                # Need to remove individuals
+                # Find sub-sectors with the smallest fractional remainders
+                remainders = expected_counts - counts
+                # Exclude sub-sectors with counts == 1 (cannot reduce further)
+                remainders[counts == 1] = np.inf
+                # Identify sub-sector(s) with the minimum remainder
+                min_remainder_indices = np.flatnonzero(remainders == remainders.min())
+                # Subtract one from the counts of these sub-sectors (break ties arbitrarily)
+                counts[min_remainder_indices[0]] -= 1
+                total_counts -= 1
+
+        # For reproducibility, shuffle the indices
+        indices = list(indices)
+        np.random.shuffle(indices)
+        start_idx = 0
+        for sub_sector_code, count in zip(subsector_codes, counts):
+            end_idx = start_idx + count
+            selected_indices = indices[start_idx:end_idx]
+            individuals_df.loc[selected_indices, "Disaggregated Industry"] = sub_sector_code
+            start_idx = end_idx
+
+    individuals_df["Employment Industry"] = np.where(
+        individuals_df["Disaggregated Industry"].isna(),
+        individuals_df["Employment Industry"],
+        individuals_df["Disaggregated Industry"],
+    )
+    individuals_df.drop(columns=["Disaggregated Industry"], inplace=True)
+    return individuals_df
 
 
 def default_desired_consumption(

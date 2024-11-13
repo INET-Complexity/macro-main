@@ -7,13 +7,12 @@ from macro_data.configuration.countries import Country
 from macro_data.configuration.dataconfiguration import BanksDataConfiguration
 from macro_data.processing.synthetic_banks.rates_utils import (
     default_rate_values,
-    rates_dataframe,
     fit_firm_models,
     fit_household_models,
     fit_mortgage_models,
+    rates_dataframe,
 )
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
-
 from macro_data.readers.default_readers import DataReaders
 
 

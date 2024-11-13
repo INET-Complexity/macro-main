@@ -1,20 +1,26 @@
 import pickle as pkl
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import time
 
 from macro_data.configuration import DataConfiguration
 from macro_data.configuration.countries import Country
-
 from macro_data.processing.synthetic_country import SyntheticCountry
 from macro_data.processing.synthetic_rest_of_the_world.default_synthetic_rest_of_the_world import (
     DefaultSyntheticRestOfTheWorld,
 )
-from macro_data.processing.synthetic_rest_of_the_world.synthetic_rest_of_the_world import SyntheticRestOfTheWorld
-from macro_data.readers import DataReaders, compile_industry_data
+from macro_data.processing.synthetic_rest_of_the_world.synthetic_rest_of_the_world import (
+    SyntheticRestOfTheWorld,
+)
+from macro_data.readers import (
+    AGGREGATED_INDUSTRIES,
+    ALL_INDUSTRIES,
+    DataReaders,
+    compile_industry_data,
+)
 from macro_data.readers.exogenous_data import ExogenousCountryData
 
 
@@ -111,7 +117,8 @@ class DataWrapper:
         }
 
         country_names = configuration.countries
-        industries = configuration.industries
+        industries = AGGREGATED_INDUSTRIES if configuration.aggregate_industries else ALL_INDUSTRIES
+
         year = configuration.year
         quarter = configuration.quarter
 
@@ -128,6 +135,7 @@ class DataWrapper:
             force_single_hfcs_survey=single_hfcs_survey,
             single_icio_survey=single_icio_survey,
             proxy_country_dict=proxy_country_dict,
+            aggregate_industries=configuration.aggregate_industries,
         )
 
         single_firm_dict = {

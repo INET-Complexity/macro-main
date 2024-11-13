@@ -612,7 +612,6 @@ class OECDEconData:
         return data
 
     def get_household_consumption_by_income_quantile(self, country: Country, year: int) -> pd.DataFrame:
-        assert year
         data = self.data["consumption_by_income_quintiles"]
         if country != "FRA":
             logging.warning("Overwriting Consumption Weights by Income with French Data")

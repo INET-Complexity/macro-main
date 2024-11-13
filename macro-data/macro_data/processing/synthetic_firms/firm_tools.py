@@ -116,12 +116,23 @@ def add_number_employees_compustat(
         sizes = compustat_subset["Number of Employees"].values
 
         sizes_norm = np.ones_like(sizes) if sizes.sum() == 0 else sizes / sizes.sum()
-        offset = 0
 
-        sizes_red = np.maximum(1, np.floor(sizes_norm * n_emp_per_industry[industry]) - offset).astype(int)
-        while sum(sizes_red) > n_emp_per_industry[industry]:
-            sizes_red = np.maximum(1, np.floor(sizes_norm * n_emp_per_industry[industry]) - offset).astype(int)
-            offset += 1
+        sizes_red = np.ones_like(sizes_norm)
+
+        # compute the difference between the number of employees and the sum of the firm sizes
+        remainder = n_emp_per_industry[industry] - sizes_red.sum()
+
+        # if the remainder is positive, allocate proportionally to the firm sizes
+        if remainder > 0:
+            redistributed = np.floor(sizes_norm * remainder).astype(int)
+            sizes_red += redistributed
+
+        # offset = 0
+        #
+        # sizes_red = np.maximum(1, np.floor(sizes_norm * n_emp_per_industry[industry]) - offset).astype(int)
+        # while sum(sizes_red) > n_emp_per_industry[industry]:
+        #     sizes_red = np.maximum(1, np.floor(sizes_norm * n_emp_per_industry[industry]) - offset).astype(int)
+        #     offset += 1
 
         sizes = distribute_industry_employee_remainder(
             sizes_red,

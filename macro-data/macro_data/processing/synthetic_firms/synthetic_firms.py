@@ -3,10 +3,12 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
 
-from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
-
 from macro_data.processing.country_data import TaxData
-from macro_data.processing.synthetic_credit_market.loan_data import LongtermLoans, ShorttermLoans
+from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
+from macro_data.processing.synthetic_credit_market.loan_data import (
+    LongtermLoans,
+    ShorttermLoans,
+)
 
 
 class SyntheticFirms(ABC):

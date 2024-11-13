@@ -1,12 +1,13 @@
+import tempfile
+from pathlib import Path
+
 import pytest
 import yaml
 
 from macro_data import DataWrapper, SyntheticCountry
-from pathlib import Path
-import tempfile
-
 from macro_data.configuration import DataConfiguration
 from macro_data.configuration.countries import Country
+from macro_data.readers import ALL_INDUSTRIES
 
 TEST_PATH = Path(__file__).parent.parent.resolve()
 
@@ -51,6 +52,27 @@ class TestCreator:
         )
 
         assert True
+
+    def test__create_all_industries(self, data_config_path):
+        with open(data_config_path, "r") as f:
+            config_dict = yaml.safe_load(f)
+        # not necessary to do the country splitting here
+        # since the fixture used only has one country key
+        configuration = DataConfiguration(**config_dict)
+        configuration.prune_date = None
+        configuration.seed = 0
+        configuration.aggregate_industries = False
+        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
+        # Check if there is a file in raw data path
+        creator = DataWrapper.from_config(
+            configuration=configuration,
+            raw_data_path=raw_data_path,
+            single_hfcs_survey=True,
+        )
+
+        check_country_credit(creator.synthetic_countries["FRA"])
+
+        check_country_gdp(creator.synthetic_countries["FRA"])
 
     def test__default_banks_firms(self, data_config_path):
         with open(data_config_path, "r") as f:
@@ -180,6 +202,51 @@ class TestCreator:
             assert wages * (
                 1 - employee_social_contribution_taxes - income_tax * (1 - employee_social_contribution_taxes)
             ) == pytest.approx(employee_income, rel=5e-2)
+
+    def test_create_us_can_all_industries(self, data_config_path):
+        with open(data_config_path, "r") as f:
+            config_dict = yaml.safe_load(f)
+        # not necessary to do the country splitting here
+        # since the fixture used only has one country key
+        configuration = DataConfiguration(**config_dict)
+
+        united_states = Country("USA")
+        canada = Country("CAN")
+        france = Country("FRA")
+
+        configuration.country_configs[france].single_firm_per_industry = True
+        configuration.country_configs[france].single_bank = True
+        configuration.country_configs[france].single_government_entity = True
+
+        # we add the US and Canada to the configuration
+        # by setting their configurations to be the same as France
+        # and by setting their EU proxy country to be France
+
+        configuration.country_configs[united_states] = configuration.country_configs[france]
+
+        configuration.country_configs[canada] = configuration.country_configs[france]
+
+        configuration.country_configs[united_states].eu_proxy_country = france
+        configuration.country_configs[canada].eu_proxy_country = france
+
+        configuration.aggregate_industries = False
+
+        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
+        creator = DataWrapper.from_config(
+            configuration=configuration,
+            raw_data_path=raw_data_path,
+            single_hfcs_survey=True,
+        )
+
+        assert creator.synthetic_countries.keys() == {"FRA", "USA", "CAN"}
+
+        check_country_gdp(creator.synthetic_countries["FRA"])
+        check_country_gdp(creator.synthetic_countries["USA"])
+        check_country_gdp(creator.synthetic_countries["CAN"])
+
+        check_country_credit(creator.synthetic_countries["FRA"])
+        check_country_credit(creator.synthetic_countries["USA"])
+        check_country_credit(creator.synthetic_countries["CAN"])
 
     def test_create_can_only(self, data_config_path):
         with open(data_config_path, "r") as f:

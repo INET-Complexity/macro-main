@@ -1,8 +1,7 @@
-import pandas as pd
-
 from pathlib import Path
+from typing import Iterable, Optional
 
-from typing import Optional, Iterable
+import pandas as pd
 
 from macro_data.configuration.countries import Country
 

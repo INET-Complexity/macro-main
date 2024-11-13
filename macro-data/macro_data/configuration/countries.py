@@ -1,7 +1,7 @@
 from enum import StrEnum
 from pathlib import Path
-import yaml
 
+import yaml
 
 # get this file's directory path
 THIS_FILE_PATH = Path(__file__).parent.resolve()

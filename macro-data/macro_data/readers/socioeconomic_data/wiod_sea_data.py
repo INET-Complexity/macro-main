@@ -1,11 +1,12 @@
-import json
-from datetime import datetime, date
+from datetime import date, datetime
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 
 from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
+from macro_data.readers.io_tables.mappings import WIOD_AGGREGATE, WIOD_ALL
 from macro_data.readers.util.prune_util import prune_index
 
 
@@ -44,19 +45,19 @@ class WIODSEAReader:
     def agg_from_csv(
         cls,
         path: Path | str,
-        aggregation_path: Path,
+        aggregation_type: Literal["All", "Aggregate"],
         year: int,
         country_names: list[str],
         industries: list,
         exchange_rates: ExchangeRatesReader,
-        value_added_dict: dict[str, np.ndarray],
+        value_added_dict: dict[str, pd.Series],
     ) -> "WIODSEAReader":
         """
         Aggregate socioeconomic data from a CSV file. Aggregation is done using a JSON file that maps sectors to aggregated sectors.
 
         Args:
             path (Path | str): The path to the CSV file.
-            aggregation_path (Path): The path to the aggregation JSON file.
+            aggregation_type (Literal["All", "Aggregate"]): The industry level aggregation.
             year (int): The year of the data.
             country_names (list[str]): The list of country names to include in the aggregation.
             industries (list): The list of industries to include in the aggregation.
@@ -68,7 +69,8 @@ class WIODSEAReader:
         """
         # Aggregate industries
         raw_df = pd.read_csv(path, thousands=",", index_col=[0, 1, 2, 3])
-        aggregation = json.load(open(aggregation_path))
+        # aggregation = json.load(open(aggregation_path))
+        aggregation = WIOD_AGGREGATE if aggregation_type == "Aggregate" else WIOD_ALL
         agg_dict_full = {}
         for key, values in aggregation.items():
             for value in values:
@@ -92,6 +94,22 @@ class WIODSEAReader:
 
         # Cosmetics
         sea = sea.loc[sea.index.get_level_values(0).isin(country_names)]
+
+        sea_industries = sea.index.get_level_values(1).unique()
+        not_present_industries = [industry for industry in sea_industries if industry not in industries]
+
+        industry_to_fix = [
+            any([ind.startswith(sea_ind[0]) for ind in industries]) for sea_ind in not_present_industries
+        ]
+
+        for sea_industry, should_fix in zip(not_present_industries, industry_to_fix):
+            sub_industries = [ind for ind in industries if ind.startswith(sea_industry[0])]
+            for country in country_names:
+                factors = value_added_dict[country].loc[sub_industries].values
+                factors /= factors.sum()
+                for sub_industry, factor in zip(sub_industries, factors):
+                    sea.loc[(country, sub_industry), :] = sea.loc[(country, sea_industry), :] * factor
+
         sea = sea.loc[sea.index.get_level_values(1).isin(industries)]
 
         sea.index.names = ["Country", "Industry"]
@@ -109,9 +127,10 @@ class WIODSEAReader:
 
         # rescale
         for country in country_names:
-            scale = value_added_dict[country] / sea.loc[country, "Value Added"].values
+            scale = value_added_dict[country] / sea.loc[country, "Value Added"]
+            scale = np.copy(scale.values)
             for field in ["Value Added", "Labour Compensation", "Capital Compensation", "Capital Stock"]:
-                sea.loc[country, field] = sea.loc[country, field].values * scale
+                sea.loc[country, field] = (sea.loc[country, field] * scale).values
 
         return cls(
             df=sea,

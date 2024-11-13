@@ -1,14 +1,20 @@
 import pathlib
 
-
 import pytest
 import yaml
 
 from macro_data.configuration import DataConfiguration
 from macro_data.configuration.countries import Country
+from macro_data.readers import AGGREGATED_INDUSTRIES, ALL_INDUSTRIES
 from macro_data.readers.default_readers import DataReaders
-from macro_data.readers.exogenous_data import create_all_exogenous_data, ExogenousCountryData
-from macro_data.readers.util.industry_extraction import compile_industry_data, compile_exogenous_industry_data
+from macro_data.readers.exogenous_data import (
+    ExogenousCountryData,
+    create_all_exogenous_data,
+)
+from macro_data.readers.util.industry_extraction import (
+    compile_exogenous_industry_data,
+    compile_industry_data,
+)
 
 PARENT = pathlib.Path(__file__).parent.resolve()
 DATA_PATH = PARENT / "sample_raw_data"
@@ -49,30 +55,43 @@ def readers(data_path):
         simulation_year=2014,
         # need to put in Afghanistan because that is used in tests...
         scale_dict={france: 100000, "AFG": 100000},
-        industries=[
-            "A",
-            "B",
-            "C",
-            "D",
-            "E",
-            "F",
-            "G",
-            "H",
-            "I",
-            "J",
-            "K",
-            "L",
-            "M",
-            "N",
-            "O",
-            "P",
-            "Q",
-            "R_S",
-        ],
+        industries=AGGREGATED_INDUSTRIES,
         force_single_hfcs_survey=True,
         single_icio_survey=True,
     )
     return readers
+
+
+@pytest.fixture(scope="module", name="all_readers")
+def all_readers(data_path):
+    france = Country("FRA")
+    all_readers = DataReaders.from_raw_data(
+        raw_data_path=data_path,
+        country_names=[Country("FRA")],
+        simulation_year=2014,
+        scale_dict={france: 100000},
+        industries=ALL_INDUSTRIES,
+        force_single_hfcs_survey=True,
+        single_icio_survey=True,
+        aggregate_industries=False,
+    )
+    return all_readers
+
+
+@pytest.fixture(scope="module", name="all_industries_readers")
+def all_industries_readers(data_path):
+    france = Country("FRA")
+    all_industries_readers = DataReaders.from_raw_data(
+        raw_data_path=data_path,
+        country_names=[Country("FRA")],
+        simulation_year=2014,
+        scale_dict={france: 100000},
+        industries=ALL_INDUSTRIES,
+        force_single_hfcs_survey=True,
+        single_icio_survey=True,
+        aggregate_industries=False,
+    )
+    return all_industries_readers
 
 
 @pytest.fixture(scope="module", name="multic_readers")

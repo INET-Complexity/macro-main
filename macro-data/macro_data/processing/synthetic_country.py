@@ -6,20 +6,33 @@ import pandas as pd
 
 from macro_data.configuration import CountryDataConfiguration
 from macro_data.configuration.countries import Country
-from macro_data.processing import set_housing_df
 from macro_data.processing.country_data import TaxData
-from macro_data.processing.synthetic_banks.default_synthetic_banks import DefaultSyntheticBanks
+from macro_data.processing.synthetic_banks.default_synthetic_banks import (
+    DefaultSyntheticBanks,
+)
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
-from macro_data.processing.synthetic_central_bank.default_synthetic_central_bank import DefaultSyntheticCentralBank
-from macro_data.processing.synthetic_central_bank.synthetic_central_bank import SyntheticCentralBank
+from macro_data.processing.synthetic_central_bank.default_synthetic_central_bank import (
+    DefaultSyntheticCentralBank,
+)
+from macro_data.processing.synthetic_central_bank.synthetic_central_bank import (
+    SyntheticCentralBank,
+)
 from macro_data.processing.synthetic_central_government.default_synthetic_central_government import (
     DefaultSyntheticCGovernment,
 )
-from macro_data.processing.synthetic_central_government.synthetic_central_government import SyntheticCentralGovernment
-from macro_data.processing.synthetic_credit_market.synthetic_credit_market import SyntheticCreditMarket
-from macro_data.processing.synthetic_firms.default_synthetic_firms import DefaultSyntheticFirms
+from macro_data.processing.synthetic_central_government.synthetic_central_government import (
+    SyntheticCentralGovernment,
+)
+from macro_data.processing.synthetic_credit_market.synthetic_credit_market import (
+    SyntheticCreditMarket,
+)
+from macro_data.processing.synthetic_firms.default_synthetic_firms import (
+    DefaultSyntheticFirms,
+)
 from macro_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
-from macro_data.processing.synthetic_goods_market.synthetic_goods_market import SyntheticGoodsMarket
+from macro_data.processing.synthetic_goods_market.synthetic_goods_market import (
+    SyntheticGoodsMarket,
+)
 from macro_data.processing.synthetic_government_entities.default_synthetic_government_entities import (
     DefaultSyntheticGovernmentEntities,
 )
@@ -29,19 +42,28 @@ from macro_data.processing.synthetic_government_entities.synthetic_government_en
 from macro_data.processing.synthetic_housing_market.default_synthetic_housing_market import (
     DefaultSyntheticHousingMarket,
 )
-from macro_data.processing.synthetic_housing_market.synthetic_housing_market import SyntheticHousingMarket
+from macro_data.processing.synthetic_housing_market.synthetic_housing_market import (
+    SyntheticHousingMarket,
+)
 from macro_data.processing.synthetic_matching.matching_firms_with_banks import (
     match_firms_with_banks_optimal,
 )
 from macro_data.processing.synthetic_matching.matching_households_with_banks import (
     match_households_with_banks_optimal,
 )
+from macro_data.processing.synthetic_matching.matching_households_with_houses import (
+    set_housing_df,
+)
 from macro_data.processing.synthetic_matching.matching_individuals_with_firms import (
     match_individuals_with_firms_country,
 )
-from macro_data.processing.synthetic_population.hfcs_synthetic_population import SyntheticHFCSPopulation
-from macro_data.processing.synthetic_population.synthetic_population import SyntheticPopulation
-from macro_data.readers import DataReaders
+from macro_data.processing.synthetic_population.hfcs_synthetic_population import (
+    SyntheticHFCSPopulation,
+)
+from macro_data.processing.synthetic_population.synthetic_population import (
+    SyntheticPopulation,
+)
+from macro_data.readers import ALL_INDUSTRIES, DataReaders
 from macro_data.readers.exogenous_data import ExogenousCountryData
 
 
@@ -193,7 +215,13 @@ class SyntheticCountry:
         long_term_interest_rate = readers.oecd_econ.read_long_term_interest_rates(country=country, year=year)
         policy_rate_markup = readers.eurostat.firm_risk_premium(country=country, year=year)
 
-        weights_by_income = readers.oecd_econ.get_household_consumption_by_income_quantile(country=country, year=year)
+        if set(industries).issubset(ALL_INDUSTRIES):
+            weights_by_income = readers.expand_weights_by_income(year=year, country=country)
+        else:
+            weights_by_income = readers.oecd_econ.get_household_consumption_by_income_quantile(
+                country=country, year=year
+            )
+
         cls.match_households_firms_banks(banks, firms, industries, population, tax_data)
 
         housing_data = set_housing_df(
@@ -354,7 +382,12 @@ class SyntheticCountry:
         long_term_interest_rate = readers.oecd_econ.read_long_term_interest_rates(country=country, year=year)
         policy_rate_markup = readers.eurostat.firm_risk_premium(country=country, year=year)
 
-        weights_by_income = readers.oecd_econ.get_household_consumption_by_income_quantile(country=country, year=year)
+        if set(industries).issubset(ALL_INDUSTRIES):
+            weights_by_income = readers.expand_weights_by_income(year=year, country=country)
+        else:
+            weights_by_income = readers.oecd_econ.get_household_consumption_by_income_quantile(
+                country=country, year=year
+            )
 
         cls.match_households_firms_banks(banks, firms, industries, population, tax_data)
 

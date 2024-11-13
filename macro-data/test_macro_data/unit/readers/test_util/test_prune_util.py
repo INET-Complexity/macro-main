@@ -1,5 +1,6 @@
-from macro_data.readers.util.prune_util import prune_index
 import pandas as pd
+
+from macro_data.readers.util.prune_util import prune_index
 
 
 def test_prune_index():

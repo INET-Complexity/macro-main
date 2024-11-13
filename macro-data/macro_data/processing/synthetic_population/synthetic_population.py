@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-
 RESTRICT_COLS = [
     "Type",
     "Corresponding Individuals ID",

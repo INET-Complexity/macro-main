@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 
-class TestICIOReader:
+class TestICIOAggReader:
     def test__countries_agg(self, readers):
         assert set(readers.icio[2014].considered_countries) == {"FRA"}
 
@@ -50,3 +50,14 @@ class TestICIOReader:
         )
 
         assert total_imports.sum() - total_exports.sum() == pytest.approx(0)
+
+
+class TestICIODisagg:
+
+    def test__output(self, all_readers):
+        icio = all_readers.icio[2014]
+        output = icio.get_total_output("FRA")
+        assert np.all(output > 0)
+        output_series = icio.get_total_output_series("FRA")
+        assert np.all(output_series > 0)
+        output_shares = icio.get_output_shares_dict("FRA")
