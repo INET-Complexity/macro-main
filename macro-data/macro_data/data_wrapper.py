@@ -51,6 +51,7 @@ class DataWrapper:
     destination_trade_proportions: pd.DataFrame
     configuration: DataConfiguration
     calibration_data: pd.DataFrame
+    industries: list[str]
 
     @property
     def all_country_names(self) -> list[str]:
@@ -59,14 +60,6 @@ class DataWrapper:
             list[str]: A list of all the country names.
         """
         return list(self.synthetic_countries.keys()) + ["ROW"]
-
-    @property
-    def industries(self) -> list[str]:
-        """
-        Returns:
-            list[str]: A list of all the industry names.
-        """
-        return self.configuration.industries
 
     @property
     def n_industries(self):
@@ -255,6 +248,7 @@ class DataWrapper:
             destination_trade_proportions=destination_trade_proportions,
             configuration=configuration,
             calibration_data=calibration_data,
+            industries=industries,
         )
 
     @classmethod
