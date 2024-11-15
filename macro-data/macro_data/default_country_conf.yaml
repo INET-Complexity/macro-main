@@ -1,0 +1,33 @@
+scale:
+  10000
+single_bank:
+  false
+single_firm_per_industry:
+  false
+single_government_entity:
+  false
+firms_configuration:
+  zero_initial_deposits:
+    false
+  zero_initial_debt:
+    false
+
+central_bank_configuration:
+  inflation_target:
+    0.02
+
+banks_configuration:
+  long_term_firm_loan_maturity:
+    60
+  consumption_exp_loan_maturity:
+    12
+  mortgage_maturity:
+    120
+
+  interest_rates:
+    consumption_loans_markup:
+      0.01
+    mortgage_markup:
+      0.1
+    household_overdraft_markup:
+      0.01
