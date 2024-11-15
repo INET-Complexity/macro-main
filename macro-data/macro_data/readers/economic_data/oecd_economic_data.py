@@ -10,6 +10,8 @@ from scipy.optimize import curve_fit
 from scipy.special import zetac
 
 from macro_data.configuration.countries import Country
+from macro_data.readers.economic_data.oecd_mappings import INDUSTRY_MAPPING
+from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE
 from macro_data.readers.util.prune_util import DataFilterWarning
 
 force_tau_sif = {
@@ -110,14 +112,12 @@ class OECDEconData:
     def __init__(
         self,
         path: Path | str,
-        industry_mappings_path: Path,
-        sector_mapping_path: Path,
         scale_dict: dict[Country, int],
     ):
         # Parameters
         self.scale_dict = scale_dict
-        self.industry_mapping = json.load(open(industry_mappings_path))
-        self.sector_mapping = json.load(open(sector_mapping_path))
+        self.industry_mapping = INDUSTRY_MAPPING
+        self.sector_mapping = ICIO_AGGREGATE
 
         # Load data files
         self.files_with_codes = self.get_files_with_codes()
