@@ -21,7 +21,12 @@ from macro_data.readers.economic_data.policy_rates import PolicyRatesReader
 from macro_data.readers.economic_data.world_bank_reader import WorldBankReader
 from macro_data.readers.io_tables.icio_reader import ICIOReader
 from macro_data.readers.io_tables.industries import AGGREGATED_INDUSTRIES
-from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE
+from macro_data.readers.io_tables.mappings import (
+    ICIO_AGGREGATE,
+    ICIO_ALL,
+    WIOD_AGGREGATE,
+    WIOD_ALL,
+)
 from macro_data.readers.population_data.compustat_banks_reader import (
     CompustatBanksReader,
 )
@@ -41,9 +46,7 @@ class DataPaths:
     hfcs_path: Path
     icio_paths: dict[int, Path]
     icio_pivot_paths: dict[int, Path]
-    icio_agg_path: Path
     wiod_sea_path: Path
-    wiod_sea_agg_path: Path
     oecd_econ_path: Path
     oecd_econ_mapping_path: Path
     policy_rates_path: Path
@@ -69,9 +72,7 @@ class DataPaths:
             #     year: raw_data_path / "icio" / str(year) / f"ICIO2021_{year}_pivot.csv" for year in icio_years
             # },
             icio_pivot_paths={year: raw_data_path / "icio" / f"{year}_SML_P.csv" for year in icio_years},
-            icio_agg_path=raw_data_path / "icio" / "mappings.json",
             wiod_sea_path=raw_data_path / "wiod_sea" / "wiod_sea.csv",
-            wiod_sea_agg_path=raw_data_path / "wiod_sea" / "mappings.json",
             oecd_econ_path=raw_data_path / "oecd_econ",
             oecd_econ_mapping_path=raw_data_path / "oecd_econ" / "mappings.json",
             policy_rates_path=raw_data_path / "policy_rates" / "bis_cb_policy_rates.csv",
@@ -85,12 +86,12 @@ class DataPaths:
             compustat_banks_path=raw_data_path / "compustat" / "banks.csv",
         )
 
-    @classmethod
-    def all_industries(cls, raw_data_path: Path, icio_years: Iterable[int]):
-        paths = cls.default_paths(raw_data_path, icio_years)
-        paths.icio_agg_path = raw_data_path / "icio" / "mappings_all_industries.json"
-        paths.wiod_sea_agg_path = raw_data_path / "wiod_sea" / "mappings_all_industries.json"
-        return paths
+    # @classmethod
+    # def all_industries(cls, raw_data_path: Path, icio_years: Iterable[int]):
+    #     paths = cls.default_paths(raw_data_path, icio_years)
+    #     paths.icio_agg_path = raw_data_path / "icio" / "mappings_all_industries.json"
+    #     paths.wiod_sea_agg_path = raw_data_path / "wiod_sea" / "mappings_all_industries.json"
+    #     return paths
 
 
 @dataclass
@@ -137,10 +138,9 @@ class DataReaders:
         else:
             all_years = range(exog_data_range[0], exog_data_range[1] + 1)
 
-        if aggregate_industries:
-            datapaths = DataPaths.default_paths(raw_data_path, all_years)
-        else:
-            datapaths = DataPaths.all_industries(raw_data_path, all_years)
+        datapaths = DataPaths.default_paths(raw_data_path, all_years)
+
+        icio_mapping = ICIO_AGGREGATE if aggregate_industries else ICIO_ALL
 
         goods_criticality = GoodsCriticalityReader.from_csv(path=datapaths.goods_criticality_path)
         exchange_rates = ExchangeRatesReader.from_csv(path=datapaths.exchange_rates_path)
@@ -208,8 +208,6 @@ class DataReaders:
 
         oecd_econ = OECDEconData(
             path=datapaths.oecd_econ_path,
-            industry_mappings_path=datapaths.oecd_econ_mapping_path,
-            sector_mapping_path=datapaths.icio_agg_path,
             scale_dict=scale_dict,
         )
 
