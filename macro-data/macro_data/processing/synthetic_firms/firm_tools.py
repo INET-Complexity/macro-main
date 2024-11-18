@@ -329,6 +329,7 @@ def initialise_basic_firm_fields(
     firm_size_zetas: dict[int, float],
     exchange_rate: float,
     tau_sif: float,
+    assume_initial_unit: bool = False,
 ):
     """
     Initializes basic fields for each firm in the firm_data DataFrame.
@@ -349,6 +350,7 @@ def initialise_basic_firm_fields(
         firm_size_zetas (dict[int, float]): A dictionary mapping firm sizes to zeta values.
         exchange_rate (float): The exchange rate.
         tau_sif (float): The tau_sif value.
+        assume_initial_unit (bool): Flag indicating whether to assume an initial unit.
 
     Returns:
         pd.DataFrame: The firm_data DataFrame with the initialized fields.
@@ -372,6 +374,14 @@ def initialise_basic_firm_fields(
     firm_data["Price in USD"] = 1.0
     firm_data["Price"] = firm_data["Price in USD"] * exchange_rate
     firm_data["Labour Inputs"] = firm_data["Production"].copy()
+
+    if assume_initial_unit:
+        firm_data["Labour Productivity"] = 1.0
+    else:
+        labour_prod_by_industry = output / n_employees_per_industry
+        for industry in range(n_industries):
+            firm_data.loc[firm_data["Industry"] == industry, "Labour Productivity"] = labour_prod_by_industry[industry]
+
     return firm_data
 
 

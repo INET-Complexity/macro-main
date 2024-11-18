@@ -76,7 +76,10 @@ class CompustatBanksReader:
         # impute missing values
 
         for c in data.index.get_level_values(0).unique():
-            data.loc[c] = IterativeImputer().fit_transform(data.loc[c].values)
+            data_values = data.loc[c].values
+            if len(data_values) == 1:
+                data_values = data_values.reshape(1, -1)
+            data.loc[c] = IterativeImputer().fit_transform(data_values)
 
         return cls(data)
 

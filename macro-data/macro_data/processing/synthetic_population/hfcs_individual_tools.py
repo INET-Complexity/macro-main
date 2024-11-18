@@ -85,8 +85,8 @@ def process_individual_data(
         ]
     ]
 
-    individual_data["Corresponding Invested Firm"] = np.nan
-    individual_data["Corresponding Invested Bank"] = np.nan
+    individual_data.loc[:, "Corresponding Invested Firm"] = np.nan
+    individual_data.loc[:, "Corresponding Invested Bank"] = np.nan
 
     return individual_data
 

@@ -109,7 +109,8 @@ def set_household_housing_data(
         pd.DataFrame: The updated DataFrame with the housing data set for each household.
     """
     # Whether the household owns or rents
-    household_data["Tenure Status of the Main Residence"].replace({2: 1, 4: 1, 3: 0}, inplace=True)
+    # household_data["Tenure Status of the Main Residence"].replace({2: 1, 4: 1, 3: 0}, inplace=True)
+    household_data.replace("Tenure Status of the Main Residence", {2: 1, 4: 1, 3: 0}, inplace=True)
     households_renting = household_data["Tenure Status of the Main Residence"] == 0
     households_owning = household_data["Tenure Status of the Main Residence"] == 1
 
@@ -118,7 +119,8 @@ def set_household_housing_data(
     household_data = fill_rent(household_data, households_owning, households_renting, scale, social_housing_rent)
 
     # Number of additional properties
-    household_data["Number of Properties other than Household Main Residence"].fillna(0, inplace=True)
+    # household_data["Number of Properties other than Household Main Residence"].fillna(0, inplace=True)
+    household_data.fillna({"Number of Properties other than Household Main Residence": 0}, inplace=True)
     household_data["Number of Properties other than Household Main Residence"] = household_data[
         "Number of Properties other than Household Main Residence"
     ].astype(int)
