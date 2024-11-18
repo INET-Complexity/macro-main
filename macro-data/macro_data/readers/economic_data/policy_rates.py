@@ -49,7 +49,7 @@ class PolicyRatesReader:
         if is_eu_country:
             country = "XM"
 
-        df_c = self.df.loc[self.df["code"] == country]
+        df_c = self.df.loc[self.df["code"] == country].copy()
         dt_cols = pd.to_datetime(df_c.columns, format="%Y-%m", errors="coerce")
         df_c.drop(columns=df_c.columns[dt_cols.isna()], inplace=True)  # noqa
         df_c = df_c.T

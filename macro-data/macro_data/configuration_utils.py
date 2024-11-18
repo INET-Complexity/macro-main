@@ -22,6 +22,7 @@ def create_country_configurations(
     countries: list[str | Country],
     scale: dict[str | Country, int] | int,
     proxy_country_dict: Optional[dict[str | Country, Country | str]] = None,
+    use_compustat: bool = False,
 ) -> dict[Country, CountryDataConfiguration]:
     """
     Create a dictionary of country configurations.
@@ -35,7 +36,7 @@ def create_country_configurations(
     Returns:
         dict[Country, CountryDataConfiguration]: Dictionary of country configurations.
     """
-    country_configs = {}
+    country_configs: dict[Country, CountryDataConfiguration] = {}
 
     countries = [Country(country) if isinstance(country, str) else country for country in countries]
 
@@ -63,6 +64,9 @@ def create_country_configurations(
             country_configs[country] = read_country_conf().copy(
                 update={"eu_proxy_country": proxy_country, "scale": scale[country]}
             )
+        if not use_compustat:
+            country_configs[country].firms_configuration.constructor = "Default"
+            country_configs[country].banks_configuration.constructor = "Default"
     return country_configs
 
 
