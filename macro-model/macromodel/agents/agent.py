@@ -210,13 +210,15 @@ class Agent:
         self.ts.reset()
 
 
-@njit(float64[:](float64[:], int64), cache=True)
+# @njit(float64[:](float64[:], int64), cache=True)
+@njit(cache=True)
 def round_pos(x: np.ndarray, decimals: int) -> np.ndarray:
     r = np.round(x, decimals)
     return np.maximum(0.0, r)
 
 
-@njit(float64[:, :](float64[:, :], int64), cache=True)
+# @njit(float64[:, :](float64[:, :], int64), cache=True)
+@njit(cache=True)
 def round_pos2(x: np.ndarray, decimals: int) -> np.ndarray:
     r = np.round(x, decimals)
     return np.maximum(0.0, r)
