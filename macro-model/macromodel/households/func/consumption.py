@@ -67,22 +67,23 @@ class DefaultHouseholdConsumption(HouseholdConsumption):
         )
 
     @staticmethod
-    @njit(
-        float64[:, :](
-            float64[:, :],  # historic_consumption_sum
-            float64[:],  # saving_rates
-            float64[:],  # income
-            float64[:],  # household_benefits
-            float64[:],  # consumption_weights
-            float64[:, :],  # consumption_weights_by_income
-            boolean,  # take_consumption_weights_by_income_quantile
-            float64,  # tau_vat
-            int64,  # consumption_smoothing_window
-            float64,  # consumption_smoothing_fraction
-            float64,  # minimum_consumption_fraction
-        ),
-        cache=True,
-    )
+    # @njit(
+    #     float64[:, :](
+    #         float64[:, :],  # historic_consumption_sum
+    #         float64[:],  # saving_rates
+    #         float64[:],  # income
+    #         float64[:],  # household_benefits
+    #         float64[:],  # consumption_weights
+    #         float64[:, :],  # consumption_weights_by_income
+    #         boolean,  # take_consumption_weights_by_income_quantile
+    #         float64,  # tau_vat
+    #         int64,  # consumption_smoothing_window
+    #         float64,  # consumption_smoothing_fraction
+    #         float64,  # minimum_consumption_fraction
+    #     ),
+    #     cache=True,
+    # )
+    @njit(cache=True)
     def _compute_target_consumption(
         historic_consumption_sum: np.ndarray,
         saving_rates: np.ndarray,

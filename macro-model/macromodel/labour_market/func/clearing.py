@@ -661,20 +661,7 @@ class PolednaLabourMarketClearer(LabourMarketClearer):
         )
 
 
-@njit(
-    types.Tuple((float64[:], int64))(
-        int64[:],  # individuals_corresponding_firm
-        float64[:],  # prev_individuals_productivity
-        float64[:],  # desired_labour_inputs
-        float64[:],  # prev_labour_inputs
-        float64[:],  # current_individual_wages
-        int64[:],  # firm_industries
-        float64[:],  # average_industry_productivity
-        float64,  # firing_speed
-        float64,  # firing_cost_fraction
-    ),
-    cache=True,
-)
+@njit
 def firing(
     individuals_corresponding_firm: np.ndarray,
     prev_individuals_productivity: np.ndarray,
@@ -727,7 +714,7 @@ def firing(
 #     ),
 #     cache=True,
 # )
-@njit(cache=True)
+@njit
 def hiring(
     firm_industries: np.ndarray,
     current_individuals_industry: np.ndarray,
