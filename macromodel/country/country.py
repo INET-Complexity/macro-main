@@ -7,21 +7,21 @@ import pandas as pd
 
 from macro_data import SyntheticCountry
 from macromodel.agents.agent import Agent
-from macromodel.banks.banks import Banks
-from macromodel.central_bank.central_bank import CentralBank
-from macromodel.central_government.central_government import CentralGovernment
+from macromodel.agents.banks.banks import Banks
+from macromodel.agents.central_bank.central_bank import CentralBank
+from macromodel.agents.central_government.central_government import CentralGovernment
 from macromodel.configurations import CountryConfiguration
-from macromodel.credit_market.credit_market import CreditMarket
+from macromodel.markets.credit_market.credit_market import CreditMarket
 from macromodel.economy.economy import Economy
 from macromodel.exchange_rates import ExchangeRates
 from macromodel.exogenous.exogenous import Exogenous
-from macromodel.firms.firms import Firms
-from macromodel.government_entities.government_entities import GovernmentEntities
-from macromodel.households.households import Households
-from macromodel.housing_market.housing_market import HousingMarket
-from macromodel.individuals.individual_properties import ActivityStatus
-from macromodel.individuals.individuals import Individuals
-from macromodel.labour_market.labour_market import LabourMarket
+from macromodel.agents.firms import Firms
+from macromodel.agents.government_entities.government_entities import GovernmentEntities
+from macromodel.agents.households.households import Households
+from macromodel.markets.housing_market.housing_market import HousingMarket
+from macromodel.agents.individuals.individual_properties import ActivityStatus
+from macromodel.agents.individuals.individuals import Individuals
+from macromodel.markets.labour_market.labour_market import LabourMarket
 from macromodel.rest_of_the_world import RestOfTheWorld
 from macromodel.util.get_histogram import get_histogram
 

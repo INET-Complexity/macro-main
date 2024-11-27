@@ -1,6 +1,6 @@
 import numpy as np
 
-from macromodel.individuals.individual_properties import ActivityStatus
+from macromodel.agents.individuals.individual_properties import ActivityStatus
 from macromodel.timeseries import TimeSeries
 
 

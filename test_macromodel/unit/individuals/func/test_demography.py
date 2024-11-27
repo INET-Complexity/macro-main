@@ -1,4 +1,4 @@
-from macromodel.individuals.func.demography import NoAging
+from macromodel.agents.individuals import NoAging
 
 
 class TestIndividualDemography:

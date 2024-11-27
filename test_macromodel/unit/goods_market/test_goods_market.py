@@ -2,7 +2,7 @@ import numpy as np
 
 from macromodel.agents.agent import Agent
 from macromodel.timeseries import TimeSeries
-from macromodel.goods_market.value_type import ValueType
+from macromodel.markets.goods_market.value_type import ValueType
 
 from typing import Tuple
 

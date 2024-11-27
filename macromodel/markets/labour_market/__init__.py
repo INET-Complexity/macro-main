@@ -1,0 +1,1 @@
+from macromodel.markets.labour_market.labour_market import LabourMarket

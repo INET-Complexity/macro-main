@@ -1,6 +1,6 @@
 import numpy as np
 
-from macromodel.central_government.func.social_benefits import (
+from macromodel.agents.central_government.func.social_benefits import (
     DefaultSocialBenefitsSetter,
 )
 

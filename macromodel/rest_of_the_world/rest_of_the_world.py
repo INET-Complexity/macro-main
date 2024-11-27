@@ -9,7 +9,7 @@ from macro_data import SyntheticRestOfTheWorld
 from macromodel.agents.agent import Agent
 from macromodel.configurations import RestOfTheWorldConfiguration
 from macromodel.configurations.row_configuration import RestOfTheWorldParameters
-from macromodel.goods_market.value_type import ValueType
+from macromodel.markets.goods_market.value_type import ValueType
 from macromodel.rest_of_the_world.rest_of_the_world_ts import (
     create_rest_of_the_world_timeseries,
 )

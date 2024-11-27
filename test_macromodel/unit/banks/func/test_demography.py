@@ -1,6 +1,6 @@
 import numpy as np
 
-from macromodel.banks.func.demography import NoBankDemography
+from macromodel.agents.banks.func.demography import NoBankDemography
 
 
 class TestBankDemography:

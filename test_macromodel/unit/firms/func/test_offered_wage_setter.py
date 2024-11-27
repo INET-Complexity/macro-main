@@ -1,6 +1,6 @@
 import numpy as np
 
-from macromodel.firms.func.offered_wage_setter import DefaultOfferedWageSetter
+from macromodel.agents.firms import DefaultOfferedWageSetter
 
 
 class TestOfferedWageSetter:

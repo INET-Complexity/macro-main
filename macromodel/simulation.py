@@ -13,7 +13,7 @@ from macro_data.configuration import CountryDataConfiguration
 from macromodel.configurations import CountryConfiguration, SimulationConfiguration
 from macromodel.country import Country
 from macromodel.exchange_rates import ExchangeRates
-from macromodel.goods_market import GoodsMarket
+from macromodel.markets.goods_market import GoodsMarket
 from macromodel.rest_of_the_world import RestOfTheWorld
 from macromodel.timestep import Timestep
 
