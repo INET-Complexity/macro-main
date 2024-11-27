@@ -1,6 +1,6 @@
 import numpy as np
 
-from macromodel.firms.func.demand_estimator import DefaultDemandEstimator
+from macromodel.agents.firms.func.demand_estimator import DefaultDemandEstimator
 
 
 class TestDemandEstimator:

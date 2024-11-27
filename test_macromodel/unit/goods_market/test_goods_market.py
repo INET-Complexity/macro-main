@@ -1,10 +1,10 @@
+from typing import Tuple
+
 import numpy as np
 
 from macromodel.agents.agent import Agent
+from macromodel.markets.goods_market.value_type import ValueType
 from macromodel.timeseries import TimeSeries
-from macromodel.goods_market.value_type import ValueType
-
-from typing import Tuple
 
 
 def create_test_transactor(

@@ -1,8 +1,8 @@
 import numpy as np
 
-from macromodel.firms.func.bought_goods_distributor import (
-    BoughtGoodsDistributorIIPrio,
+from macromodel.agents.firms.func.bought_goods_distributor import (
     BoughtGoodsDistributorEvenly,
+    BoughtGoodsDistributorIIPrio,
 )
 
 

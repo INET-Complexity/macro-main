@@ -1,6 +1,6 @@
 import numpy as np
 
-from macromodel.firms.func.demand_for_goods import DefaultDemandSetter
+from macromodel.agents.firms.func.demand_for_goods import DefaultDemandSetter
 
 
 class TestDemandSetter:

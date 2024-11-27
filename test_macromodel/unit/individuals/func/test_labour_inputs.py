@@ -1,9 +1,9 @@
 import numpy as np
 
-from macromodel.individuals.func.labour_inputs import (
+from macromodel.agents.individuals.func.labour_inputs import (
     ScaledIndividualsProductivitySetter,
 )
-from macromodel.individuals.individual_properties import ActivityStatus
+from macromodel.agents.individuals.individual_properties import ActivityStatus
 
 
 class TestIndividualLabourInputsSetter:

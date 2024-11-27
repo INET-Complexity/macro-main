@@ -1,7 +1,7 @@
 import numpy as np
 
-from macromodel.individuals.func.income import DefaultIncomeSetter
-from macromodel.individuals.individual_properties import ActivityStatus
+from macromodel.agents.individuals.func.income import DefaultIncomeSetter
+from macromodel.agents.individuals.individual_properties import ActivityStatus
 
 
 class TestIncomeSetter:

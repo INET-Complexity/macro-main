@@ -9,7 +9,7 @@ from macro_data import SyntheticRestOfTheWorld
 from macromodel.agents.agent import Agent
 from macromodel.configurations import RestOfTheWorldConfiguration
 from macromodel.configurations.row_configuration import RestOfTheWorldParameters
-from macromodel.goods_market.value_type import ValueType
+from macromodel.markets.goods_market.value_type import ValueType
 from macromodel.rest_of_the_world.rest_of_the_world_ts import (
     create_rest_of_the_world_timeseries,
 )
@@ -147,7 +147,7 @@ class RestOfTheWorld(Agent):
     #     # Get corresponding functions and parameters
     #     functions = get_functions(
     #         config["functions"],
-    #         loc="macromodel.rest_of_the_world",
+    #         loc="macromodel.agents.rest_of_the_world",
     #         func_dir=Path(__file__).parent / "func",
     #     )
     #     if "parameters" in config.keys():
