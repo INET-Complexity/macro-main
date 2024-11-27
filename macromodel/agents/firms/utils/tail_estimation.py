@@ -1308,7 +1308,6 @@ def make_plots(
         ordered_data = add_uniform_noise(ordered_data, p=p_noise)
     ordered_data[::-1].sort()
 
-
     # perform smooth Hill estimation
     k_sh_arr, xi_sh_arr = smooth_hill_estimator(ordered_data, r_smooth=r_smooth)
 

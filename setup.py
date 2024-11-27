@@ -22,13 +22,11 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=requirements,
-    packages=find_packages(
-        include=["macro_data", "macro_data.*", "macromodel", "macromodel.*"]
-    ),
+    packages=find_packages(include=["macro_data", "macro_data.*", "macromodel", "macromodel.*"]),
     include_package_data=True,
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.10',  # Specify the Python versions you support
+    python_requires=">=3.10",  # Specify the Python versions you support
 )
