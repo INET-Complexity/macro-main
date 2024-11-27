@@ -99,6 +99,12 @@ class DefaultSyntheticFirms(SyntheticFirms):
                 if firm_size_zetas is None:
                     firm_size_zetas = readers.ons.get_firm_size_zetas()
 
+                keys = set(firm_size_zetas.keys())
+                if len(keys) != len(industries):
+                    avg_zeta = np.mean([firm_size_zetas[key] for key in keys])
+                    for i in range(len(industries)):
+                        firm_size_zetas[i] = avg_zeta
+
                 firm_data = initialise_basic_firm_fields(
                     firm_data,
                     industry_data,
