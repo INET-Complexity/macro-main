@@ -4,9 +4,9 @@ import numpy as np
 import pandas as pd
 import pytest
 import yaml
-from macro_data.configuration_utils import default_data_configuration
 
 from macro_data import DataWrapper
+from macro_data.configuration_utils import default_data_configuration
 from macromodel.agents.banks import Banks
 from macromodel.agents.central_bank import CentralBank
 from macromodel.agents.central_government import CentralGovernment
