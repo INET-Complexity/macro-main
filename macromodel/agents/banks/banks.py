@@ -52,7 +52,7 @@ class Banks(Agent):
         corr_firms_id = synthetic_banks.bank_data["Corresponding Firms ID"]
         corr_households_id = synthetic_banks.bank_data["Corresponding Households ID"]
         parameters = configuration.parameters
-        functions = functions_from_model(model=configuration.functions, loc="macromodel.banks")
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.banks")
 
         data = synthetic_banks.bank_data.drop(columns=["Corresponding Firms ID", "Corresponding Households ID"])
         ts = create_banks_timeseries(
@@ -86,7 +86,7 @@ class Banks(Agent):
     def reset(self, configuration: BanksConfiguration) -> None:
         self.gen_reset()
         self.parameters = configuration.parameters
-        update_functions(model=configuration.functions, loc="macromodel.banks", functions=self.functions)
+        update_functions(model=configuration.functions, loc="macromodel.agents.banks", functions=self.functions)
 
     def compute_estimated_profits(self, estimated_growth: float, estimated_inflation: float) -> np.ndarray:
         return self.functions["profit_estimator"].compute_estimated_profits(

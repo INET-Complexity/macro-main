@@ -51,7 +51,7 @@ class Individuals(Agent):
     ) -> "Individuals":
         data = (synthetic_population.individual_data.astype(float)).rename_axis("Individual ID")
 
-        functions = functions_from_model(model=configuration.functions, loc="macromodel.individuals")
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.individuals")
 
         ts = create_individuals_timeseries(data, scale)
 
@@ -112,7 +112,7 @@ class Individuals(Agent):
 
     def reset(self, configuration: IndividualsConfiguration):
         self.gen_reset()
-        update_functions(functions=self.functions, model=configuration.functions, loc="macromodel.individuals")
+        update_functions(functions=self.functions, model=configuration.functions, loc="macromodel.agents.individuals")
 
     def compute_labour_inputs(self) -> np.ndarray:
         return self.functions["labour_inputs"].update_labour_inputs(

@@ -49,7 +49,7 @@ class GoodsMarket:
         row_index: int = -1,
     ) -> "GoodsMarket":
         # Get corresponding functions
-        functions = functions_from_model(configuration.functions, loc="macromodel.goods_market")
+        functions = functions_from_model(configuration.functions, loc="macromodel.markets.goods_market")
         n_countries = int(np.sqrt(len(origin_trade_proportions) / n_industries))
 
         states = {
@@ -97,7 +97,7 @@ class GoodsMarket:
     def reset(self, configuration: GoodsMarketConfiguration):
         self.ts.reset()
         self.states = deepcopy(self.initial_states)
-        update_functions(model=configuration.functions, loc="macromodel.goods_market", functions=self.functions)
+        update_functions(model=configuration.functions, loc="macromodel.agents.goods_market", functions=self.functions)
 
     def prepare(self, collect_sd: bool = True) -> None:
         # Prepare agents

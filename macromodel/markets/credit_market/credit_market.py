@@ -44,7 +44,7 @@ class CreditMarket:
     ) -> "CreditMarket":
         functions = functions_from_model(
             credit_market_configuration.functions,
-            loc="macromodel.credit_market",
+            loc="macromodel.markets.credit_market",
         )
 
         shortterm_loans = synthetic_credit_market.shortterm_loans.stack()
@@ -85,7 +85,7 @@ class CreditMarket:
     def reset(self, configuration: CreditMarketConfiguration) -> None:
         self.states = deepcopy(self.initial_states)
         self.ts.reset()
-        update_functions(model=configuration.functions, loc="macromodel.credit_market", functions=self.functions)
+        update_functions(model=configuration.functions, loc="macromodel.agents.credit_market", functions=self.functions)
 
     @classmethod
     def from_data(

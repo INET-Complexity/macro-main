@@ -3,7 +3,7 @@ from collections import Counter
 import numpy as np
 import pandas as pd
 
-from macromodel.agents.firms import calculate_tail_exponent
+from macromodel.agents.firms.utils import calculate_tail_exponent
 from macromodel.timeseries import TimeSeries
 from macromodel.util.get_histogram import get_histogram
 

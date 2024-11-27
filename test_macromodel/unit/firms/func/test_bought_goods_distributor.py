@@ -1,6 +1,6 @@
 import numpy as np
 
-from macromodel.agents.firms import (
+from macromodel.agents.firms.func.bought_goods_distributor import (
     BoughtGoodsDistributorEvenly,
     BoughtGoodsDistributorIIPrio,
 )

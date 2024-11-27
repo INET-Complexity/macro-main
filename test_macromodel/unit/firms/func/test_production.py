@@ -1,6 +1,6 @@
 import numpy as np
 
-from macromodel.agents.firms import PureLeontief
+from macromodel.agents.firms.func.production import PureLeontief
 
 
 class TestProductionSetter:

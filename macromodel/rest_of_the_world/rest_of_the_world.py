@@ -147,7 +147,7 @@ class RestOfTheWorld(Agent):
     #     # Get corresponding functions and parameters
     #     functions = get_functions(
     #         config["functions"],
-    #         loc="macromodel.rest_of_the_world",
+    #         loc="macromodel.agents.rest_of_the_world",
     #         func_dir=Path(__file__).parent / "func",
     #     )
     #     if "parameters" in config.keys():

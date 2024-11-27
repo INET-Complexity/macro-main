@@ -47,7 +47,9 @@ class HousingMarket:
         country_name: str,
     ) -> "HousingMarket":
         # Get corresponding functions
-        functions = functions_from_model(housing_market_configuration.functions, loc="macromodel.housing_market")
+        functions = functions_from_model(
+            housing_market_configuration.functions, loc="macromodel.markets.housing_market"
+        )
 
         #     #     store[country_name + "_synthetic_housing_market"] = (
         #     #         self.synthetic_housing_market[country_name].housing_market_data.astype(float)
@@ -99,7 +101,9 @@ class HousingMarket:
 
     def reset(self, configuration: HousingMarketConfiguration) -> None:
         self.ts.reset()
-        update_functions(model=configuration.functions, loc="macromodel.housing_market", functions=self.functions)
+        update_functions(
+            model=configuration.functions, loc="macromodel.agents.housing_market", functions=self.functions
+        )
         self.states = deepcopy(self.initial_states)
 
     @classmethod
@@ -113,7 +117,7 @@ class HousingMarket:
         # Get corresponding functions and parameters
         functions = get_functions(
             config["functions"],
-            loc="macromodel.housing_market",
+            loc="macromodel.markets.housing_market",
             func_dir=Path(__file__).parent / "func",
         )
 

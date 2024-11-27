@@ -48,7 +48,7 @@ class CentralGovernment(Agent):
         number_of_unemployed_individuals: int,
         taxes_net_subsidies: np.ndarray,
     ):
-        functions = functions_from_model(model=configuration.functions, loc="macromodel.central_government")
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.central_government")
 
         states = {
             "Value-added Tax": tax_data.value_added_tax,
@@ -81,7 +81,9 @@ class CentralGovernment(Agent):
 
     def reset(self, configuration: CentralGovernmentConfiguration):
         self.gen_reset()
-        update_functions(model=configuration.functions, loc="macromodel.central_government", functions=self.functions)
+        update_functions(
+            model=configuration.functions, loc="macromodel.agents.central_government", functions=self.functions
+        )
 
     def update_benefits(
         self,

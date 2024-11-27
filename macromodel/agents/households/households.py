@@ -88,7 +88,7 @@ class Households(Agent):
 
         corr_owned_houses = synthetic_population.household_data["Corresponding Additionally Owned Houses ID"]
 
-        functions = functions_from_model(model=configuration.functions, loc="macromodel.households")
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.households")
 
         hh_data = (
             synthetic_population.household_data.drop(
@@ -206,7 +206,7 @@ class Households(Agent):
 
     def reset(self, configuration: HouseholdsConfiguration) -> None:
         self.gen_reset()
-        update_functions(functions=self.functions, model=configuration.functions, loc="macromodel.households")
+        update_functions(functions=self.functions, model=configuration.functions, loc="macromodel.agents.households")
 
     def compute_employee_income(
         self,

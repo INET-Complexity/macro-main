@@ -1,6 +1,6 @@
 import numpy as np
 
-from macromodel.agents.firms import DefaultDesiredLabourSetter
+from macromodel.agents.firms.func.desired_labour import DefaultDesiredLabourSetter
 
 
 class TestDesiredLabourSetter:

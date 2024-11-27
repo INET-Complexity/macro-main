@@ -75,7 +75,7 @@ class Firms(Agent):
         goods_criticality_matrix: pd.DataFrame | np.ndarray,
         average_initial_price: np.ndarray,
     ):
-        functions = functions_from_model(model=configuration.functions, loc="macromodel.firms")
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.firms")
 
         intermediate_inputs_productivity_matrix = synthetic_firms.intermediate_inputs_productivity_matrix
         capital_inputs_productivity_matrix = synthetic_firms.capital_inputs_productivity_matrix
@@ -137,7 +137,7 @@ class Firms(Agent):
 
     def reset(self, configuration: FirmsConfiguration) -> None:
         self.gen_reset()
-        update_functions(model=configuration.functions, loc="macromodel.firms", functions=self.functions)
+        update_functions(model=configuration.functions, loc="macromodel.agents.firms", functions=self.functions)
 
         current_inv = (
             self.ts.current("production")

@@ -45,7 +45,7 @@ class CentralBank(Agent):
         n_industries: int,
     ) -> "CentralBank":
         # Get corresponding functions and parameters
-        functions = functions_from_model(model=configuration.functions, loc="macromodel.central_bank")
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.central_bank")
 
         data = synthetic_central_bank.central_bank_data.astype(float).rename_axis("Central Bank ID")
 
@@ -72,7 +72,7 @@ class CentralBank(Agent):
 
     def reset(self, configuration: CentralBankConfiguration) -> None:
         self.gen_reset()
-        update_functions(model=configuration.functions, loc="macromodel.central_bank", functions=self.functions)
+        update_functions(model=configuration.functions, loc="macromodel.agents.central_bank", functions=self.functions)
 
     def compute_rate(self, inflation: float, growth: float) -> float:
         return self.functions["policy_rate"].compute_rate(
