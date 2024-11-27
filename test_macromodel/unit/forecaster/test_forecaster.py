@@ -1,7 +1,11 @@
 import numpy as np
 import pytest
 
-from macromodel.forecaster.forecaster import check_len, OLSForecaster, ManualAutoregForecaster
+from macromodel.forecaster.forecaster import (
+    ManualAutoregForecaster,
+    OLSForecaster,
+    check_len,
+)
 
 
 def test__check_len():

@@ -1,6 +1,8 @@
 import numpy as np
 
-from macromodel.agents.individuals.func.reservation_wages import DefaultReservationWageSetter
+from macromodel.agents.individuals.func.reservation_wages import (
+    DefaultReservationWageSetter,
+)
 from macromodel.agents.individuals.individual_properties import ActivityStatus
 
 

@@ -1,8 +1,8 @@
 import numpy as np
 
 from macromodel.agents.firms import (
-    BoughtGoodsDistributorIIPrio,
     BoughtGoodsDistributorEvenly,
+    BoughtGoodsDistributorIIPrio,
 )
 
 

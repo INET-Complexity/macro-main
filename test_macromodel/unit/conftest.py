@@ -1,38 +1,39 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
 import yaml
-from macro_data import DataWrapper
-from pathlib import Path
 
+from macro_data import DataWrapper
 from macromodel.agents.banks import Banks
 from macromodel.agents.central_bank import CentralBank
 from macromodel.agents.central_government import CentralGovernment
+from macromodel.agents.firms import Firms
+from macromodel.agents.government_entities import GovernmentEntities
+from macromodel.agents.households import Households
+from macromodel.agents.individuals import Individuals
+from macromodel.agents.individuals.individual_properties import ActivityStatus
 from macromodel.configurations import (
-    IndividualsConfiguration,
-    FirmsConfiguration,
-    CentralGovernmentConfiguration,
     BanksConfiguration,
-    HouseholdsConfiguration,
-    ExchangeRatesConfiguration,
-    GovernmentEntitiesConfiguration,
-    EconomyConfiguration,
     CentralBankConfiguration,
+    CentralGovernmentConfiguration,
+    EconomyConfiguration,
+    ExchangeRatesConfiguration,
+    FirmsConfiguration,
     GoodsMarketConfiguration,
+    GovernmentEntitiesConfiguration,
+    HouseholdsConfiguration,
+    IndividualsConfiguration,
     RestOfTheWorldConfiguration,
 )
 from macromodel.country import Country
-from macromodel.markets.credit_market.credit_market import CreditMarket
 from macromodel.economy import Economy
 from macromodel.exchange_rates import ExchangeRates
 from macromodel.exogenous import Exogenous
-from macromodel.agents.firms import Firms
+from macromodel.markets.credit_market.credit_market import CreditMarket
 from macromodel.markets.goods_market.goods_market import GoodsMarket
-from macromodel.agents.government_entities import GovernmentEntities
-from macromodel.agents.households import Households
 from macromodel.markets.housing_market.housing_market import HousingMarket
-from macromodel.agents.individuals import Individuals
-from macromodel.agents.individuals.individual_properties import ActivityStatus
 from macromodel.markets.labour_market.labour_market import LabourMarket
 from macromodel.rest_of_the_world import RestOfTheWorld
 
