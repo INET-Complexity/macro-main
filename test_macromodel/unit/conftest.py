@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import yaml
+from macro_data.configuration_utils import default_data_configuration
 
 from macro_data import DataWrapper
 from macromodel.agents.banks import Banks
@@ -412,12 +413,14 @@ def test_country(
 
 
 @pytest.fixture(scope="module", name="datawrapper")
-def read_data() -> DataWrapper:
-    pickle_path = Path(__file__).parent.parent / "pickled_data" / "agents.pkl"
-    return DataWrapper.init_from_pickle(pickle_path)
+def instantiate_datawrapper() -> DataWrapper:
+    data_config = default_data_configuration(countries=["FRA"])
+    raw_data_path = Path(__file__).parent.parent.parent / "test_macro_data" / "unit" / "sample_raw_data"
+    return DataWrapper.from_config(data_config, raw_data_path, single_hfcs_survey=True)
 
 
 @pytest.fixture(scope="module", name="allind_datawrapper")
-def read_data_all() -> DataWrapper:
-    pickle_path = Path(__file__).parent.parent / "pickled_data" / "agents_allind.pkl"
-    return DataWrapper.init_from_pickle(pickle_path)
+def instantiate_allind_datawrapper() -> DataWrapper:
+    data_config = default_data_configuration(countries=["FRA"], aggregate_industries=False)
+    raw_data_path = Path(__file__).parent.parent.parent / "test_macro_data" / "unit" / "sample_raw_data"
+    return DataWrapper.from_config(data_config, raw_data_path, single_hfcs_survey=True)
