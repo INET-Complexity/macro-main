@@ -1,7 +1,8 @@
 # macro-main/setup.py
 
-from setuptools import setup, find_packages
 from os.path import abspath, dirname, join
+
+from setuptools import find_packages, setup
 
 # Define the directory containing this file
 this_dir = abspath(dirname(__file__))
