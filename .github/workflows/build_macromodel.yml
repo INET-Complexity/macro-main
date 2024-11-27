@@ -1,4 +1,4 @@
-name: Build and test package (Macrocosm)
+name: Build and test model package
 
 on:
   pull_request:
