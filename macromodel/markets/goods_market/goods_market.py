@@ -6,7 +6,9 @@ import pandas as pd
 
 from macromodel.agents.agent import Agent
 from macromodel.configurations import GoodsMarketConfiguration
-from macromodel.markets.goods_market.goods_market_ts import create_goods_market_timeseries
+from macromodel.markets.goods_market.goods_market_ts import (
+    create_goods_market_timeseries,
+)
 from macromodel.timeseries import TimeSeries
 from macromodel.util.function_mapping import functions_from_model, update_functions
 

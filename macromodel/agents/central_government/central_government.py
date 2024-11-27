@@ -9,8 +9,8 @@ from macromodel.agents.agent import Agent
 from macromodel.agents.central_government.central_government_ts import (
     create_central_government_timeseries,
 )
-from macromodel.configurations import CentralGovernmentConfiguration
 from macromodel.agents.individuals.individual_properties import ActivityStatus
+from macromodel.configurations import CentralGovernmentConfiguration
 from macromodel.timeseries import TimeSeries
 from macromodel.util.function_mapping import functions_from_model, update_functions
 

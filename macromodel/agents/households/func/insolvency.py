@@ -4,8 +4,8 @@ from typing import Tuple
 import numpy as np
 
 from macromodel.agents.banks.banks import Banks
-from macromodel.markets.credit_market.credit_market import CreditMarket
 from macromodel.agents.households.households import Households
+from macromodel.markets.credit_market.credit_market import CreditMarket
 
 
 class HouseholdInsolvencyHandler(ABC):

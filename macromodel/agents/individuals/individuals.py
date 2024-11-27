@@ -6,13 +6,13 @@ import numpy as np
 
 from macro_data import SyntheticPopulation
 from macromodel.agents.agent import Agent
-from macromodel.configurations import IndividualsConfiguration
 from macromodel.agents.individuals.individual_properties import (
     ActivityStatus,
     Education,
     Gender,
 )
 from macromodel.agents.individuals.individuals_ts import create_individuals_timeseries
+from macromodel.configurations import IndividualsConfiguration
 from macromodel.timeseries import TimeSeries
 from macromodel.util.function_mapping import functions_from_model, update_functions
 from macromodel.util.property_mapping import map_to_enum

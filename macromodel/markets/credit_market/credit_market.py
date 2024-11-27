@@ -8,7 +8,9 @@ import numpy as np
 
 from macro_data import SyntheticCreditMarket
 from macromodel.configurations import CreditMarketConfiguration
-from macromodel.markets.credit_market.credit_market_ts import create_credit_market_timeseries
+from macromodel.markets.credit_market.credit_market_ts import (
+    create_credit_market_timeseries,
+)
 from macromodel.timeseries import TimeSeries
 from macromodel.util.function_mapping import functions_from_model, update_functions
 

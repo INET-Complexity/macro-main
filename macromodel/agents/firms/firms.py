@@ -7,9 +7,9 @@ import pandas as pd
 
 from macro_data import SyntheticFirms
 from macromodel.agents.agent import Agent
+from macromodel.agents.firms.firm_ts import FirmTimeSeries
 from macromodel.configurations import FirmsConfiguration
 from macromodel.markets.credit_market.credit_market import CreditMarket
-from macromodel.agents.firms.firm_ts import FirmTimeSeries
 from macromodel.markets.goods_market.value_type import ValueType
 from macromodel.util.function_mapping import functions_from_model, update_functions
 

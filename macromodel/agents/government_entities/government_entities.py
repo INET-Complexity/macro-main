@@ -5,11 +5,11 @@ import numpy as np
 
 from macro_data import SyntheticGovernmentEntities
 from macromodel.agents.agent import Agent
-from macromodel.configurations import GovernmentEntitiesConfiguration
-from macromodel.markets.goods_market.value_type import ValueType
 from macromodel.agents.government_entities.government_entities_ts import (
     create_government_entities_timeseries,
 )
+from macromodel.configurations import GovernmentEntitiesConfiguration
+from macromodel.markets.goods_market.value_type import ValueType
 from macromodel.timeseries import TimeSeries
 from macromodel.util.function_mapping import functions_from_model, update_functions
 

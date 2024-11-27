@@ -5,7 +5,9 @@ import numpy as np
 
 from macro_data import SyntheticCentralBank
 from macromodel.agents.agent import Agent
-from macromodel.agents.central_bank.central_bank_ts import create_central_bank_timeseries
+from macromodel.agents.central_bank.central_bank_ts import (
+    create_central_bank_timeseries,
+)
 from macromodel.configurations import CentralBankConfiguration
 from macromodel.timeseries import TimeSeries
 from macromodel.util.function_mapping import functions_from_model, update_functions

@@ -6,9 +6,9 @@ import pandas as pd
 from numba import njit
 
 from macromodel.agents.banks.banks import Banks
-from macromodel.markets.credit_market.types_of_loans import LoanTypes
 from macromodel.agents.firms import Firms
 from macromodel.agents.households.households import Households
+from macromodel.markets.credit_market.types_of_loans import LoanTypes
 
 
 class CreditMarketClearer(ABC):

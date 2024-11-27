@@ -9,7 +9,9 @@ import pandas as pd
 
 from macro_data import SyntheticHousingMarket
 from macromodel.configurations import HousingMarketConfiguration
-from macromodel.markets.housing_market.housing_market_ts import create_housing_market_timeseries
+from macromodel.markets.housing_market.housing_market_ts import (
+    create_housing_market_timeseries,
+)
 from macromodel.timeseries import TimeSeries
 from macromodel.util.function_mapping import (
     functions_from_model,

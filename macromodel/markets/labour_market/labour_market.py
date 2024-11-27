@@ -4,12 +4,14 @@ from typing import Any
 import h5py
 import numpy as np
 
-from macromodel.configurations import LabourMarketConfiguration
 from macromodel.agents.firms import Firms
 from macromodel.agents.households.households import Households
 from macromodel.agents.individuals.individual_properties import ActivityStatus
 from macromodel.agents.individuals.individuals import Individuals
-from macromodel.markets.labour_market.labour_market_ts import create_labour_market_timeseries
+from macromodel.configurations import LabourMarketConfiguration
+from macromodel.markets.labour_market.labour_market_ts import (
+    create_labour_market_timeseries,
+)
 from macromodel.timeseries import TimeSeries
 from macromodel.util.function_mapping import (
     functions_from_model,

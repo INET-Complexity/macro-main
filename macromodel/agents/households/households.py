@@ -8,11 +8,11 @@ import pandas as pd
 from macro_data import SyntheticCountry, SyntheticPopulation
 from macromodel.agents.agent import Agent
 from macromodel.agents.banks.banks import Banks
+from macromodel.agents.households.household_properties import HouseholdType
+from macromodel.agents.households.households_ts import create_households_timeseries
 from macromodel.configurations import HouseholdsConfiguration
 from macromodel.markets.credit_market.credit_market import CreditMarket
 from macromodel.markets.goods_market.value_type import ValueType
-from macromodel.agents.households.household_properties import HouseholdType
-from macromodel.agents.households.households_ts import create_households_timeseries
 from macromodel.timeseries import TimeSeries
 from macromodel.util.function_mapping import functions_from_model, update_functions
 from macromodel.util.get_histogram import get_histogram
