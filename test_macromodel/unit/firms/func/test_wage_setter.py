@@ -1,6 +1,6 @@
 import numpy as np
 
-from macromodel.firms.func.wage_setter import WorkEffortFirmWageSetter
+from macromodel.agents.firms.func.wage_setter import WorkEffortFirmWageSetter
 
 
 class TestFirmWageSetter:

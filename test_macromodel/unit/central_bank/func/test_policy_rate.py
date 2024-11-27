@@ -1,4 +1,4 @@
-from macromodel.central_bank.func.policy_rate import ConstantPolicyRate
+from macromodel.agents.central_bank.func.policy_rate import ConstantPolicyRate
 
 
 class TestPolicyRate:

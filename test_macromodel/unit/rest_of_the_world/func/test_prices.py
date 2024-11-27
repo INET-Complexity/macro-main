@@ -1,8 +1,6 @@
 import numpy as np
 
-from macromodel.rest_of_the_world.func.prices import (
-    InflationRoWPriceSetter,
-)
+from macromodel.rest_of_the_world.func.prices import InflationRoWPriceSetter
 
 
 class TestRoWPriceSetter:

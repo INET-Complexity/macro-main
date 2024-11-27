@@ -5,9 +5,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from macromodel.configurations import SimulationConfiguration, CountryConfiguration
-from macromodel.simulation import Simulation, check_compatibility
 from macro_data.configuration.countries import Country as CountryName
+from macromodel.configurations import CountryConfiguration, SimulationConfiguration
+from macromodel.simulation import Simulation, check_compatibility
 
 
 @pytest.mark.parametrize("seed", [0, 100, 150, 200, 145])

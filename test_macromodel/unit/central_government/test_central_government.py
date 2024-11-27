@@ -1,7 +1,6 @@
 import numpy as np
-import pytest
 
-from macromodel.individuals.individual_properties import ActivityStatus
+from macromodel.agents.individuals.individual_properties import ActivityStatus
 
 
 class TestCentralGovernment:

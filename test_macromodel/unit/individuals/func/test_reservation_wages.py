@@ -1,7 +1,9 @@
 import numpy as np
 
-from macromodel.individuals.func.reservation_wages import DefaultReservationWageSetter
-from macromodel.individuals.individual_properties import ActivityStatus
+from macromodel.agents.individuals.func.reservation_wages import (
+    DefaultReservationWageSetter,
+)
+from macromodel.agents.individuals.individual_properties import ActivityStatus
 
 
 class TestReservationWageSetter:
