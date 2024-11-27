@@ -1,0 +1,27 @@
+# Makes sure that the code is properly formatted with black and isort.
+
+name: Style Check
+
+on: [push, pull_request]
+
+jobs:
+  style:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.12'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install black==23.12.1
+        pip install "black[jupyter]"
+        pip install isort
+    - name: Check code formatting with black
+      run: |
+        black --check --config="pyproject.toml" .
+    - name: Check code formatting with isort
+      run: |
+        isort . --check-only --settings-path pyproject.toml
