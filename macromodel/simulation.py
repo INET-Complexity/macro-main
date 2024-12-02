@@ -276,7 +276,9 @@ class Simulation:
             save_dir = Path(save_dir)
         for country_name, country in self.countries.items():
             df = country.shallow_output()
+            industry_df = country.firms.industries_dataframe
             df.to_hdf(save_dir / file_name, key=country_name, mode="a")
+            industry_df.to_hdf(save_dir / file_name, key=f"{country_name}_industries", mode="a")
 
     def get_country_shallow_output(self, country: str):
         return self.countries[country].shallow_output()

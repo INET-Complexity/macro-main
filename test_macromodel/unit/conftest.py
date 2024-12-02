@@ -141,6 +141,7 @@ def test_firms(datawrapper):
         all_country_names=["FRA", "ROW"],
         goods_criticality_matrix=country.goods_criticality_matrix,
         average_initial_price=country.industry_data["industry_vectors"]["Average Initial Price"].values,
+        industries=datawrapper.industries,
     )
 
     return firms
