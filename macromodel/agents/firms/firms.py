@@ -33,6 +33,7 @@ class Firms(Agent):
         capital_inputs_delay: np.ndarray,
         average_initial_price: np.ndarray,
         configuration: FirmsConfiguration,
+        industries: list[str],
     ):
         n_transactors = ts.current("n_firms")
         super().__init__(
@@ -65,6 +66,8 @@ class Firms(Agent):
 
         self.configuration = configuration
 
+        self.industries = industries
+
     @classmethod
     def from_pickled_agent(
         cls,
@@ -74,6 +77,7 @@ class Firms(Agent):
         all_country_names: list[str],
         goods_criticality_matrix: pd.DataFrame | np.ndarray,
         average_initial_price: np.ndarray,
+        industries: list[str],
     ):
         functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.firms")
 
@@ -133,7 +137,31 @@ class Firms(Agent):
             np.array(configuration.parameters.capital_inputs_delay),
             average_initial_price,
             configuration=configuration,
+            industries=industries,
         )
+
+    @property
+    def industries_dataframe(self) -> pd.DataFrame:
+        """
+        Returns a DataFrame with firm indices and their corresponding industry names.
+
+        Returns:
+            pd.DataFrame: DataFrame with 'Firm_ID' as the index and 'Industry' as the column.
+        """
+        # Get the industry indices of the firms
+        industry_indices = self.states["Industry"]
+
+        # Map industry indices to industry names
+        industry_names = [self.industries[i] for i in industry_indices]
+
+        # Assuming firms are indexed from 0 to N-1
+        firm_indices = np.arange(len(industry_indices))
+
+        # Create the DataFrame
+        df = pd.DataFrame({"Industry": industry_names}, index=firm_indices)
+        df.index.name = "Firm_ID"
+
+        return df
 
     def reset(self, configuration: FirmsConfiguration) -> None:
         self.gen_reset()
@@ -897,15 +925,33 @@ class Firms(Agent):
     def save_to_h5(self, group: h5py.Group):
         self.ts.write_to_h5("firms", group)
 
-    def save_industry_firms_df(self, group: h5py.Group):
-        industry_firms_df = pd.DataFrame(
-            data=np.array(self.states["Industry"]),
-            index=pd.Index(range(self.ts.current("n_firms")), name="Firm ID"),
-            columns=pd.Index(["Industry"], name="Field"),
-        )
+        firms_group = group["firms"]
 
-        group.create_dataset("industry_firms", data=industry_firms_df.values, dtype="int32")
-        group["industry_firms"].attrs["columns"] = industry_firms_df.columns.to_list()
+        # Save industries DataFrame under 'firms_group'
+        industries_df = self.industries_dataframe
+
+        # Create a subgroup for industries under 'firms_group'
+        industries_group = firms_group.create_group("industries")
+
+        # Save the DataFrame to the HDF5 group
+        self._save_dataframe_to_h5(industries_df, industries_group)
+
+    @staticmethod
+    def _save_dataframe_to_h5(df: pd.DataFrame, group: h5py.Group):
+        """
+        Saves a DataFrame to an HDF5 group.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to save.
+            group (h5py.Group): The HDF5 group to save data into.
+        """
+        # Save index
+        group.create_dataset("Firm_ID", data=df.index.values, dtype="int")
+
+        # Save industry names as variable-length UTF-8 strings
+        dt = h5py.string_dtype(encoding="utf-8")
+        industry_names = df["Industry"].values
+        group.create_dataset("Industry", data=industry_names, dtype=dt)
 
     def total_sales(self):
         return self.ts.get_aggregate("total_sales")

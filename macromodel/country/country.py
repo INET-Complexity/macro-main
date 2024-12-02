@@ -155,6 +155,7 @@ class Country:
             all_country_names=all_country_names,
             goods_criticality_matrix=synthetic_country.goods_criticality_matrix,
             average_initial_price=average_initial_price,
+            industries=industries,
         )
 
         taxes_less_subsidies = synthetic_country.industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values
@@ -1095,7 +1096,7 @@ class Country:
     def save_to_h5(self, h5_file: h5py.File):
         group = h5_file.create_group(self.country_name)
         self.firms.save_to_h5(group)
-        self.firms.save_industry_firms_df(group)
+        # self.firms.save_industry_firms_df(group)
 
         self.individuals.save_to_h5(group)
         self.households.save_to_h5(group)
