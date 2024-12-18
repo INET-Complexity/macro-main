@@ -4,6 +4,7 @@ import h5py
 import numpy as np
 import pandas as pd
 
+from macromodel.util.inequality import compute_gini, compute_ninetyten
 
 class TimeSeries:
     def __init__(self, **kwargs):
@@ -107,3 +108,13 @@ class TimeSeries:
 
     def get_aggregate(self, name: str):
         return np.array(self.historic(name)).sum(axis=1)
+    
+    def get_gini(self, name: str):
+        return compute_gini(
+            np.array(self.historic(name))
+            )
+    
+    def get_ninetyten(self, name: str):
+        return compute_ninetyten(
+            np.array(self.historic(name))
+            )
