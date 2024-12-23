@@ -9,9 +9,7 @@ import pandas as pd
 
 from macro_data.configuration.countries import Country
 from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
-from macro_data.readers.io_tables.industries import (
-    AGGREGATED_INDUSTRIES,
-)
+from macro_data.readers.io_tables.industries import AGGREGATED_INDUSTRIES
 from macro_data.readers.io_tables.mappings import (
     ICIO_AGGREGATE,
     ICIO_AGGREGATE_INV,

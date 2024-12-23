@@ -21,10 +21,7 @@ from macro_data.readers.economic_data.policy_rates import PolicyRatesReader
 from macro_data.readers.economic_data.world_bank_reader import WorldBankReader
 from macro_data.readers.io_tables.icio_reader import ICIOReader
 from macro_data.readers.io_tables.industries import AGGREGATED_INDUSTRIES
-from macro_data.readers.io_tables.mappings import (
-    ICIO_AGGREGATE,
-    ICIO_ALL,
-)
+from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE, ICIO_ALL
 from macro_data.readers.population_data.compustat_banks_reader import (
     CompustatBanksReader,
 )
