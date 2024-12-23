@@ -1,4 +1,5 @@
 import os
+import re
 from functools import reduce
 from pathlib import Path
 from typing import Literal, Optional
@@ -10,13 +11,11 @@ from macro_data.configuration.countries import Country
 from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
 from macro_data.readers.io_tables.industries import (
     AGGREGATED_INDUSTRIES,
-    ALL_INDUSTRIES,
 )
 from macro_data.readers.io_tables.mappings import (
     ICIO_AGGREGATE,
     ICIO_AGGREGATE_INV,
     ICIO_ALL,
-    ICIO_ALL_INV,
 )
 from macro_data.readers.io_tables.util import aggregate_df
 
@@ -285,13 +284,13 @@ class ICIOReader:
         return self.iot[("TOTAL", "Output")].xs(country_name, axis=0, level=0).loc[self.industries] / self.yearly_factor
 
     def get_output_shares_dict(self, country_name: str) -> dict[str, pd.Series]:
-        if not set(ALL_INDUSTRIES) == set(self.industries):
-            raise ValueError("Industries are already aggregated")
         output_shares_dict = {}
         output_series = self.get_total_output_series(country_name)
 
+        industry_dict = update_dictionary(self.industries, ICIO_AGGREGATE)
+
         for agg_sector in AGGREGATED_INDUSTRIES:
-            sub_sectors = ICIO_AGGREGATE[agg_sector]
+            sub_sectors = industry_dict[agg_sector]
             sub_sector_outputs = output_series.loc[output_series.index.intersection(sub_sectors)]
             total_output = sub_sector_outputs.sum()
             output_shares_dict[agg_sector] = sub_sector_outputs / total_output
@@ -305,7 +304,8 @@ class ICIOReader:
         df.columns = ["Industry", "Consumption"]
 
         # Step 3: Map each sub-sector to its aggregate sector
-        df["AggregateSector"] = df["Industry"].map(ICIO_AGGREGATE_INV)
+        inverse_dict = self.get_inverse_updated_dictionary()
+        df["AggregateSector"] = df["Industry"].map(inverse_dict)
 
         # Step 4: Calculate total output per aggregate sector
         agg_cons = df.groupby("AggregateSector")["Consumption"].sum().reset_index()
@@ -509,6 +509,21 @@ class ICIOReader:
             / self.yearly_factor
         )
 
+    def get_updated_dictionary(self):
+        dictionary = ICIO_AGGREGATE
+        return update_dictionary(self.industries, dictionary)
+
+    def get_inverse_updated_dictionary(self):
+        updated_dict = self.get_updated_dictionary()
+
+        inverse_dict = {}
+        # each value in the updated dictionary is a list of sub-sectors
+        # we want to create a dictionary where each sub-sector is a key, and the value is the aggregate sector
+        for agg_sector, sub_sectors in updated_dict.items():
+            for sub_sector in sub_sectors:
+                inverse_dict[sub_sector] = agg_sector
+        return inverse_dict
+
 
 def normalise_iot(
     iot: pd.DataFrame,
@@ -624,3 +639,16 @@ def default_no_agg_dict(df: pd.DataFrame) -> dict[str, list[str]]:
 
     names = set(ind_rows).union(set(ind_cols))
     return {c: [c] for c in names}
+
+
+def update_dictionary(industries: list[str], dictionary: dict):
+    pattern = re.compile(r"[A-Z]\d{2}[a-z]")
+    new_industries = [ind for ind in industries if pattern.match(ind)]
+
+    for ind in new_industries:
+        key = ind[0]
+        if key in dictionary:
+            dictionary[key].append(ind)
+        else:
+            dictionary[key] = [ind]
+    return dictionary
