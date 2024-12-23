@@ -306,6 +306,62 @@ class TestCreator:
 
         assert creator.synthetic_countries.keys() == {"USA"}
 
+    def test__create_can_disagg(self, data_config_path):
+        with open(data_config_path, "r") as f:
+            config_dict = yaml.safe_load(f)
+        # not necessary to do the country splitting here
+        # since the fixture used only has one country key
+        configuration = DataConfiguration(**config_dict)
+        configuration.can_disaggregation = True
+        configuration.aggregate_industries = False
+
+        canada = Country("CAN")
+        france = Country("FRA")
+
+        configuration.country_configs[france].single_firm_per_industry = True
+        configuration.country_configs[france].single_bank = True
+        configuration.country_configs[france].single_government_entity = True
+
+        configuration.country_configs[canada] = configuration.country_configs[france]
+
+        configuration.country_configs[canada].eu_proxy_country = france
+
+        del configuration.country_configs[france]
+
+        configuration.prune_date = None
+        configuration.seed = 0
+        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
+        # Check if there is a file in raw data path
+        creator = DataWrapper.from_config(
+            configuration=configuration,
+            raw_data_path=raw_data_path,
+            single_hfcs_survey=True,
+        )
+
+        check_country_credit(creator.synthetic_countries["CAN"])
+
+        check_country_gdp(creator.synthetic_countries["CAN"])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            tmp_file = tmp / "creator.pkl"
+            creator.save(tmp_file)
+            new_creator = DataWrapper.init_from_pickle(tmp_file)
+
+        assert creator.synthetic_countries.keys() == {"CAN"}
+
+        assert new_creator.synthetic_countries.keys() == {"CAN"}
+
+        new_creator.synthetic_countries["CAN"].reset_firm_function_dependent(
+            capital_inputs_utilisation_rate=0.1,
+            initial_inventory_to_input_fraction=0.1,
+            intermediate_inputs_utilisation_rate=0.2,
+            zero_initial_debt=False,
+            zero_initial_deposits=False,
+        )
+
+        assert True
+
 
 def check_country_credit(country: SyntheticCountry):
     pop_debt = country.population.household_data["Debt"].sum()

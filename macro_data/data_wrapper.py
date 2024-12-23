@@ -118,18 +118,38 @@ class DataWrapper:
         scale_dict = {country: configuration.country_configs[country].scale for country in country_names}
 
         prune_date = configuration.prune_date
-        readers = DataReaders.from_raw_data(
-            raw_data_path=raw_data_path,
-            country_names=country_names,
-            industries=industries,
-            simulation_year=year,
-            scale_dict=scale_dict,
-            prune_date=prune_date,
-            force_single_hfcs_survey=single_hfcs_survey,
-            single_icio_survey=single_icio_survey,
-            proxy_country_dict=proxy_country_dict,
-            aggregate_industries=configuration.aggregate_industries,
-        )
+        if configuration.can_disaggregation:
+            if configuration.aggregate_industries:
+                raise ValueError("Cannot disaggregate industries when aggregate_industries is True")
+            readers = DataReaders.from_raw_data(
+                raw_data_path=raw_data_path,
+                country_names=country_names,
+                industries=industries,
+                simulation_year=year,
+                scale_dict=scale_dict,
+                prune_date=prune_date,
+                force_single_hfcs_survey=single_hfcs_survey,
+                single_icio_survey=single_icio_survey,
+                proxy_country_dict=proxy_country_dict,
+                aggregate_industries=configuration.aggregate_industries,
+                use_disagg_can_2014_reader=True,
+            )
+        else:
+            readers = DataReaders.from_raw_data(
+                raw_data_path=raw_data_path,
+                country_names=country_names,
+                industries=industries,
+                simulation_year=year,
+                scale_dict=scale_dict,
+                prune_date=prune_date,
+                force_single_hfcs_survey=single_hfcs_survey,
+                single_icio_survey=single_icio_survey,
+                proxy_country_dict=proxy_country_dict,
+                aggregate_industries=configuration.aggregate_industries,
+            )
+
+        # override industries
+        industries = readers.icio[year].industries
 
         single_firm_dict = {
             country: configuration.country_configs[country].single_firm_per_industry for country in country_names
