@@ -63,7 +63,7 @@ from macro_data.processing.synthetic_population.hfcs_synthetic_population import
 from macro_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
 )
-from macro_data.readers import ALL_INDUSTRIES, AGGREGATED_INDUSTRIES, DataReaders
+from macro_data.readers import AGGREGATED_INDUSTRIES, ALL_INDUSTRIES, DataReaders
 from macro_data.readers.exogenous_data import ExogenousCountryData
 
 
