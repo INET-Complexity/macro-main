@@ -62,6 +62,26 @@ def readers(data_path):
     return readers
 
 
+@pytest.fixture(scope="module", name="readers_disagg_can")
+def readers_disagg_can(data_path):
+    canada = Country("CAN")
+    france = Country("FRA")
+    reader = DataReaders.from_raw_data(
+        raw_data_path=data_path,
+        country_names=[Country("CAN")],
+        simulation_year=2014,
+        scale_dict={canada: 100000},
+        industries=ALL_INDUSTRIES,
+        force_single_hfcs_survey=True,
+        single_icio_survey=True,
+        aggregate_industries=False,
+        proxy_country_dict={canada: france},
+        use_disagg_can_2014_reader=True,
+    )
+
+    return reader
+
+
 @pytest.fixture(scope="module", name="all_readers")
 def all_readers(data_path):
     france = Country("FRA")
