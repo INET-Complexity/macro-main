@@ -34,6 +34,8 @@ def process_individual_data(
         pd.DataFrame: The processed individual data.
     """
 
+    n_industries = len(industries)
+
     # Temporarily set age
     no_age = individual_data["Age"].isna()
     individual_data.loc[no_age, "Age"] = np.random.choice(range(0, 100), no_age.sum(), replace=True)
@@ -52,7 +54,7 @@ def process_individual_data(
         unemployment_rate=unemployment_rate,
         participation_rate=participation_rate,
     )
-    individual_data = fill_individual_nace(individual_data, industries, n_firms_by_industry)
+    individual_data = fill_individual_nace(individual_data, industries, n_firms_by_industry, n_industries)
     n_unemployed = np.sum(individual_data["Activity Status"] == 2)
 
     # DANGER: if we don't have total unemployment benefits
@@ -370,7 +372,10 @@ def increase_participation_rate(individual_data: pd.DataFrame, participation_rat
 
 
 def fill_individual_nace(
-    individual_data: pd.DataFrame, industries: list[str], n_firms_by_industry: list[int] | np.ndarray
+    individual_data: pd.DataFrame,
+    industries: list[str],
+    n_firms_by_industry: list[int] | np.ndarray,
+    n_industries: int = 43,
 ) -> pd.DataFrame:
     """
     Fill in missing values in the 'Employment Industry' column of the individual_data DataFrame
@@ -410,7 +415,7 @@ def fill_individual_nace(
     n_employees_by_sector_series = individual_data.groupby("Employment Industry").apply(
         lambda x: (x["Activity Status"] == 1).sum()
     )
-    n_employees_by_sector_series = n_employees_by_sector_series.reindex(range(43)).fillna(0).astype("int")
+    n_employees_by_sector_series = n_employees_by_sector_series.reindex(range(n_industries)).fillna(0).astype("int")
 
     n_employees_by_sector = n_employees_by_sector_series.values
 

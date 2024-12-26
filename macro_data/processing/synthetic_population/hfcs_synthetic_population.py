@@ -215,7 +215,8 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         hfcs_households_data = readers.hfcs[country_name].households_df
 
         if set(industries).issubset(ALL_INDUSTRIES):
-            output_shares = readers.icio[year].get_output_shares_dict(country_name)
+            queried_country = proxied_country if proxied_country is not None else country_name
+            output_shares = readers.icio[year].get_output_shares_dict(queried_country)
         else:
             output_shares = None
 

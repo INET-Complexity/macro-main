@@ -74,6 +74,21 @@ def test_all_industries(allind_datawrapper, seed):
     assert True
 
 
+def test_canadian_disagg(can_disagg_datawrapper):
+    n_industries = can_disagg_datawrapper.n_industries
+    configuration = SimulationConfiguration(
+        country_configurations={"CAN": CountryConfiguration.n_industry_default(n_industries=n_industries)}
+    )
+
+    configuration.seed = 0
+    simulation = Simulation.from_datawrapper(datawrapper=can_disagg_datawrapper, simulation_configuration=configuration)
+
+    for _ in range(3):
+        simulation.iterate()
+
+    assert True
+
+
 def test_check_compatibility(datawrapper):
     """Test the compatibility check."""
     france = CountryName("FRA")
