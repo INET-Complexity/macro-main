@@ -109,5 +109,5 @@ def default_data_configuration(
         aggregate_industries=aggregate_industries,
         single_firm_per_industry=single_firm_per_industry,
         seed=seed,
-        use_disagg_can_2014_reader=use_disagg_can_2014_reader,
+        can_disaggregation=use_disagg_can_2014_reader,
     )
