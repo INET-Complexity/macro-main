@@ -1020,7 +1020,11 @@ class Country:
         self.economy.ts.npl_mortgages.append([npl_mortgages])
 
         # Total government entity consumption
-        self.government_entities.record_consumption()
+        self.government_entities.record_consumption(
+            add_emissions=self.add_emissions,
+            readjusted_factors=readjusted_factors,
+            emitting_indices=self.emitting_indices,
+        )
 
         # Calculate the interest on deposits received/paid by banks
         self.banks.ts.interest_received_on_deposits.append(
