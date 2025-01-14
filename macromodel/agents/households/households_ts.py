@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import pandas as pd
 
@@ -14,6 +16,8 @@ def create_households_timeseries(
     scale: int,
     vat: float,
     tau_cf: float,
+    consumption_emissions: Optional[np.ndarray] = None,
+    investment_emissions: Optional[np.ndarray] = None,
 ) -> TimeSeries:
     n_industries = len(initial_consumption_by_industry)
     return TimeSeries(
@@ -99,4 +103,6 @@ def create_households_timeseries(
         interest_paid_on_deposits=np.full(len(data), np.nan),
         interest_paid_on_loans=np.full(len(data), np.nan),
         interest_paid=np.full(len(data), np.nan),
+        consumption_emissions=consumption_emissions,
+        investment_emissions=investment_emissions,
     )

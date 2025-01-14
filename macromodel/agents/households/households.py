@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Tuple
+from typing import Any, Tuple, Optional
 
 import h5py
 import numpy as np
@@ -77,6 +77,8 @@ class Households(Agent):
         initial_consumption_by_industry: np.ndarray,
         value_added_tax: float,
         scale: int,
+        add_emissions: bool,
+        emission_factors_lcu: Optional[np.ndarray] = None,
     ) -> "Households":
         individual_ages = synthetic_population.individual_data["Age"].values
 
@@ -156,6 +158,18 @@ class Households(Agent):
 
         consumption_by_industry_hh = 1 / (1 + tau_vat) * synthetic_population.industry_consumption_before_vat
 
+        # coal index is industries=="B05a"
+        if add_emissions:
+            coal_index = np.flatnonzero(industries == "B05a")
+            gas_index = np.flatnonzero(industries == "B05b")
+            oil_index = np.flatnonzero(industries == "B05c")
+            emitting_indices = np.concatenate([coal_index, gas_index, oil_index])
+            consumption_emissions = consumption_by_industry_hh[:, emitting_indices] @ emission_factors_lcu
+            investment_emissions = initial_investment.loc[:, ["B05a", "B05b", "B05c"]].values @ emission_factors_lcu
+        else:
+            consumption_emissions = None
+            investment_emissions = None
+
         ts = create_households_timeseries(
             data=hh_data,
             initial_consumption_by_industry=initial_consumption_by_industry,
@@ -165,6 +179,8 @@ class Households(Agent):
             scale=scale,
             vat=value_added_tax,
             tau_cf=tau_cf,
+            consumption_emissions=consumption_emissions,
+            investment_emissions=investment_emissions,
         )
 
         # Update the household type
@@ -631,7 +647,14 @@ class Households(Agent):
         self.set_goods_to_sell(np.zeros(self.ts.current("n_households")))
         self.set_prices(np.zeros(self.ts.current("n_households")))
 
-    def update_consumption_and_investment(self, tau_vat: float, tau_cf: float) -> None:
+    def update_consumption_and_investment(
+        self,
+        tau_vat: float,
+        tau_cf: float,
+        add_emissions: bool = False,
+        readjusted_factors: Optional[np.ndarray] = None,
+        emitting_indices: Optional[np.ndarray] = None,
+    ) -> None:
         # Total amount spent
         self.ts.amount_bought.append(self.ts.current("nominal_amount_spent_in_lcu").sum(axis=1))
 
@@ -641,6 +664,10 @@ class Households(Agent):
             self.ts.current("target_consumption"),
         )
 
+        if add_emissions:
+            consumption_emissions = consumption_by_good[:, emitting_indices] @ readjusted_factors
+            self.ts.consumption_emissions.append(consumption_emissions)
+
         # Consumption
         self.ts.consumption.append(consumption_by_good.sum(axis=1))
         self.ts.total_consumption.append([(1 + tau_vat) * self.ts.current("consumption").sum()])
@@ -649,6 +676,10 @@ class Households(Agent):
 
         # Investment
         self.ts.investment.append(self.ts.current("nominal_amount_spent_in_lcu") - consumption_by_good)
+        if add_emissions:
+            inv = self.ts.current("nominal_amount_spent_in_lcu") - consumption_by_good
+            investment_emissions = inv @ readjusted_factors
+            self.ts.investment_emissions.append(investment_emissions)
         self.ts.total_investment.append([(1 + tau_cf) * self.ts.current("investment").sum()])
         self.ts.total_investment_before_vat.append([self.ts.current("investment").sum()])
         self.ts.industry_investment.append(self.ts.current("investment").sum(axis=0))
