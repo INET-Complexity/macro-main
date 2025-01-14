@@ -78,6 +78,7 @@ def default_data_configuration(
     single_firm_per_industry: bool = True,
     scale: dict[str | Country, int] | int = 10_000,
     seed: Optional[int] = None,
+    use_disagg_can_2014_reader: bool = False,
 ) -> DataConfiguration:
     """
     Create a default data configuration.
@@ -90,10 +91,17 @@ def default_data_configuration(
         single_firm_per_industry (bool): Whether to have a single firm per industry.
         scale (dict[str | Country, int] | int): Scale factor.
         seed (Optional[int]): Seed value.
+        use_disagg_can_2014_reader (bool): Whether to use the energy disaggregation reader for Canada.
 
     Returns:
         DataConfiguration: The default data configuration.
     """
+    # if we use the disaggregated reader for Canada, we can only have CAN in the list of countries, and
+    # it can't be empty
+    if use_disagg_can_2014_reader:
+        if countries != ["CAN"]:
+            raise ValueError("If using the disaggregated reader for Canada, only CAN can be in the list of countries.")
+
     country_configurations = create_country_configurations(countries, scale, proxy_country_dict)
     return DataConfiguration(
         year=year,
@@ -101,4 +109,5 @@ def default_data_configuration(
         aggregate_industries=aggregate_industries,
         single_firm_per_industry=single_firm_per_industry,
         seed=seed,
+        can_disaggregation=use_disagg_can_2014_reader,
     )
