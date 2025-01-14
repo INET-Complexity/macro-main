@@ -133,6 +133,7 @@ class DataConfiguration(BaseModel):
     purpose: str = ""
     author: str = "INET"
     aggregate_industries: bool = False
+    can_disaggregation: bool = False
     seed: Optional[int] = None
 
     def model_post_init(self, __context: Any) -> None:
