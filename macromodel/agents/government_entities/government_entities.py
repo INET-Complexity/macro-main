@@ -173,9 +173,17 @@ class GovernmentEntities(Agent):
         )
         self.prepare_selling_goods(n_industries)
 
-    def record_consumption(self) -> None:
+    def record_consumption(
+        self,
+        add_emissions: bool = False,
+        readjusted_factors: Optional[np.ndarray] = None,
+        emitting_indices: Optional[np.ndarray] = None,
+    ) -> None:
         self.ts.consumption_in_usd.append(self.ts.current("nominal_amount_spent_in_usd").sum(axis=0))
         self.ts.consumption_in_lcu.append(self.exchange_rate_usd_to_lcu * self.ts.current("consumption_in_usd"))
+        if add_emissions:
+            emissions = np.sum(self.ts.current("consumption_in_lcu")[emitting_indices] * readjusted_factors).sum()
+            self.ts.emissions.append(emissions)
         self.ts.total_consumption.append([self.ts.current("consumption_in_lcu").sum()])
 
     def save_to_h5(self, group: h5py.Group):

@@ -678,7 +678,7 @@ class Households(Agent):
         self.ts.investment.append(self.ts.current("nominal_amount_spent_in_lcu") - consumption_by_good)
         if add_emissions:
             inv = self.ts.current("nominal_amount_spent_in_lcu") - consumption_by_good
-            investment_emissions = inv @ readjusted_factors
+            investment_emissions = inv[:, emitting_indices] @ readjusted_factors
             self.ts.investment_emissions.append(investment_emissions)
         self.ts.total_investment.append([(1 + tau_cf) * self.ts.current("investment").sum()])
         self.ts.total_investment_before_vat.append([self.ts.current("investment").sum()])
