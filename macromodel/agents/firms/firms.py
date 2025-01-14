@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 import h5py
 import numpy as np
@@ -78,6 +78,8 @@ class Firms(Agent):
         goods_criticality_matrix: pd.DataFrame | np.ndarray,
         average_initial_price: np.ndarray,
         industries: list[str],
+        add_emissions: bool = False,
+        emission_factors_lcu: Optional[np.ndarray] = None,
     ):
         functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.firms")
 
@@ -93,6 +95,17 @@ class Firms(Agent):
 
         data = synthetic_firms.firm_data.drop(columns=["Employees ID"]).astype(float).rename_axis("Firm ID")
 
+        if add_emissions:
+            coal_index = np.flatnonzero(synthetic_firms.industries == "B05a")
+            gas_index = np.flatnonzero(synthetic_firms.industries == "B05b")
+            oil_index = np.flatnonzero(synthetic_firms.industries == "B05c")
+            emitting_indices = np.concatenate([coal_index, gas_index, oil_index])
+            inputs_emissions = synthetic_firms.used_intermediate_inputs[:, emitting_indices] @ emission_factors_lcu
+            capital_emissions = synthetic_firms.used_capital_inputs[:, emitting_indices] @ emission_factors_lcu
+        else:
+            inputs_emissions = None
+            capital_emissions = None
+
         ts = FirmTimeSeries.from_data(
             data=data,
             intermediate_inputs_stock=synthetic_firms.intermediate_inputs_stock,
@@ -102,6 +115,8 @@ class Firms(Agent):
             initial_good_prices=average_initial_price,
             n_industries=len(synthetic_firms.industries),
             calculate_hill_exponent=configuration.calculate_hill_exponent,
+            inputs_emissions=inputs_emissions,
+            capital_emissions=capital_emissions,
         )
 
         states: dict[str, Any] = {}
