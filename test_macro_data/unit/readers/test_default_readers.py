@@ -36,3 +36,11 @@ def test__create_exogenous_data(readers):
 
 def test__readers_disagg_can(readers_disagg_can):
     assert "B05a" in readers_disagg_can.icio[2014].industries
+
+
+def test__emissions(readers):
+    data = readers.emissions.get_emissions_factors(2014)
+
+    assert data["coal"] > 0
+    assert data["oil"] > 0
+    assert data["gas"] > 0

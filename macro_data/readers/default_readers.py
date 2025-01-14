@@ -19,6 +19,7 @@ from macro_data.readers.economic_data.oecd_economic_data import OECDEconData
 from macro_data.readers.economic_data.ons_reader import ONSReader
 from macro_data.readers.economic_data.policy_rates import PolicyRatesReader
 from macro_data.readers.economic_data.world_bank_reader import WorldBankReader
+from macro_data.readers.emissions.emissions_reader import EmissionsReader
 from macro_data.readers.io_tables.icio_reader import ICIOReader
 from macro_data.readers.io_tables.industries import AGGREGATED_INDUSTRIES
 from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE, ICIO_ALL
@@ -53,6 +54,7 @@ class DataPaths:
     compustat_firms_annual_path: Path
     compustat_firms_quarterly_path: Path
     compustat_banks_path: Path
+    emissions_path: Path
 
     @classmethod
     def default_paths(cls, raw_data_path: Path, icio_years: Iterable[int]):
@@ -79,6 +81,7 @@ class DataPaths:
             compustat_firms_annual_path=raw_data_path / "compustat" / "firms_annual.csv",
             compustat_firms_quarterly_path=raw_data_path / "compustat" / "firms_quarterly.csv",
             compustat_banks_path=raw_data_path / "compustat" / "banks.csv",
+            emissions_path=raw_data_path / "emissions",
         )
 
     # @classmethod
@@ -105,6 +108,7 @@ class DataReaders:
     ecb_reader: ECBReader
     compustat_firms: CompustatFirmsReader
     compustat_banks: CompustatBanksReader
+    emissions: EmissionsReader
 
     @classmethod
     def from_raw_data(
@@ -255,6 +259,8 @@ class DataReaders:
             imf_reader.prune(prune_date)
             world_bank.prune(prune_date)
 
+        emissions = EmissionsReader.read_price_data(datapaths.emissions_path)
+
         return cls(
             icio=icio,
             wiod_sea=wiod_sea,
@@ -270,6 +276,7 @@ class DataReaders:
             ecb_reader=ecb_reader,
             compustat_firms=compustat_firms,
             compustat_banks=compustat_banks,
+            emissions=emissions,
         )
 
     @classmethod

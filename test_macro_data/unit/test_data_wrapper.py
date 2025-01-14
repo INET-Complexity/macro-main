@@ -51,6 +51,10 @@ class TestCreator:
             zero_initial_deposits=False,
         )
 
+        assert new_creator.emission_factors["coal"] > 0
+        assert new_creator.emission_factors["oil"] > 0
+        assert new_creator.emission_factors["gas"] > 0
+
         assert True
 
     def test__create_all_industries(self, data_config_path):
