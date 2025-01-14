@@ -974,6 +974,12 @@ class Firms(Agent):
     def total_used_input_costs(self):
         return self.ts.get_aggregate("used_intermediate_inputs_costs")
 
+    def get_total_inputs_emissions(self):
+        return self.ts.get_aggregate("inputs_emissions")
+
+    def get_total_capital_emissions(self):
+        return self.ts.get_aggregate("capital_emissions")
+
     def total_bought_input_costs(self):
         return self.ts.get_aggregate("total_intermediate_inputs_bought_costs")
 

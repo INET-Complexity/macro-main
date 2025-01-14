@@ -191,3 +191,6 @@ class GovernmentEntities(Agent):
 
     def total_consumption(self):
         return self.ts.get_aggregate("total_consumption")
+
+    def emissions(self):
+        return self.ts.historic("emissions")

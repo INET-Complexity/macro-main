@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Tuple, Optional
+from typing import Any, Optional, Tuple
 
 import h5py
 import numpy as np
@@ -77,7 +77,7 @@ class Households(Agent):
         initial_consumption_by_industry: np.ndarray,
         value_added_tax: float,
         scale: int,
-        add_emissions: bool,
+        add_emissions: bool = False,
         emission_factors_lcu: Optional[np.ndarray] = None,
     ) -> "Households":
         individual_ages = synthetic_population.individual_data["Age"].values
@@ -850,3 +850,9 @@ class Households(Agent):
 
     def mortgage_debt(self) -> np.ndarray:
         return self.ts.get_aggregate("mortgage_debt")
+
+    def consumption_emissions(self) -> np.ndarray:
+        return self.ts.get_aggregate("consumption_emissions")
+
+    def investment_emissions(self) -> np.ndarray:
+        return self.ts.get_aggregate("investment_emissions")

@@ -1198,6 +1198,14 @@ class Country:
             "Mortgage Debt": self.households.mortgage_debt(),
             "Central Bank Policy Rate": self.central_bank.ts.get_aggregate("policy_rate"),
         }
+
+        if self.add_emissions:
+            data_dict["Firm Input Emissions"] = self.firms.get_total_inputs_emissions()
+            data_dict["Firm Capital Emissions"] = self.firms.get_total_capital_emissions()
+            data_dict["Household Consumption Emissions"] = self.households.consumption_emissions()
+            data_dict["Household Investment Emissions"] = self.households.investment_emissions()
+            data_dict["Government Emissions"] = self.government_entities.emissions()
+
         return pd.DataFrame(data_dict)
 
     @property
