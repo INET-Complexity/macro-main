@@ -50,12 +50,18 @@ class GovernmentEntities(Agent):
         country_name: str,
         all_country_names: list[str],
         n_industries: int,
+        add_emissions: bool = False,
+        emission_factors_lcu: Optional[np.ndarray] = None,
+        emitting_indices: Optional[np.ndarray] = None,
     ):
         functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.government_entities")
 
         ts = create_government_entities_timeseries(
             data=synthetic_government_entities.gov_entity_data,
             n_government_entities=synthetic_government_entities.number_of_entities,
+            add_emissions=add_emissions,
+            emission_factors_lcu=emission_factors_lcu,
+            emitting_indices=emitting_indices,
         )
 
         states = {"government_consumption_model": synthetic_government_entities.government_consumption_model}
