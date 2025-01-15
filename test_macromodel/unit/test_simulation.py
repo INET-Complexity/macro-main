@@ -86,6 +86,19 @@ def test_canadian_disagg(can_disagg_datawrapper):
     for _ in range(3):
         simulation.iterate()
 
+    shallow_output = simulation.countries["CAN"].shallow_output()
+
+    keys = [
+        "Firm Input Emissions",
+        "Firm Capital Emissions",
+        "Household Consumption Emissions",
+        "Household Investment Emissions",
+        "Government Emissions",
+    ]
+
+    for key in keys:
+        assert np.all(shallow_output[key] > 0)
+
     assert True
 
 
