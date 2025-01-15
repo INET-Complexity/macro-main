@@ -7,7 +7,8 @@ from macromodel.agents.agent import Agent
 from macromodel.markets.goods_market.value_type import ValueType
 
 
-@njit(float64[:](float64[:], int64[:], int64), parallel=True, cache=True)
+# @njit(float64[:](float64[:], int64[:], int64), parallel=True, cache=True)
+@njit(parallel=True, cache=True)
 def get_split_sum(val: np.ndarray, groups: np.ndarray, n_industries: int) -> np.ndarray:
     split_sum = np.zeros(n_industries)
     for _g in prange(n_industries):
