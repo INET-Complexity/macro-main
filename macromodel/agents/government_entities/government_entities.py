@@ -50,12 +50,18 @@ class GovernmentEntities(Agent):
         country_name: str,
         all_country_names: list[str],
         n_industries: int,
+        add_emissions: bool = False,
+        emission_factors_lcu: Optional[np.ndarray] = None,
+        emitting_indices: Optional[np.ndarray] = None,
     ):
         functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.government_entities")
 
         ts = create_government_entities_timeseries(
             data=synthetic_government_entities.gov_entity_data,
             n_government_entities=synthetic_government_entities.number_of_entities,
+            add_emissions=add_emissions,
+            emission_factors_lcu=emission_factors_lcu,
+            emitting_indices=emitting_indices,
         )
 
         states = {"government_consumption_model": synthetic_government_entities.government_consumption_model}
@@ -167,9 +173,17 @@ class GovernmentEntities(Agent):
         )
         self.prepare_selling_goods(n_industries)
 
-    def record_consumption(self) -> None:
+    def record_consumption(
+        self,
+        add_emissions: bool = False,
+        readjusted_factors: Optional[np.ndarray] = None,
+        emitting_indices: Optional[np.ndarray] = None,
+    ) -> None:
         self.ts.consumption_in_usd.append(self.ts.current("nominal_amount_spent_in_usd").sum(axis=0))
         self.ts.consumption_in_lcu.append(self.exchange_rate_usd_to_lcu * self.ts.current("consumption_in_usd"))
+        if add_emissions:
+            emissions = np.sum(self.ts.current("consumption_in_lcu")[emitting_indices] * readjusted_factors).sum()
+            self.ts.emissions.append(emissions)
         self.ts.total_consumption.append([self.ts.current("consumption_in_lcu").sum()])
 
     def save_to_h5(self, group: h5py.Group):
@@ -177,3 +191,6 @@ class GovernmentEntities(Agent):
 
     def total_consumption(self):
         return self.ts.get_aggregate("total_consumption")
+
+    def emissions(self):
+        return self.ts.historic("emissions")

@@ -1,3 +1,5 @@
+import numpy as np
+
 from macromodel.configurations import CountryConfiguration, ExchangeRatesConfiguration
 from macromodel.country import Country
 from macromodel.exchange_rates import ExchangeRates
@@ -20,6 +22,14 @@ class TestCountry:
             country_names=country_names,
         )
 
+        emission_factors = np.array(
+            [
+                datawrapper.emission_factors["coal"],
+                datawrapper.emission_factors["gas"],
+                datawrapper.emission_factors["oil"],
+            ]
+        )
+
         country = Country.from_pickled_country(
             synthetic_country=synthetic_country,
             country_configuration=country_configuration,
@@ -30,6 +40,7 @@ class TestCountry:
             initial_year=datawrapper.configuration.year,
             t_max=12,
             running_multiple_countries=False,
+            emission_factors_usd=emission_factors,
         )
 
         assert country is not None

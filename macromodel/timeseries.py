@@ -9,7 +9,8 @@ class TimeSeries:
     def __init__(self, **kwargs):
         self.dicts = {}
         for key, value in kwargs.items():
-            self.dicts[key] = [value]
+            if value is not None:
+                self.dicts[key] = [value]
 
     def __getattr__(self, item):
         return self.dicts[item]
