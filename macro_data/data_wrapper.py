@@ -52,6 +52,7 @@ class DataWrapper:
     configuration: DataConfiguration
     calibration_data: pd.DataFrame
     industries: list[str]
+    emission_factors: dict[str, float]
 
     @property
     def all_country_names(self) -> list[str]:
@@ -260,6 +261,8 @@ class DataWrapper:
         origin_trade_proportions = readers.icio[year].get_origin_trade_proportions()
         destination_trade_proportions = readers.icio[year].get_destination_trade_proportions()
 
+        emission_factors = readers.emissions.get_emissions_factors(year)
+
         return cls(
             synthetic_countries=synthetic_countries,
             synthetic_rest_of_the_world=synthetic_row,
@@ -269,6 +272,7 @@ class DataWrapper:
             configuration=configuration,
             calibration_data=calibration_data,
             industries=industries,
+            emission_factors=emission_factors,
         )
 
     @classmethod
