@@ -1,7 +1,7 @@
-from strenum import StrEnum
 from pathlib import Path
 
 import yaml
+from strenum import StrEnum
 
 # get this file's directory path
 THIS_FILE_PATH = Path(__file__).parent.resolve()
