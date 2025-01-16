@@ -129,7 +129,7 @@ class Country:
     ) -> "Country":
         scale = synthetic_country.scale
 
-        emission_industries = ["B05a", "B05b", "B05c"]
+        emission_industries = ["B05a", "B05b", "B05c", "C19"]
         add_emissions = all([industry in industries for industry in emission_industries])
 
         emission_factors_lcu = emission_factors_usd / exchange_rates.get_current_exchange_rates_from_usd_to_lcu(
@@ -197,9 +197,11 @@ class Country:
             coal_index = np.flatnonzero(industries == "B05a")
             oil_index = np.flatnonzero(industries == "B05b")
             gas_index = np.flatnonzero(industries == "B05c")
-            emitting_indices = np.concatenate([coal_index, oil_index, gas_index])
+            refining_index = np.flatnonzero(industries == "C19")
+            emitting_indices = np.concatenate([coal_index, oil_index, gas_index, refining_index])
         else:
             emitting_indices = None
+            refining_index = None
 
         government_entities = GovernmentEntities.from_pickled_agent(
             synthetic_government_entities=synthetic_country.government_entities,
@@ -852,6 +854,11 @@ class Country:
             used_capital_inputs = self.firms.compute_used_capital_inputs()
             inputs_emissions = used_intermediate_inputs[:, self.emitting_indices] @ readjusted_factors
             capital_emissions = used_capital_inputs[:, self.emitting_indices] @ readjusted_factors
+
+            refining_firms = self.firms.states["Industry"] == self.emitting_indices[-1]
+            inputs_emissions[refining_firms] = 0
+            capital_emissions[refining_firms] = 0
+
             self.firms.ts.inputs_emissions.append(inputs_emissions)
             self.firms.ts.capital_emissions.append(capital_emissions)
 

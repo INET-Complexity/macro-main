@@ -66,6 +66,7 @@ class Simulation:
                 emission_factors["coal"],  # B05a
                 emission_factors["gas"],  # B05b
                 emission_factors["oil"],  # B05c
+                emission_factors["coke_refining"],  # C19
             ]
         )
 

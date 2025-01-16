@@ -99,9 +99,12 @@ class Firms(Agent):
             coal_index = np.flatnonzero(synthetic_firms.industries == "B05a")
             gas_index = np.flatnonzero(synthetic_firms.industries == "B05b")
             oil_index = np.flatnonzero(synthetic_firms.industries == "B05c")
-            emitting_indices = np.concatenate([coal_index, gas_index, oil_index])
+            refining_index = np.flatnonzero(synthetic_firms.industries == "C19")
+            emitting_indices = np.concatenate([coal_index, gas_index, oil_index, refining_index])
             inputs_emissions = synthetic_firms.used_intermediate_inputs[:, emitting_indices] @ emission_factors_lcu
+            inputs_emissions[refining_index] = 0
             capital_emissions = synthetic_firms.used_capital_inputs[:, emitting_indices] @ emission_factors_lcu
+            capital_emissions[refining_index] = 0
         else:
             inputs_emissions = None
             capital_emissions = None
