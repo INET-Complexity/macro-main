@@ -22,6 +22,7 @@ from macro_data.readers import (
     compile_industry_data,
 )
 from macro_data.readers.exogenous_data import ExogenousCountryData
+from macro_data.readers.io_tables.icio_reader import ICIOReader
 
 
 @dataclass
@@ -263,6 +264,13 @@ class DataWrapper:
 
         emission_factors = readers.emissions.get_emissions_factors(year)
 
+        if all([emitting_ind in industries for emitting_ind in ["B05a", "B05b", "B05c"]]):
+            emission_factors["coke_refining"] = get_coke_refining_emissions(
+                readers.icio[year], emission_factors, country_names + ["ROW"], year
+            )
+        else:
+            emission_factors["coke_refining"] = np.mean(list(emission_factors.values()))
+
         return cls(
             synthetic_countries=synthetic_countries,
             synthetic_rest_of_the_world=synthetic_row,
@@ -440,3 +448,26 @@ def country_scaled_imports(
     imports = industry_data[country]["industry_vectors"]["Imports in USD"]
     scaled = scaled_imports[country]
     return pd.DataFrame(imports.values * scaled.values[:, np.newaxis], index=scaled.index).fillna(0)
+
+
+def get_country_coke_refining_emissions(
+    icio_reader: ICIOReader, emission_factors_array: np.ndarray, country: str | Country, year: int
+):
+    coefficients = (1 / icio_reader.get_intermediate_inputs_matrix(country)).loc["C19", ["B05a", "B05b", "B05c"]]
+    return coefficients @ emission_factors_array
+
+
+def get_coke_refining_emissions(
+    icio_reader: ICIOReader, emission_factors: dict[str, float], countries: list[str | Country], year: int
+):
+    factors_array = np.array(
+        [
+            emission_factors["coal"],
+            emission_factors["gas"],
+            emission_factors["oil"],
+        ]
+    )
+
+    return np.mean(
+        [get_country_coke_refining_emissions(icio_reader, factors_array, country, year) for country in countries]
+    )
