@@ -19,14 +19,10 @@ from macro_data.readers.economic_data.oecd_economic_data import OECDEconData
 from macro_data.readers.economic_data.ons_reader import ONSReader
 from macro_data.readers.economic_data.policy_rates import PolicyRatesReader
 from macro_data.readers.economic_data.world_bank_reader import WorldBankReader
+from macro_data.readers.emissions.emissions_reader import EmissionsReader
 from macro_data.readers.io_tables.icio_reader import ICIOReader
 from macro_data.readers.io_tables.industries import AGGREGATED_INDUSTRIES
-from macro_data.readers.io_tables.mappings import (
-    ICIO_AGGREGATE,
-    ICIO_ALL,
-    WIOD_AGGREGATE,
-    WIOD_ALL,
-)
+from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE, ICIO_ALL
 from macro_data.readers.population_data.compustat_banks_reader import (
     CompustatBanksReader,
 )
@@ -58,6 +54,7 @@ class DataPaths:
     compustat_firms_annual_path: Path
     compustat_firms_quarterly_path: Path
     compustat_banks_path: Path
+    emissions_path: Path
 
     @classmethod
     def default_paths(cls, raw_data_path: Path, icio_years: Iterable[int]):
@@ -84,6 +81,7 @@ class DataPaths:
             compustat_firms_annual_path=raw_data_path / "compustat" / "firms_annual.csv",
             compustat_firms_quarterly_path=raw_data_path / "compustat" / "firms_quarterly.csv",
             compustat_banks_path=raw_data_path / "compustat" / "banks.csv",
+            emissions_path=raw_data_path / "emissions",
         )
 
     # @classmethod
@@ -110,6 +108,7 @@ class DataReaders:
     ecb_reader: ECBReader
     compustat_firms: CompustatFirmsReader
     compustat_banks: CompustatBanksReader
+    emissions: EmissionsReader
 
     @classmethod
     def from_raw_data(
@@ -126,6 +125,7 @@ class DataReaders:
         force_single_hfcs_survey: bool = False,
         single_icio_survey: bool = False,
         proxy_country_dict: dict[Country, Country] = None,
+        use_disagg_can_2014_reader: bool = False,
     ):
         if proxy_country_dict is None:
             proxy_country_dict = {country: country for country in country_names}
@@ -183,6 +183,18 @@ class DataReaders:
             )
             for year in all_years
         }
+
+        if use_disagg_can_2014_reader:
+            # check that only Canada is in the country names
+            if country_names != [Country("CAN")]:
+                raise ValueError("Only Canada is supported for this reader.")
+            if simulation_year != 2014:
+                raise ValueError("Only 2014 is supported for this reader.")
+            disagg_path = raw_data_path / "icio" / "icio_can_2014_disagg.csv"
+            df = pd.read_csv(disagg_path, header=[0, 1], index_col=[0, 1])
+            icio[simulation_year].iot = df
+            industries = df.loc["ROW"].index.unique()
+            icio[simulation_year].industries = industries
 
         value_added_dict = {
             country_name: icio[simulation_year].get_value_added_series(country_name)
@@ -247,6 +259,8 @@ class DataReaders:
             imf_reader.prune(prune_date)
             world_bank.prune(prune_date)
 
+        emissions = EmissionsReader.read_price_data(datapaths.emissions_path)
+
         return cls(
             icio=icio,
             wiod_sea=wiod_sea,
@@ -262,6 +276,7 @@ class DataReaders:
             ecb_reader=ecb_reader,
             compustat_firms=compustat_firms,
             compustat_banks=compustat_banks,
+            emissions=emissions,
         )
 
     @classmethod
@@ -373,14 +388,17 @@ class DataReaders:
         return merged
 
     def expand_weights_by_income(self, year: int, country: str | Country):
+
         weights_by_income = self.oecd_econ.get_household_consumption_by_income_quantile(country=country, year=year)
         weights_by_income.index = AGGREGATED_INDUSTRIES
         consumption_shares = self.icio[year].get_consumption_shares_series(country)
 
         weights_by_income_all = pd.DataFrame(index=consumption_shares.index, columns=weights_by_income.columns)
 
+        dictionary = self.icio[year].get_updated_dictionary()
+
         for aggregate_industry in AGGREGATED_INDUSTRIES:
-            sub_industries = ICIO_AGGREGATE.get(aggregate_industry, [])
+            sub_industries = dictionary.get(aggregate_industry, [])
             if not sub_industries:
                 continue
 

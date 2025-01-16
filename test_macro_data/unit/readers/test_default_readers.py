@@ -32,3 +32,15 @@ def test__get_benefits_inflation(readers):
 def test__create_exogenous_data(readers):
     exog_data = create_all_exogenous_data(readers, [Country("FRA")])
     assert exog_data["FRA"]["log_inflation"].shape[0] > 0
+
+
+def test__readers_disagg_can(readers_disagg_can):
+    assert "B05a" in readers_disagg_can.icio[2014].industries
+
+
+def test__emissions(readers):
+    data = readers.emissions.get_emissions_factors(2014)
+
+    assert data["coal"] > 0
+    assert data["oil"] > 0
+    assert data["gas"] > 0

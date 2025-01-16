@@ -1,5 +1,6 @@
 import logging
 from copy import deepcopy
+from typing import Optional
 
 import h5py
 import numpy as np
@@ -68,6 +69,9 @@ class Country:
         forecasting_window: int = 60,
         assume_zero_growth: bool = False,
         assume_zero_noise: bool = False,
+        add_emissions: bool = False,
+        emission_factors_lcu: Optional[np.ndarray] = None,
+        emitting_indices: Optional[np.ndarray] = None,
     ):
         # Parameters
         self.country_name = country_name
@@ -105,6 +109,10 @@ class Country:
 
         self.configuration = configuration
 
+        self.add_emissions = add_emissions
+        self.emission_factors_lcu = emission_factors_lcu
+        self.emitting_indices = emitting_indices
+
     @classmethod
     def from_pickled_country(
         cls,
@@ -117,8 +125,16 @@ class Country:
         initial_year: int,
         t_max: int,
         running_multiple_countries: bool,
+        emission_factors_usd: np.ndarray,
     ) -> "Country":
         scale = synthetic_country.scale
+
+        emission_industries = ["B05a", "B05b", "B05c", "C19"]
+        add_emissions = all([industry in industries for industry in emission_industries])
+
+        emission_factors_lcu = emission_factors_usd / exchange_rates.get_current_exchange_rates_from_usd_to_lcu(
+            country_name=country_name, current_year=initial_year, prev_inflation=0, prev_growth=0
+        )
 
         n_industries = len(industries)
 
@@ -145,6 +161,8 @@ class Country:
             initial_consumption_by_industry=initial_consumption_by_industry,
             value_added_tax=synthetic_country.tax_data.value_added_tax,
             scale=scale,
+            add_emissions=add_emissions,
+            emission_factors_lcu=emission_factors_lcu,
         )
 
         average_initial_price = synthetic_country.industry_data["industry_vectors"]["Average Initial Price"].values
@@ -155,6 +173,9 @@ class Country:
             all_country_names=all_country_names,
             goods_criticality_matrix=synthetic_country.goods_criticality_matrix,
             average_initial_price=average_initial_price,
+            industries=industries,
+            add_emissions=add_emissions,
+            emission_factors_lcu=emission_factors_lcu,
         )
 
         taxes_less_subsidies = synthetic_country.industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values
@@ -172,12 +193,25 @@ class Country:
             n_industries=n_industries,
         )
 
+        if add_emissions:
+            coal_index = np.flatnonzero(industries == "B05a")
+            oil_index = np.flatnonzero(industries == "B05b")
+            gas_index = np.flatnonzero(industries == "B05c")
+            refining_index = np.flatnonzero(industries == "C19")
+            emitting_indices = np.concatenate([coal_index, oil_index, gas_index, refining_index])
+        else:
+            emitting_indices = None
+            refining_index = None
+
         government_entities = GovernmentEntities.from_pickled_agent(
             synthetic_government_entities=synthetic_country.government_entities,
             configuration=country_configuration.government_entities,
             country_name=country_name,
             all_country_names=all_country_names,
             n_industries=n_industries,
+            add_emissions=add_emissions,
+            emission_factors_lcu=emission_factors_lcu,
+            emitting_indices=emitting_indices,
         )
 
         banks = Banks.from_pickled_agent(
@@ -259,6 +293,9 @@ class Country:
             assume_zero_noise=country_configuration.assume_zero_noise,
             running_multiple_countries=running_multiple_countries,
             configuration=country_configuration,
+            add_emissions=add_emissions,
+            emission_factors_lcu=emission_factors_lcu,
+            emitting_indices=emitting_indices,
         )
 
     def reset(self, configuration: CountryConfiguration) -> None:
@@ -809,6 +846,22 @@ class Country:
         )
 
         # Firm inventory and stocks
+        if self.add_emissions:
+            readjusted_factors = (
+                self.emission_factors_lcu / self.economy.ts.current("good_prices")[self.emitting_indices]
+            )
+            used_intermediate_inputs = self.firms.compute_used_intermediate_inputs()
+            used_capital_inputs = self.firms.compute_used_capital_inputs()
+            inputs_emissions = used_intermediate_inputs[:, self.emitting_indices] @ readjusted_factors
+            capital_emissions = used_capital_inputs[:, self.emitting_indices] @ readjusted_factors
+
+            refining_firms = self.firms.states["Industry"] == self.emitting_indices[-1]
+            inputs_emissions[refining_firms] = 0
+            capital_emissions[refining_firms] = 0
+
+            self.firms.ts.inputs_emissions.append(inputs_emissions)
+            self.firms.ts.capital_emissions.append(capital_emissions)
+
         self.firms.ts.used_intermediate_inputs.append(self.firms.compute_used_intermediate_inputs())
         self.firms.ts.used_intermediate_inputs_costs.append(
             self.firms.compute_used_intermediate_inputs_costs(
@@ -945,9 +998,19 @@ class Country:
         self.households.ts.rent_div_income_histogram.append(get_histogram(rent_div_income, None))
 
         # Household consumption, investment, wealth, and debt
+        if self.add_emissions:
+            readjusted_factors = (
+                self.emission_factors_lcu / self.economy.ts.current("good_prices")[self.emitting_indices]
+            )
+        else:
+            readjusted_factors = None
+
         self.households.update_consumption_and_investment(
             tau_vat=self.central_government.states["Value-added Tax"],
             tau_cf=self.central_government.states["Capital Formation Tax"],
+            readjusted_factors=readjusted_factors,
+            emitting_indices=self.emitting_indices,
+            add_emissions=self.add_emissions,
         )
         self.households.update_wealth(
             housing_data=self.housing_market.states["properties"],
@@ -964,7 +1027,11 @@ class Country:
         self.economy.ts.npl_mortgages.append([npl_mortgages])
 
         # Total government entity consumption
-        self.government_entities.record_consumption()
+        self.government_entities.record_consumption(
+            add_emissions=self.add_emissions,
+            readjusted_factors=readjusted_factors,
+            emitting_indices=self.emitting_indices,
+        )
 
         # Calculate the interest on deposits received/paid by banks
         self.banks.ts.interest_received_on_deposits.append(
@@ -1095,7 +1162,7 @@ class Country:
     def save_to_h5(self, h5_file: h5py.File):
         group = h5_file.create_group(self.country_name)
         self.firms.save_to_h5(group)
-        self.firms.save_industry_firms_df(group)
+        # self.firms.save_industry_firms_df(group)
 
         self.individuals.save_to_h5(group)
         self.households.save_to_h5(group)
@@ -1138,6 +1205,14 @@ class Country:
             "Mortgage Debt": self.households.mortgage_debt(),
             "Central Bank Policy Rate": self.central_bank.ts.get_aggregate("policy_rate"),
         }
+
+        if self.add_emissions:
+            data_dict["Firm Input Emissions"] = self.firms.get_total_inputs_emissions()
+            data_dict["Firm Capital Emissions"] = self.firms.get_total_capital_emissions()
+            data_dict["Household Consumption Emissions"] = self.households.consumption_emissions()
+            data_dict["Household Investment Emissions"] = self.households.investment_emissions()
+            data_dict["Government Emissions"] = self.government_entities.emissions()
+
         return pd.DataFrame(data_dict)
 
     @property
