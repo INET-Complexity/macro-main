@@ -22,6 +22,7 @@ from macro_data.readers import (
     compile_industry_data,
 )
 from macro_data.readers.exogenous_data import ExogenousCountryData
+from macro_data.readers.io_tables.icio_reader import ICIOReader
 
 
 @dataclass
@@ -52,6 +53,7 @@ class DataWrapper:
     configuration: DataConfiguration
     calibration_data: pd.DataFrame
     industries: list[str]
+    emission_factors: dict[str, float]
 
     @property
     def all_country_names(self) -> list[str]:
@@ -118,18 +120,38 @@ class DataWrapper:
         scale_dict = {country: configuration.country_configs[country].scale for country in country_names}
 
         prune_date = configuration.prune_date
-        readers = DataReaders.from_raw_data(
-            raw_data_path=raw_data_path,
-            country_names=country_names,
-            industries=industries,
-            simulation_year=year,
-            scale_dict=scale_dict,
-            prune_date=prune_date,
-            force_single_hfcs_survey=single_hfcs_survey,
-            single_icio_survey=single_icio_survey,
-            proxy_country_dict=proxy_country_dict,
-            aggregate_industries=configuration.aggregate_industries,
-        )
+        if configuration.can_disaggregation:
+            if configuration.aggregate_industries:
+                raise ValueError("Cannot disaggregate industries when aggregate_industries is True")
+            readers = DataReaders.from_raw_data(
+                raw_data_path=raw_data_path,
+                country_names=country_names,
+                industries=industries,
+                simulation_year=year,
+                scale_dict=scale_dict,
+                prune_date=prune_date,
+                force_single_hfcs_survey=single_hfcs_survey,
+                single_icio_survey=single_icio_survey,
+                proxy_country_dict=proxy_country_dict,
+                aggregate_industries=configuration.aggregate_industries,
+                use_disagg_can_2014_reader=True,
+            )
+        else:
+            readers = DataReaders.from_raw_data(
+                raw_data_path=raw_data_path,
+                country_names=country_names,
+                industries=industries,
+                simulation_year=year,
+                scale_dict=scale_dict,
+                prune_date=prune_date,
+                force_single_hfcs_survey=single_hfcs_survey,
+                single_icio_survey=single_icio_survey,
+                proxy_country_dict=proxy_country_dict,
+                aggregate_industries=configuration.aggregate_industries,
+            )
+
+        # override industries
+        industries = readers.icio[year].industries
 
         single_firm_dict = {
             country: configuration.country_configs[country].single_firm_per_industry for country in country_names
@@ -240,6 +262,15 @@ class DataWrapper:
         origin_trade_proportions = readers.icio[year].get_origin_trade_proportions()
         destination_trade_proportions = readers.icio[year].get_destination_trade_proportions()
 
+        emission_factors = readers.emissions.get_emissions_factors(year)
+
+        if all([emitting_ind in industries for emitting_ind in ["B05a", "B05b", "B05c"]]):
+            emission_factors["coke_refining"] = get_coke_refining_emissions(
+                readers.icio[year], emission_factors, country_names + ["ROW"], year
+            )
+        else:
+            emission_factors["coke_refining"] = np.mean(list(emission_factors.values()))
+
         return cls(
             synthetic_countries=synthetic_countries,
             synthetic_rest_of_the_world=synthetic_row,
@@ -249,6 +280,7 @@ class DataWrapper:
             configuration=configuration,
             calibration_data=calibration_data,
             industries=industries,
+            emission_factors=emission_factors,
         )
 
     @classmethod
@@ -416,3 +448,26 @@ def country_scaled_imports(
     imports = industry_data[country]["industry_vectors"]["Imports in USD"]
     scaled = scaled_imports[country]
     return pd.DataFrame(imports.values * scaled.values[:, np.newaxis], index=scaled.index).fillna(0)
+
+
+def get_country_coke_refining_emissions(
+    icio_reader: ICIOReader, emission_factors_array: np.ndarray, country: str | Country, year: int
+):
+    coefficients = (1 / icio_reader.get_intermediate_inputs_matrix(country)).loc["C19", ["B05a", "B05b", "B05c"]]
+    return coefficients @ emission_factors_array
+
+
+def get_coke_refining_emissions(
+    icio_reader: ICIOReader, emission_factors: dict[str, float], countries: list[str | Country], year: int
+):
+    factors_array = np.array(
+        [
+            emission_factors["coal"],
+            emission_factors["gas"],
+            emission_factors["oil"],
+        ]
+    )
+
+    return np.mean(
+        [get_country_coke_refining_emissions(icio_reader, factors_array, country, year) for country in countries]
+    )

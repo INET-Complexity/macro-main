@@ -59,6 +59,17 @@ class Simulation:
             for country_name, country in datawrapper.synthetic_countries.items()
         }
 
+        emission_factors = datawrapper.emission_factors
+
+        emission_factors = np.array(
+            [
+                emission_factors["coal"],  # B05a
+                emission_factors["gas"],  # B05b
+                emission_factors["oil"],  # B05c
+                emission_factors["coke_refining"],  # C19
+            ]
+        )
+
         exchange_rates = ExchangeRates.from_data(
             exchange_rates_data=datawrapper.exchange_rates,
             exchange_rate_config=simulation_configuration.exchange_rates_configuration,
@@ -78,6 +89,7 @@ class Simulation:
                 initial_year=datawrapper.configuration.year,
                 t_max=simulation_configuration.t_max,
                 running_multiple_countries=running_multi_country,
+                emission_factors_usd=emission_factors,
             )
             for country_name in countries_without_row
         }
@@ -276,7 +288,9 @@ class Simulation:
             save_dir = Path(save_dir)
         for country_name, country in self.countries.items():
             df = country.shallow_output()
+            industry_df = country.firms.industries_dataframe
             df.to_hdf(save_dir / file_name, key=country_name, mode="a")
+            industry_df.to_hdf(save_dir / file_name, key=f"{country_name}_industries", mode="a")
 
     def get_country_shallow_output(self, country: str):
         return self.countries[country].shallow_output()

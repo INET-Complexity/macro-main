@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 import h5py
 import numpy as np
@@ -33,6 +33,7 @@ class Firms(Agent):
         capital_inputs_delay: np.ndarray,
         average_initial_price: np.ndarray,
         configuration: FirmsConfiguration,
+        industries: list[str],
     ):
         n_transactors = ts.current("n_firms")
         super().__init__(
@@ -65,6 +66,8 @@ class Firms(Agent):
 
         self.configuration = configuration
 
+        self.industries = industries
+
     @classmethod
     def from_pickled_agent(
         cls,
@@ -74,6 +77,9 @@ class Firms(Agent):
         all_country_names: list[str],
         goods_criticality_matrix: pd.DataFrame | np.ndarray,
         average_initial_price: np.ndarray,
+        industries: list[str],
+        add_emissions: bool = False,
+        emission_factors_lcu: Optional[np.ndarray] = None,
     ):
         functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.firms")
 
@@ -89,6 +95,20 @@ class Firms(Agent):
 
         data = synthetic_firms.firm_data.drop(columns=["Employees ID"]).astype(float).rename_axis("Firm ID")
 
+        if add_emissions:
+            coal_index = np.flatnonzero(synthetic_firms.industries == "B05a")
+            gas_index = np.flatnonzero(synthetic_firms.industries == "B05b")
+            oil_index = np.flatnonzero(synthetic_firms.industries == "B05c")
+            refining_index = np.flatnonzero(synthetic_firms.industries == "C19")
+            emitting_indices = np.concatenate([coal_index, gas_index, oil_index, refining_index])
+            inputs_emissions = synthetic_firms.used_intermediate_inputs[:, emitting_indices] @ emission_factors_lcu
+            inputs_emissions[refining_index] = 0
+            capital_emissions = synthetic_firms.used_capital_inputs[:, emitting_indices] @ emission_factors_lcu
+            capital_emissions[refining_index] = 0
+        else:
+            inputs_emissions = None
+            capital_emissions = None
+
         ts = FirmTimeSeries.from_data(
             data=data,
             intermediate_inputs_stock=synthetic_firms.intermediate_inputs_stock,
@@ -98,6 +118,8 @@ class Firms(Agent):
             initial_good_prices=average_initial_price,
             n_industries=len(synthetic_firms.industries),
             calculate_hill_exponent=configuration.calculate_hill_exponent,
+            inputs_emissions=inputs_emissions,
+            capital_emissions=capital_emissions,
         )
 
         states: dict[str, Any] = {}
@@ -133,7 +155,31 @@ class Firms(Agent):
             np.array(configuration.parameters.capital_inputs_delay),
             average_initial_price,
             configuration=configuration,
+            industries=industries,
         )
+
+    @property
+    def industries_dataframe(self) -> pd.DataFrame:
+        """
+        Returns a DataFrame with firm indices and their corresponding industry names.
+
+        Returns:
+            pd.DataFrame: DataFrame with 'Firm_ID' as the index and 'Industry' as the column.
+        """
+        # Get the industry indices of the firms
+        industry_indices = self.states["Industry"]
+
+        # Map industry indices to industry names
+        industry_names = [self.industries[i] for i in industry_indices]
+
+        # Assuming firms are indexed from 0 to N-1
+        firm_indices = np.arange(len(industry_indices))
+
+        # Create the DataFrame
+        df = pd.DataFrame({"Industry": industry_names}, index=firm_indices)
+        df.index.name = "Firm_ID"
+
+        return df
 
     def reset(self, configuration: FirmsConfiguration) -> None:
         self.gen_reset()
@@ -897,21 +943,45 @@ class Firms(Agent):
     def save_to_h5(self, group: h5py.Group):
         self.ts.write_to_h5("firms", group)
 
-    def save_industry_firms_df(self, group: h5py.Group):
-        industry_firms_df = pd.DataFrame(
-            data=np.array(self.states["Industry"]),
-            index=pd.Index(range(self.ts.current("n_firms")), name="Firm ID"),
-            columns=pd.Index(["Industry"], name="Field"),
-        )
+        firms_group = group["firms"]
 
-        group.create_dataset("industry_firms", data=industry_firms_df.values, dtype="int32")
-        group["industry_firms"].attrs["columns"] = industry_firms_df.columns.to_list()
+        # Save industries DataFrame under 'firms_group'
+        industries_df = self.industries_dataframe
+
+        # Create a subgroup for industries under 'firms_group'
+        industries_group = firms_group.create_group("industries")
+
+        # Save the DataFrame to the HDF5 group
+        self._save_dataframe_to_h5(industries_df, industries_group)
+
+    @staticmethod
+    def _save_dataframe_to_h5(df: pd.DataFrame, group: h5py.Group):
+        """
+        Saves a DataFrame to an HDF5 group.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to save.
+            group (h5py.Group): The HDF5 group to save data into.
+        """
+        # Save index
+        group.create_dataset("Firm_ID", data=df.index.values, dtype="int")
+
+        # Save industry names as variable-length UTF-8 strings
+        dt = h5py.string_dtype(encoding="utf-8")
+        industry_names = df["Industry"].values
+        group.create_dataset("Industry", data=industry_names, dtype=dt)
 
     def total_sales(self):
         return self.ts.get_aggregate("total_sales")
 
     def total_used_input_costs(self):
         return self.ts.get_aggregate("used_intermediate_inputs_costs")
+
+    def get_total_inputs_emissions(self):
+        return self.ts.get_aggregate("inputs_emissions")
+
+    def get_total_capital_emissions(self):
+        return self.ts.get_aggregate("capital_emissions")
 
     def total_bought_input_costs(self):
         return self.ts.get_aggregate("total_intermediate_inputs_bought_costs")

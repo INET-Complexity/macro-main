@@ -1,4 +1,5 @@
 from collections import Counter
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -21,6 +22,8 @@ class FirmTimeSeries(TimeSeries):
         initial_good_prices: np.ndarray,
         n_industries: int,
         calculate_hill_exponent: bool = False,
+        inputs_emissions: Optional[np.ndarray] = None,
+        capital_emissions: Optional[np.ndarray] = None,
     ) -> "FirmTimeSeries":
         gross_operating_surplus_mixed_income = (
             data["Price"].values * (data["Production"].values + data["Inventory"].values)
@@ -141,6 +144,8 @@ class FirmTimeSeries(TimeSeries):
                     else calculate_tail_exponent(data["Production"].values / data["Number of Employees"].values.copy())
                 )
             ],
+            inputs_emissions=inputs_emissions,
+            capital_emissions=capital_emissions,
         )
 
     def reset_values(

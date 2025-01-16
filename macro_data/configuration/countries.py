@@ -252,7 +252,7 @@ class Country(StrEnum):
     REST_OF_WORLD = "ROW"
 
     def __str__(self):
-        return country_names[self.value]
+        return country_names.get(self.value, self.value)
 
     def to_two_letter_code(self):
         return country_codes[self.value]

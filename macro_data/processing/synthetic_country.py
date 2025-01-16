@@ -63,7 +63,7 @@ from macro_data.processing.synthetic_population.hfcs_synthetic_population import
 from macro_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
 )
-from macro_data.readers import ALL_INDUSTRIES, DataReaders
+from macro_data.readers import AGGREGATED_INDUSTRIES, ALL_INDUSTRIES, DataReaders
 from macro_data.readers.exogenous_data import ExogenousCountryData
 
 
@@ -382,12 +382,12 @@ class SyntheticCountry:
         long_term_interest_rate = readers.oecd_econ.read_long_term_interest_rates(country=country, year=year)
         policy_rate_markup = readers.eurostat.firm_risk_premium(country=country, year=year)
 
-        if set(industries).issubset(ALL_INDUSTRIES):
-            weights_by_income = readers.expand_weights_by_income(year=year, country=country)
-        else:
+        if set(industries).issubset(AGGREGATED_INDUSTRIES):
             weights_by_income = readers.oecd_econ.get_household_consumption_by_income_quantile(
                 country=country, year=year
             )
+        else:
+            weights_by_income = readers.expand_weights_by_income(year=year, country=country)
 
         cls.match_households_firms_banks(banks, firms, industries, population, tax_data)
 

@@ -141,6 +141,7 @@ def test_firms(datawrapper):
         all_country_names=["FRA", "ROW"],
         goods_criticality_matrix=country.goods_criticality_matrix,
         average_initial_price=country.industry_data["industry_vectors"]["Average Initial Price"].values,
+        industries=datawrapper.industries,
     )
 
     return firms
@@ -422,5 +423,17 @@ def instantiate_datawrapper() -> DataWrapper:
 @pytest.fixture(scope="module", name="allind_datawrapper")
 def instantiate_allind_datawrapper() -> DataWrapper:
     data_config = default_data_configuration(countries=["FRA"], aggregate_industries=False)
+    raw_data_path = Path(__file__).parent.parent.parent / "test_macro_data" / "unit" / "sample_raw_data"
+    return DataWrapper.from_config(data_config, raw_data_path, single_hfcs_survey=True)
+
+
+@pytest.fixture(scope="module", name="can_disagg_datawrapper")
+def instantiate_can_disagg_datawrapper() -> DataWrapper:
+    data_config = default_data_configuration(
+        countries=["CAN"],
+        aggregate_industries=False,
+        proxy_country_dict={"CAN": "FRA"},
+        use_disagg_can_2014_reader=True,
+    )
     raw_data_path = Path(__file__).parent.parent.parent / "test_macro_data" / "unit" / "sample_raw_data"
     return DataWrapper.from_config(data_config, raw_data_path, single_hfcs_survey=True)

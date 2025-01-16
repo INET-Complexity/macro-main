@@ -35,8 +35,8 @@ def test_simulation(datawrapper, seed):
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
-        simulation.save(save_dir=tmp, file_name="simulation.pkl")
-        simulation.shallow_hdf_save(save_dir=tmp, file_name="simulation.h5")
+        simulation.save(save_dir=tmp, file_name="simulation_long.h5")
+        simulation.shallow_hdf_save(save_dir=tmp, file_name="simulation_shallow.h5")
         dicts = simulation.shallow_df_dict()
         assert "FRA" in dicts
 
@@ -70,6 +70,34 @@ def test_all_industries(allind_datawrapper, seed):
 
     for _ in range(3):
         simulation.iterate()
+
+    assert True
+
+
+def test_canadian_disagg(can_disagg_datawrapper):
+    n_industries = can_disagg_datawrapper.n_industries
+    configuration = SimulationConfiguration(
+        country_configurations={"CAN": CountryConfiguration.n_industry_default(n_industries=n_industries)}
+    )
+
+    configuration.seed = 0
+    simulation = Simulation.from_datawrapper(datawrapper=can_disagg_datawrapper, simulation_configuration=configuration)
+
+    for _ in range(3):
+        simulation.iterate()
+
+    shallow_output = simulation.countries["CAN"].shallow_output()
+
+    keys = [
+        "Firm Input Emissions",
+        "Firm Capital Emissions",
+        "Household Consumption Emissions",
+        "Household Investment Emissions",
+        "Government Emissions",
+    ]
+
+    for key in keys:
+        assert np.all(shallow_output[key] > 0)
 
     assert True
 
