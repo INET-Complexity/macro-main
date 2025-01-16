@@ -163,9 +163,12 @@ class Households(Agent):
             coal_index = np.flatnonzero(industries == "B05a")
             gas_index = np.flatnonzero(industries == "B05b")
             oil_index = np.flatnonzero(industries == "B05c")
-            emitting_indices = np.concatenate([coal_index, gas_index, oil_index])
+            refining_index = np.flatnonzero(industries == "C19")
+            emitting_indices = np.concatenate([coal_index, gas_index, oil_index, refining_index])
             consumption_emissions = consumption_by_industry_hh[:, emitting_indices] @ emission_factors_lcu
-            investment_emissions = initial_investment.loc[:, ["B05a", "B05b", "B05c"]].values @ emission_factors_lcu
+            investment_emissions = (
+                initial_investment.loc[:, ["B05a", "B05b", "B05c", "C19"]].values @ emission_factors_lcu
+            )
         else:
             consumption_emissions = None
             investment_emissions = None
