@@ -9,6 +9,7 @@ from macro_data.processing.synthetic_government_entities.synthetic_government_en
     SyntheticGovernmentEntities,
 )
 from macro_data.readers.default_readers import DataReaders
+from macro_data.readers.emissions.emissions_reader import EmissionsData
 from macro_data.readers.exogenous_data import ExogenousCountryData
 
 
@@ -64,6 +65,7 @@ class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
         industry_data: dict[str, pd.DataFrame],
         single_government_entity: bool,
         create_model: bool = False,
+        emission_factors: Optional[EmissionsData] = None,
     ):
         if exogenous_country_data:
             total_gov_consumption = exogenous_country_data.national_accounts["Real Government Consumption (Value)"]
@@ -107,6 +109,14 @@ class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
             )
         else:
             government_consumption_model = None
+
+        if emission_factors is not None:
+            array = emission_factors.emissions_array
+            emitting_consumption = industry_data["industry_vectors"]["Government Consumption in LCU"].loc[
+                ["B05a", "B05b", "B05c", "C19"]
+            ]
+            emissions = emitting_consumption.values @ array
+            gov_entity_data["Consumption Emissions"] = emissions
 
         return cls(
             country_name,

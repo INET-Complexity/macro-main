@@ -20,6 +20,7 @@ from macro_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
 )
 from macro_data.readers.default_readers import DataReaders
+from macro_data.readers.emissions.emissions_reader import EmissionsData
 from macro_data.readers.exogenous_data import ExogenousCountryData
 from macro_data.readers.io_tables.industries import ALL_INDUSTRIES
 from macro_data.util.clean_data import remove_outliers

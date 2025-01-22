@@ -1,7 +1,11 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
+
+from macro_data.configuration.countries import Country
+from macro_data.readers.io_tables.icio_reader import ICIOReader
 
 COAL_TCO2_PER_TON = 1.57
 OIL_TCO2_PER_BARREL = 0.43
@@ -50,3 +54,33 @@ class EmissionsReader:
             "oil": oil_tco2_per_usd,
             "gas": gas_tco2_per_usd,
         }
+
+
+@dataclass
+class EmissionsData:
+    oil_factor_lcu: float
+    gas_factor_lcu: float
+    coal_factor_lcu: float
+    refining_factor_lcu: float
+
+    @classmethod
+    def from_readers(
+        cls,
+        usd_emission_factors: dict[str, float],
+        exchange_rate: float,
+    ):
+        oil_factor_lcu = usd_emission_factors["oil"] / exchange_rate
+        gas_factor_lcu = usd_emission_factors["gas"] / exchange_rate
+        coal_factor_lcu = usd_emission_factors["coal"] / exchange_rate
+        refining_factor_lcu = usd_emission_factors["coke_refining"] / exchange_rate
+
+        return cls(
+            oil_factor_lcu=oil_factor_lcu,
+            gas_factor_lcu=gas_factor_lcu,
+            coal_factor_lcu=coal_factor_lcu,
+            refining_factor_lcu=refining_factor_lcu,
+        )
+
+    @property
+    def emissions_array(self):
+        return np.array([self.oil_factor_lcu, self.gas_factor_lcu, self.coal_factor_lcu, self.refining_factor_lcu])
