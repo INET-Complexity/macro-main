@@ -64,6 +64,7 @@ from macro_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
 )
 from macro_data.readers import AGGREGATED_INDUSTRIES, ALL_INDUSTRIES, DataReaders
+from macro_data.readers.emissions.emissions_reader import EmissionsData
 from macro_data.readers.exogenous_data import ExogenousCountryData
 
 
@@ -116,6 +117,7 @@ class SyntheticCountry:
     country_configuration: CountryDataConfiguration
     industries: list[str]
     consumption_weights_by_income: pd.DataFrame
+    emission_factors: EmissionsData
 
     @classmethod
     def eu_synthetic_country(
@@ -130,6 +132,7 @@ class SyntheticCountry:
         country_industry_data: dict[str, pd.DataFrame],
         year_range: int,
         goods_criticality_matrix: pd.DataFrame,
+        emission_factors: Optional[EmissionsData] = None,
     ) -> "SyntheticCountry":
         """
         Create a synthetic country object for the European Union.
@@ -146,6 +149,7 @@ class SyntheticCountry:
             year_range: The range of years for which data is considered (determines the amount of data used to
                         decide benefits setting).
             goods_criticality_matrix: The goods criticality matrix.
+            emission_factors: The emission factors for the country (in tCO2/LCU).
 
         Returns:
             The synthetic country object.
@@ -162,6 +166,7 @@ class SyntheticCountry:
             exogenous_country_data=exogenous_country_data,
             industry_data=country_industry_data,
             single_government_entity=country_configuration.single_government_entity,
+            emission_factors=emission_factors,
         )
 
         central_bank = DefaultSyntheticCentralBank.from_readers(
@@ -190,6 +195,7 @@ class SyntheticCountry:
             scale=country_configuration.scale,
             n_employees_per_industry=population.number_employees_by_industry,
             firm_configuration=country_configuration.firms_configuration,
+            emission_factors=emission_factors,
         )
 
         banks = DefaultSyntheticBanks.from_readers(
@@ -233,6 +239,15 @@ class SyntheticCountry:
 
         housing_market = DefaultSyntheticHousingMarket(country, housing_data)
 
+        if emission_factors is not None:
+            emitting_industry_indices = np.array(
+                [list(industries).index(industry) for industry in ["B05a", "B05b", "B05c", "C19"]]
+            )
+            emission_factors_array = emission_factors.emissions_array
+        else:
+            emitting_industry_indices = None
+            emission_factors_array = None
+
         credit_market = cls.set_wealth_and_credit(
             banks=banks,
             central_government=central_government,
@@ -243,6 +258,8 @@ class SyntheticCountry:
             tax_data=tax_data,
             central_bank=central_bank,
             weights_by_income=weights_by_income,
+            emitting_indices=emitting_industry_indices,
+            emission_factors_array=emission_factors_array,
         )
 
         return cls(
@@ -267,6 +284,7 @@ class SyntheticCountry:
             industries=industries,
             consumption_weights_by_income=weights_by_income,
             synthetic_goods_market=synthetic_goods_market,
+            emission_factors=emission_factors,
         )
 
     @classmethod
@@ -284,6 +302,7 @@ class SyntheticCountry:
         year_range: int,
         goods_criticality_matrix: pd.DataFrame,
         proxy_inflation_data: pd.DataFrame,
+        emission_factors: Optional[EmissionsData] = None,
     ) -> "SyntheticCountry":
         """
         Create a synthetic country object for a country using a European Union country as a proxy for population.
@@ -302,6 +321,7 @@ class SyntheticCountry:
              (determines the amount of data used to decide benefits setting).
             goods_criticality_matrix: The goods criticality matrix.
             proxy_inflation_data: The inflation data for the proxy country.
+            emission_factors: The emission factors for the country (in tCO2/LCU).
 
         Returns:
             The synthetic country object.
@@ -318,6 +338,7 @@ class SyntheticCountry:
             industry_data=country_industry_data,
             single_government_entity=country_configuration.single_government_entity,
             quarter=quarter,
+            emission_factors=emission_factors,
         )
 
         central_bank = DefaultSyntheticCentralBank.from_readers(
@@ -356,6 +377,7 @@ class SyntheticCountry:
             n_employees_per_industry=population.number_employees_by_industry,
             firm_configuration=country_configuration.firms_configuration,
             exchange_rate_from_eur=exch_rate_proxy_to_lcu,
+            emission_factors=emission_factors,
         )
 
         banks = DefaultSyntheticBanks.from_readers(
@@ -400,6 +422,15 @@ class SyntheticCountry:
 
         housing_market = DefaultSyntheticHousingMarket(country, housing_data)
 
+        if emission_factors is not None:
+            emitting_industry_indices = np.array(
+                [list(industries).index(industry) for industry in ["B05a", "B05b", "B05c", "C19"]]
+            )
+            emission_factors_array = emission_factors.emissions_array
+        else:
+            emitting_industry_indices = None
+            emission_factors_array = None
+
         credit_market = cls.set_wealth_and_credit(
             banks=banks,
             central_government=central_government,
@@ -410,6 +441,8 @@ class SyntheticCountry:
             tax_data=tax_data,
             central_bank=central_bank,
             weights_by_income=weights_by_income,
+            emitting_indices=emitting_industry_indices,
+            emission_factors_array=emission_factors_array,
         )
 
         return cls(
@@ -434,6 +467,7 @@ class SyntheticCountry:
             industries=industries,
             consumption_weights_by_income=weights_by_income,
             synthetic_goods_market=synthetic_goods_market,
+            emission_factors=emission_factors,
         )
 
     @classmethod
@@ -448,6 +482,8 @@ class SyntheticCountry:
         tax_data: TaxData,
         central_bank: SyntheticCentralBank,
         weights_by_income: pd.DataFrame,
+        emission_factors_array: Optional[np.ndarray] = None,
+        emitting_indices: Optional[np.ndarray] = None,
     ) -> SyntheticCreditMarket:
         """
         This function takes care of matching the different agents together and initialising the Credit
@@ -466,6 +502,8 @@ class SyntheticCountry:
             tax_data (TaxData): The tax data for the country.
             central_bank (SyntheticCentralBank): The synthetic central bank.
             weights_by_income (pd.DataFrame): The weights by income for the country.
+            emission_factors_array (np.ndarray): The emission factors for the country (tCO2 per LCU).
+            emitting_indices (np.ndarray): The indices of emitting industries.
 
         Returns:
             tuple[SyntheticCreditMarket, SyntheticHousingMarket]: A tuple containing the synthetic credit market,
@@ -487,6 +525,8 @@ class SyntheticCountry:
             tax_data=tax_data,
             weights_by_income=weights_by_income,
             independents=independents,
+            emission_factors_array=emission_factors_array,
+            emitting_industry_indices=emitting_indices,
         )
 
         credit_market = cls.init_credit_market(
@@ -563,7 +603,7 @@ class SyntheticCountry:
             policy_rate=policy_rate,
             tau_bank=tau_bank,
             risk_premium=risk_premium,
-            **country_configuration.banks_configuration.interest_rates.dict()
+            **country_configuration.banks_configuration.interest_rates.model_dump()
         )
         credit_market = SyntheticCreditMarket.create_from_agents(
             firms=firms,
@@ -618,6 +658,8 @@ class SyntheticCountry:
         tax_data: TaxData,
         weights_by_income: pd.DataFrame,
         independents: Optional[list[str]] = None,
+        emission_factors_array: Optional[np.ndarray] = None,
+        emitting_industry_indices: Optional[np.ndarray] = None,
     ):
         population.set_wealth_distribution_function(independents=independents)
 
@@ -641,6 +683,10 @@ class SyntheticCountry:
         population.match_consumption_weights_by_income(
             weights_by_income=weights_by_income, iot_hh_consumption=iot_consumption, vat=tax_data.value_added_tax
         )
+
+        if (emission_factors_array is not None) and (emitting_industry_indices is not None):
+            population.add_emissions(emission_factors_array, emitting_industry_indices)
+
         banks.initialise_deposits_and_loans(
             synthetic_population=population,
             firm_deposits=firms.firm_data["Deposits"].values,

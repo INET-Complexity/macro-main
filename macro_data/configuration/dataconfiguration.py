@@ -84,6 +84,7 @@ class CountryDataConfiguration(BaseModel):
         scale (int): scale of the country (number of agents represented by a synthetic agent).
         eu_proxy_country (Country): EU proxy country (optional, if the country is not in the EU, part of the data will
                                     be generated using the EU proxy country).
+        carbon_price (float): Carbon price per tonne of CO2 in LCU.
     """
 
     firms_configuration: FirmsDataConfiguration
@@ -94,6 +95,7 @@ class CountryDataConfiguration(BaseModel):
     single_government_entity: bool
     scale: int
     eu_proxy_country: Optional[Country] = None
+    carbon_price: float = 0.0
 
 
 class ROWDataConfiguration(BaseModel):
@@ -115,7 +117,6 @@ class DataConfiguration(BaseModel):
     Represents a configuration object for the data package.
 
     Attributes:
-        industries (list[str]): List of industries.
         year (int): Initial year.
         quarter (int): Initial Quarter.
         prune_date (date): Prune date value.

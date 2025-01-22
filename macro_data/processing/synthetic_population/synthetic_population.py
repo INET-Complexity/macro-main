@@ -283,3 +283,7 @@ class SyntheticPopulation(ABC):
     ) -> None: ...
 
     def set_wealth_distribution_function(self, independents: Optional[list[str]] = None) -> None: ...
+
+    def add_emissions(self, emission_factors_array: np.ndarray, emitting_indices: list[int] | np.ndarray) -> None:
+        emissions = self.industry_consumption_before_vat[:, emitting_indices] @ emission_factors_array
+        self.household_data["Consumption Emissions"] = emissions
