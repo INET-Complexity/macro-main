@@ -685,7 +685,9 @@ class SyntheticCountry:
         )
 
         if (emission_factors_array is not None) and (emitting_industry_indices is not None):
-            population.add_emissions(emission_factors_array, emitting_industry_indices)
+            population.add_emissions(
+                emission_factors_array, emitting_industry_indices, tau_cf=tax_data.capital_formation_tax
+            )
 
         banks.initialise_deposits_and_loans(
             synthetic_population=population,

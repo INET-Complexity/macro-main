@@ -18,9 +18,9 @@ from macro_data.processing.synthetic_population.hfcs_individual_tools import (
 )
 from macro_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
+    default_target_investment,
 )
 from macro_data.readers.default_readers import DataReaders
-from macro_data.readers.emissions.emissions_reader import EmissionsData
 from macro_data.readers.exogenous_data import ExogenousCountryData
 from macro_data.readers.io_tables.industries import ALL_INDUSTRIES
 from macro_data.util.clean_data import remove_outliers
@@ -1057,15 +1057,6 @@ def default_desired_consumption(
     tau_vat_: float,
 ) -> np.ndarray:
     return 1.0 / (1 + tau_vat_) * np.outer(consumption_weights_, (1 - saving_rates_) * income_).T
-
-
-def default_target_investment(
-    income_: np.ndarray,
-    investment_weights_: np.ndarray,
-    investment_rate: np.ndarray,
-    tau_cf_: float,
-) -> np.ndarray:
-    return 1.0 / (1 + tau_cf_) * np.outer(investment_weights_, investment_rate * income_).T
 
 
 def set_initial_values(household_data: pd.DataFrame, scale: int):

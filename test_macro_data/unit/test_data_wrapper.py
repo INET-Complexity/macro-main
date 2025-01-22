@@ -376,6 +376,10 @@ class TestCreator:
 
         assert household_emissions > 0
 
+        household_investment_emissions = canada.population.household_data["Investment Emissions"].sum()
+
+        assert household_investment_emissions > 0
+
         government_consumption_emissions = canada.government_entities.gov_entity_data["Consumption Emissions"].sum()
 
         assert government_consumption_emissions > 0
