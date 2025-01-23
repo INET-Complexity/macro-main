@@ -2,6 +2,7 @@ import pickle as pkl
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -21,7 +22,10 @@ from macro_data.readers import (
     DataReaders,
     compile_industry_data,
 )
-from macro_data.readers.emissions.emissions_reader import EmissionsData
+from macro_data.readers.emissions.emissions_reader import (
+    EmissionsData,
+    EmissionsEnergyFactors,
+)
 from macro_data.readers.exogenous_data import ExogenousCountryData
 from macro_data.readers.io_tables.icio_reader import ICIOReader
 
@@ -55,6 +59,7 @@ class DataWrapper:
     calibration_data: pd.DataFrame
     industries: list[str]
     emission_factors: dict[str, float]
+    emissions_energy_factors: Optional[EmissionsEnergyFactors] = None
 
     @property
     def all_country_names(self) -> list[str]:
@@ -299,6 +304,9 @@ class DataWrapper:
             calibration_data=calibration_data,
             industries=industries,
             emission_factors=emission_factors,
+            emissions_energy_factors=(
+                EmissionsEnergyFactors.from_readers(readers.icio[year], country_names) if add_emissions else None
+            ),
         )
 
     @classmethod
@@ -471,7 +479,7 @@ def country_scaled_imports(
 def get_country_coke_refining_emissions(
     icio_reader: ICIOReader, emission_factors_array: np.ndarray, country: str | Country, year: int
 ):
-    coefficients = (1 / icio_reader.get_intermediate_inputs_matrix(country)).loc["C19", ["B05a", "B05b", "B05c"]]
+    coefficients = (1 / icio_reader.get_intermediate_inputs_matrix(country)).loc[["B05a", "B05b", "B05c"], "C19"]
     return coefficients @ emission_factors_array
 
 
