@@ -891,3 +891,9 @@ class Households(Agent):
 
     def investment_emissions(self) -> np.ndarray:
         return self.ts.get_aggregate("investment_emissions")
+
+    def disaggregated_consumption_emissions(self, input_name: str) -> np.ndarray:
+        return self.ts.get_aggregate(f"{input_name}_consumption_emissions")
+
+    def disaggregated_investment_emissions(self, input_name: str) -> np.ndarray:
+        return self.ts.get_aggregate(f"{input_name}_investment_emissions")
