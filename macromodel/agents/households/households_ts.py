@@ -18,6 +18,14 @@ def create_households_timeseries(
     tau_cf: float,
     consumption_emissions: Optional[np.ndarray] = None,
     investment_emissions: Optional[np.ndarray] = None,
+    coal_consumption_emissions: Optional[np.ndarray] = None,
+    gas_consumption_emissions: Optional[np.ndarray] = None,
+    oil_consumption_emissions: Optional[np.ndarray] = None,
+    refined_products_consumption_emissions: Optional[np.ndarray] = None,
+    coal_investment_emissions: Optional[np.ndarray] = None,
+    gas_investment_emissions: Optional[np.ndarray] = None,
+    oil_investment_emissions: Optional[np.ndarray] = None,
+    refined_products_investment_emissions: Optional[np.ndarray] = None,
 ) -> TimeSeries:
     n_industries = len(initial_consumption_by_industry)
     return TimeSeries(
@@ -105,4 +113,12 @@ def create_households_timeseries(
         interest_paid=np.full(len(data), np.nan),
         consumption_emissions=consumption_emissions,
         investment_emissions=investment_emissions,
+        coal_consumption_emissions=coal_consumption_emissions,
+        gas_consumption_emissions=gas_consumption_emissions,
+        oil_consumption_emissions=oil_consumption_emissions,
+        refined_products_consumption_emissions=refined_products_consumption_emissions,
+        coal_investment_emissions=coal_investment_emissions,
+        gas_investment_emissions=gas_investment_emissions,
+        oil_investment_emissions=oil_investment_emissions,
+        refined_products_investment_emissions=refined_products_investment_emissions,
     )
