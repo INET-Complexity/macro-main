@@ -19,6 +19,7 @@ from macro_data.processing.synthetic_firms.firm_tools import (
 )
 from macro_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
 from macro_data.readers.default_readers import DataReaders
+from macro_data.readers.emissions.emissions_reader import EmissionsData
 
 
 class DefaultSyntheticFirms(SyntheticFirms):
@@ -73,6 +74,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
         firm_configuration: FirmsDataConfiguration,
         exchange_rate_from_eur: float = 1.0,
         proxy_country: Optional[Country] = None,
+        emission_factors: Optional[EmissionsData] = None,
     ) -> "DefaultSyntheticFirms":
         n_firms_per_industry = industry_data["industry_vectors"]["Number of Firms"].values
         # number of firms per industry is at most the number of employees per industry
@@ -160,6 +162,46 @@ class DefaultSyntheticFirms(SyntheticFirms):
         )
 
         firm_data["Employees ID"] = [[] for _ in range(n_firms)]
+
+        if emission_factors is not None:
+            emitting_industries = ["B05a", "B05b", "B05c", "C19"]
+            # get indices of emitting industries
+            emitting_indices = [list(industries).index(industry) for industry in emitting_industries]
+            emitting_intermediate_inputs = used_intermediate_inputs[:, emitting_indices]
+            input_emissions = emitting_intermediate_inputs @ emission_factors.emissions_array
+            firm_data["Input Emissions"] = input_emissions
+
+            capital_emissions = used_capital_inputs[:, emitting_indices] @ emission_factors.emissions_array
+            firm_data["Capital Emissions"] = capital_emissions
+
+            # decompose emissions of oil, gas, coal and refined products emissions
+            for i, name in enumerate(["Coal", "Gas", "Oil", "Refined Products"]):
+                firm_data[f"{name} Input Emissions"] = (
+                    used_intermediate_inputs[:, emitting_indices[i]] * emission_factors.emissions_array[i]
+                )
+                # same for capital emissions
+                firm_data[f"{name} Capital Emissions"] = (
+                    used_capital_inputs[:, emitting_indices[i]] * emission_factors.emissions_array[i]
+                )
+
+            firm_data.loc[
+                firm_data["Industry"] == emitting_indices[-1],
+                ["Input Emissions", "Capital Emissions"],
+            ] = 0.0
+
+            zero_columns = [
+                "Oil Input Emissions",
+                "Gas Input Emissions",
+                "Coal Input Emissions",
+                "Oil Capital Emissions",
+                "Gas Capital Emissions",
+                "Coal Capital Emissions",
+            ]
+
+            firm_data.loc[
+                firm_data["Industry"] == emitting_indices[-1],
+                zero_columns,
+            ] = 0.0
 
         return cls(
             country_name=country_name,

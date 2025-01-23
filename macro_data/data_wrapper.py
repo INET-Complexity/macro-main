@@ -2,6 +2,7 @@ import pickle as pkl
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -20,6 +21,10 @@ from macro_data.readers import (
     ALL_INDUSTRIES,
     DataReaders,
     compile_industry_data,
+)
+from macro_data.readers.emissions.emissions_reader import (
+    EmissionsData,
+    EmissionsEnergyFactors,
 )
 from macro_data.readers.exogenous_data import ExogenousCountryData
 from macro_data.readers.io_tables.icio_reader import ICIOReader
@@ -54,6 +59,7 @@ class DataWrapper:
     calibration_data: pd.DataFrame
     industries: list[str]
     emission_factors: dict[str, float]
+    emissions_energy_factors: Optional[EmissionsEnergyFactors] = None
 
     @property
     def all_country_names(self) -> list[str]:
@@ -153,6 +159,18 @@ class DataWrapper:
         # override industries
         industries = readers.icio[year].industries
 
+        emission_factors = readers.emissions.get_emissions_factors(year)
+
+        add_emissions = False
+
+        if all([emitting_ind in industries for emitting_ind in ["B05a", "B05b", "B05c"]]):
+            emission_factors["coke_refining"] = get_coke_refining_emissions(
+                readers.icio[year], emission_factors, country_names + ["ROW"], year
+            )
+            add_emissions = True
+        else:
+            emission_factors["coke_refining"] = np.mean(list(emission_factors.values()))
+
         single_firm_dict = {
             country: configuration.country_configs[country].single_firm_per_industry for country in country_names
         }
@@ -216,6 +234,13 @@ class DataWrapper:
                 country_industry_data=industry_data[country],
                 year_range=year_range,
                 goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
+                emission_factors=(
+                    EmissionsData.from_readers(
+                        emission_factors, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country, year)
+                    )
+                    if add_emissions
+                    else None
+                ),
             )
             for country in country_names
             if country.is_eu_country
@@ -236,6 +261,13 @@ class DataWrapper:
                     goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
                     quarter=quarter,
                     proxy_inflation_data=proxy_inflation[country],
+                    emission_factors=(
+                        EmissionsData.from_readers(
+                            emission_factors, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country, year)
+                        )
+                        if add_emissions
+                        else None
+                    ),
                 )
 
         row_exports_growth = calibration_data[("ROW", "Exports (Growth)")]
@@ -262,15 +294,6 @@ class DataWrapper:
         origin_trade_proportions = readers.icio[year].get_origin_trade_proportions()
         destination_trade_proportions = readers.icio[year].get_destination_trade_proportions()
 
-        emission_factors = readers.emissions.get_emissions_factors(year)
-
-        if all([emitting_ind in industries for emitting_ind in ["B05a", "B05b", "B05c"]]):
-            emission_factors["coke_refining"] = get_coke_refining_emissions(
-                readers.icio[year], emission_factors, country_names + ["ROW"], year
-            )
-        else:
-            emission_factors["coke_refining"] = np.mean(list(emission_factors.values()))
-
         return cls(
             synthetic_countries=synthetic_countries,
             synthetic_rest_of_the_world=synthetic_row,
@@ -281,6 +304,9 @@ class DataWrapper:
             calibration_data=calibration_data,
             industries=industries,
             emission_factors=emission_factors,
+            emissions_energy_factors=(
+                EmissionsEnergyFactors.from_readers(readers.icio[year], country_names) if add_emissions else None
+            ),
         )
 
     @classmethod
@@ -453,7 +479,7 @@ def country_scaled_imports(
 def get_country_coke_refining_emissions(
     icio_reader: ICIOReader, emission_factors_array: np.ndarray, country: str | Country, year: int
 ):
-    coefficients = (1 / icio_reader.get_intermediate_inputs_matrix(country)).loc["C19", ["B05a", "B05b", "B05c"]]
+    coefficients = (1 / icio_reader.get_intermediate_inputs_matrix(country)).loc[["B05a", "B05b", "B05c"], "C19"]
     return coefficients @ emission_factors_array
 
 

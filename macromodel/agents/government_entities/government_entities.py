@@ -184,6 +184,18 @@ class GovernmentEntities(Agent):
         if add_emissions:
             emissions = np.sum(self.ts.current("consumption_in_lcu")[emitting_indices] * readjusted_factors).sum()
             self.ts.emissions.append(emissions)
+            self.ts.coal_emissions.append(
+                np.sum(self.ts.current("consumption_in_lcu")[emitting_indices] * readjusted_factors[0])
+            )
+            self.ts.gas_emissions.append(
+                np.sum(self.ts.current("consumption_in_lcu")[emitting_indices] * readjusted_factors[1])
+            )
+            self.ts.oil_emissions.append(
+                np.sum(self.ts.current("consumption_in_lcu")[emitting_indices] * readjusted_factors[2])
+            )
+            self.ts.refined_products_emissions.append(
+                np.sum(self.ts.current("consumption_in_lcu")[emitting_indices] * readjusted_factors[3])
+            )
         self.ts.total_consumption.append([self.ts.current("consumption_in_lcu").sum()])
 
     def save_to_h5(self, group: h5py.Group):
@@ -194,3 +206,6 @@ class GovernmentEntities(Agent):
 
     def emissions(self):
         return self.ts.historic("emissions")
+
+    def disaggregated_emissions(self, input_name: str):
+        return self.ts.historic(f"{input_name}_emissions")

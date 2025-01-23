@@ -24,6 +24,14 @@ class FirmTimeSeries(TimeSeries):
         calculate_hill_exponent: bool = False,
         inputs_emissions: Optional[np.ndarray] = None,
         capital_emissions: Optional[np.ndarray] = None,
+        coal_inputs_emissions: Optional[np.ndarray] = None,
+        gas_inputs_emissions: Optional[np.ndarray] = None,
+        oil_inputs_emissions: Optional[np.ndarray] = None,
+        refined_products_inputs_emissions: Optional[np.ndarray] = None,
+        coal_capital_emissions: Optional[np.ndarray] = None,
+        gas_capital_emissions: Optional[np.ndarray] = None,
+        oil_capital_emissions: Optional[np.ndarray] = None,
+        refined_products_capital_emissions: Optional[np.ndarray] = None,
     ) -> "FirmTimeSeries":
         gross_operating_surplus_mixed_income = (
             data["Price"].values * (data["Production"].values + data["Inventory"].values)
@@ -146,6 +154,14 @@ class FirmTimeSeries(TimeSeries):
             ],
             inputs_emissions=inputs_emissions,
             capital_emissions=capital_emissions,
+            coal_inputs_emissions=coal_inputs_emissions,
+            gas_inputs_emissions=gas_inputs_emissions,
+            oil_inputs_emissions=oil_inputs_emissions,
+            refined_products_inputs_emissions=refined_products_inputs_emissions,
+            coal_capital_emissions=coal_capital_emissions,
+            gas_capital_emissions=gas_capital_emissions,
+            oil_capital_emissions=oil_capital_emissions,
+            refined_products_capital_emissions=refined_products_capital_emissions,
         )
 
     def reset_values(
