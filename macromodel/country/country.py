@@ -132,9 +132,12 @@ class Country:
         emission_industries = ["B05a", "B05b", "B05c", "C19"]
         add_emissions = all([industry in industries for industry in emission_industries])
 
-        emission_factors_lcu = emission_factors_usd / exchange_rates.get_current_exchange_rates_from_usd_to_lcu(
-            country_name=country_name, current_year=initial_year, prev_inflation=0, prev_growth=0
-        )
+        if add_emissions:
+            emitting_indices = np.array([list(industries).index(industry) for industry in emission_industries])
+            emission_factors_lcu = synthetic_country.emission_factors.emissions_array
+        else:
+            emitting_indices = None
+            emission_factors_lcu = None
 
         n_industries = len(industries)
 
@@ -162,7 +165,6 @@ class Country:
             value_added_tax=synthetic_country.tax_data.value_added_tax,
             scale=scale,
             add_emissions=add_emissions,
-            emission_factors_lcu=emission_factors_lcu,
         )
 
         average_initial_price = synthetic_country.industry_data["industry_vectors"]["Average Initial Price"].values
@@ -175,7 +177,6 @@ class Country:
             average_initial_price=average_initial_price,
             industries=industries,
             add_emissions=add_emissions,
-            emission_factors_lcu=emission_factors_lcu,
         )
 
         taxes_less_subsidies = synthetic_country.industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values
@@ -192,16 +193,6 @@ class Country:
             tax_data=synthetic_country.tax_data,
             n_industries=n_industries,
         )
-
-        if add_emissions:
-            coal_index = np.flatnonzero(industries == "B05a")
-            oil_index = np.flatnonzero(industries == "B05b")
-            gas_index = np.flatnonzero(industries == "B05c")
-            refining_index = np.flatnonzero(industries == "C19")
-            emitting_indices = np.concatenate([coal_index, oil_index, gas_index, refining_index])
-        else:
-            emitting_indices = None
-            refining_index = None
 
         government_entities = GovernmentEntities.from_pickled_agent(
             synthetic_government_entities=synthetic_country.government_entities,
@@ -850,17 +841,7 @@ class Country:
             readjusted_factors = (
                 self.emission_factors_lcu / self.economy.ts.current("good_prices")[self.emitting_indices]
             )
-            used_intermediate_inputs = self.firms.compute_used_intermediate_inputs()
-            used_capital_inputs = self.firms.compute_used_capital_inputs()
-            inputs_emissions = used_intermediate_inputs[:, self.emitting_indices] @ readjusted_factors
-            capital_emissions = used_capital_inputs[:, self.emitting_indices] @ readjusted_factors
-
-            refining_firms = self.firms.states["Industry"] == self.emitting_indices[-1]
-            inputs_emissions[refining_firms] = 0
-            capital_emissions[refining_firms] = 0
-
-            self.firms.ts.inputs_emissions.append(inputs_emissions)
-            self.firms.ts.capital_emissions.append(capital_emissions)
+            self.firms.update_emissions(readjusted_factors=readjusted_factors, emitting_indices=self.emitting_indices)
 
         self.firms.ts.used_intermediate_inputs.append(self.firms.compute_used_intermediate_inputs())
         self.firms.ts.used_intermediate_inputs_costs.append(
@@ -1212,6 +1193,23 @@ class Country:
             data_dict["Household Consumption Emissions"] = self.households.consumption_emissions()
             data_dict["Household Investment Emissions"] = self.households.investment_emissions()
             data_dict["Government Emissions"] = self.government_entities.emissions()
+            for input_name in ["Coal", "Gas", "Oil", "Refined Products"]:
+                input_rename = input_name.replace(" ", "_").lower()
+                data_dict[f"Firm Input Emissions {input_name}"] = self.firms.get_disaggregated_input_emissions(
+                    input_rename
+                )
+                data_dict[f"Firm Capital Emissions {input_name}"] = self.firms.get_disaggregated_capital_emissions(
+                    input_rename
+                )
+                data_dict[f"Household Consumption Emissions {input_name}"] = (
+                    self.households.disaggregated_consumption_emissions(input_rename)
+                )
+                data_dict[f"Household Investment Emissions {input_name}"] = (
+                    self.households.disaggregated_investment_emissions(input_rename)
+                )
+                data_dict[f"Government Emissions {input_name}"] = self.government_entities.disaggregated_emissions(
+                    input_rename
+                )
 
         return pd.DataFrame(data_dict)
 

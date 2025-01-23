@@ -79,7 +79,6 @@ class Firms(Agent):
         average_initial_price: np.ndarray,
         industries: list[str],
         add_emissions: bool = False,
-        emission_factors_lcu: Optional[np.ndarray] = None,
     ):
         functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.firms")
 
@@ -96,18 +95,26 @@ class Firms(Agent):
         data = synthetic_firms.firm_data.drop(columns=["Employees ID"]).astype(float).rename_axis("Firm ID")
 
         if add_emissions:
-            coal_index = np.flatnonzero(synthetic_firms.industries == "B05a")
-            gas_index = np.flatnonzero(synthetic_firms.industries == "B05b")
-            oil_index = np.flatnonzero(synthetic_firms.industries == "B05c")
-            refining_index = np.flatnonzero(synthetic_firms.industries == "C19")
-            emitting_indices = np.concatenate([coal_index, gas_index, oil_index, refining_index])
-            inputs_emissions = synthetic_firms.used_intermediate_inputs[:, emitting_indices] @ emission_factors_lcu
-            inputs_emissions[refining_index] = 0
-            capital_emissions = synthetic_firms.used_capital_inputs[:, emitting_indices] @ emission_factors_lcu
-            capital_emissions[refining_index] = 0
+            inputs_emissions = synthetic_firms.firm_data["Input Emissions"].values
+            capital_emissions = synthetic_firms.firm_data["Capital Emissions"].values
+            input_dict: dict = {
+                f"{key}_inputs_emissions": synthetic_firms.firm_data[f"{emitting_industry} Input Emissions"]
+                for key, emitting_industry in zip(
+                    ["coal", "oil", "gas", "refined_products"], ["Coal", "Oil", "Gas", "Refined Products"]
+                )
+            }
+            capital_dict = {
+                f"{key}_capital_emissions": synthetic_firms.firm_data[f"{emitting_industry} Capital Emissions"]
+                for key, emitting_industry in zip(
+                    ["coal", "oil", "gas", "refined_products"], ["Coal", "Oil", "Gas", "Refined Products"]
+                )
+            }
+
         else:
             inputs_emissions = None
             capital_emissions = None
+            input_dict = {}
+            capital_dict = {}
 
         ts = FirmTimeSeries.from_data(
             data=data,
@@ -120,6 +127,8 @@ class Firms(Agent):
             calculate_hill_exponent=configuration.calculate_hill_exponent,
             inputs_emissions=inputs_emissions,
             capital_emissions=capital_emissions,
+            **input_dict,
+            **capital_dict,
         )
 
         states: dict[str, Any] = {}
@@ -937,6 +946,33 @@ class Firms(Agent):
     def compute_total_debt(self) -> float:
         return self.ts.current("debt").sum()
 
+    def update_emissions(self, readjusted_factors: np.ndarray, emitting_indices: list | np.ndarray):
+        used_intermediate_inputs = self.compute_used_intermediate_inputs()
+        used_capital_inputs = self.compute_used_capital_inputs()
+        inputs_emissions = used_intermediate_inputs[:, emitting_indices] @ readjusted_factors
+        capital_emissions = used_capital_inputs[:, emitting_indices] @ readjusted_factors
+        refining_firms = self.states["Industry"] == emitting_indices[-1]
+        inputs_emissions[refining_firms] = 0
+        capital_emissions[refining_firms] = 0
+
+        self.ts.inputs_emissions.append(inputs_emissions)
+        self.ts.capital_emissions.append(capital_emissions)
+
+        # disaggregate emissions
+        inputs_emissions_disaggregated = used_intermediate_inputs[:, emitting_indices] * readjusted_factors
+        capital_emissions_disaggregated = used_capital_inputs[:, emitting_indices] * readjusted_factors
+        inputs_emissions_disaggregated[refining_firms] = 0
+        capital_emissions_disaggregated[refining_firms] = 0
+
+        self.ts.coal_inputs_emissions.append(inputs_emissions_disaggregated[:, 0])
+        self.ts.gas_inputs_emissions.append(inputs_emissions_disaggregated[:, 1])
+        self.ts.oil_inputs_emissions.append(inputs_emissions_disaggregated[:, 2])
+        self.ts.refined_products_inputs_emissions.append(inputs_emissions_disaggregated[:, 3])
+        self.ts.coal_capital_emissions.append(capital_emissions_disaggregated[:, 0])
+        self.ts.gas_capital_emissions.append(capital_emissions_disaggregated[:, 1])
+        self.ts.oil_capital_emissions.append(capital_emissions_disaggregated[:, 2])
+        self.ts.refined_products_capital_emissions.append(capital_emissions_disaggregated[:, 3])
+
     def compute_total_deposits(self) -> float:
         return self.ts.current("deposits").sum()
 
@@ -979,6 +1015,12 @@ class Firms(Agent):
 
     def get_total_inputs_emissions(self):
         return self.ts.get_aggregate("inputs_emissions")
+
+    def get_disaggregated_input_emissions(self, input_name: str):
+        return self.ts.get_aggregate(f"{input_name}_inputs_emissions")
+
+    def get_disaggregated_capital_emissions(self, input_name: str):
+        return self.ts.get_aggregate(f"{input_name}_capital_emissions")
 
     def get_total_capital_emissions(self):
         return self.ts.get_aggregate("capital_emissions")

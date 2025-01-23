@@ -272,7 +272,32 @@ class SyntheticPopulation(ABC):
 
     def normalise_household_investment(
         self, tau_cf: float, iot_hh_investment: np.ndarray | pd.Series, positive_investment_rates: bool = True
-    ) -> None: ...
+    ) -> None:
+        inv_weights = iot_hh_investment / iot_hh_investment.sum()
+        income = self.household_data["Income"].values
+        investment_rate = self.household_data["Investment Rate"].values
+
+        current_hh_investment = default_target_investment(
+            income_=income, investment_rate=investment_rate, tau_cf_=tau_cf, investment_weights_=inv_weights
+        )
+
+        factor = iot_hh_investment.sum() / current_hh_investment.sum()
+
+        self.household_data["Investment Rate"] = factor * investment_rate
+
+        self.investment *= factor
+
+        # set initial investment
+        self.household_data["Investment"] = (self.household_data["Income"] * self.household_data["Investment Rate"]) / (
+            1 + tau_cf
+        )
+
+    def get_current_hh_investment_by_industry(self, tau_cf: float) -> np.ndarray:
+        income = self.household_data["Income"].values
+        investment_rate = self.household_data["Investment Rate"].values
+        return default_target_investment(
+            income_=income, investment_rate=investment_rate, tau_cf_=tau_cf, investment_weights_=self.investment_weights
+        )
 
     def match_consumption_weights_by_income(
         self,
@@ -283,3 +308,39 @@ class SyntheticPopulation(ABC):
     ) -> None: ...
 
     def set_wealth_distribution_function(self, independents: Optional[list[str]] = None) -> None: ...
+
+    def add_emissions(
+        self, emission_factors_array: np.ndarray, emitting_indices: list[int] | np.ndarray, tau_cf: float
+    ) -> None:
+        consumption_emissions = self.industry_consumption_before_vat[:, emitting_indices] @ emission_factors_array
+        self.household_data["Consumption Emissions"] = consumption_emissions
+
+        investment_emissions = (
+            self.get_current_hh_investment_by_industry(tau_cf)[:, emitting_indices] @ emission_factors_array
+        )
+
+        self.household_data["Investment Emissions"] = investment_emissions
+
+        # decompose in oil, gas, coal and refined products emissions
+
+        for i, name in enumerate(["Coal", "Gas", "Oil", "Refined Products"]):
+            self.household_data[f"{name} Consumption Emissions"] = (
+                self.industry_consumption_before_vat[:, emitting_indices[i]] * emission_factors_array[i]
+            )
+            # investment
+            self.household_data[f"{name} Investment Emissions"] = (
+                self.get_current_hh_investment_by_industry(tau_cf)[:, emitting_indices[i]] * emission_factors_array[i]
+            )
+
+    @property
+    def total_emissions(self) -> float:
+        return self.household_data["Consumption Emissions"] + self.household_data["Investment Emissions"]
+
+
+def default_target_investment(
+    income_: np.ndarray,
+    investment_weights_: np.ndarray,
+    investment_rate: np.ndarray,
+    tau_cf_: float,
+) -> np.ndarray:
+    return 1.0 / (1 + tau_cf_) * np.outer(investment_weights_, investment_rate * income_).T

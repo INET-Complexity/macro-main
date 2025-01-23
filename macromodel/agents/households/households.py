@@ -78,7 +78,6 @@ class Households(Agent):
         value_added_tax: float,
         scale: int,
         add_emissions: bool = False,
-        emission_factors_lcu: Optional[np.ndarray] = None,
     ) -> "Households":
         individual_ages = synthetic_population.individual_data["Age"].values
 
@@ -158,20 +157,32 @@ class Households(Agent):
 
         consumption_by_industry_hh = 1 / (1 + tau_vat) * synthetic_population.industry_consumption_before_vat
 
-        # coal index is industries=="B05a"
         if add_emissions:
-            coal_index = np.flatnonzero(industries == "B05a")
-            gas_index = np.flatnonzero(industries == "B05b")
-            oil_index = np.flatnonzero(industries == "B05c")
-            refining_index = np.flatnonzero(industries == "C19")
-            emitting_indices = np.concatenate([coal_index, gas_index, oil_index, refining_index])
-            consumption_emissions = consumption_by_industry_hh[:, emitting_indices] @ emission_factors_lcu
-            investment_emissions = (
-                initial_investment.loc[:, ["B05a", "B05b", "B05c", "C19"]].values @ emission_factors_lcu
-            )
+            consumption_emissions = synthetic_population.household_data["Consumption Emissions"].values
+            investment_emissions = synthetic_population.household_data["Investment Emissions"].values
+            coal_consumption_emissions = synthetic_population.household_data["Coal Consumption Emissions"].values
+            gas_consumption_emissions = synthetic_population.household_data["Gas Consumption Emissions"].values
+            oil_consumption_emissions = synthetic_population.household_data["Oil Consumption Emissions"].values
+            refined_products_consumption_emissions = synthetic_population.household_data[
+                "Refined Products Consumption Emissions"
+            ].values
+            coal_investment_emissions = synthetic_population.household_data["Coal Investment Emissions"].values
+            gas_investment_emissions = synthetic_population.household_data["Gas Investment Emissions"].values
+            oil_investment_emissions = synthetic_population.household_data["Oil Investment Emissions"].values
+            refined_products_investment_emissions = synthetic_population.household_data[
+                "Refined Products Investment Emissions"
+            ].values
         else:
             consumption_emissions = None
             investment_emissions = None
+            coal_consumption_emissions = None
+            gas_consumption_emissions = None
+            oil_consumption_emissions = None
+            refined_products_consumption_emissions = None
+            coal_investment_emissions = None
+            gas_investment_emissions = None
+            oil_investment_emissions = None
+            refined_products_investment_emissions = None
 
         ts = create_households_timeseries(
             data=hh_data,
@@ -184,6 +195,14 @@ class Households(Agent):
             tau_cf=tau_cf,
             consumption_emissions=consumption_emissions,
             investment_emissions=investment_emissions,
+            coal_consumption_emissions=coal_consumption_emissions,
+            gas_consumption_emissions=gas_consumption_emissions,
+            oil_consumption_emissions=oil_consumption_emissions,
+            refined_products_consumption_emissions=refined_products_consumption_emissions,
+            coal_investment_emissions=coal_investment_emissions,
+            gas_investment_emissions=gas_investment_emissions,
+            oil_investment_emissions=oil_investment_emissions,
+            refined_products_investment_emissions=refined_products_investment_emissions,
         )
 
         # Update the household type
@@ -670,6 +689,12 @@ class Households(Agent):
         if add_emissions:
             consumption_emissions = consumption_by_good[:, emitting_indices] @ readjusted_factors
             self.ts.consumption_emissions.append(consumption_emissions)
+            # coal, oil, gas, refined products consumption emissions
+            disaggregated_emissions = consumption_by_good[:, emitting_indices] * readjusted_factors
+            self.ts.coal_consumption_emissions.append(disaggregated_emissions[:, 0])
+            self.ts.oil_consumption_emissions.append(disaggregated_emissions[:, 1])
+            self.ts.gas_consumption_emissions.append(disaggregated_emissions[:, 2])
+            self.ts.refined_products_consumption_emissions.append(disaggregated_emissions[:, 3])
 
         # Consumption
         self.ts.consumption.append(consumption_by_good.sum(axis=1))
@@ -683,6 +708,13 @@ class Households(Agent):
             inv = self.ts.current("nominal_amount_spent_in_lcu") - consumption_by_good
             investment_emissions = inv[:, emitting_indices] @ readjusted_factors
             self.ts.investment_emissions.append(investment_emissions)
+
+            # coal, oil, gas, refined products investment emissions
+            disaggregated_emissions = inv[:, emitting_indices] * readjusted_factors
+            self.ts.coal_investment_emissions.append(disaggregated_emissions[:, 0])
+            self.ts.oil_investment_emissions.append(disaggregated_emissions[:, 1])
+            self.ts.gas_investment_emissions.append(disaggregated_emissions[:, 2])
+            self.ts.refined_products_investment_emissions.append(disaggregated_emissions[:, 3])
         self.ts.total_investment.append([(1 + tau_cf) * self.ts.current("investment").sum()])
         self.ts.total_investment_before_vat.append([self.ts.current("investment").sum()])
         self.ts.industry_investment.append(self.ts.current("investment").sum(axis=0))
@@ -859,3 +891,9 @@ class Households(Agent):
 
     def investment_emissions(self) -> np.ndarray:
         return self.ts.get_aggregate("investment_emissions")
+
+    def disaggregated_consumption_emissions(self, input_name: str) -> np.ndarray:
+        return self.ts.get_aggregate(f"{input_name}_consumption_emissions")
+
+    def disaggregated_investment_emissions(self, input_name: str) -> np.ndarray:
+        return self.ts.get_aggregate(f"{input_name}_investment_emissions")
