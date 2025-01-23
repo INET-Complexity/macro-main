@@ -321,6 +321,17 @@ class SyntheticPopulation(ABC):
 
         self.household_data["Investment Emissions"] = investment_emissions
 
+        # decompose in oil, gas, coal and refined products emissions
+
+        for i, name in enumerate(["Coal", "Gas", "Oil", "Refined Products"]):
+            self.household_data[f"{name} Consumption Emissions"] = (
+                self.industry_consumption_before_vat[:, emitting_indices[i]] * emission_factors_array[i]
+            )
+            # investment
+            self.household_data[f"{name} Investment Emissions"] = (
+                self.get_current_hh_investment_by_industry(tau_cf)[:, emitting_indices[i]] * emission_factors_array[i]
+            )
+
     @property
     def total_emissions(self) -> float:
         return self.household_data["Consumption Emissions"] + self.household_data["Investment Emissions"]

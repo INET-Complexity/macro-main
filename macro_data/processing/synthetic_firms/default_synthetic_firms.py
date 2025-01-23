@@ -174,9 +174,33 @@ class DefaultSyntheticFirms(SyntheticFirms):
             capital_emissions = used_capital_inputs[:, emitting_indices] @ emission_factors.emissions_array
             firm_data["Capital Emissions"] = capital_emissions
 
+            # decompose emissions of oil, gas, coal and refined products emissions
+            for i, name in enumerate(["Coal", "Gas", "Oil", "Refined Products"]):
+                firm_data[f"{name} Input Emissions"] = (
+                    used_intermediate_inputs[:, emitting_indices[i]] * emission_factors.emissions_array[i]
+                )
+                # same for capital emissions
+                firm_data[f"{name} Capital Emissions"] = (
+                    used_capital_inputs[:, emitting_indices[i]] * emission_factors.emissions_array[i]
+                )
+
             firm_data.loc[
                 firm_data["Industry"] == emitting_indices[-1],
                 ["Input Emissions", "Capital Emissions"],
+            ] = 0.0
+
+            zero_columns = [
+                "Oil Input Emissions",
+                "Gas Input Emissions",
+                "Coal Input Emissions",
+                "Oil Capital Emissions",
+                "Gas Capital Emissions",
+                "Coal Capital Emissions",
+            ]
+
+            firm_data.loc[
+                firm_data["Industry"] == emitting_indices[-1],
+                zero_columns,
             ] = 0.0
 
         return cls(

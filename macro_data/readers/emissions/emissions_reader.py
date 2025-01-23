@@ -58,9 +58,9 @@ class EmissionsReader:
 
 @dataclass
 class EmissionsData:
-    oil_factor_lcu: float
-    gas_factor_lcu: float
     coal_factor_lcu: float
+    gas_factor_lcu: float
+    oil_factor_lcu: float
     refining_factor_lcu: float
 
     @classmethod
@@ -83,4 +83,4 @@ class EmissionsData:
 
     @property
     def emissions_array(self):
-        return np.array([self.oil_factor_lcu, self.gas_factor_lcu, self.coal_factor_lcu, self.refining_factor_lcu])
+        return np.array([self.coal_factor_lcu, self.gas_factor_lcu, self.oil_factor_lcu, self.refining_factor_lcu])

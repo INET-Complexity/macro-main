@@ -117,6 +117,8 @@ class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
             ]
             emissions = emitting_consumption.values @ array
             gov_entity_data["Consumption Emissions"] = emissions
+            for i, name in enumerate(["Coal", "Gas", "Oil", "Refined Products"]):
+                gov_entity_data[f"{name} Consumption Emissions"] = emitting_consumption.values[i] * array[i]
 
         return cls(
             country_name,
