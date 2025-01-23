@@ -130,3 +130,7 @@ class SyntheticFirms(ABC):
         short_term_loans: ShorttermLoans,
         tax_data: TaxData,
     ) -> None: ...
+
+    @property
+    def total_emissions(self):
+        return self.firm_data["Input Emissions"] + self.firm_data["Capital Emissions"]

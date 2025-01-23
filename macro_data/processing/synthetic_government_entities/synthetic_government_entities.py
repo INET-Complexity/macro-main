@@ -47,3 +47,13 @@ class SyntheticGovernmentEntities(ABC):
 
         # Consumption model
         self.government_consumption_model = government_consumption_model
+
+    @property
+    def total_emissions(self):
+        """
+        Returns the total emissions of the government entities.
+
+        Returns:
+            pd.Series: The total emissions of the government entities.
+        """
+        return self.gov_entity_data["Consumption Emissions"]
