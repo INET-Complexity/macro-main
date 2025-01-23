@@ -321,6 +321,10 @@ class SyntheticPopulation(ABC):
 
         self.household_data["Investment Emissions"] = investment_emissions
 
+    @property
+    def total_emissions(self) -> float:
+        return self.household_data["Consumption Emissions"] + self.household_data["Investment Emissions"]
+
 
 def default_target_investment(
     income_: np.ndarray,

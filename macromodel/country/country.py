@@ -132,9 +132,12 @@ class Country:
         emission_industries = ["B05a", "B05b", "B05c", "C19"]
         add_emissions = all([industry in industries for industry in emission_industries])
 
-        emission_factors_lcu = emission_factors_usd / exchange_rates.get_current_exchange_rates_from_usd_to_lcu(
-            country_name=country_name, current_year=initial_year, prev_inflation=0, prev_growth=0
-        )
+        if add_emissions:
+            emitting_indices = np.array([list(industries).index(industry) for industry in emission_industries])
+            emission_factors_lcu = synthetic_country.emission_factors.emissions_array
+        else:
+            emitting_indices = None
+            emission_factors_lcu = None
 
         n_industries = len(industries)
 
@@ -162,7 +165,6 @@ class Country:
             value_added_tax=synthetic_country.tax_data.value_added_tax,
             scale=scale,
             add_emissions=add_emissions,
-            emission_factors_lcu=emission_factors_lcu,
         )
 
         average_initial_price = synthetic_country.industry_data["industry_vectors"]["Average Initial Price"].values
@@ -175,7 +177,6 @@ class Country:
             average_initial_price=average_initial_price,
             industries=industries,
             add_emissions=add_emissions,
-            emission_factors_lcu=emission_factors_lcu,
         )
 
         taxes_less_subsidies = synthetic_country.industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values
@@ -192,16 +193,6 @@ class Country:
             tax_data=synthetic_country.tax_data,
             n_industries=n_industries,
         )
-
-        if add_emissions:
-            coal_index = np.flatnonzero(industries == "B05a")
-            oil_index = np.flatnonzero(industries == "B05b")
-            gas_index = np.flatnonzero(industries == "B05c")
-            refining_index = np.flatnonzero(industries == "C19")
-            emitting_indices = np.concatenate([coal_index, oil_index, gas_index, refining_index])
-        else:
-            emitting_indices = None
-            refining_index = None
 
         government_entities = GovernmentEntities.from_pickled_agent(
             synthetic_government_entities=synthetic_country.government_entities,

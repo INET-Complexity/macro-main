@@ -78,7 +78,6 @@ class Households(Agent):
         value_added_tax: float,
         scale: int,
         add_emissions: bool = False,
-        emission_factors_lcu: Optional[np.ndarray] = None,
     ) -> "Households":
         individual_ages = synthetic_population.individual_data["Age"].values
 
@@ -158,17 +157,9 @@ class Households(Agent):
 
         consumption_by_industry_hh = 1 / (1 + tau_vat) * synthetic_population.industry_consumption_before_vat
 
-        # coal index is industries=="B05a"
         if add_emissions:
-            coal_index = np.flatnonzero(industries == "B05a")
-            gas_index = np.flatnonzero(industries == "B05b")
-            oil_index = np.flatnonzero(industries == "B05c")
-            refining_index = np.flatnonzero(industries == "C19")
-            emitting_indices = np.concatenate([coal_index, gas_index, oil_index, refining_index])
-            consumption_emissions = consumption_by_industry_hh[:, emitting_indices] @ emission_factors_lcu
-            investment_emissions = (
-                initial_investment.loc[:, ["B05a", "B05b", "B05c", "C19"]].values @ emission_factors_lcu
-            )
+            consumption_emissions = synthetic_population.household_data["Consumption Emissions"].values
+            investment_emissions = synthetic_population.household_data["Investment Emissions"].values
         else:
             consumption_emissions = None
             investment_emissions = None
