@@ -5,7 +5,7 @@ banking products through:
 - Policy rate transmission
 - Product-specific adjustments
 - Pass-through mechanisms
-- Error correction terms
+- ECT terms
 
 The rates cover:
 - Firm loans (short/long-term)
@@ -26,7 +26,7 @@ class InterestRatesSetter(ABC):
     banking products through:
     - Policy rate transmission
     - Pass-through mechanisms
-    - Error correction adjustments
+    - ECT adjustments
     - Product differentiation
 
     The rates include:
@@ -51,7 +51,7 @@ class InterestRatesSetter(ABC):
             prev_interest_rates_on_short_term_firm_loans (np.ndarray):
                 Previous period's rates
             firm_pt (float): Firm pass-through parameter
-            firm_ect (float): Firm error correction parameter
+            firm_ect (float): Firm ECT parameter
 
         Returns:
             np.ndarray: New short-term firm loan rates by bank
@@ -73,7 +73,7 @@ class InterestRatesSetter(ABC):
             prev_interest_rates_on_long_term_firm_loans (np.ndarray):
                 Previous period's rates
             firm_pt (float): Firm pass-through parameter
-            firm_ect (float): Firm error correction parameter
+            firm_ect (float): Firm ECT parameter
 
         Returns:
             np.ndarray: New long-term firm loan rates by bank
@@ -95,7 +95,7 @@ class InterestRatesSetter(ABC):
             prev_interest_rate_on_hh_consumption_loans (np.ndarray):
                 Previous period's rates
             hh_cons_pt (float): Household consumption pass-through
-            hh_cons_ect (float): Household consumption error correction
+            hh_cons_ect (float): Household consumption ECT
 
         Returns:
             np.ndarray: New household consumption loan rates by bank
@@ -117,7 +117,7 @@ class InterestRatesSetter(ABC):
             prev_interest_rate_on_mortgages (np.ndarray):
                 Previous period's rates
             hh_mortgage_pt (float): Mortgage pass-through parameter
-            hh_mortgage_ect (float): Mortgage error correction parameter
+            hh_mortgage_ect (float): Mortgage ECT parameter
 
         Returns:
             np.ndarray: New mortgage rates by bank
@@ -139,7 +139,7 @@ class InterestRatesSetter(ABC):
             prev_interest_rate_on_firm_deposits (np.ndarray):
                 Previous period's rates
             firm_pt (float): Firm pass-through parameter
-            firm_ect (float): Firm error correction parameter
+            firm_ect (float): Firm ECT parameter
 
         Returns:
             np.ndarray: New firm deposit rates by bank
@@ -161,7 +161,7 @@ class InterestRatesSetter(ABC):
             prev_overdraft_rate_on_firm_deposits (np.ndarray):
                 Previous period's rates
             firm_pt (float): Firm pass-through parameter
-            firm_ect (float): Firm error correction parameter
+            firm_ect (float): Firm ECT parameter
 
         Returns:
             np.ndarray: New firm overdraft rates by bank
@@ -183,7 +183,7 @@ class InterestRatesSetter(ABC):
             prev_interest_rate_on_hh_deposits (np.ndarray):
                 Previous period's rates
             hh_cons_pt (float): Household pass-through parameter
-            hh_cons_ect (float): Household error correction parameter
+            hh_cons_ect (float): Household ECT parameter
 
         Returns:
             np.ndarray: New household deposit rates by bank
@@ -205,7 +205,7 @@ class InterestRatesSetter(ABC):
             prev_overdraft_rate_on_hh_deposits (np.ndarray):
                 Previous period's rates
             hh_cons_pt (float): Household pass-through parameter
-            hh_cons_ect (float): Household error correction parameter
+            hh_cons_ect (float): Household ECT parameter
 
         Returns:
             np.ndarray: New household overdraft rates by bank
@@ -219,12 +219,12 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
     This class implements interest rate determination through:
     - Policy rate transmission
     - Pass-through mechanisms
-    - Error correction adjustments
+    - ECT adjustments
     - Product-specific spreads
 
     The approach:
     - Uses pass-through parameters
-    - Applies error correction terms
+    - Applies ECT terms
     - Maintains rate differentials
     - Ensures rate consistency
     """
@@ -242,14 +242,14 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
         - Previous period's rates
         - Policy rate changes
         - Pass-through effects
-        - Error correction
+        - ECT term
 
         Args:
             central_bank_policy_rate (float): Current policy rate
             prev_interest_rates_on_short_term_firm_loans (np.ndarray):
                 Previous period's rates
             firm_pt (float): Firm pass-through parameter
-            firm_ect (float): Firm error correction parameter
+            firm_ect (float): Firm ECT parameter
 
         Returns:
             np.ndarray: New short-term firm loan rates by bank
@@ -271,14 +271,14 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
         - Previous period's rates
         - Policy rate changes
         - Pass-through effects
-        - Error correction
+        - ECT term
 
         Args:
             central_bank_policy_rate (float): Current policy rate
             prev_interest_rates_on_long_term_firm_loans (np.ndarray):
                 Previous period's rates
             firm_pt (float): Firm pass-through parameter
-            firm_ect (float): Firm error correction parameter
+            firm_ect (float): Firm ECT parameter
 
         Returns:
             np.ndarray: New long-term firm loan rates by bank
@@ -300,14 +300,14 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
         - Previous period's rates
         - Policy rate changes
         - Pass-through effects
-        - Error correction
+        - ECT term
 
         Args:
             central_bank_policy_rate (float): Current policy rate
             prev_interest_rate_on_hh_consumption_loans (np.ndarray):
                 Previous period's rates
             hh_cons_pt (float): Household consumption pass-through
-            hh_cons_ect (float): Household consumption error correction
+            hh_cons_ect (float): Household consumption ECT
 
         Returns:
             np.ndarray: New household consumption loan rates by bank
@@ -329,14 +329,14 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
         - Previous period's rates
         - Policy rate changes
         - Pass-through effects
-        - Error correction
+        - ECT term
 
         Args:
             central_bank_policy_rate (float): Current policy rate
             prev_interest_rate_on_mortgages (np.ndarray):
                 Previous period's rates
             hh_mortgage_pt (float): Mortgage pass-through parameter
-            hh_mortgage_ect (float): Mortgage error correction parameter
+            hh_mortgage_ect (float): Mortgage ECT parameter
 
         Returns:
             np.ndarray: New mortgage rates by bank
@@ -361,7 +361,7 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
             prev_interest_rate_on_firm_deposits (np.ndarray):
                 Previous period's rates
             firm_pt (float): Firm pass-through parameter
-            firm_ect (float): Firm error correction parameter
+            firm_ect (float): Firm ECT parameter
 
         Returns:
             np.ndarray: New firm deposit rates by bank
@@ -381,14 +381,14 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
         - Previous period's rates
         - Policy rate changes
         - Pass-through effects
-        - Error correction
+        - ECT term
 
         Args:
             central_bank_policy_rate (float): Current policy rate
             prev_overdraft_rate_on_firm_deposits (np.ndarray):
                 Previous period's rates
             firm_pt (float): Firm pass-through parameter
-            firm_ect (float): Firm error correction parameter
+            firm_ect (float): Firm ECT parameter
 
         Returns:
             np.ndarray: New firm overdraft rates by bank
@@ -413,7 +413,7 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
             prev_interest_rate_on_hh_deposits (np.ndarray):
                 Previous period's rates
             hh_cons_pt (float): Household pass-through parameter
-            hh_cons_ect (float): Household error correction parameter
+            hh_cons_ect (float): Household ECT parameter
 
         Returns:
             np.ndarray: New household deposit rates by bank
@@ -433,14 +433,14 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
         - Previous period's rates
         - Policy rate changes
         - Pass-through effects
-        - Error correction
+        - ECT term
 
         Args:
             central_bank_policy_rate (float): Current policy rate
             prev_overdraft_rate_on_hh_deposits (np.ndarray):
                 Previous period's rates
             hh_cons_pt (float): Household pass-through parameter
-            hh_cons_ect (float): Household error correction parameter
+            hh_cons_ect (float): Household ECT parameter
 
         Returns:
             np.ndarray: New household overdraft rates by bank
