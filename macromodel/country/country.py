@@ -1,3 +1,35 @@
+"""Module implementing the country-level economic model.
+
+This module provides the core Country class that integrates all economic agents,
+markets, and processes within a single national economy. It orchestrates:
+
+1. Economic Agents:
+   - Individuals (workers, consumers)
+   - Households (consumption, investment, housing decisions)
+   - Firms (production, pricing, employment)
+   - Banks (lending, deposit-taking)
+   - Government entities (public spending, services)
+   - Central bank (monetary policy)
+
+2. Markets:
+   - Labor market (employment, wages)
+   - Credit market (loans, interest rates)
+   - Housing market (property sales, rentals)
+   - Goods market (production, consumption)
+
+3. Economic Processes:
+   - Production and consumption
+   - Price formation and inflation
+   - Wage determination
+   - Credit creation and allocation
+   - Fiscal and monetary policy
+   - International trade
+
+The model runs in discrete timesteps (typically quarterly but configurable),
+with each iteration updating all agents and markets in sequence according
+to their behavioral rules and interactions.
+"""
+
 import logging
 from copy import deepcopy
 from typing import Optional
@@ -28,6 +60,43 @@ from macromodel.util.get_histogram import get_histogram
 
 
 class Country:
+    """A complete national economy with interacting agents and markets.
+
+    This class represents a single country's economy, integrating all economic agents
+    (individuals, households, firms, banks, government) and markets (labor, credit,
+    housing, goods). It manages their interactions and evolution over time.
+
+    The economy operates in discrete timesteps, with each iteration:
+    1. Updating exchange rates and monetary conditions
+    2. Running agent-level planning and decision-making
+    3. Clearing all markets sequentially
+    4. Recording economic outcomes and updating metrics
+
+    The timestep length is configurable (typically quarterly) and determined by
+    how the input data is preprocessed (see ICIOReader's yearly_factor parameter).
+
+    Attributes:
+        country_name (str): Identifier for the country
+        scale (int): Scaling factor for population-based calculations
+        individuals (Individuals): Population of individual economic agents
+        households (Households): Collection of household units
+        firms (Firms): Collection of producing firms
+        central_government (CentralGovernment): Fiscal authority
+        government_entities (GovernmentEntities): Public sector bodies
+        banks (Banks): Commercial banking sector
+        central_bank (CentralBank): Monetary authority
+        economy (Economy): Aggregate economic metrics and tracking
+        labour_market (LabourMarket): Employment matching and wage setting
+        credit_market (CreditMarket): Lending and borrowing
+        housing_market (HousingMarket): Property sales and rentals
+        exchange_rate_usd_to_lcu (float): Exchange rate to USD
+        exogenous (Exogenous): External economic conditions
+        forecasting_window (int): Periods ahead for forecasting
+        assume_zero_growth (bool): Whether to assume no growth
+        assume_zero_noise (bool): Whether to assume no random shocks
+        configuration (CountryConfiguration): Model parameters
+    """
+
     country_name: str
     scale: int
     individuals: Individuals
@@ -73,6 +142,32 @@ class Country:
         emission_factors_lcu: Optional[np.ndarray] = None,
         emitting_indices: Optional[np.ndarray] = None,
     ):
+        """Initialize a new country economy.
+
+        Args:
+            country_name (str): Country identifier
+            scale (int): Population scaling factor
+            individuals (Individuals): Individual agents
+            households (Households): Household units
+            firms (Firms): Producing firms
+            central_government (CentralGovernment): Fiscal authority
+            government_entities (GovernmentEntities): Public sector
+            banks (Banks): Banking sector
+            central_bank (CentralBank): Monetary authority
+            economy (Economy): Economic tracking
+            labour_market (LabourMarket): Employment market
+            credit_market (CreditMarket): Lending market
+            housing_market (HousingMarket): Property market
+            exogenous (Exogenous): External conditions
+            running_multiple_countries (bool): If True, part of multi-country sim
+            configuration (CountryConfiguration): Model parameters
+            forecasting_window (int): Forecast periods
+            assume_zero_growth (bool): If True, assume no growth
+            assume_zero_noise (bool): If True, assume no shocks
+            add_emissions (bool): If True, track emissions
+            emission_factors_lcu (Optional[np.ndarray]): Emission factors
+            emitting_indices (Optional[np.ndarray]): Industry indices that emit
+        """
         # Parameters
         self.country_name = country_name
         self.scale = scale
@@ -127,6 +222,26 @@ class Country:
         running_multiple_countries: bool,
         emission_factors_usd: np.ndarray,
     ) -> "Country":
+        """Create a Country instance from preprocessed synthetic data.
+
+        This factory method constructs a complete country economy from preprocessed
+        data, initializing all agents and markets with calibrated starting conditions.
+
+        Args:
+            synthetic_country (SyntheticCountry): Preprocessed country data
+            country_configuration (CountryConfiguration): Model parameters
+            exchange_rates (ExchangeRates): Exchange rate dynamics
+            country_name (str): Country identifier
+            all_country_names (list[str]): All countries in simulation
+            industries (list[str]): Industry sectors
+            initial_year (int): Starting year
+            t_max (int): Maximum simulation periods
+            running_multiple_countries (bool): If True, part of multi-country sim
+            emission_factors_usd (np.ndarray): Emission factors in USD
+
+        Returns:
+            Country: Initialized country economy
+        """
         scale = synthetic_country.scale
 
         emission_industries = ["B05a", "B05b", "B05c", "C19"]
@@ -290,7 +405,14 @@ class Country:
         )
 
     def reset(self, configuration: CountryConfiguration) -> None:
+        """Reset the country economy to its initial state.
 
+        Resets all agents, markets, and state variables to their initial conditions,
+        optionally with new configuration parameters.
+
+        Args:
+            configuration (CountryConfiguration): New model parameters
+        """
         self.forecasting_window = configuration.forecasting_window
         self.assume_zero_growth = configuration.assume_zero_growth
         self.assume_zero_noise = configuration.assume_zero_noise
@@ -314,10 +436,23 @@ class Country:
         self.configuration = deepcopy(configuration)
 
     def initialisation_phase(self, exchange_rate_usd_to_lcu: float) -> None:
+        """Initialize the monthly economic cycle.
+
+        Sets up the initial conditions for the current timestep, including
+        exchange rates and firm counts.
+
+        Args:
+            exchange_rate_usd_to_lcu (float): Current exchange rate to USD
+        """
         self.exchange_rate_usd_to_lcu = exchange_rate_usd_to_lcu
         self.firms.update_number_of_firms()
 
     def estimation_phase(self) -> None:
+        """Run economic forecasting and estimation.
+
+        Updates agent expectations about growth, inflation, and other key
+        economic variables used in decision-making.
+        """
         self.economy.set_estimates(
             exogenous_growth=self.exogenous.national_accounts_before["Real Gross Output (Growth)"].values,
             exogenous_inflation=self.exogenous.inflation_before,
@@ -337,6 +472,11 @@ class Country:
         )
 
     def target_setting_phase(self) -> None:
+        """Set agent-level targets and plans.
+
+        Updates production targets, wage offers, and reservation wages based
+        on current conditions and expectations.
+        """
         # Firms set production targets
         self.firms.set_targets(
             bank_overdraft_rate_on_firm_deposits=self.banks.ts.current("overdraft_rate_on_firm_deposits"),
@@ -370,6 +510,11 @@ class Country:
         )
 
     def clear_labour_market(self) -> None:
+        """Execute labor market clearing.
+
+        Matches job seekers with vacancies and determines employment
+        and wages through the labor market mechanism.
+        """
         logging.info("Clearing labour market for %s", self.country_name)
         labour_costs = self.labour_market.clear(
             firms=self.firms,
@@ -379,6 +524,11 @@ class Country:
         self.firms.ts.labour_costs.append(labour_costs)
 
     def update_planning_metrics(self) -> None:
+        """Update forward-looking economic indicators.
+
+        Computes expected profits, asset values, benefits, and other metrics
+        used by agents in their planning decisions.
+        """
         # Firms estimate profits
         self.firms.ts.expected_profits.append(
             self.firms.compute_estimated_profits(
@@ -578,6 +728,11 @@ class Country:
         )
 
     def prepare_housing_market_clearing(self) -> None:
+        """Prepare for housing market transactions.
+
+        Updates property values and household housing decisions before
+        market clearing.
+        """
         # Update property values
         self.housing_market.update_property_value()
 
@@ -599,6 +754,11 @@ class Country:
         )
 
     def clear_housing_market(self) -> None:
+        """Execute housing market clearing.
+
+        Matches buyers/renters with sellers/landlords and determines
+        property transactions.
+        """
         self.housing_market.clear(
             household_main_residence_tenure_status=self.households.states["Tenure Status of the Main Residence"],
             max_price_willing_to_pay=self.households.ts.current("max_price_willing_to_pay"),
@@ -606,6 +766,10 @@ class Country:
         )
 
     def prepare_credit_market_clearing(self) -> None:
+        """Prepare for credit market transactions.
+
+        Updates loan demands and interest rates before market clearing.
+        """
         self.firms.compute_target_credit(
             estimated_growth=self.economy.ts.current("estimated_growth")[0],
             estimated_inflation=self.economy.ts.current("estimated_ppi_inflation")[0],
@@ -618,6 +782,11 @@ class Country:
         self.banks.set_interest_rates(central_bank_policy_rate=self.central_bank.ts.current("policy_rate")[0])
 
     def clear_credit_market(self) -> None:
+        """Execute credit market clearing.
+
+        Matches borrowers with lenders and determines loan allocations
+        and terms.
+        """
         self.credit_market.clear(
             banks=self.banks,
             firms=self.firms,
@@ -628,6 +797,11 @@ class Country:
         )
 
     def process_housing_market_clearing(self) -> None:
+        """Process housing market outcomes.
+
+        Updates property ownership, rents, and related financial positions
+        after market clearing.
+        """
         self.housing_market.ts.observed_fraction_value_price.append(
             self.housing_market.compute_observed_fraction_value_price()
         )
@@ -651,6 +825,11 @@ class Country:
         )
 
     def process_credit_market_clearing(self) -> None:
+        """Process credit market outcomes.
+
+        Updates loan positions, interest payments, and related financial
+        positions after market clearing.
+        """
         # Handle debt installments
         self.firms.ts.debt_installments.append(self.credit_market.pay_firm_installments())
         self.firms.ts.total_debt_installments.append([self.firms.ts.current("debt_installments").sum()])
@@ -706,6 +885,11 @@ class Country:
         self.banks.ts.interest_received_on_loans.append(self.credit_market.compute_interest_received_by_bank())
 
     def prepare_goods_market_clearing(self) -> None:
+        """Prepare for goods market transactions.
+
+        Updates production plans, consumption demands, and prices before
+        market clearing.
+        """
         self.firms.prepare_goods_market_clearing(
             exchange_rate_usd_to_lcu=self.exchange_rate_usd_to_lcu,
             previous_good_prices=self.economy.ts.current("good_prices"),
@@ -738,10 +922,82 @@ class Country:
         )
 
     def update_realised_metrics(self) -> None:
+        """Update realized economic outcomes after market clearing.
+
+        This method coordinates the comprehensive updating of all economic metrics after markets
+        have cleared. It processes the results of market interactions and computes derived
+        economic indicators across eight major categories:
+
+        1. Economic Indicators:
+           - Price indices (PPI, CPI)
+           - Economic growth rates
+           - House price indices
+           - Labor market metrics (employment, unemployment)
+           - Rental market aggregates
+
+        2. Global Trade and Capital Formation:
+           - International trade flows
+           - Import/export tracking
+           - Gross fixed capital formation
+           - Input costs (intermediate and capital)
+
+        3. Firm Production and Costs:
+           - Production volumes and nominal values
+           - Wages and labor costs
+           - Inventory management
+           - Input utilization
+           - Emissions (if enabled)
+
+        4. Firm Financial Metrics:
+           - Sales and revenue
+           - Profits and taxes
+           - Corporate financial positions
+           - Insolvency metrics
+           - Debt aggregates
+
+        5. Individual and Household Income:
+           - Employment income
+           - Social transfers
+           - Financial asset income
+           - Rental income
+           - Total household income
+
+        6. Household Wealth and Consumption:
+           - Consumption patterns
+           - Investment decisions
+           - Wealth positions
+           - Debt management
+           - Insolvency handling
+
+        7. Government and Banking:
+           - Tax collection
+           - Government revenue and deficit
+           - Bank profits and equity
+           - Interest payments
+           - Market share metrics
+
+        8. GDP and National Accounts:
+           - GDP components
+           - Value added
+           - National income
+           - Sectoral balances
+
+        The method ensures consistency between micro-level agent behaviors and macro-level
+        economic outcomes, maintaining stock-flow consistency throughout the economy.
+
+        Note:
+            This method should be called after all markets (goods, labor, credit, housing)
+            have cleared and agents have executed their planned transactions.
+
+        Side Effects:
+            Updates numerous time series variables across all economic agents and markets,
+            reflecting the realized outcomes of the current period's economic activity.
+        """
         # Firms distribute bought goods
         self.firms.distribute_bought_goods()
 
-        # Economic indicators
+        # A1. ECONOMIC INDICATORS
+        # Update core economic indicators and market metrics
         self.economy.compute_price_indicators(
             firm_real_amount_bought=self.firms.ts.current("real_amount_bought"),
             firm_nominal_amount_spent=self.firms.ts.current("nominal_amount_spent_in_lcu"),
@@ -777,7 +1033,8 @@ class Country:
             rental_income=self.households.ts.current("income_rental"),
         )
 
-        # Global trade
+        # B1. GLOBAL TRADE AND CAPITAL FORMATION
+        # Record international trade flows and capital formation
         self.economy.record_global_trade(
             firms=self.firms,
             households=self.households,
@@ -785,48 +1042,28 @@ class Country:
             tau_export=self.central_government.states["Export Tax"],
         )
 
-        # Gross fixed capital formation
+        # Update gross fixed capital formation
         self.firms.ts.gross_fixed_capital_formation.append(
             self.firms.compute_gross_fixed_capital_formation(
                 current_good_prices=self.economy.ts.current("good_prices"),
             )
         )
 
-        # Amount spent on intermediate inputs and capital inputs
+        # C1. FIRM PRODUCTION AND COSTS
+        # Update input costs and production metrics
         self.firms.update_total_newly_bought_costs(
             current_good_prices=self.economy.ts.current("good_prices"),
         )
 
-        # Firm demand
         self.firms.ts.demand.append(self.firms.compute_demand())
-        """
-        print(
-            "DEM/PROD",
-            (
-                np.bincount(
-                    self.firms.states["Industry"],
-                    weights=self.firms.ts.current("demand"),
-                )
-                - np.bincount(
-                    self.firms.states["Industry"],
-                    weights=self.firms.ts.current("production"),
-                )
-            )
-            / np.bincount(
-                self.firms.states["Industry"],
-                weights=self.firms.ts.current("production"),
-            ),
-        )
-        """
 
-        # Firm nominal sales
         self.firms.ts.production_nominal.append(
             self.firms.compute_nominal_production(
                 current_good_prices=self.economy.ts.current("good_prices"),
             )
         )
 
-        # Firm total wages paid
+        # C2. WAGES AND LABOR
         self.firms.update_total_wages_paid(
             corresponding_firm=self.individuals.states["Corresponding Firm ID"],
             individual_wages=self.individuals.ts.current("employee_income"),
@@ -836,7 +1073,7 @@ class Country:
             cpi=self.economy.ts.current("cpi")[0],
         )
 
-        # Firm inventory and stocks
+        # C3. EMISSIONS AND INVENTORY
         if self.add_emissions:
             readjusted_factors = (
                 self.emission_factors_lcu / self.economy.ts.current("good_prices")[self.emitting_indices]
@@ -878,64 +1115,47 @@ class Country:
         )
         self.firms.ts.capital_inputs_stock_industry.append(self.firms.ts.current("capital_inputs_stock").sum(axis=0))
 
-        # Firm total changes in inventories
+        # D1. FIRM FINANCIAL METRICS
+        # Update firm financial positions
         self.firms.ts.total_inventory_change.append(self.firms.compute_total_inventory_change())
-
-        # Firm total sales
         self.firms.ts.total_sales.append(self.firms.compute_total_sales())
-
-        # Firm taxes paid on production
         self.firms.ts.taxes_paid_on_production.append(
             self.firms.compute_taxes_paid_on_production(
                 taxes_less_subsidies_rates=self.central_government.states["Taxes Less Subsidies Rates"],
             )
         )
-
-        # Firm profits
         self.firms.ts.profits.append(self.firms.compute_profits())
-
-        # Firm unit costs
         self.firms.ts.unit_costs.append(self.firms.compute_unit_costs())
-
-        # Firm corporate tax payments
         self.firms.ts.corporate_taxes_paid.append(
             self.firms.compute_corporate_taxes_paid(
                 tau_firm=self.central_government.states["Profit Tax"],
             )
         )
 
-        # Firm gross operating surplus and mixed income
+        # D2. FIRM BALANCE SHEETS
         self.firms.ts.gross_operating_surplus_mixed_income.append(
             self.firms.compute_gross_operating_surplus_mixed_income()
         )
-
-        # Firm deposits
         self.firms.ts.deposits.append(self.firms.compute_deposits())
-
-        # Compute firm equity
         self.firms.ts.equity.append(
             self.firms.compute_equity(
                 current_good_prices=self.economy.ts.current("good_prices"),
             )
         )
 
-        # Check for insolvency
+        # D3. FIRM INSOLVENCY
         npl_firm_loans = self.firms.handle_insolvency(credit_market=self.credit_market)
         self.economy.ts.npl_firm_loans.append([npl_firm_loans])
 
-        # Compute the insolvency rate
-        (
-            firm_insolvency_rate,
-            num_insolvent_firms_by_sector,
-        ) = self.firms.compute_insolvency_rate()
+        firm_insolvency_rate, num_insolvent_firms_by_sector = self.firms.compute_insolvency_rate()
         self.economy.ts.firm_insolvency_rate.append([firm_insolvency_rate])
         self.economy.ts.num_insolvent_firms_by_sector.append(num_insolvent_firms_by_sector)
 
-        # Firm aggregates for debt and deposits
         self.firms.ts.total_debt.append([self.firms.compute_total_debt()])
         self.firms.ts.total_deposits.append([self.firms.compute_total_deposits()])
 
-        # Individual income
+        # E1. INDIVIDUAL AND HOUSEHOLD INCOME
+        # Update individual income components
         self.individuals.ts.income.append(
             self.individuals.compute_income(
                 firm_profits=self.firms.ts.current("profits"),
@@ -947,7 +1167,7 @@ class Country:
         )
         self.individuals.ts.income_histogram.append(get_histogram(self.individuals.ts.current("income"), self.scale))
 
-        # Household income
+        # E2. HOUSEHOLD INCOME COMPONENTS
         self.households.ts.income_employee.append(
             self.households.compute_employee_income(
                 individual_income=self.individuals.ts.current("income"),
@@ -970,6 +1190,8 @@ class Country:
         )
         self.households.ts.income.append(self.households.compute_income())
         self.households.ts.income_histogram.append(get_histogram(self.households.ts.current("income"), self.scale))
+
+        # E3. HOUSEHOLD METRICS
         rent_div_income = np.divide(
             self.households.ts.current("rent"),
             self.households.ts.current("income"),
@@ -978,7 +1200,8 @@ class Country:
         )
         self.households.ts.rent_div_income_histogram.append(get_histogram(rent_div_income, None))
 
-        # Household consumption, investment, wealth, and debt
+        # F1. HOUSEHOLD WEALTH AND CONSUMPTION
+        # Update household financial positions
         if self.add_emissions:
             readjusted_factors = (
                 self.emission_factors_lcu / self.economy.ts.current("good_prices")[self.emitting_indices]
@@ -999,6 +1222,8 @@ class Country:
         )
         self.households.ts.wealth_histogram.append(get_histogram(self.households.ts.current("wealth"), self.scale))
         self.households.ts.net_wealth.append(self.households.compute_net_wealth())
+
+        # F2. HOUSEHOLD INSOLVENCY
         household_insolvency_rate, npl_hh_cons_loans, npl_mortgages = self.households.handle_insolvency(
             banks=self.banks,
             credit_market=self.credit_market,
@@ -1007,25 +1232,24 @@ class Country:
         self.economy.ts.npl_hh_cons_loans.append([npl_hh_cons_loans])
         self.economy.ts.npl_mortgages.append([npl_mortgages])
 
-        # Total government entity consumption
+        # G1. GOVERNMENT AND BANKING
+        # Update government consumption
         self.government_entities.record_consumption(
             add_emissions=self.add_emissions,
             readjusted_factors=readjusted_factors,
             emitting_indices=self.emitting_indices,
         )
 
-        # Calculate the interest on deposits received/paid by banks
+        # G2. BANKING METRICS
         self.banks.ts.interest_received_on_deposits.append(
             self.banks.compute_interest_received_on_deposits(
                 central_bank_policy_rate=self.central_bank.ts.current("policy_rate"),
             )
         )
-
-        # Calculate bank profits
         self.banks.ts.profits.append(self.banks.compute_profits())
         self.banks.ts.profits_histogram.append(get_histogram(self.banks.ts.current("profits"), self.scale))
 
-        # Record current bank deposits and loans from firms and households
+        # G3. BANK BALANCE SHEETS
         self.banks.update_deposits(
             current_firm_deposits=self.firms.ts.current("deposits"),
             current_household_deposits=self.households.ts.current("wealth_deposits"),
@@ -1034,11 +1258,9 @@ class Country:
         )
         self.banks.update_loans(credit_market=self.credit_market)
 
-        # Bank market share
         self.banks.ts.market_share.append(self.banks.compute_market_share())
         self.banks.ts.market_share_histogram.append(get_histogram(self.banks.ts.current("market_share"), None))
 
-        # Bank equity
         self.banks.ts.equity.append(
             self.banks.compute_equity(
                 profit_taxes=self.central_government.states["Profit Tax"],
@@ -1046,20 +1268,19 @@ class Country:
         )
         self.banks.ts.equity_histogram.append(get_histogram(self.banks.ts.current("equity"), self.scale))
 
-        # Bank liability
         self.banks.ts.liability.append(self.banks.compute_liability())
         self.banks.ts.liability_histogram.append(get_histogram(self.banks.ts.current("liability"), self.scale))
 
-        # Bank deposits
         self.banks.ts.deposits.append(self.banks.compute_deposits())
         self.banks.ts.deposits_histogram.append(get_histogram(self.banks.ts.current("deposits"), self.scale))
 
-        # Handle bank insolvency
+        # G4. BANK INSOLVENCY
         self.central_government.ts.bank_equity_injection.append(
             [self.banks.handle_insolvency(credit_market=self.credit_market)]
         )
         self.economy.ts.bank_insolvency_rate.append([self.banks.compute_insolvency_rate()])
-        # Compute taxes collected by the central government
+
+        # G5. GOVERNMENT REVENUE
         self.central_government.compute_taxes(
             current_ind_employee_income=self.individuals.ts.current("employee_income"),
             current_total_rent_paid=self.households.ts.current("rent")[
@@ -1135,12 +1356,31 @@ class Country:
         )
 
     def update_population_structure(self) -> None:
+        """Update demographic composition.
+
+        Applies demographic changes (aging, retirement, etc.) to the
+        population of individual agents.
+        """
         self.individuals.update_demography()
 
     def get_goods_market_participants(self) -> list[Agent | RestOfTheWorld]:
+        """Get all participants in the goods market.
+
+        Returns:
+            list[Agent | RestOfTheWorld]: List of agents participating in
+                goods market transactions
+        """
         return [self.firms, self.households, self.government_entities]
 
-    def save_to_h5(self, h5_file: h5py.File):
+    def save_to_h5(self, h5_file: h5py.File) -> None:
+        """Save complete country state to HDF5.
+
+        Saves the full state of all agents, markets, and economic variables
+        to an HDF5 file for later analysis or continuation.
+
+        Args:
+            h5_file (h5py.File): Open HDF5 file to save to
+        """
         group = h5_file.create_group(self.country_name)
         self.firms.save_to_h5(group)
         # self.firms.save_industry_firms_df(group)
@@ -1161,6 +1401,12 @@ class Country:
         self.exogenous.save_to_h5(group)
 
     def shallow_output(self) -> pd.DataFrame:
+        """Create summary DataFrame of key economic indicators.
+
+        Returns:
+            pd.DataFrame: DataFrame containing main economic metrics
+                (GDP, inflation, unemployment, etc.)
+        """
         data_dict = {
             "Sales": self.firms.total_sales(),
             "Production": self.firms.total_production(),
@@ -1215,4 +1461,5 @@ class Country:
 
     @property
     def n_individuals(self) -> int:
+        """int: Total number of individual agents in the economy."""
         return self.individuals.n_individuals
