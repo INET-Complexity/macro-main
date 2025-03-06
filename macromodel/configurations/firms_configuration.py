@@ -246,6 +246,21 @@ class FirmsFunctions(BaseModel):
 
 
 class FirmsParameters(BaseModel):
+    """Parameters for firm behavior configuration.
+
+    Defines operational parameters that control firm production and investment through:
+    - Capital input timing and depreciation
+    - Resource utilization rates
+    - Production capacity constraints
+    - Investment behavior settings
+
+    Attributes:
+        capital_inputs_delay (list[int]): Delays in capital input availability by industry
+        depreciation_rates (list[float]): Asset depreciation rates by industry
+        capital_inputs_utilisation_rate (float): Capacity utilization for capital
+        intermediate_inputs_utilisation_rate (float): Capacity utilization for inputs
+    """
+
     capital_inputs_delay: list[int] = [0 for _ in range(18)]
     depreciation_rates: list[float] = [0.0 for _ in range(18)]
     capital_inputs_utilisation_rate: float = Field(1.0, ge=0.0, le=1.0)
@@ -262,6 +277,19 @@ class FirmsParameters(BaseModel):
 
 
 class FirmsConfiguration(BaseModel):
+    """Configuration for firm behavior and operations.
+
+    Defines the complete configuration for firms through:
+    - Operational parameters
+    - Functional components
+    - Calculation settings
+
+    Attributes:
+        parameters (FirmsParameters): Operational parameter settings
+        functions (FirmsFunctions): Function implementations
+        calculate_hill_exponent (bool): Whether to calculate Hill exponent
+    """
+
     parameters: FirmsParameters = FirmsParameters()
     functions: FirmsFunctions = FirmsFunctions()
     calculate_hill_exponent: bool = True
