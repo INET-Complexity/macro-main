@@ -4,6 +4,18 @@ from pydantic import BaseModel
 
 
 class HouseholdsParameters(BaseModel):
+    """Parameters for household behavior configuration.
+
+    Defines behavioral parameters that control household economic decisions through:
+    - Consumption pattern determination
+    - Income-based consumption weights
+    - Behavioral preference settings
+
+    Attributes:
+        take_consumption_weights_by_income_quantile (bool): Whether to use income-based
+            consumption weights. Defaults to False.
+    """
+
     take_consumption_weights_by_income_quantile: bool = False
 
 
@@ -135,6 +147,20 @@ class WealthFunction(BaseModel):
 
 
 class SocialTransfersFunction(BaseModel):
+    """The function used to set household social transfer allocation.
+
+    Defines how social transfers are distributed among households through:
+    - Equal distribution mechanisms
+    - Income-based allocation
+    - Model-driven predictions
+    - Household characteristics consideration
+
+    Attributes:
+        path_name (str): Module path for social transfer functions
+        name (Literal): Selected transfer allocation strategy
+        parameters (dict): Configuration parameters including independent variables
+    """
+
     path_name: str = "social_transfers"
     name: Literal["EqualSocialTransfersSetter", "ConstantSocialTransfersSetter", "DefaultSocialTransfersSetter"] = (
         "EqualSocialTransfersSetter"
