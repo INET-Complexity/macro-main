@@ -1,3 +1,18 @@
+"""Household insolvency management implementation.
+
+This module implements household insolvency handling through:
+- Default detection and processing
+- Debt restructuring mechanisms
+- Asset liquidation procedures
+- Bank interaction management
+
+The implementation handles:
+- Insolvency identification
+- Credit market impacts
+- Non-performing loan tracking
+- Default rate calculations
+"""
+
 from abc import ABC, abstractmethod
 from typing import Tuple
 
@@ -9,6 +24,15 @@ from macromodel.markets.credit_market.credit_market import CreditMarket
 
 
 class HouseholdInsolvencyHandler(ABC):
+    """Abstract base class for household insolvency management.
+
+    Defines interface for handling household defaults through:
+    - Insolvency detection
+    - Default processing
+    - Credit market updates
+    - Bank interactions
+    """
+
     @abstractmethod
     def handle_insolvency(
         self,
@@ -16,16 +40,51 @@ class HouseholdInsolvencyHandler(ABC):
         banks: Banks,
         credit_market: CreditMarket,
     ) -> Tuple[float, float, float]:
+        """Process household insolvency cases.
+
+        Args:
+            households (Households): Household sector agent
+            banks (Banks): Banking sector agent
+            credit_market (CreditMarket): Credit market interface
+
+        Returns:
+            Tuple[float, float, float]: Default rate, NPL ratios for consumption
+                loans and mortgages
+        """
         pass
 
 
 class DefaultHouseholdInsolvencyHandler(HouseholdInsolvencyHandler):
+    """Default implementation of household insolvency management.
+
+    Implements insolvency handling through:
+    - Net wealth and deposit checks
+    - Loan removal processing
+    - NPL ratio calculations
+    """
+
     def handle_insolvency(
         self,
         households: Households,
         banks: Banks,
         credit_market: CreditMarket,
     ) -> Tuple[float, float, float]:
+        """Process household defaults using default behavior.
+
+        Handles insolvency through:
+        - Identifying insolvent households
+        - Processing loan removals
+        - Calculating default metrics
+
+        Args:
+            households (Households): Household sector agent
+            banks (Banks): Banking sector agent
+            credit_market (CreditMarket): Credit market interface
+
+        Returns:
+            Tuple[float, float, float]: Default rate, NPL ratios for consumption
+                loans and mortgages
+        """
         insolvent_households = np.where(
             np.logical_and(
                 households.ts.current("net_wealth") < 0,
