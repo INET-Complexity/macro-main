@@ -1,3 +1,28 @@
+"""Individual agent implementation in macroeconomic modeling.
+
+This module implements the Individual agent class, representing individual
+economic actors who:
+- Participate in labor markets
+- Generate income from various sources
+- Form households
+- Make investment decisions
+- Receive social benefits
+
+The implementation captures:
+- Individual characteristics (demographics, education)
+- Economic activities (employment, investment)
+- Income generation and expectations
+- Household relationships
+- Labor market behavior
+
+Individuals are the fundamental microeconomic units that:
+- Group into households for consumption/investment
+- Supply labor to firms
+- Generate income through various channels
+- Receive government transfers
+- Hold investments in firms/banks
+"""
+
 import warnings
 from typing import Any
 
@@ -19,6 +44,38 @@ from macromodel.util.property_mapping import map_to_enum
 
 
 class Individuals(Agent):
+    """Individual economic agents in the macroeconomic model.
+
+    This class represents individual economic actors who participate in
+    various markets and form households. Individuals:
+    - Supply labor to the economy
+    - Generate income from multiple sources
+    - Form households for consumption/investment
+    - Make investment decisions
+    - Receive social benefits
+
+    The class manages:
+    - Individual characteristics (age, gender, education)
+    - Economic status (employment, activity)
+    - Income streams (wages, benefits, investments)
+    - Labor market behavior (reservation wages, labor supply)
+    - Household relationships
+    - Investment positions
+
+    Attributes:
+        country_name (str): Country of residence
+        all_country_names (list[str]): All countries in model
+        n_industries (int): Number of industrial sectors
+        functions (dict[str, Any]): Economic behavior functions
+        ts (TimeSeries): Time series of economic variables
+        states (dict): Current state variables including:
+            - Demographic characteristics
+            - Economic status
+            - Income levels
+            - Household/firm relationships
+            - Investment positions
+    """
+
     def __init__(
         self,
         country_name: str,
@@ -28,6 +85,16 @@ class Individuals(Agent):
         ts: TimeSeries,
         states: dict[str, float | np.ndarray | list[np.ndarray]],
     ):
+        """Initialize individual agent.
+
+        Args:
+            country_name (str): Country of residence
+            all_country_names (list[str]): All countries in model
+            n_industries (int): Number of industrial sectors
+            functions (dict[str, Any]): Economic behavior functions
+            ts (TimeSeries): Time series of economic variables
+            states (dict): Current state variables
+        """
         super().__init__(
             country_name,
             all_country_names,
@@ -49,6 +116,26 @@ class Individuals(Agent):
         n_industries: int,
         scale: int,
     ) -> "Individuals":
+        """Create Individuals instance from synthetic population data.
+
+        Initializes individual agents with:
+        - Demographic characteristics
+        - Economic status
+        - Income levels
+        - Household/firm relationships
+        - Investment positions
+
+        Args:
+            synthetic_population (SyntheticPopulation): Synthetic population data
+            configuration (IndividualsConfiguration): Individual behavior config
+            country_name (str): Country of residence
+            all_country_names (list[str]): All countries in model
+            n_industries (int): Number of industrial sectors
+            scale (int): Scale factor for distributions
+
+        Returns:
+            Individuals: Initialized individuals agent
+        """
         data = (synthetic_population.individual_data.astype(float)).rename_axis("Individual ID")
 
         functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.individuals")
@@ -111,16 +198,39 @@ class Individuals(Agent):
         return cls(country_name, all_country_names, n_industries, functions, ts, states)
 
     def reset(self, configuration: IndividualsConfiguration):
+        """Reset individual states and update functions.
+
+        Args:
+            configuration (IndividualsConfiguration): New configuration
+        """
         self.gen_reset()
         update_functions(functions=self.functions, model=configuration.functions, loc="macromodel.agents.individuals")
 
     def compute_labour_inputs(self) -> np.ndarray:
+        """Calculate individual labor market inputs.
+
+        Returns:
+            np.ndarray: Labor inputs by individual based on activity status
+        """
         return self.functions["labour_inputs"].update_labour_inputs(
             previous_individuals_labour_inputs=self.ts.current("labour_inputs"),
             current_individuals_activity=self.states["Activity Status"],
         )
 
     def compute_reservation_wages(self, unemployment_benefits_by_individual: float) -> np.ndarray:
+        """Calculate individual reservation wages.
+
+        Determines minimum acceptable wages based on:
+        - Historical wages
+        - Current activity status
+        - Unemployment benefits
+
+        Args:
+            unemployment_benefits_by_individual (float): Per person benefits
+
+        Returns:
+            np.ndarray: Reservation wages by individual
+        """
         return (
             self.functions["reservation_wages"]
             .compute_reservation_wages(
@@ -140,6 +250,28 @@ class Individuals(Agent):
         income_taxes: float,
         tau_firm: float,
     ) -> np.ndarray:
+        """Calculate expected future income for individuals.
+
+        Computes expected income from all sources:
+        - Employment wages
+        - Social benefits
+        - Investment returns (firms/banks)
+        Adjusted for:
+        - Expected inflation
+        - Tax rates
+        - CPI changes
+
+        Args:
+            expected_firm_profits (np.ndarray): Expected profits by firm
+            expected_bank_profits (np.ndarray): Expected profits by bank
+            cpi (float): Current price index
+            expected_inflation (float): Expected inflation rate
+            income_taxes (float): Personal income tax rate
+            tau_firm (float): Corporate tax rate
+
+        Returns:
+            np.ndarray: Expected total income by individual
+        """
         return (
             self.functions["income"].compute_expected_income(
                 current_individual_activity_status=self.states["Activity Status"],
@@ -165,6 +297,26 @@ class Individuals(Agent):
         income_taxes: float,
         tau_firm: float,
     ) -> np.ndarray:
+        """Calculate current period income for individuals.
+
+        Computes realized income from all sources:
+        - Employment wages
+        - Social benefits
+        - Investment returns (firms/banks)
+        Adjusted for:
+        - Current CPI
+        - Tax rates
+
+        Args:
+            firm_profits (np.ndarray): Current profits by firm
+            bank_profits (np.ndarray): Current profits by bank
+            cpi (float): Current price index
+            income_taxes (float): Personal income tax rate
+            tau_firm (float): Corporate tax rate
+
+        Returns:
+            np.ndarray: Current total income by individual
+        """
         return (
             self.functions["income"].compute_income(
                 current_individual_activity_status=self.states["Activity Status"],
@@ -182,11 +334,22 @@ class Individuals(Agent):
         ).astype(float)
 
     def update_demography(self) -> None:
+        """Update demographic variables for individuals."""
         self.ts.n_individuals.append(self.functions["demography"].update(self.ts.current("n_individuals")))
 
     def save_to_h5(self, group: h5py.Group):
+        """Save individual time series data to HDF5.
+
+        Args:
+            group (h5py.Group): HDF5 group to save to
+        """
         self.ts.write_to_h5("individuals", group)
 
     @property
     def n_individuals(self) -> int:
+        """Get total number of individuals.
+
+        Returns:
+            int: Number of individuals in population
+        """
         return self.states["Age"].shape[0]
