@@ -19,21 +19,31 @@ from macro_data.readers.io_tables.util import aggregate_df
 
 
 class ICIOReader:
-    """
-    A class for reading and manipulating Input-Output Tables (IOT) from the OECD Inter-Country Input Output Tables.
+    """Reader and processor for OECD Inter-Country Input Output Tables.
 
-    Parameters
-    ----------
-    iot : pd.DataFrame
-        The input-output table.
-    considered_countries : list[str]
-        List of countries considered for the aggregation.
-    industries : list[str]
-        List of industries.
-    imputed_rents : dict[str, float]
-        Dictionary of imputed rents for each country.
-    year : int
-        The year of the input-output table.
+    This class reads and processes OECD ICIO tables, providing methods to:
+    1. Aggregate and normalize input-output relationships
+    2. Calculate trade flows and proportions
+    3. Extract industry-specific metrics
+    4. Convert annual values to sub-annual frequency
+
+    The reader handles:
+    - Multi-country input-output relationships
+    - Industry aggregation and mapping
+    - Trade flow calculations
+    - Value-added computations
+    - Capital formation and investment
+    - Government and household consumption
+    - Exchange rate conversions
+
+    Attributes:
+        iot (pd.DataFrame): The input-output table
+        considered_countries (list[str]): Countries included in analysis
+        industries (list[str]): Industries tracked in the model
+        imputed_rents (dict[str, float]): Imputed rents by country
+        year (int): Reference year for the data
+        investment_matrices (dict): Investment allocation matrices
+        yearly_factor (float): Factor to convert annual to sub-annual values
 
     Methods
     -------
@@ -92,6 +102,17 @@ class ICIOReader:
         year: int,
         yearly_factor: float = 4.0,
     ):
+        """Initialize the ICIOReader.
+
+        Args:
+            iot (pd.DataFrame): Input-output table
+            considered_countries (list[str]): Countries to include
+            industries (list[str]): Industries to track
+            imputed_rents (dict[str, float]): Imputed rents by country
+            year (int): Reference year
+            yearly_factor (float, optional): Factor to convert annual to sub-annual values.
+                Defaults to 4.0 (quarterly).
+        """
         self.iot = iot
         self.considered_countries = considered_countries
         self.industries = industries
@@ -118,6 +139,28 @@ class ICIOReader:
         proxy_country_dict: Optional[dict[str | Country, str | Country]] = None,
         aggregation_type: Optional[Literal["All", "Aggregate"]] = None,
     ) -> "ICIOReader":
+        """Create an ICIOReader instance from CSV data with aggregation.
+
+        This factory method reads raw ICIO data, performs necessary aggregations
+        and normalizations, and returns a configured ICIOReader instance.
+
+        Args:
+            path (Path): Path to raw ICIO CSV file
+            pivot_path (Path): Path to save/load pivoted data
+            considered_countries (list[str | Country]): Countries to include
+            industries (list[str]): Industries to track
+            year (int): Reference year
+            exchange_rates (ExchangeRatesReader): Exchange rate data
+            imputed_rent_fraction (dict[str, float]): Rent fractions by country
+            investment_fractions (dict[Country | str, dict[str, float]]): Investment splits
+            yearly_factor (float, optional): Annual to sub-annual conversion.
+                Defaults to 4.0 (quarterly).
+            proxy_country_dict (Optional[dict]): Country mapping for missing data
+            aggregation_type (Optional[Literal["All", "Aggregate"]]): Aggregation method
+
+        Returns:
+            ICIOReader: Configured reader instance
+        """
         if proxy_country_dict is None:
             proxy_country_dict = {}
 
@@ -269,19 +312,58 @@ class ICIOReader:
         return aggregated
 
     def column_allc(self, country_name: str, symbol: str) -> pd.Series:
+        """Sum columns across all countries for a specific symbol.
+
+        Aggregates values across all countries (including ROW) for a given
+        country and symbol combination.
+
+        Args:
+            country_name (str): Target country
+            symbol (str): Column identifier (e.g., "Household Consumption")
+
+        Returns:
+            pd.Series: Summed values across all countries
+        """
         considered_countries_row = self.considered_countries + ["ROW"]
         all_cols = [self.iot.loc[col, (country_name, symbol)].loc[self.industries] for col in considered_countries_row]
         return reduce(lambda a, b: a + b, all_cols).fillna(0)
 
     def get_total_output(self, country_name: str) -> np.ndarray:
+        """Get total output by industry for a country.
+
+        Args:
+            country_name (str): Country to get output for
+
+        Returns:
+            np.ndarray: Total output values by industry, converted to sub-annual frequency
+        """
         return (self.iot[("TOTAL", "Output")].xs(country_name, axis=0, level=0).loc[self.industries]).fillna(
             0
         ).values / self.yearly_factor
 
     def get_total_output_series(self, country_name: str) -> pd.Series:
+        """Get total output by industry as a pandas Series.
+
+        Args:
+            country_name (str): Country to get output for
+
+        Returns:
+            pd.Series: Total output values by industry, converted to sub-annual frequency
+        """
         return self.iot[("TOTAL", "Output")].xs(country_name, axis=0, level=0).loc[self.industries] / self.yearly_factor
 
     def get_output_shares_dict(self, country_name: str) -> dict[str, pd.Series]:
+        """Calculate output shares for aggregated industry sectors.
+
+        Computes the proportion of output each sub-sector contributes to its
+        aggregated sector total.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            dict[str, pd.Series]: Mapping of aggregate sectors to sub-sector shares
+        """
         output_shares_dict = {}
         output_series = self.get_total_output_series(country_name)
 
@@ -296,6 +378,17 @@ class ICIOReader:
         return output_shares_dict
 
     def get_consumption_shares_series(self, country_name: str) -> pd.Series:
+        """Calculate consumption shares for each industry.
+
+        Computes the proportion of total consumption each industry represents
+        within its aggregate sector.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            pd.Series: Industry-level consumption shares
+        """
         hh_cons = self.get_hh_consumption_series(country_name)
 
         df = hh_cons.reset_index()
@@ -315,6 +408,17 @@ class ICIOReader:
         return df.set_index("Industry")["ConsumptionShare"]
 
     def get_intermediate_inputs_use(self, country_name: str) -> np.ndarray:
+        """Get intermediate inputs used by each industry.
+
+        Computes the total intermediate inputs used by each industry in the country,
+        including both domestic and imported inputs.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: Matrix of intermediate input usage, converted to sub-annual frequency
+        """
         return (
             reduce(
                 lambda a, b: a + b,
@@ -327,6 +431,17 @@ class ICIOReader:
         )
 
     def get_intermediate_inputs_supply(self, country_name: str) -> np.ndarray:
+        """Get intermediate inputs supplied by each industry.
+
+        Computes the total intermediate inputs supplied by each industry in the country
+        to all other industries, both domestic and foreign.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: Matrix of intermediate input supply, converted to sub-annual frequency
+        """
         return (
             reduce(
                 lambda a, b: a + b,
@@ -339,19 +454,74 @@ class ICIOReader:
         )
 
     def get_intermediate_inputs_domestic(self, country_name: str) -> np.ndarray:
+        """Get domestic intermediate inputs for each industry.
+
+        Computes the intermediate inputs used within the same country,
+        excluding imports.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: Matrix of domestic intermediate inputs, converted to sub-annual frequency
+        """
         c_iot = self.iot.xs(country_name, axis=1, level=0)
         return c_iot.loc[country_name, c_iot.columns.isin(self.industries)] / self.yearly_factor
 
     def get_capital_inputs(self, country_name: str) -> np.ndarray:
+        """Get total capital inputs by industry.
+
+        Computes the total fixed capital formation (investment) from all sources
+        for each industry.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: Capital input values by industry, converted to sub-annual frequency
+        """
         return self.column_allc(country_name, "Fixed Capital Formation").values / self.yearly_factor
 
-    def get_firm_capital_inputs(self, country_name: str):
+    def get_firm_capital_inputs(self, country_name: str) -> np.ndarray:
+        """Get capital inputs used by firms.
+
+        Computes the capital inputs used by firms in each industry,
+        excluding household and government capital formation.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: Firm capital inputs by industry, converted to sub-annual frequency
+        """
         return self.column_allc(country_name, "Firm Fixed Capital Formation").values / self.yearly_factor
 
     def get_household_capital_inputs(self, country_name: str) -> np.ndarray:
+        """Get capital inputs used by households.
+
+        Computes household fixed capital formation (e.g., housing investment)
+        by industry.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: Household capital inputs by industry, converted to sub-annual frequency
+        """
         return self.column_allc(country_name, "Household Fixed Capital Formation").values / self.yearly_factor
 
     def get_gfcf_column(self, country_name: str) -> np.ndarray:
+        """Get Gross Fixed Capital Formation (GFCF) column.
+
+        Retrieves the raw GFCF values for each industry before splitting
+        between firms, households, and government.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: GFCF values by industry, converted to sub-annual frequency
+        """
         return (
             self.iot.loc[
                 self.iot.index.get_level_values(1).isin(self.industries),
@@ -361,52 +531,195 @@ class ICIOReader:
         )
 
     def get_capital_inputs_domestic(self, country_name: str) -> np.ndarray:
+        """Get domestic capital inputs by industry.
+
+        Computes fixed capital formation using only domestically produced
+        capital goods.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: Domestic capital inputs by industry, converted to sub-annual frequency
+        """
         return self.iot.loc[country_name, country_name]["Fixed Capital Formation"].values / self.yearly_factor
 
     def get_value_added(self, country_name: str) -> np.ndarray:
+        """Get value added by industry.
+
+        Computes the value added (contribution to GDP) for each industry
+        in the specified country.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: Value added by industry, converted to sub-annual frequency
+        """
         return (
             self.iot.xs(country_name, axis=1, level=0).loc[("TOTAL", "Value Added"), self.industries].values
             / self.yearly_factor
         )
 
     def get_value_added_series(self, country_name: str) -> pd.Series:
+        """Get value added by industry as a pandas Series.
+
+        Computes the value added (contribution to GDP) for each industry,
+        returned as a labeled Series.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            pd.Series: Value added by industry, converted to sub-annual frequency
+        """
         return (
             self.iot.xs(country_name, axis=1, level=0).loc[("TOTAL", "Value Added"), self.industries]
             / self.yearly_factor
         )
 
     def get_taxes_less_subsidies(self, country_name: str) -> np.ndarray:
+        """Get net taxes (taxes less subsidies) by industry.
+
+        Computes the net taxes (taxes minus subsidies) for each industry
+        in the specified country.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: Net taxes by industry, converted to sub-annual frequency
+        """
         return (
             self.iot.xs(country_name, axis=1, level=0).loc[("TOTAL", "Taxes Less Subsidies"), self.industries].values
         ) / self.yearly_factor
 
     def get_taxes_less_subsidies_rates(self, country_name: str) -> np.ndarray:
+        """Calculate net tax rates by industry.
+
+        Computes the ratio of net taxes (taxes minus subsidies) to total output
+        for each industry.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: Net tax rates by industry
+        """
         return self.get_taxes_less_subsidies(country_name) / self.get_total_output(country_name)
 
     def get_hh_consumption(self, country_name: str) -> np.ndarray:
+        """Get total household consumption by industry.
+
+        Computes household consumption from all sources (domestic and imported)
+        for each industry.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: Household consumption by industry, converted to sub-annual frequency
+        """
         return self.column_allc(country_name, "Household Consumption").values / self.yearly_factor
 
     def get_hh_consumption_series(self, country_name: str) -> pd.Series:
+        """Get household consumption by industry as a pandas Series.
+
+        Computes total household consumption (domestic and imported) by industry,
+        returned as a labeled Series.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            pd.Series: Household consumption by industry, converted to sub-annual frequency
+        """
         return self.column_allc(country_name, "Household Consumption") / self.yearly_factor
 
     def get_hh_consumption_domestic(self, country_name: str) -> np.ndarray:
+        """Get domestic household consumption by industry.
+
+        Computes household consumption of domestically produced goods and services
+        for each industry.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: Domestic household consumption by industry, converted to sub-annual frequency
+        """
         return self.iot.loc[country_name, (country_name, "Household Consumption")].values / self.yearly_factor
 
     def get_hh_consumption_weights(self, country_name: str) -> np.ndarray:
+        """Calculate household consumption weights by industry.
+
+        Computes the proportion of total household consumption represented
+        by each industry.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: Household consumption weights by industry
+        """
         hh_cons = self.get_hh_consumption(country_name)
         return hh_cons / hh_cons.sum()
 
     def get_govt_consumption(self, country_name: str) -> np.ndarray:
+        """Get total government consumption by industry.
+
+        Computes government consumption from all sources (domestic and imported)
+        for each industry.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: Government consumption by industry, converted to sub-annual frequency
+        """
         return self.column_allc(country_name, "Government Consumption").values / self.yearly_factor
 
     def get_govt_consumption_domestic(self, country_name: str) -> np.ndarray:
+        """Get domestic government consumption by industry.
+
+        Computes government consumption of domestically produced goods and services
+        for each industry.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: Domestic government consumption by industry, converted to sub-annual frequency
+        """
         return self.iot.loc[country_name, (country_name, "Government Consumption")].values / self.yearly_factor
 
     def govt_consumption_weights(self, country_name: str) -> np.ndarray:
+        """Calculate government consumption weights by industry.
+
+        Computes the proportion of total government consumption represented
+        by each industry.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            np.ndarray: Government consumption weights by industry
+        """
         gov_cons = self.get_govt_consumption(country_name)
         return gov_cons / gov_cons.sum()
 
     def get_imports(self, country_name: str) -> pd.Series:
+        """Calculate total imports by industry.
+
+        Computes the sum of imports from all other countries (including ROW)
+        for each industry.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            pd.Series: Import values by industry, converted to sub-annual frequency
+        """
         considered_countries_row = self.considered_countries + ["ROW"]
         imports = reduce(
             lambda a, b: a + b,
@@ -415,6 +728,17 @@ class ICIOReader:
         return imports.loc[self.industries] / self.yearly_factor
 
     def get_exports(self, country_name: str) -> pd.Series:
+        """Calculate total exports by industry.
+
+        Computes the sum of exports to all other countries (including ROW)
+        for each industry.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            pd.Series: Export values by industry, converted to sub-annual frequency
+        """
         considered_countries_row = self.considered_countries + ["ROW"]
         exports = reduce(
             lambda a, b: a + b,
@@ -423,9 +747,30 @@ class ICIOReader:
         return exports.loc[self.industries] / self.yearly_factor
 
     def get_trade(self, start_country: str, end_country: str) -> pd.Series:
+        """Calculate bilateral trade flows between two countries.
+
+        Computes the trade flow from the start country to the end country
+        for each industry.
+
+        Args:
+            start_country (str): Exporting country
+            end_country (str): Importing country
+
+        Returns:
+            pd.Series: Trade values by industry, converted to sub-annual frequency
+        """
         return self.iot.loc[start_country, end_country].sum(axis=1).loc[self.industries] / self.yearly_factor
 
     def get_origin_trade_proportions(self) -> pd.DataFrame:
+        """Calculate trade proportions from origin country perspective.
+
+        Computes the fraction of each industry's imports that comes from each
+        source country, including domestic production.
+
+        Returns:
+            pd.DataFrame: Multi-indexed DataFrame with trade proportions
+                Index levels: [start_country, end_country, industry]
+        """
         trade_proportions = {
             "start_country": [],
             "end_country": [],
@@ -450,6 +795,15 @@ class ICIOReader:
         return pd.DataFrame(trade_proportions).set_index(["start_country", "end_country", "industry"]).sort_index()
 
     def get_destination_trade_proportions(self) -> pd.DataFrame:
+        """Calculate trade proportions from destination country perspective.
+
+        Computes the fraction of each industry's exports that goes to each
+        destination country, including domestic consumption.
+
+        Returns:
+            pd.DataFrame: Multi-indexed DataFrame with trade proportions
+                Index levels: [start_country, end_country, industry]
+        """
         trade_proportions = {
             "start_country": [],
             "end_country": [],
@@ -474,6 +828,17 @@ class ICIOReader:
         return pd.DataFrame(trade_proportions).set_index(["start_country", "end_country", "industry"]).sort_index()
 
     def get_intermediate_inputs_matrix(self, country_name: str) -> pd.DataFrame:
+        """Calculate the intermediate inputs coefficient matrix.
+
+        Computes the technical coefficients matrix showing the amount of
+        intermediate inputs required per unit of output for each industry.
+
+        Args:
+            country_name (str): Country to analyze
+
+        Returns:
+            pd.DataFrame: Matrix of input-output coefficients
+        """
         total_output = self.get_total_output(country_name)
         total_monthly_intermediate_inputs = self.get_intermediate_inputs_use(country_name)
         return total_output[None, :] / total_monthly_intermediate_inputs  # noqa
@@ -483,6 +848,19 @@ class ICIOReader:
         country_name: str,
         capital_stock: np.ndarray,
     ) -> pd.DataFrame:
+        """Calculate the capital inputs coefficient matrix.
+
+        Computes the matrix showing how capital from each industry is used
+        in the production processes of other industries, normalized by
+        capital stock.
+
+        Args:
+            country_name (str): Country to analyze
+            capital_stock (np.ndarray): Current capital stock by industry
+
+        Returns:
+            pd.DataFrame: Matrix of capital input coefficients
+        """
         norm_investment_matrix = self.investment_matrices[country_name].copy()
         norm_investment_matrix /= norm_investment_matrix.sum(axis=0)
         cap_inputs_matrix = (self.get_total_output(country_name) / capital_stock) / norm_investment_matrix
@@ -493,6 +871,18 @@ class ICIOReader:
         country_name: str,
         capital_compensation: np.ndarray,
     ) -> pd.DataFrame:
+        """Calculate the capital depreciation matrix.
+
+        Computes the matrix of depreciation rates for capital used in each industry,
+        normalized by total output and adjusted for capital compensation.
+
+        Args:
+            country_name (str): Country to analyze
+            capital_compensation (np.ndarray): Capital compensation by industry
+
+        Returns:
+            pd.DataFrame: Matrix of capital depreciation rates, converted to sub-annual frequency
+        """
         total_output = self.get_total_output(country_name)
         gfcf = self.get_firm_capital_inputs(country_name)
         investment_matrix = np.array([gfcf for _ in range(len(capital_compensation))]).T
@@ -507,11 +897,27 @@ class ICIOReader:
             / self.yearly_factor
         )
 
-    def get_updated_dictionary(self):
+    def get_updated_dictionary(self) -> dict:
+        """Get updated industry aggregation dictionary.
+
+        Returns a mapping of aggregate sectors to their constituent
+        sub-sectors based on the current industry list.
+
+        Returns:
+            dict: Mapping of aggregate sectors to lists of sub-sectors
+        """
         dictionary = ICIO_AGGREGATE
         return update_dictionary(self.industries, dictionary)
 
-    def get_inverse_updated_dictionary(self):
+    def get_inverse_updated_dictionary(self) -> dict:
+        """Get inverse industry aggregation dictionary.
+
+        Returns a mapping of sub-sectors to their parent aggregate sectors,
+        inverting the standard aggregation hierarchy.
+
+        Returns:
+            dict: Mapping of sub-sectors to their aggregate sectors
+        """
         updated_dict = self.get_updated_dictionary()
 
         inverse_dict = {}
@@ -529,8 +935,27 @@ def normalise_iot(
     considered_countries: list[Country] | list[str],
     investment_fractions: dict[str | Country, dict[str, float]],
 ) -> pd.DataFrame:
-    """
-    Normalises the IOT by adjusting value-added.
+    """Normalize the input-output table for consistency and analysis.
+
+    This function performs several normalization steps:
+    1. Removes aggregate rows and columns
+    2. Handles negative value-added entries
+    3. Forces non-negative values where appropriate
+    4. Computes intermediate input totals
+    5. Adjusts taxes and subsidies
+    6. Splits fixed capital formation between firms, households, and government
+
+    Args:
+        iot (pd.DataFrame): Input-output table to normalize
+        industries (list[str]): List of industries to consider
+        considered_countries (list[Country | str]): Countries to process
+        investment_fractions (dict): Investment allocation fractions by country
+
+    Returns:
+        pd.DataFrame: Normalized input-output table
+
+    Raises:
+        ValueError: If negative value-added remains after adjustments
     """
     # Remove aggregates
     iot = iot.loc[iot.index != ("TOTAL", "Gross Output")]
@@ -632,6 +1057,18 @@ def normalise_iot(
 
 
 def default_no_agg_dict(df: pd.DataFrame) -> dict[str, list[str]]:
+    """Create a default no-aggregation dictionary.
+
+    Creates a mapping where each industry maps to itself,
+    effectively creating a "no aggregation" scenario.
+
+    Args:
+        df (pd.DataFrame): Input-output table with industry information
+
+    Returns:
+        dict[str, list[str]]: Mapping of each industry to a single-item list
+            containing itself
+    """
     ind_cols = df.columns.get_level_values(1).unique()
     ind_rows = df.index.get_level_values(1).unique()
 
@@ -639,7 +1076,19 @@ def default_no_agg_dict(df: pd.DataFrame) -> dict[str, list[str]]:
     return {c: [c] for c in names}
 
 
-def update_dictionary(industries: list[str], dictionary: dict):
+def update_dictionary(industries: list[str], dictionary: dict) -> dict:
+    """Update industry aggregation dictionary with new industries.
+
+    Processes a list of industries and adds them to an existing aggregation
+    dictionary based on their prefix codes.
+
+    Args:
+        industries (list[str]): List of industry codes to process
+        dictionary (dict): Existing aggregation dictionary to update
+
+    Returns:
+        dict: Updated aggregation dictionary
+    """
     pattern = re.compile(r"[A-Z]\d{2}[a-z]")
     new_industries = [ind for ind in industries if pattern.match(ind)]
 
