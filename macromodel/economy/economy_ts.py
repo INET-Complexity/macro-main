@@ -1,3 +1,46 @@
+"""Economy time series initialization and management module.
+
+This module provides functionality for creating and managing time series data
+for tracking economic indicators and aggregates. It serves as the data backbone
+for the Economy class, initializing and maintaining time series for:
+
+1. Price Indices and Inflation:
+   - Consumer Price Index (CPI)
+   - Producer Price Index (PPI)
+   - Capital Formation Price Index (CFPI)
+   - House Price Index (HPI)
+   - Industry-specific prices
+
+2. Labor Market Metrics:
+   - Unemployment rates
+   - Participation rates
+   - Vacancy rates
+   - Job reallocation rates
+
+3. Growth and Production:
+   - Total and sectoral growth rates
+   - Value added by industry
+   - Production and sales volumes
+
+4. Financial Health:
+   - Insolvency rates
+   - Non-performing loan ratios
+   - Credit market conditions
+
+5. International Trade:
+   - Bilateral trade flows
+   - Import/export volumes
+   - Trade balances
+
+6. National Accounts:
+   - GDP components (output, expenditure, income)
+   - Government fiscal metrics
+   - Household sector aggregates
+
+The module ensures consistent initialization and proper accounting
+of economic time series data across all sectors of the economy.
+"""
+
 import numpy as np
 
 from macromodel.agents.individuals.individual_properties import ActivityStatus
@@ -37,6 +80,57 @@ def create_economy_timeseries(
     initial_total_growth: float,
     initial_npl_ratio: float,
 ) -> TimeSeries:
+    """Create and initialize economy-wide time series data.
+
+    This function sets up all time series needed to track economic indicators
+    and aggregates. It initializes series with starting values and establishes
+    the data structure for tracking economic evolution.
+
+    The function creates series for:
+    1. Price levels and inflation rates
+    2. Labor market conditions
+    3. Production and growth metrics
+    4. Housing market indicators
+    5. Financial health measures
+    6. International trade flows
+    7. National accounts components
+
+    Args:
+        country_name (str): Country identifier
+        all_country_names (list[str]): List of all countries
+        n_industries (int): Number of industrial sectors
+        initial_firm_prices (np.ndarray): Starting price levels
+        initial_firm_total_sales (float): Initial total sales
+        initial_sectoral_firm_sales (np.ndarray): Sales by sector
+        initial_sectoral_firm_used_ii (np.ndarray): Intermediate inputs
+        initial_total_taxes_on_products (float): Product tax revenue
+        initial_total_taxes_on_production (float): Production tax revenue
+        initial_change_in_firm_stock_inventories (float): Inventory change
+        initial_gross_fixed_capital_formation (float): Fixed investment
+        initial_total_operating_surplus (float): Operating surplus
+        initial_total_wages (float): Total wage payments
+        initial_individual_activity (np.ndarray): Activity statuses
+        initial_cpi_inflation (float): Starting CPI inflation
+        initial_ppi_inflation (float): Starting PPI inflation
+        initial_hpi_inflation (float): Starting HPI inflation
+        initial_real_rent_paid (np.ndarray): Actual rent payments
+        initial_imp_rent_paid (np.ndarray): Imputed rent values
+        initial_hh_rental_income (np.ndarray): Rental income
+        initial_hh_consumption (float): Household consumption
+        initial_gov_consumption (float): Government consumption
+        initial_cg_rent_received (float): Central gov rental income
+        initial_cg_taxes_rental_income (float): Rental tax revenue
+        initial_imports (np.ndarray): Import volumes by sector
+        initial_imports_by_country (dict[str, np.ndarray]): Bilateral imports
+        initial_exports (np.ndarray): Export volumes by sector
+        initial_exports_by_country (dict[str, np.ndarray]): Bilateral exports
+        export_taxes (float): Export tax rate
+        initial_total_growth (float): Starting growth rate
+        initial_npl_ratio (float): Non-performing loan ratio
+
+    Returns:
+        TimeSeries: Initialized time series object with all economic indicators
+    """
     ts = TimeSeries(
         ppi=[1.0],
         cpi=[1.0],
