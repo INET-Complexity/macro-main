@@ -1,3 +1,30 @@
+"""Rest of the World implementation module.
+
+This module implements the Rest of the World (ROW) component that represents
+all external economies interacting with the modeled countries. It handles:
+
+1. International Trade:
+   - Export supply decisions
+   - Import demand behavior
+   - Price setting in international markets
+   - Currency conversion
+
+2. Economic Integration:
+   - Trade flow adjustments
+   - Price level convergence
+   - Market clearing processes
+   - Exchange rate effects
+
+3. Dynamic Behavior:
+   - Trade volume forecasting
+   - Price adjustment mechanisms
+   - Growth and inflation impacts
+   - Expectation formation
+
+The ROW component serves as the external sector in the model, providing
+closure for international trade and ensuring consistent global accounting.
+"""
+
 from functools import reduce
 from typing import Any
 
@@ -18,6 +45,28 @@ from macromodel.util.function_mapping import functions_from_model, update_functi
 
 
 class RestOfTheWorld(Agent):
+    """Rest of the World economic agent.
+
+    This class represents all external economies as a single agent that trades
+    with the modeled countries. It manages international trade flows, price
+    setting, and market interactions through:
+    - Import and export decisions
+    - International price determination
+    - Trade flow adjustments
+    - Market clearing participation
+
+    Attributes:
+        country_name (str): Associated country identifier
+        all_country_names (list[str]): All countries in model
+        n_industries (int): Number of industrial sectors
+        functions (dict[str, Any]): Economic function implementations
+        parameters (RestOfTheWorldParameters): Behavioral parameters
+        forecasting_window (int): Periods for forecasting
+        assume_zero_growth (bool): Whether to assume no growth
+        assume_zero_noise (bool): Whether to suppress random variation
+        configuration (RestOfTheWorldConfiguration): Model settings
+    """
+
     def __init__(
         self,
         country_name: str,
@@ -34,6 +83,23 @@ class RestOfTheWorld(Agent):
         assume_zero_noise: bool,
         configuration: RestOfTheWorldConfiguration,
     ):
+        """Initialize Rest of the World agent.
+
+        Args:
+            country_name (str): Associated country identifier
+            all_country_names (list[str]): All countries in model
+            n_industries (int): Number of industrial sectors
+            n_importers (int): Number of importing agents
+            n_exporters_by_industry (np.ndarray): Exporters per industry
+            functions (dict[str, Any]): Economic function implementations
+            ts (TimeSeries): Time series data
+            parameters (RestOfTheWorldParameters): Behavioral parameters
+            states (dict): Initial state variables
+            forecasting_window (int): Periods for forecasting
+            assume_zero_growth (bool): Whether to assume no growth
+            assume_zero_noise (bool): Whether to suppress random variation
+            configuration (RestOfTheWorldConfiguration): Model settings
+        """
         super().__init__(
             country_name=country_name,
             all_country_names=all_country_names,
@@ -55,7 +121,6 @@ class RestOfTheWorld(Agent):
         self.forecasting_window = forecasting_window
         self.assume_zero_growth = assume_zero_growth
         self.assume_zero_noise = assume_zero_noise
-
         self.configuration = configuration
 
     @classmethod
@@ -69,6 +134,23 @@ class RestOfTheWorld(Agent):
         calibration_data_before: pd.DataFrame,
         calibration_data_during: pd.DataFrame,
     ) -> "RestOfTheWorld":
+        """Create ROW instance from synthetic data.
+
+        Factory method that constructs a RestOfTheWorld instance using
+        synthetic data and calibration information.
+
+        Args:
+            country_name (str): Associated country identifier
+            all_country_names (list[str]): All countries in model
+            n_industries (int): Number of industrial sectors
+            synthetic_row (SyntheticRestOfTheWorld): Synthetic ROW data
+            configuration (RestOfTheWorldConfiguration): Model settings
+            calibration_data_before (pd.DataFrame): Pre-period calibration data
+            calibration_data_during (pd.DataFrame): During-period calibration data
+
+        Returns:
+            RestOfTheWorld: Initialized ROW instance
+        """
         functions = functions_from_model(model=configuration.functions, loc="macromodel.rest_of_the_world")
 
         data = synthetic_row.row_data.astype(float)
@@ -119,6 +201,11 @@ class RestOfTheWorld(Agent):
         )
 
     def reset(self, configuration: RestOfTheWorldConfiguration) -> None:
+        """Reset ROW state with new configuration.
+
+        Args:
+            configuration (RestOfTheWorldConfiguration): New model settings
+        """
         self.gen_reset()
         update_functions(
             model=configuration.functions,
@@ -132,52 +219,15 @@ class RestOfTheWorld(Agent):
         self.assume_zero_noise = configuration.assume_zero_noise
         self.configuration = configuration
 
-    # @classmethod
-    # def from_data(
-    #     cls,
-    #     country_name: str,
-    #     all_country_names: list[str],
-    #     n_industries: int,
-    #     data: pd.DataFrame,
-    #     row_exports_model: Optional[Any],
-    #     row_imports_model: Optional[Any],
-    #     average_country_ppi_inflation: float,
-    #     config: dict[str, Any],
-    # ) -> "RestOfTheWorld":
-    #     # Get corresponding functions and parameters
-    #     functions = get_functions(
-    #         config["functions"],
-    #         loc="macromodel.agents.rest_of_the_world",
-    #         func_dir=Path(__file__).parent / "func",
-    #     )
-    #     if "parameters" in config.keys():
-    #         parameters = config["parameters"].copy()
-    #     else:
-    #         parameters = {}
-    #
-    #     # Create the corresponding time series object
-    #     ts = create_rest_of_the_world_timeseries(
-    #         data=data,
-    #         n_industries=n_industries,
-    #     )
-    #
-    #     # Additional states
-    #     states = {
-    #         "row_exports_model": row_exports_model,
-    #         "row_imports_model": row_imports_model,
-    #         "Industry": list(range(n_industries)),
-    #     }
-    #
-    #     return cls(
-    #         country_name,
-    #         all_country_names,
-    #         n_industries,
-    #         functions,
-    #         ts,
-    #         states,
-    #     )
-
     def estimate_inflation(self, average_country_ppi_inflation: float) -> float:
+        """Estimate ROW inflation rate.
+
+        Args:
+            average_country_ppi_inflation (float): Average PPI inflation
+
+        Returns:
+            float: Estimated ROW inflation rate
+        """
         return self.functions["inflation"].compute_inflation(
             average_country_ppi_inflation=average_country_ppi_inflation
         )
@@ -187,6 +237,15 @@ class RestOfTheWorld(Agent):
         aggregate_country_production_index: float,
         aggregate_country_price_index: float,
     ) -> None:
+        """Prepare import decisions.
+
+        Determines desired import volumes based on historical data and
+        current economic conditions.
+
+        Args:
+            aggregate_country_production_index (float): Production level
+            aggregate_country_price_index (float): Price level
+        """
         historic_total_real_imports = np.concatenate(
             (
                 self.states["exogenous_real_imports_before"][-self.forecasting_window :],
@@ -230,6 +289,15 @@ class RestOfTheWorld(Agent):
         aggregate_country_production_index: float,
         aggregate_country_price_index: float,
     ) -> None:
+        """Prepare export decisions.
+
+        Determines desired export volumes and prices based on historical
+        data and current economic conditions.
+
+        Args:
+            aggregate_country_production_index (float): Production level
+            aggregate_country_price_index (float): Price level
+        """
         # Set desired exports
         historic_total_real_exports = np.concatenate(
             (
@@ -300,6 +368,14 @@ class RestOfTheWorld(Agent):
         aggregate_country_production_index: float,
         aggregate_country_price_index: float,
     ) -> None:
+        """Prepare for goods market clearing.
+
+        Sets up all necessary trade decisions and prices for market clearing.
+
+        Args:
+            aggregate_country_production_index (float): Production level
+            aggregate_country_price_index (float): Price level
+        """
         self.set_exchange_rate(1.0)
         self.prepare_buying_goods(
             aggregate_country_production_index=aggregate_country_production_index,
@@ -315,12 +391,22 @@ class RestOfTheWorld(Agent):
         aggregate_country_production_index: float,
         aggregate_country_price_index: float,
     ) -> None:
+        """Update planning metrics for market participation.
+
+        Args:
+            aggregate_country_production_index (float): Production level
+            aggregate_country_price_index (float): Price level
+        """
         self.prepare_goods_market_clearing(
             aggregate_country_production_index=aggregate_country_production_index,
-            aggregate_country_price_index=aggregate_country_price_index,  #
+            aggregate_country_price_index=aggregate_country_price_index,
         )
 
     def record_bought_goods(self) -> None:
+        """Record results of goods market transactions.
+
+        Updates time series with actual trade volumes and values.
+        """
         self.ts.exports_real.append(self.ts.current("real_amount_sold"))
         self.ts.total_exports.append([self.ts.current("exports_real").sum()])
         self.ts.imports_in_usd.append(self.ts.current("nominal_amount_spent_in_lcu")[0])
@@ -328,5 +414,10 @@ class RestOfTheWorld(Agent):
         self.ts.total_imports.append([self.ts.current("imports_in_lcu").sum()])
 
     def save_to_h5(self, file: h5py.File) -> None:
+        """Save ROW data to HDF5 file.
+
+        Args:
+            file (h5py.File): HDF5 file to save to
+        """
         group = file.create_group("ROW")
         self.ts.write_to_h5("rest_of_the_world", group)
