@@ -1,3 +1,43 @@
+"""Pro-rata credit market clearing utility functions.
+
+This module implements a proportional (pro-rata) credit market clearing mechanism where
+credit supply and demand are matched based on relative shares rather than individual
+matches. This approach ensures fair distribution of credit when supply and demand
+are imbalanced.
+
+Key Features:
+1. Credit Supply Collection:
+   - Aggregate real and nominal credit supply by sector
+   - Calculate average interest rates
+   - Handle lending preferences and priorities
+   - Track lending capacity utilization
+
+2. Credit Demand Collection:
+   - Aggregate real and nominal credit demand by sector
+   - Convert between value types (real/nominal)
+   - Apply borrowing constraints and limits
+   - Consider borrower priorities
+
+3. Even Distribution:
+   - Proportional allocation when supply > demand
+   - Fair rationing when demand > supply
+   - Priority-based credit distribution
+   - Minimum credit allocation guarantees
+
+4. Excess Demand Handling:
+   - Track unfulfilled credit demand
+   - Distribute excess demand proportionally
+   - Update lender capacity utilization
+   - Monitor credit market pressures
+
+The pro-rata mechanism is particularly useful for:
+- Ensuring fair credit allocation in supply-constrained markets
+- Handling large numbers of lenders and borrowers efficiently
+- Maintaining stable lending relationships
+- Managing priority-based credit distribution
+- Implementing policy-driven credit allocation
+"""
+
 from typing import Optional, Tuple
 
 import numpy as np
@@ -10,6 +50,31 @@ from macromodel.markets.goods_market.value_type import ValueType
 # @njit(float64[:](float64[:], int64[:], int64), parallel=True, cache=True)
 @njit(parallel=True, cache=True)
 def get_split_sum(val: np.ndarray, groups: np.ndarray, n_industries: int) -> np.ndarray:
+    """Calculate sum of values by industry group for credit market analysis.
+
+    This function efficiently computes the sum of credit-related values for each
+    industry group using parallel processing. It's optimized with Numba for
+    performance on large credit market datasets.
+
+    The function is used to:
+    1. Aggregate credit supply/demand by industry
+    2. Calculate total lending capacity by sector
+    3. Sum up credit exposures for risk analysis
+
+    Args:
+        val: Array of credit-related values to sum (e.g., loan amounts)
+        groups: Array of industry indices for each value
+        n_industries: Total number of industries in the model
+
+    Returns:
+        np.ndarray: Array of sums for each industry
+
+    Example:
+        val = [1000000, 2000000, 3000000, 4000000]  # Credit amounts
+        groups = [0, 0, 1, 1]  # Industry indices
+        n_industries = 2
+        Returns: [3000000, 7000000]  # Total credit for industries 0 and 1
+    """
     split_sum = np.zeros(n_industries)
     for _g in prange(n_industries):
         split_sum[_g] = val[groups == _g].sum()
@@ -31,6 +96,58 @@ def collect_seller_info(
     np.ndarray,
     np.ndarray,
 ]:
+    """Collect and aggregate lender information across all participants.
+
+    This function gathers credit supply information from all lenders, considering
+    priorities, lending preferences, and value types. It calculates both real
+    and nominal credit supply totals and average interest rates.
+
+    The collection process:
+    1. Initialize supply tracking:
+       - Set up dictionaries for real and nominal supply by sector
+       - Handle initial vs remaining credit capacity
+       - Apply lending proportion constraints
+
+    2. Aggregate by lender type:
+       - Process high-priority lenders first if specified
+       - Convert between real and nominal values
+       - Track bilateral lending relationships
+       - Apply sector-specific lending limits
+
+    3. Calculate market metrics:
+       - Total credit supply by sector
+       - Average interest rates
+       - Lending capacity utilization
+       - Market concentration measures
+
+    Args:
+        goods_market_participants: Dict mapping sector names to lists of lending agents
+        n_industries: Number of industries/sectors in the model
+        high_prio_only: Whether to only consider high-priority lenders
+        from_country: Optional specific sector index to collect from
+        trade_proportions: Optional array of lending proportion constraints
+        exclude_row: Whether to exclude Rest of World sector
+        use_initial: Whether to use initial rather than remaining credit capacity
+
+    Returns:
+        Tuple containing:
+        - Dict mapping sectors to real credit supply arrays
+        - Aggregate real credit supply array
+        - Dict mapping sectors to nominal credit supply arrays
+        - Aggregate nominal credit supply array
+        - Average interest rate array by sector
+
+    Example:
+        For banking sector across three industries:
+        1. Collect supply:
+           Bank A: $10M at 5% rate
+           Bank B: $5M at 6% rate
+           Bank C: $3M at 4.5% rate
+        2. Calculate aggregates:
+           Total real supply: $18M
+           Average rate: 5.2%
+           Capacity utilization: 75%
+    """
     init_field, rem_field = "Initial Goods", "Remaining Goods"
     if use_initial:
         rem_field = "Initial Goods"
@@ -69,22 +186,6 @@ def collect_seller_info(
                         n_industries,
                     )
 
-                    """
-                    print("\n")
-                    print("Seller information for %s", country_name)
-                    print("Transactor %s", transactor)
-                    print(
-                        "Total %s: %.2e",
-                        rem_field,
-                        get_split_sum(
-                            transactor.transactor_seller_states[rem_field]
-                                * transactor.transactor_seller_states["Prices"],
-                            transactor.transactor_seller_states["Industries"],
-                            n_industries,
-                        )
-                    )
-                    """
-
     # Calculate the average price
     aggr_real_supply = np.stack(list(total_real_supply.values()), axis=0).sum(axis=0)
     aggr_nominal_supply = np.stack(list(total_nominal_supply.values()), axis=0).sum(axis=0)
@@ -114,6 +215,60 @@ def collect_buyer_info(
     exclude_row: bool = False,
     with_value_type: Optional[ValueType] = None,
 ) -> Tuple[dict[str, np.ndarray], np.ndarray, dict[str, np.ndarray], np.ndarray]:
+    """Collect and aggregate borrower information across all participants.
+
+    This function gathers credit demand information from all borrowers, handling
+    both real and nominal value types. It converts between value types using
+    average interest rates and applies borrowing constraints.
+
+    The collection process:
+    1. Initialize demand tracking:
+       - Set up dictionaries for real and nominal demand by sector
+       - Apply borrowing proportion constraints
+       - Handle value type filtering
+
+    2. Aggregate by borrower type:
+       - Process high-priority borrowers first if specified
+       - Convert between real and nominal values
+       - Apply sector-specific borrowing limits
+       - Track bilateral borrowing relationships
+
+    3. Calculate market metrics:
+       - Total credit demand by sector
+       - Demand composition by value type
+       - Borrowing capacity utilization
+       - Sector concentration measures
+
+    Args:
+        goods_market_participants: Dict mapping sector names to lists of borrowing agents
+        average_price: Array of average interest rates by sector
+        n_industries: Number of industries/sectors in the model
+        high_prio_only: Whether to only consider high-priority borrowers
+        to_country: Optional specific sector index to collect from
+        trade_proportions: Optional array of borrowing proportion constraints
+        exclude_row: Whether to exclude Rest of World sector
+        with_value_type: Optional filter for specific value type
+
+    Returns:
+        Tuple containing:
+        - Dict mapping sectors to real credit demand arrays
+        - Aggregate real credit demand array
+        - Dict mapping sectors to nominal credit demand arrays
+        - Aggregate nominal credit demand array
+
+    Example:
+        For corporate sector across two industries:
+        1. Collect demand:
+           Firm A:
+           - Real borrowers: $8M
+           - Nominal borrowers: $10M (at 5% rate = $9.52M real)
+           Firm B:
+           - Real borrowers: $4M
+           - Nominal borrowers: $6M (at 5% rate = $5.71M real)
+        2. Calculate aggregates:
+           Total real demand: $27.23M
+           Total nominal: $28.6M
+    """
     init_field, rem_field = "Initial Goods", "Remaining Goods"
     if trade_proportions is None:
         trade_proportions = np.ones(n_industries)
@@ -188,6 +343,65 @@ def clear_evenly(
     exclude_row: bool = False,
     with_buyer_value_type: Optional[ValueType] = None,
 ) -> None:
+    """Execute pro-rata credit market clearing across all participants.
+
+    This function implements proportional credit market clearing where supply and
+    demand are matched based on relative shares. It handles both cases where
+    credit supply exceeds demand and vice versa, ensuring fair distribution.
+
+    The clearing process:
+    1. When supply > demand:
+       - Each lender provides credit proportional to their capacity
+       - Each borrower receives their full requested amount
+       - Lenders maintain excess lending capacity
+       - Interest rates tend to be more favorable to borrowers
+
+    2. When demand > supply:
+       - Each lender provides their full available credit
+       - Each borrower receives proportional to their demand
+       - Borrowers maintain excess demand records
+       - Interest rates tend to be more favorable to lenders
+
+    3. Priority handling:
+       - High-priority lenders get first choice of borrowers
+       - High-priority borrowers get first access to credit
+       - Minimum credit allocations are guaranteed where possible
+       - Sector-specific constraints are respected
+
+    Args:
+        goods_market_participants: Dict mapping sector names to lists of agents
+        n_industries: Number of industries/sectors in the model
+        total_real_supply: Dict mapping sectors to real credit supply arrays
+        aggr_real_supply: Aggregate real credit supply array
+        average_goods_price: Array of average interest rates by sector
+        total_real_demand: Dict mapping sectors to real credit demand arrays
+        aggr_real_demand: Aggregate real credit demand array
+        sell_high_prio_only: Whether to only process high-priority lenders
+        buy_high_prio_only: Whether to only process high-priority borrowers
+        from_country: Optional specific source sector
+        to_country: Optional specific destination sector
+        trade_proportions: Optional array of credit proportion constraints
+        exclude_row: Whether to exclude Rest of World sector
+        with_buyer_value_type: Optional filter for specific borrower value type
+
+    Example:
+        For banking sector:
+        1. Supply > Demand case:
+           Supply: $10M
+           Demand: $8M
+           Result:
+           - Each lender provides 80% of their capacity
+           - Borrowers get 100% of requested amount
+           - $2M remains available for lending
+
+        2. Demand > Supply case:
+           Supply: $8M
+           Demand: $10M
+           Result:
+           - Lenders provide 100% of capacity
+           - Each borrower gets 80% of requested amount
+           - $2M of excess demand recorded
+    """
     if from_country is None:
         from_country_names = list(goods_market_participants.keys())
         if exclude_row:
@@ -435,6 +649,60 @@ def distribute_excess_demand_evenly(
     goods_market_participants: dict[str, list[Agent]],
     n_industries: int,
 ) -> None:
+    """Distribute excess credit demand proportionally across lenders.
+
+    This function handles unfulfilled credit demand by allocating it to lenders
+    based on their initial lending capacity and interest rates. This helps track
+    market pressures and potential credit constraints.
+
+    The distribution process:
+    1. Calculate initial metrics:
+       - Initial lending capacity by sector
+       - Current interest rates
+       - Utilization rates
+       - Market concentration
+
+    2. Determine total excess demand:
+       - Aggregate unfulfilled credit requests
+       - Break down by sector and priority
+       - Consider value type conversions
+       - Track bilateral relationships
+
+    3. Allocate excess demand:
+       - Distribute proportionally to lending capacity
+       - Consider interest rate differentials
+       - Respect regulatory constraints
+       - Update lender records
+
+    4. Update market metrics:
+       - Excess demand by sector
+       - Credit rationing indicators
+       - Market pressure signals
+       - Policy effectiveness measures
+
+    Args:
+        goods_market_participants: Dict mapping sector names to lists of agents
+        n_industries: Number of industries/sectors in the model
+
+    Example:
+        For banking sector:
+        1. Initial state:
+           - Total credit supply: $8M
+           - Total credit demand: $10M
+           - Excess demand: $2M
+           - Bank A capacity: $5M (62.5%)
+           - Bank B capacity: $3M (37.5%)
+
+        2. Allocation:
+           - Bank A gets $1.25M of excess demand (62.5% of $2M)
+           - Bank B gets $0.75M of excess demand (37.5% of $2M)
+
+        This information helps:
+        - Guide credit policy decisions
+        - Identify credit constraints
+        - Signal market stress
+        - Plan capacity adjustments
+    """
     # Collect initial values
     _, _, total_nominal_supply, aggr_nominal_supply, average_price = collect_seller_info(
         goods_market_participants=goods_market_participants,

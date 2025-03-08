@@ -1,3 +1,32 @@
+"""Credit market clearing implementations.
+
+This module provides different strategies for clearing the credit market, matching
+lenders (banks) with borrowers (firms and households) while respecting various
+constraints and priorities. It implements multiple clearing mechanisms:
+
+1. Default Clearing:
+   - Interest rate based matching
+   - Risk assessment and constraints
+   - Regulatory compliance
+
+2. Poledna Clearing:
+   - Simplified firm-focused clearing
+   - Basic capital requirements
+   - Risk-weighted allocation
+
+3. Water Bucket Clearing:
+   - Network flow based allocation
+   - Priority-based lending
+   - Minimum fill rates
+
+Each clearing mechanism handles:
+- Capital adequacy requirements
+- Risk assessment criteria
+- Interest rate determination
+- Loan type preferences
+- Default risk management
+"""
+
 from abc import ABC, abstractmethod
 from typing import Tuple
 
@@ -12,6 +41,32 @@ from macromodel.markets.credit_market.types_of_loans import LoanTypes
 
 
 class CreditMarketClearer(ABC):
+    """Abstract base class for credit market clearing mechanisms.
+
+    This class defines the interface and common functionality for all credit market
+    clearing implementations. It handles the matching of lenders (banks) with
+    borrowers (firms and households) while respecting various financial constraints
+    and regulatory requirements.
+
+    The clearing process follows these general steps:
+    1. Assessment of bank lending capacity
+    2. Evaluation of borrower creditworthiness
+    3. Interest rate determination
+    4. Loan allocation and origination
+
+    Attributes:
+        allow_short_term_firm_loans (bool): Whether to allow short-term lending to firms
+        allow_household_loans (bool): Whether to allow lending to households
+        firms_max_number_of_banks_visiting (int): Max banks a firm can approach
+        households_max_number_of_banks_visiting (int): Max banks a household can approach
+        consider_loan_type_fractions (bool): Whether to use loan type preferences
+        credit_supply_temperature (float): Sensitivity to NPL rates in supply
+        interest_rates_selection_temperature (float): Rate sensitivity in matching
+        creditor_selection_is_deterministic (bool): Whether to use deterministic matching
+        creditor_minimum_fill (bool): Whether to enforce minimum lending amounts
+        debtor_minimum_fill (bool): Whether to enforce minimum borrowing amounts
+    """
+
     def __init__(
         self,
         allow_short_term_firm_loans: bool,
@@ -25,6 +80,20 @@ class CreditMarketClearer(ABC):
         creditor_minimum_fill: bool,
         debtor_minimum_fill: bool,
     ):
+        """Initialize market clearer with configuration parameters.
+
+        Args:
+            allow_short_term_firm_loans (bool): Allow short-term firm lending
+            allow_household_loans (bool): Allow household lending
+            firms_max_number_of_banks_visiting (int): Max banks per firm
+            households_max_number_of_banks_visiting (int): Max banks per household
+            consider_loan_type_fractions (bool): Use loan type preferences
+            credit_supply_temperature (float): NPL sensitivity parameter
+            interest_rates_selection_temperature (float): Rate sensitivity
+            creditor_selection_is_deterministic (bool): Use deterministic matching
+            creditor_minimum_fill (bool): Enforce minimum lending
+            debtor_minimum_fill (bool): Enforce minimum borrowing
+        """
         self.allow_short_term_firm_loans = allow_short_term_firm_loans
         self.allow_household_loans = allow_household_loans
         self.firms_max_number_of_banks_visiting = firms_max_number_of_banks_visiting
@@ -46,10 +115,39 @@ class CreditMarketClearer(ABC):
         current_npl_hh_cons_loans: float,
         current_npl_mortgages: float,
     ) -> pd.DataFrame:
+        """Execute market clearing algorithm.
+
+        Abstract method that must be implemented by concrete clearers to match
+        lenders with borrowers and originate loans.
+
+        Args:
+            banks (Banks): Banking sector agent
+            firms (Firms): Corporate sector agents
+            households (Households): Household sector agents
+            current_npl_firm_loans (float): Current NPL rate for firm loans
+            current_npl_hh_cons_loans (float): Current NPL rate for consumer loans
+            current_npl_mortgages (float): Current NPL rate for mortgages
+
+        Returns:
+            pd.DataFrame: Details of newly originated loans with columns:
+                - loan_type: Type of loan (short-term, long-term, etc.)
+                - loan_value_initial: Original principal amount
+                - loan_value: Current principal amount
+                - loan_maturity: Term of the loan
+                - loan_interest_rate: Interest rate
+                - loan_bank_id: ID of lending bank
+                - loan_recipient_id: ID of borrower
+        """
         pass
 
 
 class NoCreditMarketClearer(CreditMarketClearer):
+    """Null implementation of credit market clearing.
+
+    This implementation does nothing during clearing, effectively creating
+    a market with no lending. Useful for testing and debugging.
+    """
+
     @staticmethod
     def clear(
         banks: Banks,
@@ -59,6 +157,21 @@ class NoCreditMarketClearer(CreditMarketClearer):
         current_npl_hh_cons_loans: float,
         current_npl_mortgages: float,
     ) -> pd.DataFrame:
+        """No-op implementation of market clearing.
+
+        Returns an empty DataFrame with the expected loan columns.
+
+        Args:
+            banks (Banks): Unused
+            firms (Firms): Unused
+            households (Households): Unused
+            current_npl_firm_loans (float): Unused
+            current_npl_hh_cons_loans (float): Unused
+            current_npl_mortgages (float): Unused
+
+        Returns:
+            pd.DataFrame: Empty DataFrame with loan columns
+        """
         return pd.DataFrame(
             columns=[
                 "loan_type",
@@ -73,6 +186,23 @@ class NoCreditMarketClearer(CreditMarketClearer):
 
 
 class DefaultCreditMarketClearer(CreditMarketClearer):
+    """Default implementation of credit market clearing.
+
+    This implementation uses an interest rate based matching algorithm with risk
+    assessment and regulatory constraints. For each loan type, it:
+    1. Evaluates bank lending capacity considering capital requirements
+    2. Assesses borrower creditworthiness using various metrics
+    3. Matches borrowers with banks based on interest rates
+    4. Originates loans respecting all constraints
+
+    Key Features:
+    - Multiple loan types (short-term, long-term, consumer, mortgage)
+    - Risk-based lending limits
+    - Interest rate based matching
+    - Regulatory compliance checks
+    - NPL-sensitive credit supply
+    """
+
     def clear(
         self,
         banks: Banks,
@@ -82,6 +212,29 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
         current_npl_hh_cons_loans: float,
         current_npl_mortgages: float,
     ) -> pd.DataFrame:
+        """Execute the default market clearing algorithm.
+
+        Processes each loan type sequentially, matching borrowers with lenders
+        based on interest rates and various constraints.
+
+        Args:
+            banks (Banks): Banking sector agent
+            firms (Firms): Corporate sector agents
+            households (Households): Household sector agents
+            current_npl_firm_loans (float): Current NPL rate for firm loans
+            current_npl_hh_cons_loans (float): Current NPL rate for consumer loans
+            current_npl_mortgages (float): Current NPL rate for mortgages
+
+        Returns:
+            pd.DataFrame: Details of newly originated loans
+
+        Note:
+            The clearing process:
+            1. Updates bank lending preferences based on NPL rates
+            2. Clears firm loans (short-term then long-term)
+            3. Clears household loans (consumer then mortgage)
+            4. Combines and returns all new loans
+        """
         empty = pd.DataFrame(
             data={
                 "loan_type": [],
@@ -201,6 +354,32 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
         new_credit_by_firm: np.ndarray,
         max_supply_based_on_preferences: np.ndarray,
     ) -> pd.DataFrame:
+        """Clear the market for firm loans (short-term or long-term).
+
+        Matches firms with banks for lending, considering:
+        - Capital adequacy requirements
+        - Debt-to-equity ratios
+        - Return on equity/assets requirements
+        - Interest rates
+
+        Args:
+            banks (Banks): Banking sector agent
+            firms (Firms): Corporate sector agents
+            loan_type (LoanTypes): FIRM_SHORT_TERM_LOAN or FIRM_LONG_TERM_LOAN
+            new_credit_by_bank (np.ndarray): Running total of new lending by bank
+            new_credit_by_firm (np.ndarray): Running total of new borrowing by firm
+            max_supply_based_on_preferences (np.ndarray): Maximum lending by bank
+
+        Returns:
+            pd.DataFrame: Details of newly originated firm loans
+
+        Note:
+            The process for each firm:
+            1. Randomly select subset of banks to approach
+            2. Sort banks by interest rate (lowest first)
+            3. Try to borrow from each bank up to constraints
+            4. Move to next bank if more credit needed
+        """
         # Data on new loans
         new_loan_types = []
         new_loan_value = []
@@ -323,6 +502,31 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
         new_credit_by_household: np.ndarray,
         max_supply_based_on_preferences: np.ndarray,
     ) -> pd.DataFrame:
+        """Clear the market for household consumption loans.
+
+        Matches households with banks for consumer lending, considering:
+        - Capital adequacy requirements
+        - Loan-to-income ratios
+        - Interest rates
+        - Bank lending preferences
+
+        Args:
+            banks (Banks): Banking sector agent
+            households (Households): Household sector agents
+            new_credit_by_bank (np.ndarray): Running total of new lending by bank
+            new_credit_by_household (np.ndarray): Running total of new borrowing by household
+            max_supply_based_on_preferences (np.ndarray): Maximum lending by bank
+
+        Returns:
+            pd.DataFrame: Details of newly originated consumer loans
+
+        Note:
+            The process for each household:
+            1. Randomly select subset of banks to approach
+            2. Sort banks by interest rate (lowest first)
+            3. Try to borrow from each bank up to constraints
+            4. Move to next bank if more credit needed
+        """
         # Data on new loans
         new_loan_types = []
         new_loan_value = []
@@ -421,6 +625,33 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
         new_credit_by_household: np.ndarray,
         max_supply_based_on_preferences: np.ndarray,
     ) -> pd.DataFrame:
+        """Clear the market for mortgage loans.
+
+        Matches households with banks for mortgage lending, considering:
+        - Capital adequacy requirements
+        - Loan-to-income ratios
+        - Loan-to-value ratios
+        - Debt service coverage
+        - Interest rates
+
+        Args:
+            banks (Banks): Banking sector agent
+            households (Households): Household sector agents
+            loan_type (LoanTypes): Should be MORTGAGE
+            new_credit_by_bank (np.ndarray): Running total of new lending by bank
+            new_credit_by_household (np.ndarray): Running total of new borrowing by household
+            max_supply_based_on_preferences (np.ndarray): Maximum lending by bank
+
+        Returns:
+            pd.DataFrame: Details of newly originated mortgages
+
+        Note:
+            The process for each household:
+            1. Randomly select subset of banks to approach
+            2. Sort banks by interest rate (lowest first)
+            3. Try to borrow full amount from each bank
+            4. Only accept if full amount can be borrowed
+        """
         # Data on new loans
         new_loan_types = []
         new_loan_value = []
@@ -500,7 +731,7 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
                     ),
                 )
 
-                # Only take the mortgage, if we get the full amount
+                # Only take the mortgage if we get the full amount
                 if value_granted < household_target_credit[household_id]:
                     continue
 
@@ -530,6 +761,16 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
 
 
 class PolednaCreditMarketClearer(CreditMarketClearer):
+    """Simplified credit market clearing based on Poledna et al.
+
+    This implementation provides a simpler clearing mechanism focused on firm lending
+    with basic capital requirements. It uses:
+    - Basic capital adequacy checks
+    - Simplified risk assessment
+    - Interest rate based matching
+    - Short-term firm loans only
+    """
+
     def clear(
         self,
         banks: Banks,
@@ -539,6 +780,21 @@ class PolednaCreditMarketClearer(CreditMarketClearer):
         current_npl_hh_cons_loans: float,
         current_npl_mortgages: float,
     ) -> pd.DataFrame:
+        """Execute the Poledna market clearing algorithm.
+
+        Focuses only on short-term firm lending with simplified constraints.
+
+        Args:
+            banks (Banks): Banking sector agent
+            firms (Firms): Corporate sector agents
+            households (Households): Unused
+            current_npl_firm_loans (float): Unused
+            current_npl_hh_cons_loans (float): Unused
+            current_npl_mortgages (float): Unused
+
+        Returns:
+            pd.DataFrame: Details of newly originated firm loans
+        """
         new_credit_by_bank = np.zeros(banks.ts.current("n_banks"))
         new_credit_by_firm = np.zeros(firms.ts.current("n_firms"))
         new_loans = self.clear_firm_loans(
@@ -560,6 +816,20 @@ class PolednaCreditMarketClearer(CreditMarketClearer):
         new_credit_by_bank: np.ndarray,
         new_credit_by_firm: np.ndarray,
     ) -> pd.DataFrame:
+        """Clear the market for firm loans using simplified constraints.
+
+        Uses basic capital adequacy and risk assessment for firm lending.
+
+        Args:
+            banks (Banks): Banking sector agent
+            firms (Firms): Corporate sector agents
+            loan_type (LoanTypes): Type of firm loan
+            new_credit_by_bank (np.ndarray): Running total of new lending by bank
+            new_credit_by_firm (np.ndarray): Running total of new borrowing by firm
+
+        Returns:
+            pd.DataFrame: Details of newly originated firm loans
+        """
         # Data on new loans
         new_loan_types = []
         new_loan_value = []
@@ -651,6 +921,35 @@ class PolednaCreditMarketClearer(CreditMarketClearer):
 
 
 class WaterBucketCreditMarketClearer(CreditMarketClearer):
+    """Network flow-based credit market clearing using the water bucket algorithm.
+
+    This implementation models credit allocation as a network flow problem, where
+    credit supply and demand are distributed through the network like water flowing
+    through buckets. The algorithm:
+
+    1. Credit Supply Management:
+       - Uses bank preferences for different loan types
+       - Adjusts supply based on NPL rates
+       - Respects capital adequacy requirements
+
+    2. Priority-Based Allocation:
+       - Supports both deterministic and stochastic creditor selection
+       - Uses interest rates to determine priorities
+       - Enforces minimum fill rates
+
+    3. Multi-Stage Clearing:
+       - Clears each loan type separately
+       - Maintains running totals of lending/borrowing
+       - Updates bank portfolio composition
+
+    Key Features:
+    - Network flow optimization for efficient allocation
+    - Support for all loan types
+    - Risk-sensitive credit supply
+    - Interest rate based prioritization
+    - Regulatory compliance
+    """
+
     def clear(
         self,
         banks: Banks,
@@ -660,6 +959,33 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
         current_npl_hh_cons_loans: float,
         current_npl_mortgages: float,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Execute the water bucket credit market clearing algorithm.
+
+        This method implements a sophisticated credit allocation mechanism that
+        models credit flows like water flowing through a network of buckets.
+        It operates in multiple stages to ensure efficient and compliant allocation.
+
+        Args:
+            banks (Banks): Banking sector agent
+            firms (Firms): Corporate sector agents
+            households (Households): Household sector agents
+            current_npl_firm_loans (float): Current NPL rate for firm loans
+            current_npl_hh_cons_loans (float): Current NPL rate for consumer loans
+            current_npl_mortgages (float): Current NPL rate for mortgages
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: Arrays of new loans:
+                - Short-term firm loans [3, n_banks, n_firms]
+                - Long-term firm loans [3, n_banks, n_firms]
+                - Consumer loans [3, n_banks, n_households]
+                - Mortgages [3, n_banks, n_households]
+
+        Note:
+            Each loan array has shape [3, n_banks, n_borrowers] where:
+            - Index 0: Principal amount
+            - Index 1: Interest rate
+            - Index 2: Monthly payment
+        """
         # Keeping track of new credit
         new_credit_by_bank = np.zeros(banks.ts.current("n_banks"))
         new_credit_by_firm = np.zeros(firms.ts.current("n_firms"))
@@ -768,7 +1094,31 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
         new_credit_by_household: np.ndarray,
         max_supply_based_on_preferences: np.ndarray,
     ) -> np.ndarray:
-        # Select loan properties and target credit
+        """Clear the market for a specific loan type using the water bucket algorithm.
+
+        This method implements the core water bucket algorithm for credit allocation:
+        1. Calculate supply and demand matrices
+        2. Apply regulatory and risk constraints
+        3. Distribute credit through the network
+        4. Update running totals
+
+        Args:
+            banks (Banks): Banking sector agent
+            firms (Firms): Corporate sector agents
+            households (Households): Household sector agents
+            loan_type (LoanTypes): Type of loan to clear
+            new_credit_by_bank (np.ndarray): Running total of new lending by bank
+            new_credit_by_firm (np.ndarray): Running total of new borrowing by firm
+            new_credit_by_household (np.ndarray): Running total of new borrowing by household
+            max_supply_based_on_preferences (np.ndarray): Maximum supply based on bank preferences
+
+        Returns:
+            np.ndarray: Array of shape [3, n_banks, n_borrowers] containing:
+                - Index 0: Principal amount
+                - Index 1: Interest rate
+                - Index 2: Monthly payment
+        """
+        # Get bank interest rates
         if loan_type == LoanTypes.FIRM_SHORT_TERM_LOAN:
             loan_maturity = banks.parameters.short_term_firm_loan_maturity
             banks_ir = banks.ts.current("interest_rates_on_short_term_firm_loans")
@@ -851,16 +1201,6 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 * households.ts.current("wealth_financial_assets")[agents_with_demand]
             )
 
-            # BTL OR OO?? need to check.
-            """
-            # Debt service to income
-            debt_service_to_income_restrictions = (
-                    banks.parameters.mortgage_debt_service_to_income_ratio
-                    * households.ts.current("income")[agents_with_demand]
-                    * (1 - (1 + banks_ir[bank_id]) ** (-banks.parameters.mortgage_maturity))
-                    / banks_ir[bank_id]
-            )
-            """
             credit_restrictions = np.minimum(loan_to_income_restrictions, loan_to_value_restrictions)
         else:
             raise ValueError("Unknown loan type", loan_type)
@@ -887,13 +1227,13 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
         if supply_sum == 0.0:
             return new_loans
         supply_weights = supply / supply_sum
-        if self.get_creditor_priorities_deterministic:
+        if self.creditor_selection_is_deterministic:
             creditor_priorities = self.get_creditor_priorities_deterministic(
                 self.interest_rates_selection_temperature,
                 interest_rates=banks_ir,
             )
         else:
-            creditor_priorities = self.get_creditor_priorities_deterministic(
+            creditor_priorities = self.get_creditor_priorities_stochastic(
                 self.interest_rates_selection_temperature,
                 interest_rates=banks_ir,
             )
@@ -906,9 +1246,6 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 priorities=creditor_priorities,
                 minimum_fill=self.creditor_minimum_fill,
             )
-            # new_loans[0, :, agents_with_demand] = np.matmul(granted_loans_by_banks, capacities_weights[np.newaxis])[
-            #     np.newaxis
-            # ].T
             new_loans[0, :, agents_with_demand] = np.outer(granted_loans_by_banks, capacities_weights)
         else:
             received_loans_by_debtors = self.fill_buckets(
@@ -917,10 +1254,6 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 priorities=debtor_priorities,
                 minimum_fill=self.debtor_minimum_fill,
             )
-            # new_loans[0, :, agents_with_demand] = np.matmul(
-            #     received_loans_by_debtors,
-            #     supply_weights[np.newaxis],
-            # )[np.newaxis].T
             new_loans[0, :, agents_with_demand] = np.outer(received_loans_by_debtors, supply_weights)
         new_loans[1, :, agents_with_demand] = banks_ir[:, np.newaxis] * new_loans[0, :, agents_with_demand]
         new_loans[2, :, agents_with_demand] = 1.0 / loan_maturity * new_loans[0, :, agents_with_demand]
@@ -928,18 +1261,40 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
         return new_loans
 
     @staticmethod
-    # @njit(int64[:](int64), cache=True)
     @njit(cache=True)
     def get_debtor_priorities(n_agents: int) -> np.ndarray:
+        """Generate random priorities for debtors.
+
+        Creates a random permutation of indices to determine the order in which
+        debtors are processed during credit allocation.
+
+        Args:
+            n_agents (int): Number of debtors to generate priorities for
+
+        Returns:
+            np.ndarray: Random permutation of indices [0, n_agents-1]
+        """
         return np.random.choice(n_agents, n_agents, replace=False)
 
     @staticmethod
-    # @njit(int64[:](float64, float64[:]), cache=True)
     @njit(cache=True)
     def get_creditor_priorities_deterministic(
         interest_rates_selection_temperature: float,
         interest_rates: np.ndarray,
     ) -> np.ndarray:
+        """Generate deterministic priorities for creditors based on interest rates.
+
+        Creates a deterministic ordering of creditors based on their offered interest
+        rates, with lower rates getting higher priority. The temperature parameter
+        controls how strongly the ordering depends on rate differences.
+
+        Args:
+            interest_rates_selection_temperature (float): Sensitivity to rate differences
+            interest_rates (np.ndarray): Array of interest rates offered by creditors
+
+        Returns:
+            np.ndarray: Indices sorted by priority (highest to lowest)
+        """
         distribution = np.exp(-interest_rates_selection_temperature * interest_rates)
         return np.argsort(distribution)[::-1]
 
@@ -948,6 +1303,19 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
         interest_rates_selection_temperature: float,
         interest_rates: np.ndarray,
     ) -> np.ndarray:
+        """Generate stochastic priorities for creditors based on interest rates.
+
+        Creates a random ordering of creditors where the probability of selection
+        is influenced by their offered interest rates. Lower rates lead to higher
+        probability of being selected earlier.
+
+        Args:
+            interest_rates_selection_temperature (float): Sensitivity to rate differences
+            interest_rates (np.ndarray): Array of interest rates offered by creditors
+
+        Returns:
+            np.ndarray: Random permutation of indices weighted by interest rates
+        """
         distribution = np.exp(-interest_rates_selection_temperature * interest_rates)
         return np.random.choice(
             len(distribution),
@@ -958,6 +1326,17 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
 
     @staticmethod
     def invert_permutation(p: np.ndarray) -> np.ndarray:
+        """Invert a permutation array.
+
+        Given a permutation array p where p[i] gives the new position of element i,
+        returns the inverse permutation s where s[p[i]] = i.
+
+        Args:
+            p (np.ndarray): Permutation array to invert
+
+        Returns:
+            np.ndarray: Inverse permutation array
+        """
         s = np.empty_like(p)
         s[p] = np.arange(p.size)
         return s
@@ -969,6 +1348,32 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
         priorities: np.ndarray,
         minimum_fill: float,
     ) -> np.ndarray:
+        """Distribute a total amount across buckets using the water bucket algorithm.
+
+        This method implements the core water bucket distribution algorithm, which
+        allocates a total amount across multiple buckets (recipients) while respecting:
+        - Individual bucket capacities
+        - Priority ordering
+        - Minimum fill requirements
+
+        The algorithm works like pouring water into a series of buckets arranged
+        by priority, where each bucket has a maximum capacity. The water (total amount)
+        flows through the buckets in order until fully distributed.
+
+        Args:
+            capacities (np.ndarray): Maximum capacity of each bucket
+            fill_amount (float): Total amount to distribute
+            priorities (np.ndarray): Priority ordering of buckets
+            minimum_fill (float): Minimum fraction each bucket should receive if possible
+
+        Returns:
+            np.ndarray: Amount allocated to each bucket, respecting original ordering
+
+        Note:
+            The algorithm proceeds in two stages:
+            1. If minimum_fill > 0, first ensures each bucket gets its minimum share
+            2. Then distributes remaining amount according to priorities and capacities
+        """
         if np.sum(capacities) == np.sum(capacities) + 1:
             return np.full_like(capacities, fill_amount / len(capacities))
         if np.sum(capacities) == 0:
