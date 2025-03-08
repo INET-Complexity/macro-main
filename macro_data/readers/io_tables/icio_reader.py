@@ -1,3 +1,46 @@
+"""
+This module provides functionality for reading and processing OECD Inter-Country Input
+Output (ICIO) tables. It handles the complex task of managing multi-country,
+multi-industry economic relationships and transforming them into a format suitable
+for economic modeling.
+
+The module centers around the ICIOReader class, which processes raw ICIO data and
+provides methods to:
+1. Read and aggregate input-output relationships
+2. Handle country-specific data transformations
+3. Calculate economic indicators and flows
+4. Convert between different time frequencies
+
+Key features:
+- Support for multiple countries and industries
+- Flexible aggregation of sectors and regions
+- Exchange rate conversions
+- Time frequency adjustments
+- Trade flow calculations
+
+Example:
+    ```python
+    from pathlib import Path
+    from macro_data.readers.io_tables.icio_reader import ICIOReader
+
+    # Initialize reader with raw data
+    reader = ICIOReader.agg_from_csv(
+        path=Path("icio_data.csv"),
+        pivot_path=Path("pivoted_data.csv"),
+        considered_countries=["FRA", "DEU"],
+        industries=["C10T12", "C13T15"],
+        year=2018,
+        exchange_rates=exchange_rates_reader,
+        imputed_rent_fraction={"FRA": 0.2, "DEU": 0.18},
+        investment_fractions=investment_data
+    )
+
+    # Get processed data
+    fra_output = reader.get_total_output("FRA")
+    fra_imports = reader.get_imports("FRA")
+    ```
+"""
+
 import os
 import re
 from functools import reduce
@@ -935,27 +978,25 @@ def normalise_iot(
     considered_countries: list[Country] | list[str],
     investment_fractions: dict[str | Country, dict[str, float]],
 ) -> pd.DataFrame:
-    """Normalize the input-output table for consistency and analysis.
+    """
+    Normalize input-output table by adjusting value-added and investment allocations.
 
-    This function performs several normalization steps:
-    1. Removes aggregate rows and columns
-    2. Handles negative value-added entries
-    3. Forces non-negative values where appropriate
-    4. Computes intermediate input totals
-    5. Adjusts taxes and subsidies
-    6. Splits fixed capital formation between firms, households, and government
+    This function ensures the input-output relationships are properly balanced by:
+    1. Adjusting value-added components
+    2. Allocating investment across industries
+    3. Ensuring consistency of trade flows
+
+    The normalization is essential for maintaining accounting identities and
+    ensuring the economic relationships represented in the table are coherent.
 
     Args:
-        iot (pd.DataFrame): Input-output table to normalize
-        industries (list[str]): List of industries to consider
-        considered_countries (list[Country | str]): Countries to process
-        investment_fractions (dict): Investment allocation fractions by country
+        iot (pd.DataFrame): Raw input-output table
+        industries (list[str]): Industries to process
+        considered_countries (list[Country | str]): Countries to include
+        investment_fractions (dict): Investment allocation ratios
 
     Returns:
         pd.DataFrame: Normalized input-output table
-
-    Raises:
-        ValueError: If negative value-added remains after adjustments
     """
     # Remove aggregates
     iot = iot.loc[iot.index != ("TOTAL", "Gross Output")]
@@ -1057,17 +1098,18 @@ def normalise_iot(
 
 
 def default_no_agg_dict(df: pd.DataFrame) -> dict[str, list[str]]:
-    """Create a default no-aggregation dictionary.
+    """
+    Create a default no-aggregation dictionary for industries.
 
-    Creates a mapping where each industry maps to itself,
-    effectively creating a "no aggregation" scenario.
+    This utility function creates a mapping where each industry maps to itself,
+    effectively specifying no aggregation should occur. It's useful as a
+    fallback when no specific aggregation scheme is provided.
 
     Args:
         df (pd.DataFrame): Input-output table with industry information
 
     Returns:
-        dict[str, list[str]]: Mapping of each industry to a single-item list
-            containing itself
+        dict[str, list[str]]: One-to-one mapping of industries
     """
     ind_cols = df.columns.get_level_values(1).unique()
     ind_rows = df.index.get_level_values(1).unique()
@@ -1077,17 +1119,19 @@ def default_no_agg_dict(df: pd.DataFrame) -> dict[str, list[str]]:
 
 
 def update_dictionary(industries: list[str], dictionary: dict) -> dict:
-    """Update industry aggregation dictionary with new industries.
+    """
+    Update industry mapping dictionary to match specified industries.
 
-    Processes a list of industries and adds them to an existing aggregation
-    dictionary based on their prefix codes.
+    This utility function ensures the industry mapping dictionary is consistent
+    with the list of industries being used in the analysis. It's particularly
+    useful when working with different industry aggregation levels.
 
     Args:
-        industries (list[str]): List of industry codes to process
-        dictionary (dict): Existing aggregation dictionary to update
+        industries (list[str]): Target industry list
+        dictionary (dict): Original mapping dictionary
 
     Returns:
-        dict: Updated aggregation dictionary
+        dict: Updated mapping dictionary
     """
     pattern = re.compile(r"[A-Z]\d{2}[a-z]")
     new_industries = [ind for ind in industries if pattern.match(ind)]
