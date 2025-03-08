@@ -106,53 +106,47 @@ AGGREGATED_INDUSTRIES = [
 
 # Detailed industry codes with full ISIC Rev. 4 granularity
 ALL_INDUSTRIES = [
-    # Primary sector
-    "A01",  # Crop and animal production
-    "A03",  # Fishing and aquaculture
-    "B05",  # Mining of coal and lignite
-    "B07",  # Mining of metal ores
-    "B09",  # Mining support service activities
-    # Manufacturing sector
-    "C10T12",  # Food, beverages and tobacco
-    "C13T15",  # Textiles, wearing apparel, leather
-    "C16",  # Wood and wood products
-    "C17",  # Paper and paper products
-    "C19",  # Coke and refined petroleum
-    "C20",  # Chemicals and chemical products
-    "C21",  # Pharmaceutical products
-    "C22",  # Rubber and plastic products
-    "C23",  # Other non-metallic mineral products
-    "C24",  # Basic metals
-    "C25",  # Fabricated metal products
-    "C26",  # Computer, electronic and optical
-    "C27",  # Electrical equipment
-    "C28",  # Machinery and equipment n.e.c.
-    "C29",  # Motor vehicles and trailers
-    "C30",  # Other transport equipment
-    "C31T33",  # Furniture, other manufacturing, repair
-    # Utilities and construction
-    "D",  # Electricity, gas, steam and air conditioning
-    "E",  # Water supply, sewerage, waste
-    "F",  # Construction
-    # Trade and transportation
-    "G",  # Wholesale and retail trade
-    "H49",  # Land transport
-    "H50",  # Water transport
-    "H51",  # Air transport
-    "H52",  # Warehousing and support activities
-    "H53",  # Postal and courier activities
-    # Information and communication
-    "J58T60",  # Publishing and broadcasting
-    "J61",  # Telecommunications
-    "J62",  # Computer programming and consultancy
-    # Services
-    "I",  # Accommodation and food service
-    "K",  # Financial and insurance activities
-    "L",  # Real estate activities
-    "M",  # Professional, scientific and technical
-    "N",  # Administrative and support service
-    "O",  # Public administration and defence
-    "P",  # Education
-    "Q",  # Human health and social work
-    "R_S",  # Arts, entertainment, recreation, other
+    "A01",
+    "A03",
+    "B05",
+    "B07",
+    "B09",
+    "C10T12",
+    "C13T15",
+    "C16",
+    "C17",
+    "C19",
+    "C20",
+    "C21",
+    "C22",
+    "C23",
+    "C24",
+    "C25",
+    "C26",
+    "C27",
+    "C28",
+    "C29",
+    "C30",
+    "C31T33",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H49",
+    "H50",
+    "H51",
+    "H52",
+    "H53",
+    "J58T60",
+    "J61",
+    "J62",
+    "I",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R_S",
 ]
