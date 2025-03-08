@@ -60,6 +60,8 @@ Example Usage:
 """
 
 from macromodel.markets.housing_market.housing_market import HousingMarket
-from macromodel.markets.housing_market.housing_market_ts import create_housing_market_timeseries
+from macromodel.markets.housing_market.housing_market_ts import (
+    create_housing_market_timeseries,
+)
 
 __all__ = ["HousingMarket", "create_housing_market_timeseries"]
