@@ -98,5 +98,7 @@ class ScaledIndividualsProductivitySetter(IndividualLabourInputsSetter):
             np.ndarray: Updated labor inputs by individual
         """
         current_labour_inputs = previous_individuals_labour_inputs.copy()
+        current_labour_inputs[current_individuals_activity == ActivityStatus.EMPLOYED] *= 1 + self.increase_employed
+        current_labour_inputs[current_individuals_activity == ActivityStatus.UNEMPLOYED] /= 1 + self.decrease_unemployed
 
         return current_labour_inputs
