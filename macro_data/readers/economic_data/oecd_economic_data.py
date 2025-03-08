@@ -1,3 +1,45 @@
+"""
+Module for reading and processing OECD economic data.
+
+This module provides comprehensive functionality to read and analyze various economic
+indicators from the OECD (Organisation for Economic Co-operation and Development).
+It handles a wide range of data including employment statistics, business demographics,
+tax rates, banking statistics, and macroeconomic indicators.
+
+Key Features:
+    - Employment statistics by industry
+    - Business demographics and firm size distributions
+    - Tax rates (corporate, personal, social insurance)
+    - Banking sector statistics
+    - Government debt and benefits data
+    - Interest rates and inflation
+    - Housing market indicators
+    - Unemployment and vacancy rates
+    - Consumption statistics by income quantile
+
+Example:
+    ```python
+    from pathlib import Path
+    from macro_data.configuration.countries import Country
+
+    # Initialize reader with scaling factors for each country
+    scale_dict = {Country("USA"): 1000, Country("GBR"): 100}
+    reader = OECDEconData(
+        path=Path("path/to/oecd_data"),
+        scale_dict=scale_dict
+    )
+
+    # Get employment by industry for a country and year
+    usa_employment = reader.employees_by_industry(2020, Country("USA"))
+    ```
+
+Note:
+    - Uses standardized OECD data files
+    - Handles missing data through proxies and interpolation
+    - Supports data pruning for specific date ranges
+    - Includes forced values for certain tax rates where OECD data is unavailable
+"""
+
 import json
 import logging
 import warnings
@@ -14,6 +56,7 @@ from macro_data.readers.economic_data.oecd_mappings import INDUSTRY_MAPPING
 from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE
 from macro_data.readers.util.prune_util import DataFilterWarning
 
+# Forced tax rates for countries where OECD data is unavailable or unreliable
 force_tau_sif = {
     "AUS": 0.0,
     "CHL": 0.0,
@@ -109,11 +152,32 @@ force_tau_income = {
 
 
 class OECDEconData:
+    """
+    Reader class for OECD economic data.
+
+    This class provides methods to read and process various economic indicators
+    from OECD datasets. It handles data scaling, industry mapping, and provides
+    access to a wide range of economic statistics.
+
+    Args:
+        path (Path | str): Path to directory containing OECD data files
+        scale_dict (dict[Country, int]): Dictionary mapping countries to their
+            scaling factors for employment numbers
+
+    Attributes:
+        scale_dict (dict[Country, int]): Country-specific scaling factors
+        industry_mapping (dict): Mapping between OECD and internal industry codes
+        sector_mapping (dict): Mapping for input-output table sectors
+        data (dict[str, pd.DataFrame]): Dictionary of loaded OECD datasets
+        default_industries (list[str]): List of standard industry codes
+    """
+
     def __init__(
         self,
         path: Path | str,
         scale_dict: dict[Country, int],
     ):
+        """Initialize the OECDEconData reader with data path and scaling factors."""
         # Parameters
         self.scale_dict = scale_dict
         self.industry_mapping = INDUSTRY_MAPPING
@@ -149,6 +213,13 @@ class OECDEconData:
 
     @staticmethod
     def get_files_with_codes() -> dict[str, str]:
+        """
+        Get mapping of data categories to file names.
+
+        Returns:
+            dict[str, str]: Dictionary mapping data categories to their file names,
+                           including employment, tax, banking, and other economic data
+        """
         return {
             "employment_by_industry": "ALFS_EMP",
             "bank_income_statement_balance_sheet": "BPF1",
@@ -183,6 +254,22 @@ class OECDEconData:
         }
 
     def employees_by_industry(self, year: int, country: Country) -> pd.Series:
+        """
+        Get number of employees by industry for a specific country and year.
+
+        Args:
+            year (int): Year to get employment data for
+            country (Country): Country to get employment data for
+
+        Returns:
+            pd.Series: Series containing number of employees for each industry,
+                      scaled by country-specific factor
+
+        Note:
+            - Uses default industry classification (A through T)
+            - Handles missing data by using median values
+            - Returns scaled values based on scale_dict
+        """
         df = self.data["employment_by_industry"]
         df = df.loc[(df["Time"] == year) & (df["SEX"] == "TT") & (df["LOCATION"] == country)].copy()
         # this scary looking line is just a regular expression
@@ -204,21 +291,20 @@ class OECDEconData:
         year: int,
     ) -> np.ndarray:
         """
-        Reads business individuals data.
+        Read business demography data for active employer enterprises.
 
-        Parameters
-        ----------
-        country : str
-            The list of countries.
-        output : pd.Series
-            The total output of each country by industry.
-        year : int
-            The current year.
+        Args:
+            country (Country): Country to get data for
+            output (pd.Series): Total output of each country by industry
+            year (int): Year to get data for
 
-        Returns
-        -------
-        n_firms_in_industry : dict
-            The number of active employer enterprises by country and industry.
+        Returns:
+            np.ndarray: Number of active employer enterprises by industry
+
+        Note:
+            - Special handling for GBR (2014-2018 only)
+            - Special handling for DEU (2012 onwards)
+            - Special handling for AUS (2010-2014)
         """
 
         # Load data
@@ -276,11 +362,36 @@ class OECDEconData:
         return isic_table.values.astype(int)
 
     @staticmethod
-    def zeta_dist(x, a):
+    def zeta_dist(x: np.ndarray, a: float) -> np.ndarray:
+        """
+        Calculate normalized Zeta distribution values.
+
+        Args:
+            x (np.ndarray): Input values (firm sizes)
+            a (float): Shape parameter of the Zeta distribution
+
+        Returns:
+            np.ndarray: Normalized probability values from Zeta distribution
+
+        Note:
+            Uses Riemann zeta function minus 1 (zetac) for calculations
+        """
         z = 1 / (x**a * zetac(a))
         return z / sum(z)
 
-    def find_sector_code(self, code):
+    def find_sector_code(self, code: str) -> int:
+        """
+        Find internal sector code from OECD industry code.
+
+        Args:
+            code (str): OECD industry code
+
+        Returns:
+            int: Internal sector code
+
+        Note:
+            Uses industry_mapping dictionary for conversion
+        """
         for sector, codes in self.sector_mapping.items():
             sector_string = "".join(codes)
             subsecs = code.split("_")
@@ -293,6 +404,23 @@ class OECDEconData:
         country: str,
         year: int,
     ) -> dict[int, np.ndarray] | None:
+        """
+        Calculate Zeta distribution parameters for firm sizes by sector.
+
+        Args:
+            country (str): Country to get firm size distribution for
+            year (int): Year to get firm size distribution for
+
+        Returns:
+            dict[int, np.ndarray] | None: Dictionary mapping sector indices to their
+                                         Zeta distribution parameters, or None if
+                                         data not available
+
+        Note:
+            - Fits Zeta distributions to empirical firm size distributions
+            - Returns None if insufficient data for fitting
+            - Handles different size classes and industry codes
+        """
         sizes = ["1-9", "10-19", "20-49", "50-249", "250"]
         size_means = [np.mean([int(v) for v in s.split("-")]) for s in sizes]
 
@@ -336,12 +464,35 @@ class OECDEconData:
         return final_zetas
 
     @staticmethod
-    def find_closest_year(df: pd.DataFrame, year: int):
+    def find_closest_year(df: pd.DataFrame, year: int) -> int:
+        """
+        Find closest available year in DataFrame to target year.
+
+        Args:
+            df (pd.DataFrame): DataFrame containing time series data
+            year (int): Target year
+
+        Returns:
+            int: Closest available year to target year
+        """
         years = df["YEA"].unique()
         min_year = min(years, key=lambda x: abs(x - year))
         return df.loc[df["YEA"] == min_year]
 
     def read_tau_sif(self, country: Country | str, year: int) -> float:
+        """
+        Get social insurance tax rate (firm contribution) for a country and year.
+
+        Args:
+            country (Country | str): Country to get tax rate for
+            year (int): Year to get tax rate for
+
+        Returns:
+            float: Social insurance tax rate as decimal
+
+        Note:
+            Uses force_tau_sif values for countries with missing or unreliable data
+        """
         if isinstance(country, str):
             country = Country(country)
         if country.value in force_tau_sif:
@@ -353,6 +504,19 @@ class OECDEconData:
         return df.loc[df["RATE_THRESH"] == "01_MR", "Value"].iloc[0] / 100.0
 
     def read_tau_siw(self, country: Country | str, year: int) -> float:
+        """
+        Get social insurance tax rate (worker contribution) for a country and year.
+
+        Args:
+            country (Country | str): Country to get tax rate for
+            year (int): Year to get tax rate for
+
+        Returns:
+            float: Social insurance tax rate as decimal
+
+        Note:
+            Uses force_tau_siw values for countries with missing or unreliable data
+        """
         if isinstance(country, str):
             country = Country(country)
         if country.value in force_tau_siw:
@@ -364,6 +528,19 @@ class OECDEconData:
         return df.loc[df["RATE_THRESH"] == "01_MR", "Value"].iloc[0] / 100.0
 
     def read_tau_firm(self, country: Country | str, year: int) -> float:
+        """
+        Get corporate tax rate for a country and year.
+
+        Args:
+            country (Country | str): Country to get tax rate for
+            year (int): Year to get tax rate for
+
+        Returns:
+            float: Corporate tax rate as decimal
+
+        Note:
+            Uses force_tau_firm values for countries with missing or unreliable data
+        """
         if isinstance(country, str):
             country = Country(country)
         if country.value in force_tau_firm:
@@ -376,6 +553,19 @@ class OECDEconData:
         return df.loc["COMB_CIT_RATE", "Value"] / 100.0
 
     def read_tau_income(self, country: Country, year: int) -> float:
+        """
+        Get personal income tax rate for a country and year.
+
+        Args:
+            country (Country): Country to get tax rate for
+            year (int): Year to get tax rate for
+
+        Returns:
+            float: Personal income tax rate as decimal
+
+        Note:
+            Uses force_tau_income values for countries with missing or unreliable data
+        """
         # df = self.data["average_personal_income_tax_by_family_type"]
         # df = df.loc[df["COU"] == country]
         # df = df.loc[df["Year"] == year]
@@ -388,6 +578,19 @@ class OECDEconData:
             return 0.09  # OECD average
 
     def read_short_term_interest_rates(self, country: Country, year: int) -> float:
+        """
+        Get short-term interest rates for a country and year.
+
+        Args:
+            country (Country): Country to get interest rates for
+            year (int): Year to get interest rates for
+
+        Returns:
+            float: Short-term interest rate as decimal
+
+        Note:
+            Returns mean of monthly rates for the year
+        """
         df = self.data["short_term_interest_rates"]
         df = df.loc[df["LOCATION"] == country]
         df = df.loc[df["FREQUENCY"] == "Q"]
@@ -401,6 +604,19 @@ class OECDEconData:
             raise ValueError("Multiple values found for short-term interest rates.")
 
     def read_long_term_interest_rates(self, country: Country, year: int) -> float:
+        """
+        Get long-term interest rates for a country and year.
+
+        Args:
+            country (Country): Country to get interest rates for
+            year (int): Year to get interest rates for
+
+        Returns:
+            float: Long-term interest rate as decimal
+
+        Note:
+            Returns mean of monthly rates for the year
+        """
         df = self.data["long_term_interest_rates"]
         df = df.loc[df["LOCATION"] == country]
         df = df.loc[df["FREQUENCY"] == "Q"]
@@ -414,6 +630,20 @@ class OECDEconData:
             raise ValueError("Multiple values found for long-term interest rates.")
 
     def get_bank_demographics(self, country: Country, year: int, code: str) -> float:
+        """
+        Get bank demographic data for a specific metric.
+
+        Args:
+            country (Country): Country to get data for
+            year (int): Year to get data for
+            code (str): Demographic metric code
+
+        Returns:
+            float: Value for the requested demographic metric
+
+        Note:
+            Handles missing data by finding closest available year
+        """
         df = self.data["bank_demography"]
 
         sel = df.loc[(df["COU"] == country) & (df["ITEM"] == code)]
@@ -427,34 +657,114 @@ class OECDEconData:
             else:
                 return sel["Value"].iloc[-1]
 
-    def read_tierone_reserves(self, country: Country, year: int):
+    def read_tierone_reserves(self, country: Country, year: int) -> float:
+        """
+        Get Tier 1 capital reserves ratio for banks.
+
+        Args:
+            country (Country): Country to get reserves for
+            year (int): Year to get reserves for
+
+        Returns:
+            float: Tier 1 capital ratio as decimal
+        """
         # noinspection PyTypeChecker
         reserves = self.get_bank_demographics(country, year, "BC32TE")
         rwa = self.get_bank_demographics(country, year, "BC36TE")
         return reserves / rwa
 
     def read_number_of_banks(self, country: Country, year: int) -> int:
+        """
+        Get number of banks in a country for a year.
+
+        Args:
+            country (Country): Country to get bank count for
+            year (int): Year to get bank count for
+
+        Returns:
+            int: Number of banks
+        """
         return int(self.get_bank_demographics(country, year, "SI37TE"))
 
     def read_number_of_bank_branches(self, country: Country, year: int) -> int:
+        """
+        Get number of bank branches in a country for a year.
+
+        Args:
+            country (Country): Country to get branch count for
+            year (int): Year to get branch count for
+
+        Returns:
+            int: Number of bank branches
+        """
         return int(self.get_bank_demographics(country, year, "SI38TE"))
 
     def read_number_of_bank_employees(self, country: Country, year: int) -> int:
+        """
+        Get number of bank employees in a country for a year.
+
+        Args:
+            country (Country): Country to get employee count for
+            year (int): Year to get employee count for
+
+        Returns:
+            int: Number of bank employees
+        """
         return int(self.get_bank_demographics(country, year, "SI39TE"))
 
-    # current domestic
-    def read_bank_distributed_profit(self, country: Country, year: int):
-        return self.get_bank_demographics(country, year, "IN12TE") * 1000000
+    def read_bank_distributed_profit(self, country: Country, year: int) -> float:
+        """
+        Get distributed profit of banks in a country for a year.
 
-    # current domestic
-    def read_bank_retained_profit(self, country: Country, year: int):
-        return self.get_bank_demographics(country, year, "IN13TD") * 1000000
+        Args:
+            country (Country): Country to get profit data for
+            year (int): Year to get profit data for
 
-    # current domestic
-    def read_bank_total_assets(self, country: Country, year: int):
-        return self.get_bank_demographics(country, year, "BT25TE") * 1000000
+        Returns:
+            float: Distributed profit amount in LCU (millions)
+        """
+        return self.get_bank_demographics(country, year, "IN12TE") * 1_000_000
+
+    def read_bank_retained_profit(self, country: Country, year: int) -> float:
+        """
+        Get retained profit of banks in a country for a year.
+
+        Args:
+            country (Country): Country to get profit data for
+            year (int): Year to get profit data for
+
+        Returns:
+            float: Retained profit amount (millions of LCU)
+        """
+        return self.get_bank_demographics(country, year, "IN13TD") * 1_000_000
+
+    def read_bank_total_assets(self, country: Country, year: int) -> float:
+        """
+        Get total assets of banks in a country for a year.
+
+        Args:
+            country (Country): Country to get asset data for
+            year (int): Year to get asset data for
+
+        Returns:
+            float: Total bank assets in LCU (millions)
+        """
+        return self.get_bank_demographics(country, year, "BT25TE") * 1_000_000
 
     def unemployment_benefits_gdp_pct(self, country: Country, year: int) -> float:
+        """
+        Get unemployment benefits as percentage of GDP.
+
+        Args:
+            country (Country): Country to get benefits data for
+            year (int): Year to get benefits data for
+
+        Returns:
+            float: Unemployment benefits as decimal percentage of GDP
+
+        Note:
+            Returns 0.0 if data not available
+        """
         df = self.data["total_unemployment_benefits_perc_gdp"]
         if country.value in df["LOCATION"].values:
             value = df.loc[(df["LOCATION"] == country) & (df["TIME"] == year), "Value"].iloc[0]
@@ -463,6 +773,20 @@ class OECDEconData:
             return df.loc[df["TIME"] == year, "Value"].mean() / 100.0
 
     def all_benefits_gdp_pct(self, country: str, year: int, average_oecd: float = 0.212) -> float:
+        """
+        Get total social benefits as percentage of GDP.
+
+        Args:
+            country (str): Country to get benefits data for
+            year (int): Year to get benefits data for
+            average_oecd (float): Default OECD average to use if data missing
+
+        Returns:
+            float: Total social benefits as decimal percentage of GDP
+
+        Note:
+            Uses OECD average if data not available for country
+        """
         if country == "ARG":
             country = "CHL"
         if country == "BRA":
@@ -494,13 +818,35 @@ class OECDEconData:
         else:
             return val[0] / 100.0
 
-    # current domestic
     def general_gov_debt(self, country: Country, year: int) -> float:
+        """
+        Get general government debt
+
+        Args:
+            country (Country): Country to get debt data for
+            year (int): Year to get debt data for
+
+        Returns:
+            float: Government debt in LCU (millions)
+        """
         df = self.data["general_gov_debt"]
         value = df.loc[(df["LOCATION"] == country) & (df["TIME"] == year), "Value"].iloc[0]
         return value * 1e6
 
     def get_unemployment_rate(self, country: str) -> pd.DataFrame:
+        """
+        Get time series of unemployment rates.
+
+        Args:
+            country (str): Country to get unemployment rates for
+
+        Returns:
+            pd.DataFrame: DataFrame with dates as index and unemployment rates
+                         as values (in decimal form)
+
+        Note:
+            Returns quarterly data
+        """
         data = self.data["unemployment_rates"].loc[
             (self.data["unemployment_rates"]["LOCATION"] == country)
             & (self.data["unemployment_rates"]["SUBJECT"] == "TOT")
@@ -523,6 +869,16 @@ class OECDEconData:
         return data
 
     def get_consumption_rates_by_income(self, country: Country) -> pd.DataFrame:
+        """
+        Get consumption rates by income quintile.
+
+        Args:
+            country (Country): Country to get consumption rates for
+
+        Returns:
+            pd.DataFrame: DataFrame with income quintiles as columns and
+                         consumption rates as values
+        """
         df = self.data["consumption_by_income_quintiles"]
         df["country_year"] = [df["country_year"][i][0:3] for i in range(len(df))]
         df = df.loc[df["country_year"] == country]
@@ -534,6 +890,19 @@ class OECDEconData:
         return df
 
     def get_house_price_index(self, country: str) -> pd.DataFrame:
+        """
+        Get time series of house price indices.
+
+        Args:
+            country (str): Country to get house price data for
+
+        Returns:
+            pd.DataFrame: DataFrame with dates as index and price indices
+                         as values
+
+        Note:
+            Returns quarterly data, normalized to base year
+        """
         df = self.data["housing_index"]
         dates, val_real, val_nominal = [], [], []
         for year in range(1970, 2024):
@@ -584,6 +953,19 @@ class OECDEconData:
         return data
 
     def get_vacancy_rate(self, country: Country) -> pd.DataFrame:
+        """
+        Get time series of job vacancy rates.
+
+        Args:
+            country (Country): Country to get vacancy rates for
+
+        Returns:
+            pd.DataFrame: DataFrame with dates as index and vacancy rates
+                         as values (in decimal form)
+
+        Note:
+            Returns quarterly data
+        """
         active_population_size = self.data["active_population_size"]
         total_job_vacancies = self.data["total_job_vacancies"]
         dates, vacancy_rate = [], []
@@ -612,6 +994,17 @@ class OECDEconData:
         return data
 
     def get_household_consumption_by_income_quantile(self, country: Country, year: int) -> pd.DataFrame:
+        """
+        Get household consumption data by income quantile.
+
+        Args:
+            country (Country): Country to get consumption data for
+            year (int): Year to get consumption data for
+
+        Returns:
+            pd.DataFrame: DataFrame with income quantiles and their
+                         corresponding consumption values
+        """
         data = self.data["consumption_by_income_quintiles"]
         if country != "FRA":
             logging.warning("Overwriting Consumption Weights by Income with French Data")
@@ -623,12 +1016,35 @@ class OECDEconData:
         return data
 
     def get_govt_debt_usd_ppp(self, country: Country, year: int) -> float:
+        """
+        Get government debt in USD PPP terms.
+
+        Args:
+            country (Country): Country to get debt data for
+            year (int): Year to get debt data for
+
+        Returns:
+            float: Government debt in USD PPP
+        """
         df = self.data["gross_gov_debt_usd_ppp"]
         df = df[df["Financial instrument"] == "Total"]
         df = df[df["REF_AREA"] == country]
         return df.set_index("TIME_PERIOD").loc[year, "OBS_VALUE"] * 1e6
 
     def get_inflation(self, country: str) -> pd.DataFrame:
+        """
+        Get time series of inflation rates.
+
+        Args:
+            country (str): Country to get inflation data for
+
+        Returns:
+            pd.DataFrame: DataFrame with dates as index and inflation rates
+                         as values (in decimal form)
+
+        Note:
+            Returns monthly data based on Producer Price Index (PPI)
+        """
         data = self.data["KEI"]
         data = data.loc[data["LOCATION"] == country]
         dates, cpi, ppi = [], [], []
@@ -658,6 +1074,19 @@ class OECDEconData:
             return data.pct_change()
 
     def get_na_growth_rates(self, country: str) -> pd.DataFrame:
+        """
+        Get national accounts growth rates.
+
+        Args:
+            country (str): Country to get growth rates for
+
+        Returns:
+            pd.DataFrame: DataFrame with dates as index and various
+                         national accounts growth rates as columns
+
+        Note:
+            Includes GDP, consumption, investment, and other key metrics
+        """
         data = self.data["QNA"]  # CQRSA
         data = data.loc[(data["LOCATION"] == country) & (data["FREQUENCY"] == "Q")]
         # if len(data) == 0:
@@ -716,6 +1145,20 @@ class OECDEconData:
         return na_data
 
     def prune(self, prune_date: date):
+        """
+        Prune data to only include entries after specified date.
+
+        Args:
+            prune_date (date): Date to prune data from
+
+        Returns:
+            OECDEconData: Self for method chaining
+
+        Note:
+            - Modifies data in place
+            - Handles both time period columns and date-based columns
+            - Warns if no data remains after pruning
+        """
         for key, value in self.data.items():
             for col in value.columns:
                 if col.lower() in ["year", "time"]:
@@ -743,7 +1186,21 @@ class OECDEconData:
                     break
 
 
-def prune_oecd(oecd_econ, start_date):
+def prune_oecd(oecd_econ: OECDEconData, start_date: date) -> OECDEconData:
+    """
+    Prune OECD economic data to only include entries after specified date.
+
+    Args:
+        oecd_econ (OECDEconData): OECD economic data reader instance
+        start_date (date): Date to prune data from
+
+    Returns:
+        OECDEconData: Pruned OECD economic data reader
+
+    Note:
+        - Modifies data in place
+        - Returns the same instance for method chaining
+    """
     # OECD
     for key, value in oecd_econ.data.items():
         for col in value.columns:
