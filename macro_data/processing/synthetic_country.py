@@ -1,3 +1,46 @@
+"""
+This module provides the SyntheticCountry class, which serves as a container for all synthetic
+economic data related to a single country in the macroeconomic model. It handles the creation
+and management of synthetic data for various economic agents and markets within a country.
+
+The module supports:
+- Creation of synthetic data for EU and non-EU countries
+- Management of economic agents (firms, banks, households)
+- Market simulations (credit, housing, goods)
+- GDP calculations and economic indicators
+- Emissions and environmental factors
+
+Key features:
+- Support for both EU countries and non-EU countries (via proxy mechanism)
+- Integration of various economic markets and agents
+- Handling of financial flows and relationships between agents
+- Calculation of key economic indicators (GDP by different methods)
+- Environmental impact tracking through emissions
+
+Example:
+    ```python
+    from macro_data import DataConfiguration, Country
+    from macro_data.processing.synthetic_country import SyntheticCountry
+
+    # Create a synthetic EU country
+    france = SyntheticCountry.eu_synthetic_country(
+        country=Country.FRANCE,
+        year=2023,
+        quarter=1,
+        country_configuration=country_config,
+        industries=industries,
+        readers=data_readers,
+        exogenous_country_data=france_data,
+        country_industry_data=industry_data,
+        year_range=1,
+        goods_criticality_matrix=criticality_matrix
+    )
+
+    # Access economic indicators
+    gdp = france.gdp_output
+    ```
+"""
+
 from dataclasses import dataclass
 from typing import Optional
 
@@ -70,30 +113,37 @@ from macro_data.readers.exogenous_data import ExogenousCountryData
 
 @dataclass
 class SyntheticCountry:
-    """Container class for synthetic countries.
+    """
+    A comprehensive container for all synthetic economic data and agents within a country.
+
+    This class serves as the primary interface for managing synthetic economic data,
+    including populations, firms, markets, and financial institutions. It provides
+    methods for creating and managing synthetic data for both EU and non-EU countries,
+    handling economic relationships between agents, and calculating key economic indicators.
 
     Attributes:
-        population (SyntheticPopulation): Synthetic population.
-        firms (SyntheticFirms): Synthetic firms.
-        credit_market (SyntheticCreditMarket): Synthetic credit market.
-        banks (SyntheticBanks): Synthetic banks.
-        central_bank (SyntheticCentralBank): Synthetic central bank.
-        central_government (SyntheticCentralGovernment): Synthetic central government.
-        government_entities (SyntheticGovernmentEntities): Synthetic government entities.
-        housing_market (SyntheticHousingMarket): Synthetic housing market.
-        synthetic_goods_market (SyntheticGoodsMarket): Synthetic goods market.
-        dividend_payout_ratio (float): Dividend payout ratio.
-        long_term_interest_rate (float): Long term interest rate.
-        policy_rate_markup (float): Policy rate markup.
-        industry_data (dict[str, pd.DataFrame]): Industry data for the country (includes various industry data).
-        goods_criticality_matrix (pd.DataFrame): The goods criticality matrix.
-        tax_data (TaxData): Tax data.
-        exogenous_data (ExogenousCountryData): Exogenous data.
-        scale (int): The scale of the synthetic country.
-        country_name (Country): The name of the country.
-        country_configuration (CountryDataConfiguration): The configuration settings for the country.
-        industries (list[str]): The list of industries in the country.
-        consumption_weights_by_income (pd.DataFrame): The consumption weights by income for the country.
+        population (SyntheticPopulation): Synthetic household and individual data
+        firms (SyntheticFirms): Synthetic firm data and behavior
+        credit_market (SyntheticCreditMarket): Credit market operations and state
+        banks (SyntheticBanks): Banking system data and operations
+        central_bank (SyntheticCentralBank): Central bank policy and operations
+        central_government (SyntheticCentralGovernment): Central government fiscal policy
+        government_entities (SyntheticGovernmentEntities): Government agency data
+        housing_market (SyntheticHousingMarket): Housing market state and operations
+        synthetic_goods_market (SyntheticGoodsMarket): Goods market transactions
+        dividend_payout_ratio (float): Ratio of profits paid as dividends
+        long_term_interest_rate (float): Long-term interest rate for the economy
+        policy_rate_markup (float): Markup over policy rate for lending
+        industry_data (dict[str, pd.DataFrame]): Industry-level economic data
+        goods_criticality_matrix (pd.DataFrame): Matrix of goods dependencies
+        tax_data (TaxData): Tax rates and revenue data
+        exogenous_data (ExogenousCountryData): External economic factors
+        scale (int): Scaling factor for synthetic agents
+        country_name (Country): Country identifier
+        country_configuration (CountryDataConfiguration): Country-specific settings
+        industries (list[str]): List of industry sectors
+        consumption_weights_by_income (pd.DataFrame): Consumption patterns by income
+        emission_factors (EmissionsData): Environmental impact factors
     """
 
     population: SyntheticPopulation
@@ -135,24 +185,34 @@ class SyntheticCountry:
         emission_factors: Optional[EmissionsData] = None,
     ) -> "SyntheticCountry":
         """
-        Create a synthetic country object for the European Union.
+        Create a synthetic country object for a European Union member country.
+
+        This method initializes all economic agents and markets for an EU country using
+        actual EU data sources. It sets up the complete economic structure including:
+        - Government institutions (central bank, government entities)
+        - Financial system (banks, credit markets)
+        - Real economy (firms, households, goods market)
+        - Environmental factors (if emission data provided)
 
         Args:
-            country: The country for which the synthetic country object is created.
-            year: The year for which the synthetic country object is created.
-            quarter: The quarter for which the synthetic country object is created.
-            country_configuration: The configuration settings for the country.
-            industries: The list of industries in the country.
-            readers: The data readers used to read data for the synthetic country object.
-            exogenous_country_data: The exogenous data for the country.
-            country_industry_data: The industry data for the country.
-            year_range: The range of years for which data is considered (determines the amount of data used to
-                        decide benefits setting).
-            goods_criticality_matrix: The goods criticality matrix.
-            emission_factors: The emission factors for the country (in tCO2/LCU).
+            country (Country): The EU country to create synthetic data for
+            year (int): Base year for data generation
+            quarter (int): Base quarter for data generation
+            country_configuration (CountryDataConfiguration): Country-specific settings
+            industries (list[str]): List of industry sectors to model
+            readers (DataReaders): Data source readers
+            exogenous_country_data (ExogenousCountryData): External economic factors
+            country_industry_data (dict[str, pd.DataFrame]): Industry-level data
+            year_range (int): Number of years of historical data to consider
+            goods_criticality_matrix (pd.DataFrame): Matrix of goods dependencies
+            emission_factors (Optional[EmissionsData]): Environmental impact factors
 
         Returns:
-            The synthetic country object.
+            SyntheticCountry: Initialized synthetic country instance
+
+        Note:
+            This method should only be used for EU member countries. For non-EU
+            countries, use proxied_synthetic_country instead.
         """
         central_government = DefaultSyntheticCGovernment.from_readers(readers, country, year, year_range=year_range)
 
@@ -305,26 +365,33 @@ class SyntheticCountry:
         emission_factors: Optional[EmissionsData] = None,
     ) -> "SyntheticCountry":
         """
-        Create a synthetic country object for a country using a European Union country as a proxy for population.
+        Create a synthetic country object for a non-EU country using an EU country as proxy.
+
+        This method creates synthetic data for non-EU countries by using an EU country's
+        data structure as a template, while maintaining the non-EU country's actual:
+        - Population ratios
+        - Exchange rates
+        - Economic scale
+        - Industry structure
+        - Trade patterns
 
         Args:
-            country: The country for which the synthetic country object is created.
-            proxy_country: The proxy country to use for the synthetic country object.
-            year: The year for which the synthetic country object is created.
-            quarter: The quarter for which the synthetic country object is created.
-            country_configuration: The configuration settings for the country.
-            industries: The list of industries in the country.
-            readers: The data readers used to read data for the synthetic country object.
-            exogenous_country_data: The exogenous data for the country.
-            country_industry_data: The industry data for the country.
-            year_range: The range of years for which data is considered
-             (determines the amount of data used to decide benefits setting).
-            goods_criticality_matrix: The goods criticality matrix.
-            proxy_inflation_data: The inflation data for the proxy country.
-            emission_factors: The emission factors for the country (in tCO2/LCU).
+            country (Country): The non-EU country to create synthetic data for
+            proxy_country (Country): The EU country to use as a template
+            year (int): Base year for data generation
+            quarter (int): Base quarter for data generation
+            country_configuration (CountryDataConfiguration): Country-specific settings
+            industries (list[str]): List of industry sectors to model
+            readers (DataReaders): Data source readers
+            exogenous_country_data (ExogenousCountryData): External economic factors
+            country_industry_data (dict[str, pd.DataFrame]): Industry-level data
+            year_range (int): Number of years of historical data to consider
+            goods_criticality_matrix (pd.DataFrame): Matrix of goods dependencies
+            proxy_inflation_data (pd.DataFrame): Inflation data from proxy country
+            emission_factors (Optional[EmissionsData]): Environmental impact factors
 
         Returns:
-            The synthetic country object.
+            SyntheticCountry: Initialized synthetic country instance
         """
         central_government = DefaultSyntheticCGovernment.from_readers(readers, country, year, year_range=year_range)
 
@@ -552,6 +619,23 @@ class SyntheticCountry:
         tax_data: TaxData,
         independents: Optional[list[str]] = None,
     ):
+        """
+        Match economic agents (households, firms, banks) to establish relationships.
+
+        This method:
+        1. Matches individuals with firms (employment relationships)
+        2. Matches firms with banks (banking relationships)
+        3. Computes household wealth
+        4. Matches households with banks (banking relationships)
+
+        Args:
+            banks (SyntheticBanks): Banking system data
+            firms (SyntheticFirms): Firm data
+            industries (list[str]): List of industries
+            population (SyntheticPopulation): Population data
+            tax_data (TaxData): Tax rates and data
+            independents (Optional[list[str]]): List of independent variables for wealth computation
+        """
         income_taxes = tax_data.income_tax
         employee_social_contribution_taxes = tax_data.employee_social_insurance_tax
         match_individuals_with_firms_country(
@@ -579,24 +663,29 @@ class SyntheticCountry:
         policy_rate: float,
     ) -> SyntheticCreditMarket:
         """
-        Initializes the credit market.
+        Initialize the credit market for the synthetic country.
+
+        This method sets up the credit market by:
+        1. Initializing bank interest rates and profits
+        2. Creating credit market relationships between agents
+        3. Setting up loan installments for households
+        4. Initializing firm financial conditions
+        5. Updating government financial relationships
 
         Args:
-            cls: The class object.
-            banks: The synthetic banks object.
-            central_government: The synthetic central government object.
-            country_configuration: The country data configuration object.
-            country_industry_data: The dictionary containing country industry data.
-            firms: The synthetic firms object.
-            population: The synthetic population object.
-            tax_data: The tax data object.
-            risk_premium: The risk premium for interest rates.
-            policy_rate: The policy rate for interest rates.
+            banks (SyntheticBanks): Banking system data
+            central_government (SyntheticCentralGovernment): Government data
+            country_configuration (CountryDataConfiguration): Country settings
+            country_industry_data (dict[str, pd.DataFrame]): Industry data
+            firms (SyntheticFirms): Firm data
+            population (SyntheticPopulation): Population data
+            tax_data (TaxData): Tax rates and data
+            risk_premium (float): Risk premium for interest rates
+            policy_rate (float): Central bank policy rate
 
         Returns:
-            The initialized synthetic credit market object.
+            SyntheticCreditMarket: Initialized credit market
         """
-
         tau_bank = tax_data.profit_tax
 
         banks.initialise_rates_profits_liabilities(
@@ -637,10 +726,24 @@ class SyntheticCountry:
 
     @property
     def n_sellers_by_industry(self):
+        """
+        Get the number of firms (sellers) in each industry.
+
+        Returns:
+            np.ndarray: Array containing the count of firms per industry
+        """
         return self.firms.number_of_firms_by_industry
 
     @property
     def n_buyers(self):
+        """
+        Get the total number of economic agents that can act as buyers.
+
+        This includes households, firms, and government entities.
+
+        Returns:
+            int: Total number of potential buyers in the economy
+        """
         return (
             self.population.number_of_households
             + self.firms.number_of_firms
@@ -661,6 +764,29 @@ class SyntheticCountry:
         emission_factors_array: Optional[np.ndarray] = None,
         emitting_industry_indices: Optional[np.ndarray] = None,
     ):
+        """
+        Initialize population wealth, income, and consumption patterns.
+
+        This method sets up:
+        1. Wealth distribution functions
+        2. Household income including social transfers
+        3. Saving and investment rates
+        4. Consumption normalization and patterns
+        5. Emissions data (if applicable)
+        6. Bank deposits and loans
+
+        Args:
+            banks (SyntheticBanks): Banking system data
+            central_government (SyntheticCentralGovernment): Government data
+            country_industry_data (dict[str, pd.DataFrame]): Industry-level data
+            firms (SyntheticFirms): Firm data
+            population (SyntheticPopulation): Population data
+            tax_data (TaxData): Tax rates and data
+            weights_by_income (pd.DataFrame): Consumption weights by income level
+            independents (Optional[list[str]]): Independent variables for wealth computation
+            emission_factors_array (Optional[np.ndarray]): Emission factors by industry
+            emitting_industry_indices (Optional[np.ndarray]): Indices of emitting industries
+        """
         population.set_wealth_distribution_function(independents=independents)
 
         population.compute_household_income(
@@ -694,7 +820,6 @@ class SyntheticCountry:
             firm_deposits=firms.firm_data["Deposits"].values,
             firm_debt=firms.firm_data["Debt"].values,
         )
-        # bank tax rate set to same as corporate tax rate
 
     def reset_firm_function_dependent(
         self,
@@ -705,16 +830,21 @@ class SyntheticCountry:
         zero_initial_deposits: bool,
     ):
         """
-        Resets the function parameters of the firms and initializes the credit market, exogenous data, and housing market.
-        These must be reinitialised because changing the firm function parameters will change their balance sheet, which in turn
-        will impact household finances, and thus the credit market, exogenous data, and housing market.
+        Reset firm parameters and reinitialize dependent markets.
+
+        This method updates firm operational parameters and reinitializes all markets
+        and relationships that depend on firm behavior, including:
+        1. Firm operational parameters
+        2. Housing market relationships
+        3. Credit market relationships
+        4. Financial flows between agents
 
         Args:
-            capital_inputs_utilisation_rate (float): The rate of capital inputs utilisation.
-            initial_inventory_to_input_fraction (float): The fraction of initial inventory to input.
-            intermediate_inputs_utilisation_rate (float): The rate of intermediate inputs utilisation.
-            zero_initial_debt (bool): Flag indicating whether to set initial debt to zero.
-            zero_initial_deposits (bool): Flag indicating whether to set initial deposits to zero.
+            capital_inputs_utilisation_rate (float): Rate of capital input usage
+            initial_inventory_to_input_fraction (float): Initial inventory ratio
+            intermediate_inputs_utilisation_rate (float): Rate of intermediate input usage
+            zero_initial_debt (bool): Whether to reset firm debt to zero
+            zero_initial_deposits (bool): Whether to reset firm deposits to zero
         """
         self.firms.reset_function_parameters(
             capital_inputs_utilisation_rate=capital_inputs_utilisation_rate,
@@ -756,6 +886,19 @@ class SyntheticCountry:
 
     @property
     def gdp_output(self) -> float:
+        """
+        Calculate GDP using the production (output) approach.
+
+        This method computes GDP by:
+        1. Taking total sales value (production * price)
+        2. Subtracting intermediate input costs
+        3. Adding taxes on products
+        4. Subtracting taxes on production
+        5. Adding rent (both paid and imputed)
+
+        Returns:
+            float: GDP value calculated using the output approach
+        """
         total_sales = (self.firms.firm_data["Production"] * self.firms.firm_data["Price"]).sum()
         used_intermediate_inputs = self.firms.used_intermediate_inputs
         used_intermediate_inputs_costs = np.matmul(self.firms.firm_data["Price"].values, used_intermediate_inputs).sum()
@@ -777,6 +920,19 @@ class SyntheticCountry:
 
     @property
     def gdp_expenditure(self) -> float:
+        """
+        Calculate GDP using the expenditure approach.
+
+        This method computes GDP as the sum of:
+        1. Capital formation (business + household investment)
+        2. Household consumption
+        3. Government consumption
+        4. Net exports (exports - imports)
+        5. Rent (both paid and imputed)
+
+        Returns:
+            float: GDP value calculated using the expenditure approach
+        """
         used_capital_inputs = self.firms.used_capital_inputs
         used_capital_inputs_costs = np.matmul(used_capital_inputs.T, self.firms.firm_data["Price"].values).sum()
 
@@ -807,6 +963,21 @@ class SyntheticCountry:
 
     @property
     def gdp_income(self) -> 0:
+        """
+        Calculate GDP using the income approach.
+
+        This method computes GDP as the sum of:
+        1. Operating surplus (sales - wages - intermediate inputs - production taxes)
+        2. Wages
+        3. Taxes on products
+        4. Rental income taxes
+        5. Social housing rent
+        6. Imputed rent
+        7. Household rental income
+
+        Returns:
+            float: GDP value calculated using the income approach
+        """
         total_sales = (self.firms.firm_data["Production"] * self.firms.firm_data["Price"]).sum()
         used_intermediate_inputs = self.firms.used_intermediate_inputs
         used_intermediate_inputs_costs = np.matmul(
