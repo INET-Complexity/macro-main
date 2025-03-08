@@ -1,3 +1,27 @@
+"""Data loading utilities for model results and configurations.
+
+This module provides utilities for loading and processing model data from
+HDF5 files, including time series data, agent states, and configurations.
+It handles various data dimensionalities and supports industry-level
+aggregation.
+
+Key Features:
+1. Data Loading:
+   - HDF5 file handling
+   - Configuration parsing
+   - Multi-dimensional data support
+
+2. Data Processing:
+   - Time series formatting
+   - Industry-level aggregation
+   - Dimension reduction
+
+3. Output Formatting:
+   - DataFrame conversion
+   - Index management
+   - Column organization
+"""
+
 import logging
 from pathlib import Path
 from typing import Optional
@@ -9,7 +33,23 @@ import yaml
 
 
 class Loader:
+    """Data loader for model results and configurations.
+
+    This class handles loading and processing of model data from HDF5
+    files, including configuration information and time series data
+    for various agents and fields.
+
+    Attributes:
+        file: Open HDF5 file handle
+        config: Parsed YAML configuration
+    """
+
     def __init__(self, path: Path | str):
+        """Initialize loader with data file path.
+
+        Args:
+            path: Path to HDF5 file containing model data
+        """
         self.file = h5py.File(path, "r")
         self.config = yaml.safe_load(self.file.attrs["configuration"])
 
@@ -20,6 +60,25 @@ class Loader:
         field: Optional[str] = None,
         aggregate_by_industry: Optional[str] = None,
     ) -> pd.DataFrame:
+        """Load field data for specific country and agent.
+
+        This method loads and processes data for a specific field,
+        optionally aggregating by industry and handling various
+        data dimensionalities.
+
+        Args:
+            country_name: Name of country to load data for
+            agent_name: Type of agent (e.g., "households", "firms")
+            field: Specific field to load (optional)
+            aggregate_by_industry: Aggregation method ("sum" or "mean")
+
+        Returns:
+            pd.DataFrame: Processed data with appropriate indexing
+
+        Raises:
+            ValueError: If dataset shape is unsupported or aggregation
+                method is unknown
+        """
         # Load data
         dataset = self.file[country_name][agent_name]
         if field is not None:
@@ -68,6 +127,14 @@ class Loader:
 
 
 def load_1d_field_as_dataframe(dataset: h5py.Dataset) -> pd.DataFrame:
+    """Convert 1D HDF5 dataset to DataFrame.
+
+    Args:
+        dataset: 1D HDF5 dataset to convert
+
+    Returns:
+        pd.DataFrame: Single-column DataFrame with numeric index
+    """
     return pd.DataFrame(
         pd.Series(
             dataset,
@@ -77,6 +144,15 @@ def load_1d_field_as_dataframe(dataset: h5py.Dataset) -> pd.DataFrame:
 
 
 def load_2d_field_as_dataframe(dataset: h5py.Dataset) -> pd.DataFrame:
+    """Convert 2D HDF5 dataset to DataFrame.
+
+    Args:
+        dataset: 2D HDF5 dataset to convert
+
+    Returns:
+        pd.DataFrame: DataFrame with agent IDs as columns and
+            numeric date index
+    """
     ts_data = np.array(dataset)
     return pd.DataFrame(
         ts_data,
@@ -86,6 +162,15 @@ def load_2d_field_as_dataframe(dataset: h5py.Dataset) -> pd.DataFrame:
 
 
 def load_3d_field_as_dataframe(dataset: h5py.Dataset) -> pd.DataFrame:
+    """Convert 3D HDF5 dataset to DataFrame.
+
+    Args:
+        dataset: 3D HDF5 dataset to convert
+
+    Returns:
+        pd.DataFrame: DataFrame with multi-index columns for agent
+            and industry IDs, and numeric date index
+    """
     ts_data = np.array(dataset)
     columns = pd.MultiIndex.from_tuples(dataset.attrs["columns"], names=("Agent ID", "Industry"))
     return pd.DataFrame(
