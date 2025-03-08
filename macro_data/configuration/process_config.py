@@ -1,3 +1,27 @@
+"""
+WARNING: This module references a deprecated configuration format.
+
+This module provides utilities for processing and manipulating model configuration data.
+It handles the parsing and transformation of configuration files, with special support
+for country-specific configurations and interest rate settings.
+
+The module provides three main functions:
+- split_country_configs: Splits combined country configurations into individual ones
+- process_config: Processes a configuration file or dictionary, handling country splits
+- initial_interest_rates: Extracts initial interest rates from configuration for a country
+
+Example:
+    ```python
+    from macro_data.configuration.process_config import process_config, initial_interest_rates
+
+    # Load and process configuration
+    config = process_config("path/to/config.yaml")
+
+    # Get interest rates for a specific country
+    france_rates = initial_interest_rates(config, "FRA")
+    ```
+"""
+
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Union
@@ -6,6 +30,26 @@ import yaml
 
 
 def split_country_configs(country_config: dict) -> dict[str, Any]:
+    """
+    Split combined country configurations into individual country configurations.
+
+    This function takes a configuration dictionary that may contain combined country
+    keys (e.g., "FRA&DEU") and splits them into individual country entries while
+    maintaining the same configuration values.
+
+    Args:
+        country_config (dict): Configuration dictionary with potentially combined country keys
+
+    Returns:
+        dict[str, Any]: Configuration dictionary with split country entries
+
+    Example:
+        ```python
+        config = {"FRA&DEU": {"param": 1}}
+        split = split_country_configs(config)
+        # Result: {"FRA": {"param": 1}, "DEU": {"param": 1}}
+        ```
+    """
     new_config = {}
     for key, value in country_config.items():
         # Split the key by '&' and assign the same value to each country code
@@ -17,14 +61,34 @@ def split_country_configs(country_config: dict) -> dict[str, Any]:
 
 def process_config(config_path: str | Path | dict) -> dict[str, Any]:
     """
-    Process the configuration file (yaml) or dictionary.
-    Read and separate country pairs as "FRA&DEU" into "FRA" and "DEU" in the init section of the config file.
+    Process a configuration file or dictionary, handling country splits and initialization.
+
+    This function reads a configuration from a YAML file or dictionary and processes it by:
+    1. Splitting combined country configurations (e.g., "FRA&DEU")
+    2. Validating country codes against the model's supported countries
+    3. Creating a clean configuration structure with model and initialization data
 
     Args:
-        config_path (Union[Path, dict]): The path to the configuration file or the configuration dictionary.
+        config_path (str | Path | dict): Path to configuration file or configuration dictionary
 
     Returns:
-        dict[str, Any]: The processed configuration dictionary.
+        dict[str, Any]: Processed configuration dictionary with structure:
+            {
+                "model": {...},  # Model-wide settings
+                "init": {...}   # Country-specific initialization data
+            }
+
+    Example:
+        ```python
+        # From file
+        config = process_config("config.yaml")
+
+        # From dictionary
+        config = process_config({
+            "model": {"country_names": {"value": ["FRA", "DEU"]}},
+            "init": {"FRA&DEU": {"param": 1}}
+        })
+        ```
     """
     # if path is str make it a Path
     if isinstance(config_path, str):
@@ -55,15 +119,30 @@ def process_config(config_path: str | Path | dict) -> dict[str, Any]:
 
 def initial_interest_rates(config: dict[str, Any], country: str) -> dict[str, float]:
     """
-    Calculate the initial interest rates for different types of loans based on the given configuration and country. (This is just a
-    wrapper for configuration data).
+    Extract initial interest rates for different loan types for a specific country.
+
+    This function retrieves the configured initial interest rate markups for various
+    types of loans (consumption loans, mortgages, overdrafts) for a given country
+    from the configuration.
 
     Args:
-        config (dict[str, Any]): The configuration dictionary.
-        country (str): The country for which the interest rates are calculated.
+        config (dict[str, Any]): The processed configuration dictionary
+        country (str): The country code to get interest rates for
 
     Returns:
-        dict[str, float]: A dictionary containing the initial interest rates for different types of loans.
+        dict[str, float]: Dictionary containing initial interest rate markups:
+            {
+                "bank_markup_interest_rate_household_consumption_loans": float,
+                "bank_markup_interest_rate_mortgages": float,
+                "bank_markup_interest_rate_overdraft_household": float
+            }
+
+    Example:
+        ```python
+        config = process_config("config.yaml")
+        france_rates = initial_interest_rates(config, "FRA")
+        mortgage_markup = france_rates["bank_markup_interest_rate_mortgages"]
+        ```
     """
     banks_dict = config["init"][country]["banks"]["parameters"]
     bank_markup_interest_rate_household_consumption_loans = banks_dict[
