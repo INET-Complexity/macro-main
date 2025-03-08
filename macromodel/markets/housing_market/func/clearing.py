@@ -1,3 +1,23 @@
+"""Housing market clearing mechanisms and algorithms.
+
+This module implements various algorithms for matching buyers/renters with
+properties in the housing market. It provides an abstract base class for
+market clearing and several concrete implementations with different matching
+strategies.
+
+The module supports:
+- Both sales and rental markets
+- Price-based matching
+- Priority-based allocation
+- Multiple clearing strategies
+
+Key components:
+1. HousingMarketClearer: Abstract base class defining the interface
+2. NoHousingMarketClearer: Null implementation for testing
+3. DefaultHousingMarketClearer: Simple price-based matching
+4. AutomaticHousingMarketClearer: Optimized matching using linear assignment
+"""
+
 from abc import ABC, abstractmethod
 from typing import Optional
 
@@ -8,7 +28,21 @@ from scipy.optimize import linear_sum_assignment as lsa  # noqa
 
 
 class HousingMarketClearer(ABC):
+    """Abstract base class for housing market clearing algorithms.
+
+    This class defines the interface for market clearing mechanisms that
+    match properties with potential buyers or renters. It supports both
+    sales and rental markets with configurable matching behavior.
+    """
+
     def __init__(self, random_assignment_shock_variance: float):
+        """Initialize the market clearer.
+
+        Args:
+            random_assignment_shock_variance: Variance for random perturbations
+                in matching decisions, allowing for some randomness in
+                otherwise deterministic matches.
+        """
         self.random_assignment_shock_variance = random_assignment_shock_variance
 
     @abstractmethod
@@ -19,10 +53,37 @@ class HousingMarketClearer(ABC):
         max_price_willing_to_pay: np.ndarray,
         max_rent_willing_to_pay: np.ndarray,
     ) -> pd.DataFrame:
+        """Clear the housing market by matching properties with buyers/renters.
+
+        Args:
+            housing_data: DataFrame containing property information
+            household_main_residence_tenure_status: Array indicating current
+                housing status for each household
+            max_price_willing_to_pay: Maximum purchase prices households
+                are willing to pay
+            max_rent_willing_to_pay: Maximum rents households are willing
+                to pay
+
+        Returns:
+            pd.DataFrame: Matched transactions with columns:
+                - sales_types: "Sell" or "Rental"
+                - property_id: ID of the property
+                - seller_id: ID of the seller/landlord
+                - buyer_id: ID of the buyer/tenant
+                - property_value: Current value of the property
+                - price_or_rent: Agreed price or rent
+        """
         pass
 
 
 class NoHousingMarketClearer(HousingMarketClearer):
+    """Null implementation that performs no market clearing.
+
+    This class implements a no-op market clearer that always returns an
+    empty transaction list. It's useful for testing and as a neutral
+    baseline for comparing other clearing mechanisms.
+    """
+
     def clear(
         self,
         housing_data: pd.DataFrame,
@@ -30,6 +91,17 @@ class NoHousingMarketClearer(HousingMarketClearer):
         max_price_willing_to_pay: np.ndarray,
         max_rent_willing_to_pay: np.ndarray,
     ) -> pd.DataFrame:
+        """Return an empty transaction list without performing any matching.
+
+        Args:
+            housing_data: Ignored in this implementation
+            household_main_residence_tenure_status: Ignored
+            max_price_willing_to_pay: Ignored
+            max_rent_willing_to_pay: Ignored
+
+        Returns:
+            pd.DataFrame: Empty DataFrame with required columns
+        """
         return pd.DataFrame(
             {
                 "sales_types": [],
@@ -43,6 +115,14 @@ class NoHousingMarketClearer(HousingMarketClearer):
 
 
 class DefaultHousingMarketClearer(HousingMarketClearer):
+    """Default implementation using price-based matching.
+
+    This class implements a simple market clearing mechanism that matches
+    properties with buyers/renters based on prices and willingness to pay.
+    It processes sales first, then rentals, ensuring each household
+    participates in at most one transaction.
+    """
+
     def clear(
         self,
         housing_data: pd.DataFrame,
@@ -50,6 +130,20 @@ class DefaultHousingMarketClearer(HousingMarketClearer):
         max_price_willing_to_pay: np.ndarray,
         max_rent_willing_to_pay: np.ndarray,
     ) -> pd.DataFrame:
+        """Clear both sales and rental markets sequentially.
+
+        This method first clears the sales market, then the rental market,
+        ensuring households that successfully purchase don't also rent.
+
+        Args:
+            housing_data: DataFrame containing property information
+            household_main_residence_tenure_status: Current housing status
+            max_price_willing_to_pay: Maximum purchase prices
+            max_rent_willing_to_pay: Maximum rents
+
+        Returns:
+            pd.DataFrame: Combined sales and rental transactions
+        """
         # Sales market
         matching_sales = self.perform_matching(
             housing_data=housing_data,
@@ -82,6 +176,22 @@ class DefaultHousingMarketClearer(HousingMarketClearer):
         is_rental_market: bool,
         households_already_operated: Optional[np.ndarray] = None,
     ) -> pd.DataFrame:
+        """Match properties with buyers/renters for one market type.
+
+        This method implements the core matching logic, finding suitable
+        properties for each household based on their willingness to pay
+        and the properties' prices/rents.
+
+        Args:
+            housing_data: Property information
+            household_main_residence_tenure_status: Current housing status
+            max_willing_to_pay: Maximum prices/rents willing to pay
+            is_rental_market: Whether this is rental (True) or sales (False)
+            households_already_operated: Optional list of households to exclude
+
+        Returns:
+            pd.DataFrame: Matched transactions for this market type
+        """
         if households_already_operated is None:
             households_already_operated = []
 
@@ -103,23 +213,7 @@ class DefaultHousingMarketClearer(HousingMarketClearer):
             len(households_with_demand),
             replace=False,
         )
-        """
-        # Prioritisation
-        households_in_social_housing = np.where(household_main_residence_tenure_status == -1)[0]
-        households_with_demand_shuffled_social_housing = np.intersect1d(
-            households_with_demand_shuffled, households_in_social_housing
-        )
-        households_with_demand_shuffled_not_social_housing = np.setdiff1d(
-            households_with_demand_shuffled,
-            households_with_demand_shuffled_social_housing,
-        )
-        households_with_demand_shuffled = np.concatenate(
-            (
-                households_with_demand_shuffled_social_housing,
-                households_with_demand_shuffled_not_social_housing,
-            )
-        )
-        """
+
         for household_id in households_with_demand_shuffled:
             if household_id in households_already_operated:
                 continue
@@ -171,6 +265,13 @@ class DefaultHousingMarketClearer(HousingMarketClearer):
 
 
 class AutomaticHousingMarketClearer(HousingMarketClearer):
+    """Optimized implementation using linear assignment algorithm.
+
+    This class implements an efficient market clearing mechanism using
+    the Hungarian algorithm for optimal matching. It considers the entire
+    market simultaneously rather than processing households sequentially.
+    """
+
     def clear(
         self,
         housing_data: pd.DataFrame,
@@ -178,6 +279,21 @@ class AutomaticHousingMarketClearer(HousingMarketClearer):
         max_price_willing_to_pay: np.ndarray,
         max_rent_willing_to_pay: np.ndarray,
     ) -> pd.DataFrame:
+        """Clear both markets using optimal matching algorithm.
+
+        This method applies the Hungarian algorithm to find optimal
+        matches in both sales and rental markets, maximizing total
+        market satisfaction.
+
+        Args:
+            housing_data: Property information
+            household_main_residence_tenure_status: Current housing status
+            max_price_willing_to_pay: Maximum purchase prices
+            max_rent_willing_to_pay: Maximum rents
+
+        Returns:
+            pd.DataFrame: Optimally matched transactions
+        """
         # Sales market
         matching_sales = self.perform_matching(
             housing_data=housing_data,
@@ -210,6 +326,27 @@ class AutomaticHousingMarketClearer(HousingMarketClearer):
         is_rental_market: bool,
         households_already_operated: Optional[np.ndarray] = None,
     ) -> pd.DataFrame:
+        """Perform optimal matching for one market type.
+
+        This method constructs a cost matrix between households and
+        properties, then applies the Hungarian algorithm to find the
+        optimal assignment that maximizes total market satisfaction.
+
+        Args:
+            housing_data: Property information
+            household_main_residence_tenure_status: Current housing status
+            max_willing_to_pay: Maximum prices/rents willing to pay
+            is_rental_market: Whether this is rental (True) or sales (False)
+            households_already_operated: Optional list of households to exclude
+
+        Returns:
+            pd.DataFrame: Optimally matched transactions for this market type
+
+        Note:
+            The cost matrix is constructed using the difference between
+            willingness to pay and actual prices, with impossible matches
+            assigned infinite cost.
+        """
         if is_rental_market:
             sales_type, price_field, status_field = (
                 "Rental",
@@ -231,13 +368,6 @@ class AutomaticHousingMarketClearer(HousingMarketClearer):
             households_with_demand,
             households_already_operated,
         )
-        """
-        households_in_social_housing = np.where(household_main_residence_tenure_status == -1)[0]
-        households_with_demand_not_social_housing = np.setdiff1d(
-            households_with_demand,
-            households_in_social_housing,
-        )
-        """
 
         # Collect properties
         property_open_ind = np.where(housing_data[status_field])[0]
