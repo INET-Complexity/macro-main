@@ -1,3 +1,22 @@
+"""Utility module for checking and validating processed model data.
+
+WARNING: This module references a deprecated way of storing preprocessed data.
+
+This module provides functionality to check if previously processed data exists that matches
+a given model configuration. It helps avoid reprocessing data when identical configurations
+have already been processed, improving efficiency in data preparation workflows.
+
+Key Features:
+    - Configuration validation and normalization
+    - Deep comparison of model configurations
+    - Handling of country-specific configurations
+    - Validation of agent parameters and functions
+    - HDF5 data file checking
+
+The module is particularly useful in scenarios where model configurations are reused or
+when verifying the existence of compatible processed data before initiating new processing tasks.
+"""
+
 import ast
 import os
 from copy import deepcopy
@@ -8,6 +27,44 @@ import pandas as pd
 
 
 def check_existing_processed_data(config: dict, data_path: Path) -> Optional[str]:
+    """Check if processed data matching the given configuration already exists.
+
+    WARNING: This function references a deprecated way of storing preprocessed data.
+
+    This function searches through existing processed data files to find a match for the
+    provided configuration. It performs deep comparison of model parameters, initialization
+    settings, and function configurations.
+
+    Args:
+        config (dict): The configuration dictionary containing model and initialization settings.
+                      Must have 'model' and 'init' keys at the top level.
+        data_path (Path): Path to the directory containing the processed_data subdirectory.
+
+    Returns:
+        Optional[str]: The filename of matching processed data if found, None otherwise.
+
+    The function performs the following checks:
+    1. Validates basic config structure (must have 'model' and 'init' keys)
+    2. Normalizes country configurations by expanding '&' separated country names
+    3. For each existing processed data file:
+        - Verifies file existence and structure
+        - Compares model configuration values
+        - Validates country-specific initialization settings
+        - Checks agent parameters and function configurations
+        - Verifies function parameters match exactly
+
+    Example:
+        >>> config = {
+        ...     'model': {'country_names': {'value': ['USA', 'EU']}},
+        ...     'init': {'USA': {'households': {'parameters': {...}}}}
+        ... }
+        >>> data_path = Path('/path/to/data')
+        >>> result = check_existing_processed_data(config, data_path)
+        >>> if result:
+        ...     print(f"Found matching data in {result}")
+        ... else:
+        ...     print("No matching data found")
+    """
     # Handle the config
     if "model" not in config.keys() or "init" not in config.keys():
         return None

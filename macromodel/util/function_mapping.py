@@ -1,3 +1,32 @@
+"""Function mapping and dynamic loading utilities.
+
+This module provides utilities for dynamically loading, instantiating, and
+managing function classes in the macroeconomic model. It handles the mapping
+between configuration specifications and actual function implementations.
+
+Key Features:
+1. Dynamic Function Loading:
+   - Load function classes from configuration
+   - Instantiate with parameters
+   - Handle module imports
+
+2. Model-based Function Management:
+   - Create functions from model specifications
+   - Update existing function instances
+   - Parameter management
+
+3. Configuration Handling:
+   - Parse function descriptions
+   - Validate parameters
+   - Handle class instantiation
+
+The module supports flexible function management through:
+- Dynamic class loading
+- Parameter validation
+- Instance caching
+- Configuration updates
+"""
+
 from pathlib import Path
 from typing import Any, Optional
 
@@ -9,6 +38,31 @@ def get_functions(
     loc: str,
     func_dir: Path,
 ) -> dict[str, Any]:
+    """Load and instantiate functions from configuration descriptions.
+
+    This function dynamically loads function classes based on configuration
+    descriptions and instantiates them with specified parameters.
+
+    Args:
+        functions_desc: Configuration describing functions to load
+        loc: Base import location for function modules
+        func_dir: Directory containing function implementations
+
+    Returns:
+        dict[str, Any]: Mapping of function names to instances
+
+    Raises:
+        ValueError: If a required function is not defined in config
+        ImportError: If function module cannot be imported
+        AttributeError: If function class is not found in module
+
+    Example:
+        functions = get_functions(
+            config["functions"],
+            "macromodel.markets.labour_market",
+            Path("func")
+        )
+    """
     functions = {}
     func_dirs = list(func_dir.glob("*"))
     func_names = [fd.stem for fd in func_dirs if fd.name not in ["__init__.py", "__pycache__"]]
@@ -38,6 +92,24 @@ def get_functions(
 
 
 def functions_from_model(model: BaseModel, loc: str) -> dict[str, Any]:
+    """Create function instances from a Pydantic model specification.
+
+    This function instantiates function classes based on a Pydantic model
+    that describes their configuration.
+
+    Args:
+        model: Pydantic model containing function specifications
+        loc: Base import location for function modules
+
+    Returns:
+        dict[str, Any]: Mapping of function names to instances
+
+    Example:
+        functions = functions_from_model(
+            market_config,
+            "macromodel.markets.labour_market"
+        )
+    """
     loaded_classes = {}
     for field_name, field_value in model:
         path_name = field_value.path_name
@@ -55,6 +127,28 @@ def functions_from_model(model: BaseModel, loc: str) -> dict[str, Any]:
 def update_functions(
     model: BaseModel, loc: str, functions: dict[str, Any], force_reset: Optional[list[str]] = None
 ) -> None:
+    """Update existing function instances with new configuration.
+
+    This function updates function instances based on new configuration,
+    either by updating parameters or reinstantiating if necessary.
+
+    Args:
+        model: Pydantic model containing new function specifications
+        loc: Base import location for function modules
+        functions: Existing function instances to update
+        force_reset: Optional list of functions to force reinstantiate
+
+    Raises:
+        ValueError: If a function is not found in the functions dict
+
+    Example:
+        update_functions(
+            new_config,
+            "macromodel.markets.labour_market",
+            existing_functions,
+            force_reset=["clearing"]
+        )
+    """
     if force_reset is None:
         force_reset = []
     for func_name, new_func_config in model.__dict__.items():
