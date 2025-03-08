@@ -58,6 +58,8 @@ Example Usage:
 """
 
 from macromodel.markets.labour_market.labour_market import LabourMarket
-from macromodel.markets.labour_market.labour_market_ts import create_labour_market_timeseries
+from macromodel.markets.labour_market.labour_market_ts import (
+    create_labour_market_timeseries,
+)
 
 __all__ = ["LabourMarket", "create_labour_market_timeseries"]
