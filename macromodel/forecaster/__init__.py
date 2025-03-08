@@ -16,11 +16,11 @@ noise components.
 """
 
 from .forecaster import (
-    Forecaster,
     ConstantForecaster,
-    OLSForecaster,
+    Forecaster,
     ImplementedAutoregForecaster,
     ManualAutoregForecaster,
+    OLSForecaster,
 )
 
 __all__ = [
