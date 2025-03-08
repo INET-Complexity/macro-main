@@ -1,3 +1,30 @@
+"""
+This module provides country-related configuration and utilities for the macroeconomic model.
+It defines country codes, names, and EU membership status, along with conversion utilities
+between different country code formats.
+
+The module uses ISO 3166-1 alpha-3 codes for country identification and provides:
+- A comprehensive Country enum for all supported countries
+- EU country membership information
+- Conversion between 2-letter and 3-letter country codes
+- Country name mappings
+
+Example:
+    ```python
+    from macro_data.configuration.countries import Country
+
+    # Create a country instance
+    france = Country.FRANCE
+
+    # Check if it's an EU country
+    is_eu = france.is_eu_country  # True
+
+    # Convert codes
+    two_letter = france.to_two_letter_code()  # 'FR'
+    three_letter = Country.convert_two_letter_to_three('FR')  # 'FRA'
+    ```
+"""
+
 from pathlib import Path
 
 import yaml
@@ -16,39 +43,56 @@ inverse_country_codes = {v: k for k, v in country_codes.items()}
 
 
 EU_COUNTRIES = [
-    "AUT",
-    "BEL",
-    "CZE",
-    "DNK",
-    "FIN",
-    "FRA",
-    "DEU",
-    "GRC",
-    "HUN",
-    "IRL",
-    "ITA",
-    "LUX",
-    "NLD",
-    "POL",
-    "PRT",
-    "SVK",
-    "ESP",
-    "SWE",
-    "EST",
-    "LVA",
-    "SVN",
-    "LTU",
-    "HRV",
-    "CYP",
-    "MLT",
-    "ROU",
-    "BGR",
+    "AUT",  # Austria
+    "BEL",  # Belgium
+    "CZE",  # Czech Republic
+    "DNK",  # Denmark
+    "FIN",  # Finland
+    "FRA",  # France
+    "DEU",  # Germany
+    "GRC",  # Greece
+    "HUN",  # Hungary
+    "IRL",  # Ireland
+    "ITA",  # Italy
+    "LUX",  # Luxembourg
+    "NLD",  # Netherlands
+    "POL",  # Poland
+    "PRT",  # Portugal
+    "SVK",  # Slovakia
+    "ESP",  # Spain
+    "SWE",  # Sweden
+    "EST",  # Estonia
+    "LVA",  # Latvia
+    "SVN",  # Slovenia
+    "LTU",  # Lithuania
+    "HRV",  # Croatia
+    "CYP",  # Cyprus
+    "MLT",  # Malta
+    "ROU",  # Romania
+    "BGR",  # Bulgaria
 ]
 
 
 class Country(StrEnum):
     """
-    Represents a country with its corresponding code.
+    Enumeration of countries using ISO 3166-1 alpha-3 codes.
+
+    This class provides a type-safe way to work with country codes in the model.
+    It includes all recognized countries and a special ROW (Rest of World) designation.
+    The enum values are the standard 3-letter ISO country codes.
+
+    Special features:
+    - Includes EU membership status checking via is_eu_country property
+    - Provides conversion between 2-letter and 3-letter codes
+    - String representation matches the country code
+
+    Example:
+        ```python
+        country = Country.FRANCE
+        print(country)  # 'FRA'
+        print(country.is_eu_country)  # True
+        print(country.to_two_letter_code())  # 'FR'
+        ```
     """
 
     FRANCE = "FRA"
@@ -252,15 +296,48 @@ class Country(StrEnum):
     REST_OF_WORLD = "ROW"
 
     def __str__(self):
+        """
+        Get the string representation of the country code.
+
+        Returns:
+            str: The 3-letter country code
+        """
         return country_names.get(self.value, self.value)
 
     def to_two_letter_code(self):
+        """
+        Convert the country's 3-letter code to its corresponding 2-letter code.
+
+        Returns:
+            str: The ISO 3166-1 alpha-2 country code
+
+        Raises:
+            KeyError: If the country code mapping is not found
+        """
         return country_codes[self.value]
 
     @staticmethod
     def convert_two_letter_to_three(two_letter_code: str):
+        """
+        Convert a 2-letter country code to its corresponding 3-letter code.
+
+        Args:
+            two_letter_code (str): The ISO 3166-1 alpha-2 country code
+
+        Returns:
+            str: The corresponding ISO 3166-1 alpha-3 country code
+
+        Raises:
+            KeyError: If the country code mapping is not found
+        """
         return inverse_country_codes[two_letter_code]
 
     @property
     def is_eu_country(self):
+        """
+        Check if the country is a member of the European Union.
+
+        Returns:
+            bool: True if the country is an EU member, False otherwise
+        """
         return self.value in EU_COUNTRIES
