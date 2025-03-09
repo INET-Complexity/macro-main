@@ -1,3 +1,23 @@
+"""Household time series data management.
+
+This module implements time series tracking for household economic variables
+through:
+- Consumption and investment tracking
+- Income source monitoring
+- Wealth composition tracking
+- Property market participation
+- Debt level monitoring
+
+The implementation handles:
+- Target and actual consumption
+- Investment allocations
+- Income components
+- Property transactions
+- Wealth composition
+- Debt positions
+- Financial flows
+"""
+
 from typing import Optional
 
 import numpy as np
@@ -18,7 +38,51 @@ def create_households_timeseries(
     tau_cf: float,
     consumption_emissions: Optional[np.ndarray] = None,
     investment_emissions: Optional[np.ndarray] = None,
+    coal_consumption_emissions: Optional[np.ndarray] = None,
+    gas_consumption_emissions: Optional[np.ndarray] = None,
+    oil_consumption_emissions: Optional[np.ndarray] = None,
+    refined_products_consumption_emissions: Optional[np.ndarray] = None,
+    coal_investment_emissions: Optional[np.ndarray] = None,
+    gas_investment_emissions: Optional[np.ndarray] = None,
+    oil_investment_emissions: Optional[np.ndarray] = None,
+    refined_products_investment_emissions: Optional[np.ndarray] = None,
 ) -> TimeSeries:
+    """Create time series for tracking household economic variables.
+
+    Initializes tracking for:
+    - Consumption patterns and targets
+    - Investment decisions
+    - Income sources and levels
+    - Property market activity
+    - Wealth composition
+    - Debt positions
+    - Emissions data
+
+    Args:
+        data (pd.DataFrame): Initial household economic data
+        initial_consumption_by_industry (np.ndarray): Starting industry consumption
+        initial_hh_investment (np.ndarray): Starting household investment
+        initial_investment_by_industry (np.ndarray): Starting industry investment
+        initial_hh_consumption (np.ndarray): Starting household consumption
+        scale (int): Scaling factor for histograms
+        vat (float): Value added tax rate
+        tau_cf (float): Capital formation tax rate
+        consumption_emissions (Optional[np.ndarray]): Initial consumption emissions
+        investment_emissions (Optional[np.ndarray]): Initial investment emissions
+        coal_consumption_emissions (Optional[np.ndarray]): Coal consumption emissions
+        gas_consumption_emissions (Optional[np.ndarray]): Gas consumption emissions
+        oil_consumption_emissions (Optional[np.ndarray]): Oil consumption emissions
+        refined_products_consumption_emissions (Optional[np.ndarray]):
+            Refined products consumption emissions
+        coal_investment_emissions (Optional[np.ndarray]): Coal investment emissions
+        gas_investment_emissions (Optional[np.ndarray]): Gas investment emissions
+        oil_investment_emissions (Optional[np.ndarray]): Oil investment emissions
+        refined_products_investment_emissions (Optional[np.ndarray]):
+            Refined products investment emissions
+
+    Returns:
+        TimeSeries: Initialized time series for household variables
+    """
     n_industries = len(initial_consumption_by_industry)
     return TimeSeries(
         n_households=len(data),
@@ -105,4 +169,12 @@ def create_households_timeseries(
         interest_paid=np.full(len(data), np.nan),
         consumption_emissions=consumption_emissions,
         investment_emissions=investment_emissions,
+        coal_consumption_emissions=coal_consumption_emissions,
+        gas_consumption_emissions=gas_consumption_emissions,
+        oil_consumption_emissions=oil_consumption_emissions,
+        refined_products_consumption_emissions=refined_products_consumption_emissions,
+        coal_investment_emissions=coal_investment_emissions,
+        gas_investment_emissions=gas_investment_emissions,
+        oil_investment_emissions=oil_investment_emissions,
+        refined_products_investment_emissions=refined_products_investment_emissions,
     )
