@@ -1,3 +1,29 @@
+"""Module for preprocessing synthetic central government data.
+
+This module provides an abstract base class for preprocessing and organizing central government
+data that will be used to initialize behavioral models. Key preprocessing includes:
+
+1. Data Collection and Organization:
+   - Government revenue data preparation
+   - Social benefits data processing
+   - Tax revenue calculations
+
+2. Financial Data Processing:
+   - Tax revenue estimation
+   - Benefits model parameter estimation
+   - Revenue stream organization
+
+3. Relationship Data:
+   - Government-household transfers
+   - Government-firm tax relationships
+   - Social housing management
+
+Note:
+    This module is NOT used for simulating government behavior. It only handles
+    the preprocessing and organization of data that will later be used to initialize
+    behavioral models in the simulation package.
+"""
+
 from abc import ABC, abstractmethod
 from typing import Optional
 
@@ -13,33 +39,41 @@ from macro_data.processing.synthetic_population.synthetic_population import (
 
 
 class SyntheticCentralGovernment(ABC):
-    """
-    Represents a synthetic central government.
+    """Abstract base class for preprocessing and organizing central government data.
 
-    The central government data is stored in a pandas DataFrame with the following columns:
-        - Total Unemployment Benefits: The total unemployment benefits.
-        - Other Social Benefits: All other social benefits.
-        - Debt: Central government debt.
-        - Bank Equity Injection: The equity injection into the banks.
-        - Total Social Housing Rent: The total social housing rent.
-        - Taxes on Production: The taxes on production.
-        - VAT: Value-Added Tax.
-        - Capital Formation Taxes: The capital formation taxes.
-        - Export Taxes: The export taxes.
-        - Corporate Taxes: The corporate taxes.
-        - Employer SI Tax: The employer social insurance tax.
-        - Employee SI Tax: The employee social insurance tax.
-        - Income Taxes: The income taxes.
-        - Rental Income Taxes: The rental income taxes.
-        - Revenue: The total revenue.
-        - Taxes on Products: The taxes on products.
+    This class provides a framework for collecting and organizing government data
+    that will be used to initialize behavioral models. It is NOT used for simulating
+    government behavior - it only handles data preprocessing.
+
+    The preprocessed data is stored in a pandas DataFrame with the following columns:
+        - Total Unemployment Benefits: Initial unemployment benefit levels
+        - Other Social Benefits: Initial levels of other social transfers
+        - Debt: Initial central government debt level
+        - Bank Equity Injection: Initial bank support levels
+        - Total Social Housing Rent: Initial social housing revenue
+        - Taxes on Production: Initial production tax revenue
+        - VAT: Initial value-added tax revenue
+        - Capital Formation Taxes: Initial capital tax revenue
+        - Export Taxes: Initial export tax revenue
+        - Corporate Taxes: Initial corporate tax revenue
+        - Employer SI Tax: Initial employer social insurance revenue
+        - Employee SI Tax: Initial employee social insurance revenue
+        - Income Taxes: Initial income tax revenue
+        - Rental Income Taxes: Initial rental tax revenue
+        - Revenue: Total initial revenue
+        - Taxes on Products: Initial product tax revenue
+
+    Note:
+        This is a data container class. The actual government behavior (spending decisions,
+        tax adjustments, etc.) is implemented in the simulation package, which uses this
+        preprocessed data for initialization.
 
     Attributes:
-        country_name (str): The name of the country.
-        year (int): The year.
-        central_gov_data (pd.DataFrame): The central government data.
-        other_benefits_model (Optional[LinearRegression]): The model for other benefits (optional).
-        unemployment_benefits_model (Optional[LinearRegression]): A linear regression model to determine unemployment benefits (optional).
+        country_name (str): Country identifier for data collection
+        year (int): Reference year for preprocessing
+        central_gov_data (pd.DataFrame): Preprocessed government data
+        other_benefits_model (Optional[LinearRegression]): Model for estimating other benefits
+        unemployment_benefits_model (Optional[LinearRegression]): Model for estimating unemployment benefits
     """
 
     @abstractmethod
@@ -51,6 +85,15 @@ class SyntheticCentralGovernment(ABC):
         other_benefits_model: Optional[LinearRegression],
         unemployment_benefits_model: Optional[LinearRegression],
     ):
+        """Initialize the central government data container.
+
+        Args:
+            country_name (str): Country identifier for data collection
+            year (int): Reference year for preprocessing
+            central_gov_data (pd.DataFrame): Initial data to preprocess
+            other_benefits_model (Optional[LinearRegression]): Model for estimating other benefits
+            unemployment_benefits_model (Optional[LinearRegression]): Model for estimating unemployment benefits
+        """
         self.country_name = country_name
         self.year = year
 
@@ -69,6 +112,27 @@ class SyntheticCentralGovernment(ABC):
         synthetic_banks: SyntheticBanks,
         industry_data: dict[str, pd.DataFrame],
     ) -> None:
+        """Update preprocessed government data fields based on other economic agents.
+
+        This method processes and organizes data from various economic agents to prepare:
+        1. Social housing revenue data
+        2. Tax revenue calculations
+        3. Income and consumption data
+        4. Financial asset data
+
+        The preprocessing steps:
+        1. Calculate social housing metrics
+        2. Process firm and bank tax data
+        3. Calculate income-based revenues
+        4. Process consumption and investment taxes
+
+        Args:
+            tax_data (TaxData): Tax rates and parameters
+            synthetic_population (SyntheticPopulation): Population data container
+            synthetic_firms (SyntheticFirms): Firm data container
+            synthetic_banks (SyntheticBanks): Bank data container
+            industry_data (dict[str, pd.DataFrame]): Industry-level economic data
+        """
         in_social_housing = synthetic_population.household_data["Tenure Status of the Main Residence"] == -1
         total_social_housing_rent = synthetic_population.social_housing_rent * in_social_housing.sum()
         firm_taxes_and_subsidies = float(synthetic_firms.firm_data["Taxes paid on Production"].sum())
@@ -138,6 +202,33 @@ class SyntheticCentralGovernment(ABC):
         household_gross_capital_inputs: float,
         cf_tax: float,
     ) -> None:
+        """Set initial revenue values in the preprocessed government data.
+
+        This method organizes and stores initial revenue values for:
+        1. Social housing revenue
+        2. Various tax revenues
+        3. Total government revenue
+        4. Product-specific taxes
+
+        The preprocessing steps:
+        1. Store individual revenue components
+        2. Calculate and store total revenue
+        3. Calculate and store product tax totals
+
+        Args:
+            total_social_housing_rent (float): Initial social housing revenue
+            firm_taxes_and_subsidies (float): Initial production tax revenue
+            firm_corporate_taxes (float): Initial firm tax revenue
+            bank_corporate_taxes (float): Initial bank tax revenue
+            firm_employer_si_tax (float): Initial employer SI revenue
+            household_vat (float): Initial VAT revenue
+            export_tax (float): Initial export tax revenue
+            employee_si_tax (float): Initial employee SI revenue
+            income_tax (float): Initial income tax revenue
+            rental_income_tax (float): Initial rental tax revenue
+            household_gross_capital_inputs (float): Initial capital inputs
+            cf_tax (float): Capital formation tax rate
+        """
         self.central_gov_data["Total Social Housing Rent"] = [total_social_housing_rent]
         self.central_gov_data["Taxes on Production"] = [firm_taxes_and_subsidies]
         self.central_gov_data["VAT"] = [household_vat]
