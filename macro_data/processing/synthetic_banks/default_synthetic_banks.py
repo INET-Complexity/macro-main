@@ -1,3 +1,28 @@
+"""Module providing the default implementation of synthetic banking system.
+
+This module implements the abstract SyntheticBanks class with a concrete implementation
+that supports both standard bank creation (using OECD/Eurostat data) and Compustat-based
+bank creation. Key features include:
+
+1. Bank Creation:
+   - Support for single or multiple bank configurations
+   - Bank equity allocation based on real-world data
+   - Integration with Compustat data for detailed bank profiles
+
+2. Rate Management:
+   - Interest rate initialization for different products
+   - Rate adjustment mechanisms for firms and households
+   - Support for both EU and non-EU countries via proxy mechanisms
+
+3. Balance Sheet Management:
+   - Deposit and loan allocation
+   - Equity distribution
+   - Market share calculation
+
+The implementation supports both direct country data and proxy-based approaches
+for countries where direct data may not be available.
+"""
+
 from typing import Optional
 
 import numpy as np
@@ -17,6 +42,24 @@ from macro_data.readers.default_readers import DataReaders
 
 
 class DefaultSyntheticBanks(SyntheticBanks):
+    """Default implementation of the synthetic banking system.
+
+    This class provides a concrete implementation of the SyntheticBanks abstract base class,
+    offering two main initialization paths:
+    1. Standard initialization using OECD/Eurostat data
+    2. Compustat-based initialization for more detailed bank profiles
+
+    The implementation handles:
+    - Bank creation and equity allocation
+    - Interest rate initialization and management
+    - Balance sheet setup and maintenance
+    - Market share calculations
+    - Support for both EU and non-EU countries
+
+    The class maintains all the data structures defined in the base class while providing
+    specific implementations for abstract methods.
+    """
+
     def __init__(
         self,
         country_name: str,
@@ -34,6 +77,24 @@ class DefaultSyntheticBanks(SyntheticBanks):
         hh_mortgage_ect: float,
         hh_mortgage_rate: float,
     ):
+        """Initialize the default synthetic banking system.
+
+        Args:
+            country_name (str): Country identifier
+            year (int): Reference year for data
+            number_of_banks (int): Number of banks to create
+            bank_data (pd.DataFrame): Initial bank-level data
+            quarter (int): Reference quarter (1-4)
+            firm_passthrough (float): Rate adjustment factor for firm loans
+            firm_ect (float): Error correction term for firm rates
+            firm_rate (float): Base rate for firm loans
+            hh_consumption_passthrough (float): Rate adjustment for consumer loans
+            hh_consumption_ect (float): Error correction for consumer rates
+            hh_consumption_rate (float): Base rate for consumer loans
+            hh_mortgage_passthrough (float): Rate adjustment for mortgages
+            hh_mortgage_ect (float): Error correction for mortgage rates
+            hh_mortgage_rate (float): Base mortgage rate
+        """
         super().__init__(
             country_name,
             year,
@@ -65,31 +126,31 @@ class DefaultSyntheticBanks(SyntheticBanks):
         exchange_rate_from_eur: float = 1.0,
         proxy_eu_country: Optional[Country] = None,
     ) -> "DefaultSyntheticBanks":
-        """
-        Initialize a SyntheticBanks object from data readers.
-        This method creates a single bank or multiple banks, depending on the single_bank
-        flag and on the number of bank branches
-        in the country obtained from the data.
+        """Create a synthetic banking system from data readers.
 
-        Bank equity is set to the total bank equity (obtained from Eurostat) in the country
-        divided by the number of banks.
+        This method supports two initialization paths based on the banks_data_configuration:
+        1. Standard initialization using OECD/Eurostat data
+        2. Compustat-based initialization (if specified in configuration)
 
+        For standard initialization:
+        - Number of banks is based on actual bank branches (scaled)
+        - Bank equity is distributed evenly across banks
+        - Interest rates are initialized from policy rates
 
         Args:
-            cls (class): The class object.
-            single_bank (bool): Flag indicating whether to create a single bank or multiple banks.
-            country_name (Country): The name of the country.
-            year (int): The year.
-            quarter (int): The quarter.
-            readers (DataReaders): The data readers object.
-            scale (int): The scaling factor.
-            banks_data_configuration (BanksDataConfiguration): The banks data configuration object.
-            exchange_rate_from_eur (float): The exchange rate from EUR to the local currency.
-            proxy_eu_country (Optional[Country]): The proxy EU country.
-            inflation_data (pd.DataFrame): The inflation data.
+            single_bank (bool): Whether to create a single bank regardless of data
+            country_name (Country): Country to create banks for
+            year (int): Reference year
+            readers (DataReaders): Data source readers
+            scale (int): Scaling factor for number of banks
+            banks_data_configuration (BanksDataConfiguration): Bank setup configuration
+            quarter (int): Reference quarter (1-4)
+            inflation_data (pd.DataFrame): Inflation data for rate calculations
+            exchange_rate_from_eur (float, optional): Exchange rate from EUR. Defaults to 1.0.
+            proxy_eu_country (Optional[Country], optional): EU country to use as proxy. Defaults to None.
 
         Returns:
-            SyntheticBanks: The initialized SyntheticBanks object.
+            DefaultSyntheticBanks: Initialized banking system
         """
         if banks_data_configuration.constructor == "Compustat":
             return cls.from_readers_compustat(
@@ -170,30 +231,33 @@ class DefaultSyntheticBanks(SyntheticBanks):
         exchange_rate_from_eur: float = 1.0,
         proxy_eu_country: Optional[Country] = None,
     ) -> "DefaultSyntheticBanks":
-        """
-        Initialize a SyntheticBanks object from Compustat data readers.
-        This method creates a single bank or multiple banks, depending on the number of banks
-        in the country obtained from the data.
+        """Create a synthetic banking system using Compustat data.
 
-        Bank equity is set to the total bank equity (obtained from Compustat) in the country
-        divided by the number of banks.
+        This method creates banks using detailed Compustat data, which provides:
+        - Actual bank balance sheet information
+        - Real-world deposit and loan distributions
+        - Historical equity levels
+
+        The method:
+        1. Fetches and filters Compustat bank data
+        2. Samples banks based on configuration
+        3. Scales equity to match country totals
+        4. Initializes rates and other parameters
 
         Args:
-            cls (class): The class object.
-            country_name (Country): The name of the country.
-            year (int): The year.
-            readers (DataReaders): The data readers object.
-            single_bank (bool): Flag indicating whether to create a single bank or multiple banks.
-            scale (int): The scaling factor.
-            quarter (int): The quarter.
-            inflation_data (pd.DataFrame): The inflation data.
-            exchange_rate_from_eur (float): The exchange rate from EUR to the local currency.
-            proxy_eu_country (Optional[Country]): The proxy EU country.
+            country_name (Country): Country to create banks for
+            year (int): Reference year
+            readers (DataReaders): Data source readers
+            single_bank (bool): Whether to create a single bank
+            scale (int): Scaling factor for number of banks
+            quarter (int): Reference quarter (1-4)
+            inflation_data (pd.DataFrame): Inflation data for rate calculations
+            exchange_rate_from_eur (float, optional): Exchange rate from EUR. Defaults to 1.0.
+            proxy_eu_country (Optional[Country], optional): EU country to use as proxy. Defaults to None.
 
         Returns:
-            SyntheticBanks: The initialized SyntheticBanks object.
+            DefaultSyntheticBanks: Initialized banking system using Compustat data
         """
-
         compustat_data = readers.compustat_banks.get_country_data(
             country=country_name, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country_name, year)
         )
@@ -250,7 +314,6 @@ class DefaultSyntheticBanks(SyntheticBanks):
             year,
             number_of_banks,
             bank_data,
-            quarter=quarter,
             firm_passthrough=firm_passthrough,
             firm_ect=firm_ect,
             firm_rate=firm_rate,
@@ -260,10 +323,38 @@ class DefaultSyntheticBanks(SyntheticBanks):
             hh_mortgage_passthrough=hh_mortgage_passthrough,
             hh_mortgage_ect=hh_mortgage_ect,
             hh_mortgage_rate=hh_mortgage_rate,
+            quarter=quarter,
         )
 
     @classmethod
     def initialise_rates(cls, country_name, inflation_data, proxy_eu_country, quarter, readers, year):
+        """Initialize interest rates for all bank products.
+
+        This method:
+        1. Fits rate models for firms, households, and mortgages
+        2. Calculates base rates and adjustment factors
+        3. Handles proxy country data if needed
+
+        Args:
+            country_name (Country): Target country
+            inflation_data (pd.DataFrame): Inflation data for calculations
+            proxy_eu_country (Optional[Country]): EU country to use as proxy
+            quarter (int): Reference quarter
+            readers (DataReaders): Data source readers
+            year (int): Reference year
+
+        Returns:
+            tuple: Nine parameters for rate calculations:
+                - firm_ect: Error correction term for firm rates
+                - firm_passthrough: Rate adjustment for firm loans
+                - firm_rate: Base rate for firm loans
+                - hh_consumption_ect: Error correction for consumer rates
+                - hh_consumption_passthrough: Rate adjustment for consumer loans
+                - hh_consumption_rate: Base rate for consumer loans
+                - hh_mortgage_ect: Error correction for mortgage rates
+                - hh_mortgage_passthrough: Rate adjustment for mortgages
+                - hh_mortgage_rate: Base rate for mortgages
+        """
         if country_name.is_eu_country:
             data_country = country_name
         else:
@@ -322,9 +413,19 @@ class DefaultSyntheticBanks(SyntheticBanks):
         )
 
     def set_bank_equity(self, bank_equity: float) -> None:
+        """Set the equity level for each bank.
+
+        Args:
+            bank_equity (float): Equity amount to set for each bank
+        """
         self.bank_data["Equity"] = np.full(self.number_of_banks, bank_equity / self.number_of_banks)
 
     def set_deposits_from_firms(self, firm_deposits: np.ndarray) -> None:
+        """Set the initial deposits from firms for each bank.
+
+        Args:
+            firm_deposits (np.ndarray): Array of deposit amounts by firm
+        """
         initial_deposits_from_firms = np.zeros(self.number_of_banks)
         for bank_id in range(self.number_of_banks):
             corr_firms = np.array(self.bank_data["Corresponding Firms ID"][bank_id])
@@ -332,6 +433,11 @@ class DefaultSyntheticBanks(SyntheticBanks):
         self.bank_data["Deposits from Firms"] = initial_deposits_from_firms
 
     def set_deposits_from_households(self, household_deposits: np.ndarray) -> None:
+        """Set the initial deposits from households for each bank.
+
+        Args:
+            household_deposits (np.ndarray): Array of deposit amounts by household
+        """
         initial_deposits_from_households = np.zeros(self.number_of_banks)
         for bank_id in range(self.number_of_banks):
             corr_households = np.array(self.bank_data["Corresponding Households ID"][bank_id])
@@ -339,6 +445,11 @@ class DefaultSyntheticBanks(SyntheticBanks):
         self.bank_data["Deposits from Households"] = initial_deposits_from_households
 
     def set_loans_to_firms(self, firm_debt: np.ndarray) -> None:
+        """Set the initial loans to firms for each bank.
+
+        Args:
+            firm_debt (np.ndarray): Array of debt amounts by firm
+        """
         initial_loans_to_firms = np.zeros(self.number_of_banks)
         for bank_id in range(self.number_of_banks):
             corr_firms = np.array(self.bank_data["Corresponding Firms ID"][bank_id])
@@ -350,6 +461,12 @@ class DefaultSyntheticBanks(SyntheticBanks):
         household_mortgage_debt: np.ndarray,
         household_other_debt: np.ndarray,
     ) -> None:
+        """Set the initial loans to households for each bank.
+
+        Args:
+            household_mortgage_debt (np.ndarray): Array of mortgage debt by household
+            household_other_debt (np.ndarray): Array of non-mortgage debt by household
+        """
         initial_mortgages_to_households = np.zeros(self.number_of_banks)
         initial_other_loans_to_households = np.zeros(self.number_of_banks)
         for bank_id in range(self.number_of_banks):
@@ -358,6 +475,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
             initial_other_loans_to_households[bank_id] += household_other_debt[corr_firms].sum()
         self.bank_data["Mortgages to Households"] = initial_mortgages_to_households
         self.bank_data["Consumption Loans to Households"] = initial_other_loans_to_households
+        self.bank_data["Loans to Households"] = initial_mortgages_to_households + initial_other_loans_to_households
 
     def set_bank_deposits(
         self,
@@ -366,6 +484,14 @@ class DefaultSyntheticBanks(SyntheticBanks):
         household_deposits: np.ndarray,
         household_debt: np.ndarray,
     ) -> None:
+        """Set the total deposits for each bank.
+
+        Args:
+            firm_deposits (np.ndarray): Array of firm deposit amounts
+            firm_debt (np.ndarray): Array of firm debt amounts
+            household_deposits (np.ndarray): Array of household deposit amounts
+            household_debt (np.ndarray): Array of household debt amounts
+        """
         initial_bank_deposits = np.zeros(self.number_of_banks)
         for bank_id in range(self.number_of_banks):
             corr_firms = np.array(self.bank_data["Corresponding Firms ID"][bank_id])
