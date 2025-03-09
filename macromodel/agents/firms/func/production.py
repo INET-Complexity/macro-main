@@ -4,6 +4,22 @@ import numpy as np
 
 
 class ProductionSetter(ABC):
+    """Abstract base class for determining firms' production processes.
+
+    This class defines strategies for calculating production levels and
+    input usage based on:
+    - Production technology (Leontief, Linear, etc.)
+    - Input availability and constraints
+    - Input productivity and criticality
+    - Utilization rates
+
+    The production process considers:
+    - Labor inputs and constraints
+    - Intermediate inputs (materials, supplies)
+    - Capital inputs (machinery, equipment)
+    - Input criticality and substitutability
+    """
+
     def compute_production(
         self,
         desired_production: np.ndarray,
@@ -11,6 +27,24 @@ class ProductionSetter(ABC):
         current_limiting_intermediate_inputs: np.ndarray,
         current_limiting_capital_inputs: np.ndarray,
     ) -> np.ndarray:
+        """Calculate actual production levels based on constraints.
+
+        Determines feasible production by taking the minimum of:
+        - Desired production targets
+        - Available labor inputs
+        - Available intermediate and capital inputs
+
+        Args:
+            desired_production (np.ndarray): Target production levels
+            current_labour_inputs (np.ndarray): Available labor inputs
+            current_limiting_intermediate_inputs (np.ndarray): Production
+                possible with available intermediate inputs
+            current_limiting_capital_inputs (np.ndarray): Production
+                possible with available capital inputs
+
+        Returns:
+            np.ndarray: Feasible production levels by firm
+        """
         limiting_stock = self.compute_limiting_stock(
             current_limiting_intermediate_inputs,
             current_limiting_capital_inputs,
@@ -25,6 +59,27 @@ class ProductionSetter(ABC):
         intermediate_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate production possible with available intermediate inputs.
+
+        Determines maximum production levels considering:
+        - Input-output coefficients
+        - Available input stocks
+        - Utilization rates
+        - Input criticality
+
+        Args:
+            intermediate_inputs_productivity_matrix (np.ndarray): Input-output
+                coefficients for intermediate inputs
+            intermediate_inputs_stock (np.ndarray): Available stocks of
+                intermediate inputs
+            intermediate_inputs_utilisation_rate (float): Rate at which
+                inputs can be utilized (0 to 1)
+            goods_criticality_matrix (np.ndarray): Criticality levels
+                for each input type
+
+        Returns:
+            np.ndarray: Maximum production possible with intermediate inputs
+        """
         pass
 
     @abstractmethod
@@ -35,6 +90,27 @@ class ProductionSetter(ABC):
         capital_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate production possible with available capital inputs.
+
+        Determines maximum production levels considering:
+        - Capital productivity coefficients
+        - Available capital stocks
+        - Utilization rates
+        - Capital good criticality
+
+        Args:
+            capital_inputs_productivity_matrix (np.ndarray): Input-output
+                coefficients for capital inputs
+            capital_inputs_stock (np.ndarray): Available stocks of
+                capital inputs
+            capital_inputs_utilisation_rate (float): Rate at which
+                capital can be utilized (0 to 1)
+            goods_criticality_matrix (np.ndarray): Criticality levels
+                for each capital good type
+
+        Returns:
+            np.ndarray: Maximum production possible with capital inputs
+        """
         pass
 
     @staticmethod
@@ -42,6 +118,20 @@ class ProductionSetter(ABC):
         limiting_intermediate_inputs_stock: np.ndarray,
         limiting_capital_inputs_stock: np.ndarray,
     ) -> np.ndarray:
+        """Calculate overall production limits from input stocks.
+
+        Takes the minimum of intermediate and capital input constraints
+        to determine the binding constraint on production.
+
+        Args:
+            limiting_intermediate_inputs_stock (np.ndarray): Production
+                possible with intermediate inputs
+            limiting_capital_inputs_stock (np.ndarray): Production
+                possible with capital inputs
+
+        Returns:
+            np.ndarray: Overall production limits from input constraints
+        """
         return np.amin(
             [limiting_intermediate_inputs_stock, limiting_capital_inputs_stock],
             axis=0,
@@ -55,6 +145,24 @@ class ProductionSetter(ABC):
         intermediate_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate intermediate inputs consumed in production.
+
+        Determines actual input usage based on:
+        - Realized production levels
+        - Input-output coefficients
+        - Available stocks
+        - Input criticality
+
+        Args:
+            realised_production (np.ndarray): Actual production achieved
+            intermediate_inputs_productivity_matrix (np.ndarray): Input-output
+                coefficients
+            intermediate_inputs_stock (np.ndarray): Available input stocks
+            goods_criticality_matrix (np.ndarray): Input criticality levels
+
+        Returns:
+            np.ndarray: Intermediate inputs used in production
+        """
         pass
 
     @abstractmethod
@@ -65,10 +173,37 @@ class ProductionSetter(ABC):
         capital_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate capital inputs consumed (depreciated) in production.
+
+        Determines capital depreciation based on:
+        - Realized production levels
+        - Depreciation rates
+        - Available capital stocks
+        - Capital good criticality
+
+        Args:
+            realised_production (np.ndarray): Actual production achieved
+            capital_inputs_depreciation_matrix (np.ndarray): Depreciation
+                rates for capital goods
+            capital_inputs_stock (np.ndarray): Available capital stocks
+            goods_criticality_matrix (np.ndarray): Capital good criticality
+
+        Returns:
+            np.ndarray: Capital inputs depreciated in production
+        """
         pass
 
 
 class PureLeontief(ProductionSetter):
+    """Implementation of pure Leontief production technology.
+
+    This class implements a fixed-proportions production function where:
+    - Inputs are perfectly complementary
+    - No substitution between inputs is possible
+    - Production is limited by the scarcest input
+    - All inputs are treated as essential
+    """
+
     def compute_limiting_intermediate_inputs_stock(
         self,
         intermediate_inputs_productivity_matrix: np.ndarray,
@@ -76,6 +211,17 @@ class PureLeontief(ProductionSetter):
         intermediate_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate intermediate input limits under Leontief technology.
+
+        Production is limited by the most constraining intermediate input,
+        with no possibility of substitution.
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            np.ndarray: Production possible with intermediate inputs
+        """
         return np.multiply(
             intermediate_inputs_productivity_matrix,
             intermediate_inputs_stock,
@@ -90,6 +236,17 @@ class PureLeontief(ProductionSetter):
         capital_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate capital input limits under Leontief technology.
+
+        Production is limited by the most constraining capital input,
+        with no possibility of substitution.
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            np.ndarray: Production possible with capital inputs
+        """
         return np.multiply(
             capital_inputs_productivity_matrix,
             capital_inputs_stock,
@@ -104,6 +261,17 @@ class PureLeontief(ProductionSetter):
         intermediate_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate intermediate inputs used under Leontief technology.
+
+        Input usage is strictly proportional to production with fixed
+        input-output coefficients.
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            np.ndarray: Intermediate inputs used in production
+        """
         return np.divide(
             realised_production[:, None],
             intermediate_inputs_productivity_matrix,
@@ -118,6 +286,17 @@ class PureLeontief(ProductionSetter):
         capital_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate capital depreciation under Leontief technology.
+
+        Capital depreciation is proportional to production with fixed
+        depreciation rates.
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            np.ndarray: Capital inputs depreciated in production
+        """
         used_capital_inputs = realised_production[:, None] * capital_inputs_depreciation_matrix
         used_capital_inputs[used_capital_inputs == np.inf] = 0.0
         used_capital_inputs[used_capital_inputs == -np.inf] = 0.0
@@ -125,6 +304,15 @@ class PureLeontief(ProductionSetter):
 
 
 class CriticalAndImportantLeontief(ProductionSetter):
+    """Leontief production with critical and important input distinctions.
+
+    This class extends the Leontief technology by:
+    - Distinguishing between critical and non-critical inputs
+    - Allowing production with only critical and important inputs
+    - Maintaining fixed proportions within input categories
+    - Treating non-critical inputs as optional
+    """
+
     def compute_limiting_intermediate_inputs_stock(
         self,
         intermediate_inputs_productivity_matrix: np.ndarray,
@@ -132,6 +320,17 @@ class CriticalAndImportantLeontief(ProductionSetter):
         intermediate_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate intermediate input limits with criticality.
+
+        Only considers critical and important intermediate inputs as
+        binding constraints on production.
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            np.ndarray: Production possible with critical intermediate inputs
+        """
         rescaled_intermediate_inputs = np.multiply(
             intermediate_inputs_productivity_matrix,
             intermediate_inputs_stock,
@@ -148,6 +347,17 @@ class CriticalAndImportantLeontief(ProductionSetter):
         capital_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate capital input limits with criticality.
+
+        Only considers critical and important capital inputs as
+        binding constraints on production.
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            np.ndarray: Production possible with critical capital inputs
+        """
         rescaled_capital_inputs = np.multiply(
             capital_inputs_productivity_matrix,
             capital_inputs_stock,
@@ -164,6 +374,17 @@ class CriticalAndImportantLeontief(ProductionSetter):
         intermediate_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate intermediate inputs used with criticality.
+
+        Uses inputs proportionally to production, but only for
+        critical and important inputs.
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            np.ndarray: Critical intermediate inputs used
+        """
         used_intermediate_inputs = np.divide(
             realised_production[:, None],
             intermediate_inputs_productivity_matrix,
@@ -180,6 +401,17 @@ class CriticalAndImportantLeontief(ProductionSetter):
         capital_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate capital depreciation with criticality.
+
+        Depreciates capital proportionally to production, but only for
+        critical and important capital goods.
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            np.ndarray: Critical capital inputs depreciated
+        """
         used_capital_inputs = realised_production[:, None] * capital_inputs_depreciation_matrix
         used_capital_inputs[used_capital_inputs == np.inf] = 0.0
         used_capital_inputs[used_capital_inputs == -np.inf] = 0.0
@@ -188,6 +420,15 @@ class CriticalAndImportantLeontief(ProductionSetter):
 
 
 class CriticalLeontief(ProductionSetter):
+    """Leontief production with only critical input constraints.
+
+    This class implements a stricter version that:
+    - Only considers fully critical inputs (criticality = 1)
+    - Ignores all non-critical inputs in constraints
+    - Maintains fixed proportions for critical inputs
+    - Treats all other inputs as optional
+    """
+
     def compute_limiting_intermediate_inputs_stock(
         self,
         intermediate_inputs_productivity_matrix: np.ndarray,
@@ -195,6 +436,17 @@ class CriticalLeontief(ProductionSetter):
         intermediate_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate intermediate input limits for critical inputs only.
+
+        Only fully critical intermediate inputs (criticality = 1)
+        are considered as binding constraints.
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            np.ndarray: Production possible with critical inputs
+        """
         rescaled_intermediate_inputs = np.multiply(
             intermediate_inputs_productivity_matrix,
             intermediate_inputs_stock,
@@ -211,6 +463,17 @@ class CriticalLeontief(ProductionSetter):
         capital_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate capital input limits for critical inputs only.
+
+        Only fully critical capital inputs (criticality = 1)
+        are considered as binding constraints.
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            np.ndarray: Production possible with critical capital
+        """
         rescaled_capital_inputs = np.multiply(
             capital_inputs_productivity_matrix,
             capital_inputs_stock,
@@ -227,6 +490,17 @@ class CriticalLeontief(ProductionSetter):
         intermediate_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate critical intermediate inputs used.
+
+        Uses inputs proportionally to production, but only for
+        fully critical inputs.
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            np.ndarray: Critical intermediate inputs used
+        """
         used_intermediate_inputs = np.divide(
             realised_production[:, None],
             intermediate_inputs_productivity_matrix,
@@ -243,6 +517,17 @@ class CriticalLeontief(ProductionSetter):
         capital_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate critical capital depreciation.
+
+        Depreciates capital proportionally to production, but only for
+        fully critical capital goods.
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            np.ndarray: Critical capital inputs depreciated
+        """
         used_capital_inputs = realised_production[:, None] * capital_inputs_depreciation_matrix
         used_capital_inputs[used_capital_inputs == np.inf] = 0.0
         used_capital_inputs[used_capital_inputs == -np.inf] = 0.0
@@ -251,6 +536,15 @@ class CriticalLeontief(ProductionSetter):
 
 
 class Linear(ProductionSetter):
+    """Implementation of linear production technology.
+
+    This class implements a production function where:
+    - Inputs are partially substitutable
+    - Production scales linearly with inputs
+    - Input utilization rates affect productivity
+    - Criticality affects input requirements
+    """
+
     def compute_limiting_intermediate_inputs_stock(
         self,
         intermediate_inputs_productivity_matrix: np.ndarray,
@@ -258,6 +552,17 @@ class Linear(ProductionSetter):
         intermediate_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate intermediate input limits under linear technology.
+
+        Production capacity scales linearly with input availability,
+        adjusted by utilization rates.
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            np.ndarray: Production possible with intermediate inputs
+        """
         return np.multiply(
             intermediate_inputs_productivity_matrix,
             intermediate_inputs_stock,
@@ -272,6 +577,17 @@ class Linear(ProductionSetter):
         capital_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate capital input limits under linear technology.
+
+        Production capacity scales linearly with capital availability,
+        adjusted by utilization rates.
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            np.ndarray: Production possible with capital inputs
+        """
         return np.multiply(
             capital_inputs_productivity_matrix,
             capital_inputs_stock,
@@ -306,6 +622,17 @@ class Linear(ProductionSetter):
         capital_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate capital depreciation under linear technology.
+
+        Capital depreciation scales linearly with production,
+        using depreciation coefficients.
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            np.ndarray: Capital inputs depreciated in production
+        """
         used_capital_inputs = realised_production[:, None] * capital_inputs_depreciation_matrix
         used_capital_inputs[used_capital_inputs == np.inf] = 0.0
         used_capital_inputs[used_capital_inputs == -np.inf] = 0.0
@@ -318,6 +645,15 @@ class Linear(ProductionSetter):
 
 
 class UnconstrainedProduction(ProductionSetter):
+    """Implementation of unconstrained production technology.
+
+    This class implements a simplified production model where:
+    - No input constraints are binding
+    - All desired production is feasible
+    - Input usage is tracked but not limiting
+    - Useful for testing and special scenarios
+    """
+
     def compute_limiting_intermediate_inputs_stock(
         self,
         intermediate_inputs_productivity_matrix: np.ndarray,
@@ -325,6 +661,14 @@ class UnconstrainedProduction(ProductionSetter):
         intermediate_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
+        """Calculate intermediate input limits (unconstrained).
+
+        Args:
+            [same as parent class, all unused]
+
+        Returns:
+            np.ndarray: Production possible with intermediate inputs
+        """
         return np.multiply(
             intermediate_inputs_productivity_matrix,
             intermediate_inputs_stock,
@@ -362,7 +706,17 @@ class UnconstrainedProduction(ProductionSetter):
         capital_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
     ) -> np.ndarray:
-        return np.zeros(capital_inputs_stock.shape)
+        """Calculate capital depreciation (unconstrained).
+
+        Returns zero depreciation as production is unconstrained.
+
+        Args:
+            [same as parent class, all unused]
+
+        Returns:
+            np.ndarray: Zero capital depreciation
+        """
+        return np.zeros_like(capital_inputs_depreciation_matrix)
 
     def compute_production(
         self,
@@ -371,4 +725,17 @@ class UnconstrainedProduction(ProductionSetter):
         current_limiting_intermediate_inputs: np.ndarray,
         current_limiting_capital_inputs: np.ndarray,
     ) -> np.ndarray:
+        """Calculate production levels (unconstrained).
+
+        Simply returns desired production as no constraints apply.
+
+        Args:
+            desired_production (np.ndarray): Target production levels
+            current_labour_inputs (np.ndarray): Unused
+            current_limiting_intermediate_inputs (np.ndarray): Unused
+            current_limiting_capital_inputs (np.ndarray): Unused
+
+        Returns:
+            np.ndarray: Desired production levels (unconstrained)
+        """
         return desired_production

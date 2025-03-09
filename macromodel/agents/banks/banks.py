@@ -1,3 +1,21 @@
+"""Banking system implementation for macroeconomic modeling.
+
+This module implements the banking sector, which serves as a financial
+intermediary in the economy through:
+- Deposit taking from firms and households
+- Loan provision to firms and households
+- Interest rate setting and adjustment
+- Credit market participation
+- Financial stability monitoring
+
+The banks operate by:
+- Managing deposits and loans
+- Setting interest rates based on policy rates
+- Computing profits and equity
+- Handling insolvency cases
+- Tracking market shares
+"""
+
 from typing import Any
 
 import h5py
@@ -13,6 +31,36 @@ from macromodel.util.function_mapping import functions_from_model, update_functi
 
 
 class Banks(Agent):
+    """Banking system that intermediates between savers and borrowers.
+
+    This class represents the banking sector that facilitates financial
+    intermediation through:
+    - Deposit management (firms and households)
+    - Loan provision (short/long-term, consumption, mortgages)
+    - Interest rate setting (loans and deposits)
+    - Profit generation and equity accumulation
+    - Market share tracking
+    - Insolvency handling
+
+    The banks operate with:
+    - Policy rate-based interest rate adjustment
+    - Differentiated rates for different products
+    - Balance sheet management
+    - Profit computation and distribution
+    - Financial stability monitoring
+
+    Attributes:
+        parameters (BankParameters): Banking sector parameters
+        functions (dict[str, Any]): Function implementations
+        policy_rate_markup (float): Markup over policy rate
+        ts (TimeSeries): Time series tracking bank variables
+        states (dict): State variables including:
+            - corr_firms: Corresponding firm IDs
+            - corr_households: Corresponding household IDs
+            - is_insolvent: Bank solvency status
+            - Pass Through/ECT parameters for different products
+    """
+
     def __init__(
         self,
         country_name: str,
@@ -24,6 +72,18 @@ class Banks(Agent):
         ts: TimeSeries,
         states: dict[str, float | np.ndarray | list[np.ndarray]],
     ):
+        """Initialize banking system.
+
+        Args:
+            country_name (str): Name of the country
+            all_country_names (list[str]): List of all countries
+            n_industries (int): Number of industries
+            functions (dict[str, Any]): Function implementations
+            parameters (BankParameters): Banking sector parameters
+            policy_rate_markup (float): Markup over policy rate
+            ts (TimeSeries): Time series for tracking variables
+            states (dict): State variables and parameters
+        """
         super().__init__(
             country_name,
             all_country_names,
@@ -49,6 +109,26 @@ class Banks(Agent):
         country_name: str,
         all_country_names: list[str],
     ):
+        """Create banking system from pickled data.
+
+        Initializes banks with:
+        - Configuration parameters
+        - Synthetic bank data
+        - Interest rate parameters
+        - Corresponding firm/household mappings
+
+        Args:
+            synthetic_banks (SyntheticBanks): Synthetic bank data
+            configuration (BanksConfiguration): Bank configuration
+            policy_rate_markup (float): Markup over policy rate
+            n_industries (int): Number of industries
+            scale (int): Scale factor for histograms
+            country_name (str): Name of the country
+            all_country_names (list[str]): List of all countries
+
+        Returns:
+            Banks: Initialized banking system
+        """
         corr_firms_id = synthetic_banks.bank_data["Corresponding Firms ID"]
         corr_households_id = synthetic_banks.bank_data["Corresponding Households ID"]
         parameters = configuration.parameters
@@ -84,11 +164,33 @@ class Banks(Agent):
         )
 
     def reset(self, configuration: BanksConfiguration) -> None:
+        """Reset banking system to initial state.
+
+        Resets all state variables and updates function implementations
+        based on the provided configuration.
+
+        Args:
+            configuration (BanksConfiguration): New configuration
+        """
         self.gen_reset()
         self.parameters = configuration.parameters
         update_functions(model=configuration.functions, loc="macromodel.agents.banks", functions=self.functions)
 
     def compute_estimated_profits(self, estimated_growth: float, estimated_inflation: float) -> np.ndarray:
+        """Calculate estimated future profits.
+
+        Estimates profits based on:
+        - Current profit levels
+        - Expected economic growth
+        - Expected inflation
+
+        Args:
+            estimated_growth (float): Expected economic growth rate
+            estimated_inflation (float): Expected inflation rate
+
+        Returns:
+            np.ndarray: Estimated profits by bank
+        """
         return self.functions["profit_estimator"].compute_estimated_profits(
             current_profits=self.ts.current("profits"),
             estimated_growth=estimated_growth,
@@ -96,6 +198,26 @@ class Banks(Agent):
         )
 
     def set_interest_rates(self, central_bank_policy_rate: float) -> None:
+        """Set interest rates for all banking products.
+
+        Updates rates for:
+        - Short-term firm loans
+        - Long-term firm loans
+        - Household consumption loans
+        - Mortgages
+        - Firm deposits
+        - Household deposits
+        - Overdraft facilities
+
+        Each rate considers:
+        - Central bank policy rate
+        - Previous rate levels
+        - Pass-through parameters
+        - Error correction terms
+
+        Args:
+            central_bank_policy_rate (float): Current policy rate
+        """
         # On loans
         self.ts.interest_rates_on_short_term_firm_loans.append(
             self.functions["interest_rates"].get_interest_rates_on_short_term_firm_loans(
@@ -189,6 +311,20 @@ class Banks(Agent):
         )
 
     def compute_interest_received_on_deposits(self, central_bank_policy_rate: float) -> np.ndarray:
+        """Calculate net interest received on deposits.
+
+        Computes interest considering:
+        - Positive and negative deposit balances
+        - Different rates for firms and households
+        - Overdraft rates for negative balances
+        - Regular deposit rates for positive balances
+
+        Args:
+            central_bank_policy_rate (float): Current policy rate
+
+        Returns:
+            np.ndarray: Net interest received by bank
+        """
         return (
             central_bank_policy_rate * np.maximum(0, self.ts.current("deposits"))
             + self.ts.current("overdraft_rate_on_firm_deposits")
@@ -203,6 +339,15 @@ class Banks(Agent):
         )
 
     def compute_profits(self) -> np.ndarray:
+        """Calculate total bank profits.
+
+        Combines:
+        - Interest received on loans
+        - Net interest received on deposits
+
+        Returns:
+            np.ndarray: Total profits by bank
+        """
         return self.ts.current("interest_received_on_loans") + self.ts.current("interest_received_on_deposits")
 
     def update_deposits(
@@ -212,6 +357,20 @@ class Banks(Agent):
         firm_corresponding_bank: np.ndarray,
         households_corresponding_bank: np.ndarray,
     ) -> None:
+        """Update deposit balances.
+
+        Records:
+        - Firm deposits by bank
+        - Household deposits by bank
+        - Total deposits from firms
+        - Total deposits from households
+
+        Args:
+            current_firm_deposits (np.ndarray): Current firm deposits
+            current_household_deposits (np.ndarray): Current household deposits
+            firm_corresponding_bank (np.ndarray): Bank IDs for firms
+            households_corresponding_bank (np.ndarray): Bank IDs for households
+        """
         current_deposits_from_firms = np.bincount(
             firm_corresponding_bank,
             weights=current_firm_deposits,
@@ -228,6 +387,18 @@ class Banks(Agent):
         self.ts.total_deposits_from_households.append([current_deposits_from_households.sum()])
 
     def update_loans(self, credit_market: CreditMarket) -> None:
+        """Update loan balances.
+
+        Records:
+        - Short-term firm loans
+        - Long-term firm loans
+        - Household consumption loans
+        - Mortgages
+        - Total outstanding loans
+
+        Args:
+            credit_market (CreditMarket): Credit market instance
+        """
         self.ts.short_term_loans_to_firms.append(credit_market.compute_outstanding_short_term_firm_loans_by_bank())
         self.ts.total_short_term_loans_to_firms.append([self.ts.current("short_term_loans_to_firms").sum()])
         self.ts.long_term_loans_to_firms.append(credit_market.compute_outstanding_long_term_firm_loans_by_bank())
@@ -241,6 +412,16 @@ class Banks(Agent):
         self.ts.total_outstanding_loans.append(credit_market.compute_outstanding_loans_by_bank())
 
     def compute_market_share(self) -> np.ndarray:
+        """Calculate market share of each bank.
+
+        Based on:
+        - Total outstanding loans
+        - Total deposits from firms
+        - Total deposits from households
+
+        Returns:
+            np.ndarray: Market share by bank
+        """
         total_amount_of_loans_and_deposits = (
             np.absolute(self.ts.current("total_outstanding_loans")).sum()
             + np.absolute(self.ts.current("deposits_from_firms")).sum()
@@ -256,6 +437,19 @@ class Banks(Agent):
             return np.full(self.ts.current("n_banks"), 1.0 / self.ts.current("n_banks"))
 
     def compute_equity(self, profit_taxes: float) -> np.ndarray:
+        """Calculate bank equity.
+
+        Considers:
+        - Current equity levels
+        - After-tax profits
+        - Insolvency status
+
+        Args:
+            profit_taxes (float): Tax rate on profits
+
+        Returns:
+            np.ndarray: Equity by bank
+        """
         return (
             self.ts.current("equity")
             + self.ts.current("profits")
@@ -263,6 +457,15 @@ class Banks(Agent):
         )
 
     def compute_liability(self) -> np.ndarray:
+        """Calculate total bank liabilities.
+
+        Sums:
+        - Deposits from firms
+        - Deposits from households
+
+        Returns:
+            np.ndarray: Total liabilities by bank
+        """
         return (
             self.ts.current("equity")
             + np.maximum(0, self.ts.current("deposits_from_firms"))
@@ -271,6 +474,15 @@ class Banks(Agent):
         )
 
     def compute_deposits(self) -> np.ndarray:
+        """Calculate total deposits.
+
+        Sums:
+        - Deposits from firms
+        - Deposits from households
+
+        Returns:
+            np.ndarray: Total deposits by bank
+        """
         return (
             self.ts.current("deposits_from_firms")
             + self.ts.current("deposits_from_households")
@@ -279,6 +491,20 @@ class Banks(Agent):
         )
 
     def handle_insolvency(self, credit_market: CreditMarket) -> float:
+        """Handle insolvent banks.
+
+        Processes:
+        - Identification of insolvent banks
+        - Marking of insolvent status
+        - Credit market adjustments
+        - Loss computation
+
+        Args:
+            credit_market (CreditMarket): Credit market instance
+
+        Returns:
+            float: Total losses from insolvency
+        """
         equity_injection, average_equity = self.functions["demography"].handle_bank_insolvency(
             current_bank_equity=self.ts.current("equity"),
             current_bank_loans=self.ts.current("total_outstanding_loans"),
@@ -305,9 +531,21 @@ class Banks(Agent):
         return equity_injection
 
     def compute_insolvency_rate(self) -> float:
+        """Calculate bank insolvency rate.
+
+        Returns:
+            float: Fraction of banks that are insolvent
+        """
         insolvency_rate = self.states["is_insolvent"].mean()
         self.states["is_insolvent"] = np.full(self.ts.current("n_banks"), False)
         return insolvency_rate
 
     def save_to_h5(self, group: h5py.Group):
+        """Save bank data to HDF5.
+
+        Stores all time series data in the specified HDF5 group.
+
+        Args:
+            group (h5py.Group): HDF5 group to save data in
+        """
         self.ts.write_to_h5("banks", group)

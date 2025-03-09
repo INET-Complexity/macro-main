@@ -1,4 +1,56 @@
+"""
+This module provides industry mapping dictionaries for both WIOD (World Input-Output Database)
+and ICIO (Inter-Country Input Output) tables. It defines the relationships between detailed
+industry codes and their aggregated sectors, enabling flexible analysis at different levels
+of granularity.
+
+The module supports two main data sources:
+1. WIOD (World Input-Output Database)
+2. ICIO (OECD Inter-Country Input Output Tables)
+
+For each data source, two types of mappings are provided:
+1. AGGREGATE: Maps detailed industry codes to their high-level sectors
+2. ALL: Maintains detailed industry codes while providing a consistent structure
+
+Each mapping has an inverse version (e.g., WIOD_AGGREGATE_INV) that maps from
+detailed codes to their parent sectors, useful for reverse lookups.
+
+Example:
+    ```python
+    from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE, ICIO_ALL
+
+    # Using aggregate mapping
+    manufacturing_subsectors = ICIO_AGGREGATE['C']  # Get all manufacturing industries
+
+    # Using detailed mapping
+    chemical_sector = ICIO_ALL['C20']  # Get chemical industry details
+    ```
+"""
+
+
 def sub_to_aggregate(dictio: dict[str, list[str]]) -> dict[str, str]:
+    """
+    Create an inverse mapping from sub-sectors to their aggregate sectors.
+
+    This utility function inverts a mapping dictionary, creating a new dictionary
+    where each sub-sector maps to its parent aggregate sector. This is useful for
+    quickly determining which aggregate sector a detailed industry code belongs to.
+
+    Args:
+        dictio (dict[str, list[str]]): Original mapping where keys are aggregate
+            sectors and values are lists of sub-sectors
+
+    Returns:
+        dict[str, str]: Inverted mapping where keys are sub-sectors and values
+            are their corresponding aggregate sectors
+
+    Example:
+        ```python
+        original = {'C': ['C10', 'C11', 'C12']}
+        inverse = sub_to_aggregate(original)
+        # Result: {'C10': 'C', 'C11': 'C', 'C12': 'C'}
+        ```
+    """
     new_dict = {}
     for aggregate_sector, sub_sectors in dictio.items():
         for sub_sector in sub_sectors:
@@ -6,6 +58,9 @@ def sub_to_aggregate(dictio: dict[str, list[str]]) -> dict[str, str]:
     return new_dict
 
 
+# WIOD (World Input-Output Database) industry mappings
+
+# Maps detailed WIOD industry codes to their aggregate sectors
 WIOD_AGGREGATE = {
     "A": ["A01", "A02", "A03"],
     "B": ["B"],
@@ -60,8 +115,10 @@ WIOD_AGGREGATE = {
     "IntTTM": ["IntTTM"],
 }
 
+# Inverse mapping from detailed to aggregate WIOD codes
 WIOD_AGGREGATE_INV = sub_to_aggregate(WIOD_AGGREGATE)
 
+# Detailed WIOD industry mapping maintaining full granularity
 WIOD_ALL = {
     "A01": ["A01"],
     "A03": ["A03"],
@@ -111,8 +168,12 @@ WIOD_ALL = {
     "U": ["U"],
 }
 
+# Inverse mapping from detailed to aggregate WIOD codes (full granularity)
 WIOD_ALL_INV = sub_to_aggregate(WIOD_ALL)
 
+# ICIO (OECD Inter-Country Input Output) industry mappings
+
+# Maps detailed ICIO industry codes to their aggregate sectors
 ICIO_AGGREGATE = {
     "A": ["A01", "A03"],
     "B": ["B05", "B07", "B09"],
@@ -158,8 +219,10 @@ ICIO_AGGREGATE = {
     "Gross Output": ["OUT"],
 }
 
+# Inverse mapping from detailed to aggregate ICIO codes
 ICIO_AGGREGATE_INV = sub_to_aggregate(ICIO_AGGREGATE)
 
+# Detailed ICIO industry mapping maintaining full granularity
 ICIO_ALL = {
     "A01": ["A01"],
     "A03": ["A03"],
@@ -212,4 +275,5 @@ ICIO_ALL = {
     "Gross Output": ["OUT"],
 }
 
+# Inverse mapping from detailed to aggregate ICIO codes (full granularity)
 ICIO_ALL_INV = sub_to_aggregate(ICIO_ALL)
