@@ -5,12 +5,44 @@ import numpy as np
 
 
 class FirmWageSetter(ABC):
+    """Abstract base class for determining firms' wage-setting strategies.
+
+    This class defines strategies for calculating wages based on:
+    - Labor market conditions (tightness, supply/demand)
+    - Worker productivity and effort
+    - Tax considerations
+    - Historical wage levels and adjustments
+
+    The wage setting process considers:
+    - Market tightness markups based on hiring success
+    - Work effort incentives
+    - Tax-adjusted gross/net wage conversions
+
+    Attributes:
+        labour_market_tightness_markup_scale (float): Scale factor for wage
+            adjustments based on labor market tightness
+        markup_time_span (int): Number of periods to consider when calculating
+            labor market tightness markup
+        max_increase_in_work_effort (float): Maximum allowed increase in
+            work effort-based wage adjustments
+    """
+
     def __init__(
         self,
         labour_market_tightness_markup_scale: float,
         markup_time_span: int,
         max_increase_in_work_effort: float,
     ):
+        """Initialize the wage setter with markup parameters.
+
+        Args:
+            labour_market_tightness_markup_scale (float): Scale factor for
+                wage adjustments based on labor market tightness
+            markup_time_span (int): Number of periods to consider when
+                calculating labor market tightness markup
+            max_increase_in_work_effort (float): Maximum allowed increase
+                in work effort-based wage adjustments
+        """
         self.labour_market_tightness_markup_scale = labour_market_tightness_markup_scale
         self.markup_time_span = markup_time_span
         self.max_increase_in_work_effort = max_increase_in_work_effort
@@ -21,6 +53,20 @@ class FirmWageSetter(ABC):
         historic_desired_labour_inputs: list[np.ndarray],
         historic_realised_labour_inputs: list[np.ndarray],
     ) -> np.ndarray:
+        """Calculate wage markup based on labor market tightness.
+
+        Uses historical data on desired vs. realized labor inputs to
+        determine wage adjustments that reflect labor market conditions.
+
+        Args:
+            historic_desired_labour_inputs (list[np.ndarray]): Time series
+                of desired labor inputs by firm
+            historic_realised_labour_inputs (list[np.ndarray]): Time series
+                of actually achieved labor inputs by firm
+
+        Returns:
+            np.ndarray: Wage markup factors by firm based on labor market tightness
+        """
         pass
 
     @abstractmethod
@@ -46,6 +92,39 @@ class FirmWageSetter(ABC):
         employee_social_insurance_tax: float,
         employer_social_insurance_tax: float,
     ) -> np.ndarray:
+        """Set employee incomes considering all relevant factors.
+
+        Determines wages based on:
+        - Individual labor inputs and productivity
+        - Market conditions and tightness
+        - Tax rates and social insurance
+        - New vs. existing employee status
+        - Production constraints and targets
+
+        Args:
+            corresponding_firm (np.ndarray): Firm ID for each employee
+            current_individual_labour_inputs (np.ndarray): Labor input by employee
+            current_individual_stating_new_job (np.ndarray): New job indicators
+            current_employee_income (np.ndarray): Current income levels
+            current_individual_offered_wage (np.ndarray): Offered wages for new hires
+            current_target_production (np.ndarray): Production targets by firm
+            current_limiting_intermediate_inputs (np.ndarray): Input constraints
+            current_limiting_capital_inputs (np.ndarray): Capital constraints
+            labour_inputs_from_employees (np.ndarray): Employee labor contributions
+            industry_labour_productivity_by_firm (np.ndarray): Productivity metrics
+            initial_wage_per_capita (np.ndarray): Base wage levels
+            current_wage_per_capita (np.ndarray): Current wage levels
+            current_labour_productivity_factor (np.ndarray): Current productivity
+            prev_labour_productivity_factor (np.ndarray): Previous productivity
+            current_wage_tightness_markup (np.ndarray): Market condition adjustments
+            estimated_ppi_inflation (float): Expected price inflation
+            income_taxes (float): Income tax rate
+            employee_social_insurance_tax (float): Employee SI tax rate
+            employer_social_insurance_tax (float): Employer SI tax rate
+
+        Returns:
+            np.ndarray: Updated employee incomes
+        """
         pass
 
     @abstractmethod
@@ -68,15 +147,77 @@ class FirmWageSetter(ABC):
         employer_social_insurance_tax: float,
         unemployment_benefits_by_individual: float,
     ) -> Callable[[int, float | np.ndarray], float | np.ndarray]:
+        """Create a function that calculates offered wages based on labor inputs.
+
+        Returns a callable that firms can use to determine appropriate wage
+        offers for different levels of labor input, considering:
+        - Current market conditions
+        - Productivity factors
+        - Tax rates
+        - Unemployment benefits (reservation wages)
+
+        Args:
+            corresponding_firm (np.ndarray): Firm ID for each employee
+            current_individual_labour_inputs (np.ndarray): Labor input by employee
+            previous_employee_income (np.ndarray): Previous income levels
+            current_target_production (np.ndarray): Production targets by firm
+            current_limiting_intermediate_inputs (np.ndarray): Input constraints
+            current_limiting_capital_inputs (np.ndarray): Capital constraints
+            industry_labour_productivity_by_firm (np.ndarray): Productivity metrics
+            initial_wage_per_capita (np.ndarray): Base wage levels
+            current_wage_per_capita (np.ndarray): Current wage levels
+            current_labour_productivity_factor (np.ndarray): Current productivity
+            prev_labour_productivity_factor (np.ndarray): Previous productivity
+            current_wage_tightness_markup (np.ndarray): Market condition adjustments
+            income_taxes (float): Income tax rate
+            employee_social_insurance_tax (float): Employee SI tax rate
+            employer_social_insurance_tax (float): Employer SI tax rate
+            unemployment_benefits_by_individual (float): Minimum wage floor
+
+        Returns:
+            Callable[[int, float | np.ndarray], float | np.ndarray]: Function that
+                takes firm ID and labor inputs and returns offered wages
+        """
         pass
 
 
 class WorkEffortFirmWageSetter(FirmWageSetter):
+    """Implementation of wage setting based on work effort considerations.
+
+    This class implements a wage-setting strategy that:
+    1. Adjusts wages based on labor market tightness
+    2. Considers productivity changes
+    3. Ensures wages exceed unemployment benefits
+    4. Accounts for tax implications
+
+    The approach aims to:
+    - Incentivize optimal work effort
+    - Respond to labor market conditions
+    - Maintain fair compensation relative to productivity
+    - Ensure tax compliance
+    """
+
     def compute_wage_tightness_markup(
         self,
         historic_desired_labour_inputs: list[np.ndarray],
         historic_realised_labour_inputs: list[np.ndarray],
     ) -> np.ndarray:
+        """Calculate wage markup based on historical labor market tightness.
+
+        Computes markup as the weighted average of past hiring shortfalls:
+        - Zero markup if scale parameter is zero
+        - Otherwise, considers up to markup_time_span periods
+        - Weights recent periods equally within the span
+
+        Args:
+            historic_desired_labour_inputs (list[np.ndarray]): Time series
+                of desired labor inputs by firm
+            historic_realised_labour_inputs (list[np.ndarray]): Time series
+                of actually achieved labor inputs by firm
+
+        Returns:
+            np.ndarray: Wage markup factors reflecting hiring difficulty
+        """
         if self.labour_market_tightness_markup_scale == 0.0:
             return np.zeros(historic_desired_labour_inputs[0].shape)
 
@@ -118,6 +259,20 @@ class WorkEffortFirmWageSetter(FirmWageSetter):
         employee_social_insurance_tax: float,
         employer_social_insurance_tax: float,
     ) -> np.ndarray:
+        """Set employee incomes based on work effort and market conditions.
+
+        Calculates wages considering:
+        1. Base wages adjusted for productivity changes
+        2. Market tightness markup
+        3. Tax implications for gross/net conversion
+        4. Different treatment for new vs. existing employees
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            np.ndarray: Updated employee incomes adjusted for all factors
+        """
         tax = (1.0 + employer_social_insurance_tax) / (
             1 - employee_social_insurance_tax - income_taxes * (1 - employee_social_insurance_tax)
         )
@@ -165,6 +320,21 @@ class WorkEffortFirmWageSetter(FirmWageSetter):
         employer_social_insurance_tax: float,
         unemployment_benefits_by_individual: float,
     ) -> Callable[[int, float | np.ndarray], float | np.ndarray]:
+        """Create a function for calculating wage offers based on work effort.
+
+        Returns a callable that:
+        1. Calculates base wage from historical averages
+        2. Adjusts for productivity changes
+        3. Applies market tightness markup
+        4. Ensures wages exceed unemployment benefits
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            Callable[[int, float | np.ndarray], float | np.ndarray]: Function that
+                calculates appropriate wage offers given firm ID and labor inputs
+        """
         total_real_wages = np.bincount(
             corresponding_firm,
             weights=previous_employee_income,
@@ -183,8 +353,16 @@ class WorkEffortFirmWageSetter(FirmWageSetter):
             / total_labour_inputs
         )
 
-        # Create a function
         def f(firm_id: int, labour_inputs: float | np.ndarray) -> float | np.ndarray:
+            """Calculate wage offer for given firm and labor inputs.
+
+            Args:
+                firm_id (int): ID of the firm making the offer
+                labour_inputs (float | np.ndarray): Proposed labor input level(s)
+
+            Returns:
+                float | np.ndarray: Wage offer(s) that exceed unemployment benefits
+            """
             return np.maximum(
                 unemployment_benefits_by_individual,
                 labour_inputs * new_individual_wages[firm_id],

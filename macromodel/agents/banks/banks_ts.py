@@ -1,3 +1,19 @@
+"""Time series management for banking system.
+
+This module handles time series data for the banking sector, tracking:
+- Balance sheet components (equity, deposits, loans)
+- Interest rates for various products
+- Profit and market share metrics
+- Loan portfolio composition
+- Aggregate banking statistics
+
+The time series provide historical tracking of:
+- Bank-level variables
+- System-wide aggregates
+- Interest rate dynamics
+- Portfolio distributions
+"""
+
 import numpy as np
 import pandas as pd
 
@@ -6,6 +22,57 @@ from macromodel.util.get_histogram import get_histogram
 
 
 def create_banks_timeseries(bank_data: pd.DataFrame, scale: int) -> TimeSeries:
+    """Create time series for banking system.
+
+    Initializes time series tracking for:
+    - Balance sheet components
+    - Interest rates and spreads
+    - Profit metrics
+    - Market shares
+    - Loan portfolios
+
+    The time series include:
+    - Bank-level variables
+    - System-wide aggregates
+    - Distributional metrics
+    - Portfolio composition
+
+    Balance sheet components:
+    - Equity and deposits
+    - Loans by type (firm, household)
+    - Total assets and liabilities
+
+    Interest rates:
+    - Loan rates by product
+    - Deposit rates by customer
+    - Overdraft rates
+    - Average rates
+
+    Portfolio metrics:
+    - Loan composition
+    - Market shares
+    - Profit components
+    - Interest income
+
+    Args:
+        bank_data (pd.DataFrame): Initial bank data containing:
+            - Balance sheet items
+            - Interest rates
+            - Portfolio composition
+            - Market metrics
+        scale (int): Scale factor for histogram computation
+
+    Returns:
+        TimeSeries: Initialized time series containing:
+            - n_banks: Number of banks
+            - equity/deposits/profits: Balance sheet items
+            - market_share: Bank market shares
+            - liability: Total liabilities
+            - deposits_from_firms/households: Deposit breakdown
+            - loans_to_firms/households: Loan portfolio
+            - interest_rates: Various product rates
+            - new_loans_fraction: Portfolio composition
+    """
     return TimeSeries(
         n_banks=len(bank_data),
         #
