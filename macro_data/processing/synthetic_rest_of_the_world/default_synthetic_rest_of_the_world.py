@@ -1,3 +1,56 @@
+"""Default implementation of Rest of the World (ROW) data preprocessing.
+
+This module provides the standard implementation for managing Rest of the World data,
+focusing on:
+
+1. Data Integration:
+   - Reading from standard data sources
+   - Converting between currencies
+   - Aggregating trade flows
+   - Computing market shares
+
+2. Market Structure:
+   - Determining exporter counts
+   - Scaling importer numbers
+   - Preserving trade relationships
+   - Initializing agent distributions
+
+3. Growth Modeling:
+   - Fitting export growth models
+   - Estimating import trends
+   - Processing historical patterns
+   - Handling missing data
+
+4. Configuration Options:
+   - Flexible exporter allocation
+   - Configurable growth modeling
+   - Currency conversion handling
+   - Market structure settings
+
+Note:
+    This implementation provides reasonable defaults for ROW preprocessing,
+    suitable for most standard simulation scenarios. Custom implementations
+    can extend this class for specific requirements.
+
+Example:
+    ```python
+    from macro_data.readers import DataReaders
+    from macro_data.configuration import ROWDataConfiguration
+
+    readers = DataReaders(...)
+    config = ROWDataConfiguration(...)
+
+    row = DefaultSyntheticRestOfTheWorld.from_readers(
+        year=2023,
+        readers=readers,
+        industry_data=industry_data,
+        n_sellers_by_industry=sellers,
+        n_buyers=buyers,
+        row_configuration=config
+    )
+    ```
+"""
+
 from typing import Optional
 
 import numpy as np
@@ -12,6 +65,21 @@ from macro_data.readers.default_readers import DataReaders
 
 
 class DefaultSyntheticRestOfTheWorld(SyntheticRestOfTheWorld):
+    """Default implementation of Rest of the World data preprocessing.
+
+    This class provides a standard implementation for ROW data management with:
+    1. Automated data reading and currency conversion
+    2. Flexible market structure initialization
+    3. Configurable growth model fitting
+    4. Trade flow aggregation and scaling
+
+    The implementation supports:
+    - Optional growth model fitting for exports/imports
+    - Configurable exporter allocation by industry
+    - Automatic scaling of importer numbers
+    - Currency conversion handling
+    """
+
     def __init__(
         self,
         year: int,
@@ -21,6 +89,16 @@ class DefaultSyntheticRestOfTheWorld(SyntheticRestOfTheWorld):
         exports_model: Optional[LinearRegression],
         imports_model: Optional[LinearRegression],
     ):
+        """Initialize the default ROW implementation.
+
+        Args:
+            year (int): Reference year for the data
+            row_data (pd.DataFrame): Aggregated economic data for ROW
+            n_exporters_by_industry (np.ndarray): Number of exporting agents by industry
+            n_importers (int): Number of importing agents
+            exports_model (Optional[LinearRegression]): Model for export growth
+            imports_model (Optional[LinearRegression]): Model for import growth
+        """
         super().__init__(
             year=year,
             row_data=row_data,
@@ -42,6 +120,33 @@ class DefaultSyntheticRestOfTheWorld(SyntheticRestOfTheWorld):
         row_exports_growth: Optional[pd.Series] = None,
         row_imports_growth: Optional[pd.Series] = None,
     ):
+        """Create a ROW instance from data readers and configuration.
+
+        This method:
+        1. Aggregates trade data for non-simulated countries
+        2. Converts currencies using exchange rates
+        3. Fits growth models if configured
+        4. Initializes market structure
+
+        Args:
+            year (int): Reference year for the data
+            readers (DataReaders): Data source readers
+            industry_data (dict[str, dict[str, pd.DataFrame]]): Industry data by country
+            n_sellers_by_industry (np.ndarray): Number of sellers by industry in
+                simulated countries
+            n_buyers (int): Number of buyers in simulated countries
+            row_configuration (ROWDataConfiguration): Configuration settings for ROW
+            row_exports_growth (Optional[pd.Series], optional): Historical export
+                growth data. Required if fit_exports is True.
+            row_imports_growth (Optional[pd.Series], optional): Historical import
+                growth data. Required if fit_imports is True.
+
+        Returns:
+            DefaultSyntheticRestOfTheWorld: Initialized ROW instance
+
+        Raises:
+            ValueError: If growth data is required but not provided
+        """
         row_industry_data = industry_data["ROW"]
 
         total_imports = sum(
