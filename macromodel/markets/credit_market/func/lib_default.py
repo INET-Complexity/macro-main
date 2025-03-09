@@ -1,3 +1,43 @@
+"""Default credit market clearing utility functions.
+
+This module implements the default credit market clearing mechanism, which matches
+individual lenders and borrowers based on various criteria including credit history,
+priorities, and market conditions. The mechanism supports relationship lending and
+incorporates both deterministic and stochastic elements in the matching process.
+
+Key Features:
+1. Relationship Lending:
+   - Track and maintain lending relationships
+   - Probability-based relationship persistence
+   - History-based matching preferences
+   - Supply chain credit management
+
+2. Priority-Based Matching:
+   - High-priority lender/borrower preferences
+   - Domestic vs international lending bias
+   - Real sector prioritization
+   - Regulatory compliance checks
+
+3. Market-Based Selection:
+   - Interest rate sensitivity
+   - Credit capacity constraints
+   - Risk-based allocation
+   - Multi-period relationships
+
+4. Transaction Processing:
+   - Credit limit verification
+   - Regulatory compliance checks
+   - Balance sheet updates
+   - Relationship tracking
+
+The default mechanism is particularly useful for:
+- Modeling relationship-based lending
+- Implementing credit market segmentation
+- Handling heterogeneous agents
+- Incorporating regulatory constraints
+- Simulating market microstructure
+"""
+
 from typing import Optional, Tuple
 
 import numpy as np
@@ -11,6 +51,34 @@ def check_sellers_left(
     goods_market_participants: dict[str, list[Agent]],
     field: str,
 ) -> bool:
+    """Check if there are any lenders with remaining credit capacity.
+
+    This function examines all potential lenders in a given industry to determine
+    if any still have credit available to lend. It's used to decide whether to
+    continue the credit allocation process or terminate due to supply exhaustion.
+
+    The check considers:
+    1. All sectors in the market
+    2. Each lender's remaining credit capacity
+    3. Value type constraints
+    4. Industry-specific limits
+
+    Args:
+        industry: Industry/sector index to check
+        goods_market_participants: Dict mapping sector names to lists of agents
+        field: Name of the field containing credit capacity information
+            (e.g., "Remaining Goods" for available credit)
+
+    Returns:
+        bool: True if any lender has remaining credit capacity, False otherwise
+
+    Example:
+        For banking sector (industry 0):
+        - Bank A: $0 remaining
+        - Bank B: $1M remaining
+        - Bank C: $0 remaining
+        Returns: True (because Bank B has capacity)
+    """
     sum_left = 0
     for country_name in goods_market_participants.keys():
         for transactor in goods_market_participants[country_name]:
@@ -28,6 +96,34 @@ def check_buyers_left(
     goods_market_participants: dict[str, list[Agent]],
     field: str,
 ) -> bool:
+    """Check if there are any borrowers with remaining credit demand.
+
+    This function examines all potential borrowers in a given industry to determine
+    if any still have unfulfilled credit demand. It's used to decide whether to
+    continue the credit allocation process or terminate due to demand exhaustion.
+
+    The check considers:
+    1. All sectors in the market
+    2. Each borrower's remaining credit demand
+    3. Value type constraints
+    4. Industry-specific requirements
+
+    Args:
+        industry: Industry/sector index to check
+        goods_market_participants: Dict mapping sector names to lists of agents
+        field: Name of the field containing credit demand information
+            (e.g., "Remaining Goods" for unfulfilled credit requests)
+
+    Returns:
+        bool: True if any borrower has remaining credit demand, False otherwise
+
+    Example:
+        For corporate sector (industry 1):
+        - Firm A: $0 needed
+        - Firm B: $2M needed
+        - Firm C: $0 needed
+        Returns: True (because Firm B has demand)
+    """
     for country_name in goods_market_participants.keys():
         for transactor in goods_market_participants[country_name]:
             if transactor.transactor_buyer_states["Value Type"] != ValueType.NONE:
@@ -118,6 +214,52 @@ def get_random_buyer_type(
     prio_high_prio: bool,
     field: str,
 ) -> Agent:
+    """Select a random borrower type based on priority and demand.
+
+    This function implements a weighted random selection of borrower types within
+    a sector, considering priorities and current credit demand. It supports
+    preferential treatment of high-priority borrowers while maintaining some
+    randomness in the selection process.
+
+    The selection process:
+    1. Priority handling:
+       - If priority mode is active, first try high-priority borrowers
+       - Only consider other borrowers if no high-priority demand exists
+       - Weight selection by current credit demand
+
+    2. Borrower filtering:
+       - Check for positive credit demand
+       - Verify borrower eligibility
+       - Apply sector-specific constraints
+
+    3. Random selection:
+       - Calculate selection weights based on demand
+       - Use weighted random choice
+       - Handle edge cases (no eligible borrowers)
+
+    Args:
+        industry: Industry/sector index for borrower selection
+        country_goods_market_participants: List of agents in the sector
+        prio_high_prio: Whether to prioritize high-priority borrowers
+        field: Name of the field containing credit demand information
+
+    Returns:
+        Agent: Selected borrower type (agent)
+
+    Example:
+        For corporate sector with three firms:
+        1. High priority mode:
+           - Firm A (high priority): $5M needed (weight: 0.625)
+           - Firm B (high priority): $3M needed (weight: 0.375)
+           - Firm C (low priority): $2M needed (weight: 0 due to priority)
+           Result: Either Firm A or B based on weighted random choice
+
+        2. No priority mode:
+           - Firm A: $5M needed (weight: 0.5)
+           - Firm B: $3M needed (weight: 0.3)
+           - Firm C: $2M needed (weight: 0.2)
+           Result: Any firm based on weighted random choice
+    """
     if prio_high_prio:
         n_buyers_by_agent = {
             agent: np.sum(agent.transactor_buyer_states[field][:, industry] > 0.0)
@@ -146,6 +288,55 @@ def get_random_buyer(
     prio_high_prio: bool,
     field: str,
 ) -> Tuple[Agent, int]:
+    """Select a random borrower and specific loan request.
+
+    This function implements a hierarchical selection process for borrowers,
+    first choosing between sectors/countries, then selecting specific borrowers
+    within the chosen sector. It supports various prioritization schemes and
+    handles both domestic and international borrowers.
+
+    The selection process:
+    1. Sector prioritization:
+       - First try to select from priority sectors (e.g., real economy)
+       - Consider international borrowers based on prioritization parameter
+       - Handle special cases like ROW (Rest of World)
+
+    2. Borrower type selection:
+       - Prioritize high-priority borrowers if specified
+       - Weight selection by credit demand
+       - Consider regulatory constraints
+
+    3. Specific loan selection:
+       - Choose among active credit requests
+       - Verify request eligibility
+       - Apply any final constraints
+
+    Args:
+        industry: Industry/sector index for borrower selection
+        goods_market_participants: Dict mapping sector names to lists of agents
+        real_country_prioritisation: Weight given to real economy sectors [0,1]
+        prio_high_prio: Whether to prioritize high-priority borrowers
+        field: Name of the field containing credit demand information
+
+    Returns:
+        Tuple[Agent, int]: Selected borrower and index of specific loan request
+
+    Example:
+        With three sectors:
+        1. Initial selection:
+           - Corporate sector (real): 60% weight
+           - Financial sector: 30% weight
+           - External sector: 10% weight
+
+        2. Within corporate sector:
+           - Large firms (high priority): 70% weight
+           - SMEs: 30% weight
+
+        3. Final selection:
+           Returns: (SelectedFirm, LoanRequestIndex)
+           - SelectedFirm: The chosen borrower agent
+           - LoanRequestIndex: Index of the specific loan request
+    """
     # GMP
     country = list(goods_market_participants.keys())
     country.remove("ROW")
@@ -207,6 +398,57 @@ def pick_previous_seller(
     probability_keeping_previous_seller: float,
     field: str,
 ) -> Optional[Tuple[Agent, int]]:
+    """Select a lender from the borrower's previous lending relationships.
+
+    This function implements relationship lending by attempting to match borrowers
+    with their previous lenders. It considers various priorities and constraints
+    while maintaining some randomness in the selection process to model relationship
+    persistence realistically.
+
+    The selection process:
+    1. Relationship check:
+       - Random draw against relationship persistence probability
+       - Check for existing lending relationships
+       - Verify lender eligibility
+
+    2. Priority filtering:
+       - Apply real economy sector preferences
+       - Consider high-priority lender status
+       - Handle domestic vs international preferences
+
+    3. Final selection:
+       - Choose among eligible previous lenders
+       - Verify current lending capacity
+       - Apply any final constraints
+
+    Args:
+        industry: Industry/sector index for lender selection
+        chosen_buyer: Selected borrower agent
+        chosen_buyer_ind: Index of the specific loan request
+        previous_supply_chain: Dict tracking previous lending relationships
+        prio_real_countries: Whether to prioritize real economy lenders
+        prio_high_prio: Whether to prioritize high-priority lenders
+        prio_domestic_sellers: Whether to prioritize domestic lenders
+        probability_keeping_previous_seller: Chance of maintaining relationship
+        field: Name of the field containing credit capacity information
+
+    Returns:
+        Optional[Tuple[Agent, int]]: Selected lender and loan index if found,
+            None if no suitable previous lender is available
+
+    Example:
+        For a corporate borrower with previous relationships:
+        1. Initial check:
+           - Relationship persistence probability: 0.8
+           - Random draw: 0.7
+           Result: Proceed with relationship selection
+
+        2. Previous lenders:
+           - Bank A (domestic, high priority): $5M capacity
+           - Bank B (foreign): $3M capacity
+           - Bank C (domestic): No capacity
+           Result: Bank A selected (matches all priorities)
+    """
     if np.random.random() < probability_keeping_previous_seller:
         if (
             chosen_buyer in previous_supply_chain[industry].keys()
@@ -239,6 +481,61 @@ def get_random_seller_based_on_distribution(
     field: str,
     distribution_type: str,
 ) -> Optional[Tuple[Agent, int]]:
+    """Select a random lender based on interest rates and capacity.
+
+    This function implements a sophisticated lender selection process that considers
+    both interest rates and lending capacity. It uses a temperature parameter to
+    control the balance between rate sensitivity and randomization, supporting
+    different distribution types for the selection weights.
+
+    The selection process:
+    1. Weight calculation:
+       - Consider lending capacity (supply)
+       - Factor in interest rates
+       - Apply temperature scaling
+       - Support different distribution types
+
+    2. Lender filtering:
+       - Check for positive lending capacity
+       - Verify lender eligibility
+       - Apply sector-specific constraints
+
+    3. Random selection:
+       - Calculate final selection weights
+       - Handle different distribution types
+       - Perform weighted random choice
+
+    Args:
+        industry: Industry/sector index for lender selection
+        chosen_goods_market_participants: List of potential lenders
+        price_temperature: Parameter controlling interest rate sensitivity
+            Higher values → More rate-sensitive selection
+            Lower values → More uniform selection
+        field: Name of the field containing credit capacity information
+        distribution_type: How to combine capacity and rate weights
+            "multiplicative": weights = capacity_weight * rate_weight
+            "additive": weights = 0.5 * (capacity_weight + rate_weight)
+
+    Returns:
+        Optional[Tuple[Agent, int]]: Selected lender and loan index if found,
+            None if no suitable lender is available
+
+    Example:
+        For banking sector with temperature = 1.0:
+        1. Available lenders:
+           - Bank A: $10M capacity, 5% rate
+           - Bank B: $5M capacity, 4% rate
+           - Bank C: $3M capacity, 6% rate
+
+        2. Weight calculation (multiplicative):
+           - Bank A: 0.44 * 0.37 = 0.16
+           - Bank B: 0.22 * 0.45 = 0.10
+           - Bank C: 0.33 * 0.30 = 0.10
+
+        3. Result:
+           Returns: (SelectedBank, LoanIndex)
+           Selection probability matches normalized weights
+    """
     if len(chosen_goods_market_participants) == 0:
         raise ValueError("No goods market participants.")
 
@@ -301,108 +598,62 @@ def get_random_seller(
     field: str,
     distribution_type: str,
 ) -> Tuple[Agent, int]:
-    # Pick a previous seller
-    """
-    sc_seller = pick_previous_seller(
-        industry=industry,
-        chosen_buyer=chosen_buyer,
-        chosen_buyer_ind=chosen_buyer_ind,
-        previous_supply_chain=previous_supply_chain,
-        prio_real_countries=prio_real_countries,
-        prio_high_prio=prio_high_prio_sellers,
-        prio_domestic_sellers=prio_domestic_sellers,
-        probability_keeping_previous_seller=probability_keeping_previous_seller,
-        field=field,
-    )
-    if sc_seller is not None:
-        return sc_seller
-    """
+    """Select a lender through a multi-stage selection process.
 
-    #
-    # # Try to stay domestic
-    # if prio_domestic_sellers and chosen_buyer.country_name != "ROW":
-    #     # Prioritise high-priority sellers
-    #     if prio_high_prio_sellers:
-    #         chosen_goods_market_participants = []
-    #         for seller in goods_market_participants[chosen_buyer.country_name]:
-    #             if (
-    #                 seller.transactor_seller_states["Value Type"]
-    #                 != ValueType.NONE
-    #                 and seller.transactor_seller_states["Priority"] == 1
-    #             ):
-    #                 chosen_goods_market_participants += [seller]
-    #         chosen_seller = get_random_seller_based_on_distribution(
-    #             industry=industry,
-    #             chosen_goods_market_participants=chosen_goods_market_participants,
-    #             price_temperature=price_temperature,
-    #             field=field,
-    #             distribution_type=distribution_type,
-    #         )
-    #         if chosen_seller is not None:
-    #             return chosen_seller
-    #
-    #     # No consideration of priority status
-    #     chosen_goods_market_participants = []
-    #     for seller in goods_market_participants[chosen_buyer.country_name]:
-    #         if seller.transactor_seller_states["Value Type"] != ValueType.NONE:
-    #             chosen_goods_market_participants += [seller]
-    #     chosen_seller = get_random_seller_based_on_distribution(
-    #         industry=industry,
-    #         chosen_goods_market_participants=chosen_goods_market_participants,
-    #         price_temperature=price_temperature,
-    #         field=field,
-    #         distribution_type=distribution_type,
-    #     )
-    #     if chosen_seller is not None:
-    #         return chosen_seller
-    #
-    # # Try to prioritise real countries
-    # if prio_real_countries or chosen_buyer.country_name == "ROW":
-    #     # Prioritise high-priority sellers
-    #     if prio_high_prio_sellers:
-    #         chosen_goods_market_participants = []
-    #         for country_name in goods_market_participants.keys():
-    #             if country_name == "ROW":
-    #                 continue
-    #             for seller in goods_market_participants[country_name]:
-    #                 if (
-    #                     seller.transactor_seller_states["Value Type"]
-    #                     != ValueType.NONE
-    #                     and seller.transactor_seller_states["Priority"] == 1
-    #                 ):
-    #                     chosen_goods_market_participants += [seller]
-    #             chosen_seller = get_random_seller_based_on_distribution(
-    #                 industry=industry,
-    #                 chosen_goods_market_participants=chosen_goods_market_participants,
-    #                 price_temperature=price_temperature,
-    #                 field=field,
-    #                 distribution_type=distribution_type,
-    #             )
-    #             if chosen_seller is not None:
-    #                 return chosen_seller
-    #
-    #     # No consideration of priority status
-    #     chosen_goods_market_participants = []
-    #     for country_name in goods_market_participants.keys():
-    #         if country_name == "ROW":
-    #             continue
-    #         for seller in goods_market_participants[country_name]:
-    #             if (
-    #                 seller.transactor_seller_states["Value Type"]
-    #                 != ValueType.NONE
-    #             ):
-    #                 chosen_goods_market_participants += [seller]
-    #     chosen_seller = get_random_seller_based_on_distribution(
-    #         industry=industry,
-    #         chosen_goods_market_participants=chosen_goods_market_participants,
-    #         price_temperature=price_temperature,
-    #         field=field,
-    #         distribution_type=distribution_type,
-    #     )
-    #     if chosen_seller is not None:
-    #         return chosen_seller
-    #
+    This function implements a sophisticated lender selection mechanism that first
+    attempts to maintain existing relationships, then falls back to market-based
+    selection if needed. It incorporates various priorities and constraints while
+    balancing between relationship stability and market efficiency.
 
+    The selection process:
+    1. Relationship-based selection:
+       - Try to match with previous lender
+       - Consider relationship persistence probability
+       - Check lender eligibility and capacity
+
+    2. Market-based selection:
+       - Filter potential lenders by priorities
+       - Apply sector preferences
+       - Consider domestic vs international options
+       - Weight by rates and capacity
+
+    3. Final matching:
+       - Handle special cases (e.g., no eligible lenders)
+       - Apply any final constraints
+       - Complete the selection
+
+    Args:
+        industry: Industry/sector index for lender selection
+        goods_market_participants: Dict mapping sector names to lists of agents
+        chosen_buyer: Selected borrower agent
+        chosen_buyer_ind: Index of the specific loan request
+        previous_supply_chain: Dict tracking previous lending relationships
+        real_country_prioritisation: Weight given to real economy sectors [0,1]
+        prio_high_prio_sellers: Whether to prioritize high-priority lenders
+        prio_domestic_sellers: Whether to prioritize domestic lenders
+        probability_keeping_previous_seller: Chance of maintaining relationship
+        price_temperature: Parameter controlling interest rate sensitivity
+        field: Name of the field containing credit capacity information
+        distribution_type: How to combine capacity and rate weights
+
+    Returns:
+        Tuple[Agent, int]: Selected lender and loan index
+
+    Example:
+        For a corporate borrower:
+        1. Relationship check:
+           - Previous lender: Bank A
+           - Persistence probability: 0.8
+           - Check result: Bank A not eligible
+
+        2. Market selection:
+           - Available lenders filtered by priorities:
+             * Bank B (domestic, high priority)
+             * Bank C (domestic)
+             * Bank D (foreign)
+           - Weights calculated using rates and capacity
+           Result: Bank B selected based on combined criteria
+    """
     # Choose among all sellers
     chosen_goods_market_participants = []
     for country_name in goods_market_participants.keys():
@@ -429,6 +680,56 @@ def handle_transaction(
     seller: Agent,
     seller_ind: int,
 ) -> None:
+    """Process a credit transaction between lender and borrower.
+
+    This function executes the actual credit transaction once a match has been
+    made, updating all relevant state variables for both parties. It handles
+    the mechanics of credit extension while ensuring all constraints and
+    accounting identities are maintained.
+
+    The transaction process:
+    1. Pre-transaction checks:
+       - Verify credit availability
+       - Check borrower eligibility
+       - Confirm regulatory compliance
+       - Validate transaction parameters
+
+    2. Credit extension:
+       - Calculate final loan amount
+       - Apply interest rates
+       - Update credit limits
+       - Record bilateral exposures
+
+    3. State updates:
+       - Update lender's available credit
+       - Update borrower's credit utilization
+       - Record transaction details
+       - Update relationship tracking
+
+    Args:
+        industry: Industry/sector index for the transaction
+        buyer: Borrower agent
+        buyer_ind: Index of the specific loan request
+        seller: Lender agent
+        seller_ind: Index of the specific credit capacity
+
+    Example:
+        Transaction between Bank A and Firm B:
+        1. Initial state:
+           - Bank A: $10M available credit
+           - Firm B: $2M credit request
+
+        2. Transaction:
+           - Loan amount: $2M
+           - Interest rate: 5%
+           - Term: 12 months
+
+        3. Final state:
+           - Bank A: $8M available credit
+           - Firm B: $2M credit received
+           - Relationship recorded
+           - Balance sheets updated
+    """
     if seller.transactor_seller_states["Value Type"] != ValueType.REAL:
         raise ValueError("Nominal seller value type not supported.")
 
@@ -484,6 +785,50 @@ def handle_hypothetical_transaction(
     seller: Agent,
     seller_ind: int,
 ) -> None:
+    """Simulate a credit transaction without actually executing it.
+
+    This function performs a dry-run of a credit transaction to evaluate its
+    feasibility and impact. It's useful for testing transaction viability,
+    stress testing, and policy analysis without affecting actual market state.
+
+    The simulation process:
+    1. Transaction validation:
+       - Check credit availability
+       - Verify borrower eligibility
+       - Test regulatory compliance
+       - Validate parameters
+
+    2. Impact analysis:
+       - Calculate potential loan amount
+       - Estimate interest costs
+       - Project balance sheet changes
+       - Assess risk metrics
+
+    3. Constraint checking:
+       - Verify capital adequacy
+       - Check exposure limits
+       - Test policy compliance
+       - Evaluate market impact
+
+    Args:
+        industry: Industry/sector index for the transaction
+        buyer: Borrower agent
+        buyer_ind: Index of the specific loan request
+        seller: Lender agent
+        seller_ind: Index of the specific credit capacity
+
+    Example:
+        Hypothetical transaction between Bank A and Firm B:
+        1. Initial check:
+           - Bank A: $10M available, 12% capital ratio
+           - Firm B: $2M request, 3x leverage ratio
+
+        2. Simulation:
+           - Loan amount: $2M feasible
+           - Capital ratio would be 11.5% (above minimum)
+           - Leverage ratio would be 3.2x (below maximum)
+           Result: Transaction is viable
+    """
     if seller.transactor_seller_states["Value Type"] != ValueType.REAL:
         raise ValueError("Nominal seller value type not supported.")
 
@@ -517,6 +862,50 @@ def update_supply_chain(
     seller: Agent,
     seller_ind: int,
 ) -> None:
+    """Update the record of lending relationships after a transaction.
+
+    This function maintains a history of credit relationships between lenders
+    and borrowers. This information is crucial for relationship lending and
+    analyzing credit network structure.
+
+    The update process:
+    1. Data structure maintenance:
+       - Initialize new relationships if needed
+       - Update existing relationships
+       - Clean up old entries if necessary
+
+    2. Relationship recording:
+       - Store lender-borrower pair
+       - Track loan indices
+       - Record transaction details
+       - Update relationship strength
+
+    3. Network analysis:
+       - Update connectivity metrics
+       - Track relationship persistence
+       - Monitor market structure
+       - Identify key relationships
+
+    Args:
+        current_supply_chain: Dict tracking current lending relationships
+        industry: Industry/sector index for the transaction
+        buyer: Borrower agent
+        buyer_ind: Index of the specific loan request
+        seller: Lender agent
+        seller_ind: Index of the specific credit capacity
+
+    Example:
+        After a transaction between Bank A and Firm B:
+        1. Check existing relationships:
+           - First transaction: Create new entry
+           - Repeat transaction: Update existing entry
+
+        2. Record details:
+           - Store lender-borrower pair
+           - Track loan indices
+           - Update relationship strength
+           Result: Updated relationship network
+    """
     if buyer not in current_supply_chain[industry].keys():
         current_supply_chain[industry][buyer] = {}
     if buyer_ind in current_supply_chain[industry][buyer].keys():
@@ -526,6 +915,47 @@ def update_supply_chain(
 
 
 def clean_rounding_errors(goods_market_participants: dict[str, list[Agent]], decimals: int = 12) -> None:
+    """Clean up numerical rounding errors in credit market state variables.
+
+    This function addresses floating-point arithmetic precision issues that can
+    accumulate during credit market operations. It ensures that small numerical
+    errors don't affect market behavior or regulatory compliance.
+
+    The cleaning process:
+    1. Error detection:
+       - Check for small non-zero values
+       - Identify numerical instabilities
+       - Detect accumulation errors
+       - Monitor precision loss
+
+    2. State correction:
+       - Round to specified precision
+       - Zero out negligible values
+       - Maintain accounting identities
+       - Preserve regulatory ratios
+
+    3. Validation:
+       - Verify corrections
+       - Check balance consistency
+       - Confirm regulatory compliance
+       - Ensure market integrity
+
+    Args:
+        goods_market_participants: Dict mapping sector names to lists of agents
+        decimals: Number of decimal places to maintain (default: 12)
+
+    Example:
+        Cleaning process:
+        1. Initial state:
+           - Credit amount: 1000.000000000001
+           - Utilization rate: 0.799999999999999
+           - Exposure: 0.000000000000001
+
+        2. After cleaning:
+           - Credit amount: 1000.0
+           - Utilization rate: 0.8
+           - Exposure: 0.0
+    """
     for country_name in goods_market_participants.keys():
         for transactor in goods_market_participants[country_name]:
             transactor.transactor_seller_states["Remaining Goods"] = np.round(

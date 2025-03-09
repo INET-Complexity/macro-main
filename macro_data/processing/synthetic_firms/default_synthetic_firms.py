@@ -1,3 +1,32 @@
+"""Module for preprocessing default synthetic firm data.
+
+This module provides a concrete implementation for preprocessing firm-level data
+using standard data sources (OECD, Eurostat, Compustat). Key preprocessing includes:
+
+1. Data Source Integration:
+   - OECD economic indicators
+   - Eurostat business statistics
+   - Compustat firm-level data
+   - National accounts data
+
+2. Initial State Processing:
+   - Industry-level aggregates
+   - Firm size distributions
+   - Financial positions
+   - Production parameters
+
+3. Parameter Estimation:
+   - Productivity metrics
+   - Input-output relationships
+   - Tax rates
+   - Interest rates
+
+Note:
+    This module is NOT used for simulating firm behavior. It only handles
+    the preprocessing and organization of data from standard sources that will
+    later be used to initialize behavioral models in the simulation package.
+"""
+
 import logging
 from typing import Optional
 
@@ -19,9 +48,52 @@ from macro_data.processing.synthetic_firms.firm_tools import (
 )
 from macro_data.processing.synthetic_firms.synthetic_firms import SyntheticFirms
 from macro_data.readers.default_readers import DataReaders
+from macro_data.readers.emissions.emissions_reader import EmissionsData
 
 
 class DefaultSyntheticFirms(SyntheticFirms):
+    """Container for preprocessed firm data using standard data sources.
+
+    This class provides a concrete implementation for preprocessing firm-level data
+    using standard data sources (OECD, Eurostat, Compustat). It processes and
+    organizes data about firms' characteristics, financial positions, and production
+    parameters. It does NOT implement any firm behavior - it only handles data
+    preprocessing.
+
+    The preprocessing workflow includes:
+    1. Data Collection:
+       - Reading from standard data sources
+       - Handling missing data
+       - Currency conversion
+       - Scale adjustment
+
+    2. Firm Structure:
+       - Industry classification
+       - Size distribution estimation
+       - Employee allocation
+       - Bank relationship mapping
+
+    3. Financial Processing:
+       - Balance sheet construction
+       - Income statement elements
+       - Tax calculations
+       - Interest computations
+
+    4. Production Parameters:
+       - Input requirements
+       - Productivity metrics
+       - Cost structures
+       - Initial inventory levels
+
+    Note:
+        This is a data container class. The actual firm behavior is implemented
+        in the simulation package, which uses this preprocessed data for
+        initialization.
+
+    Attributes:
+        Inherits all attributes from SyntheticFirms base class.
+    """
+
     def __init__(
         self,
         country_name: str,
@@ -73,6 +145,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
         firm_configuration: FirmsDataConfiguration,
         exchange_rate_from_eur: float = 1.0,
         proxy_country: Optional[Country] = None,
+        emission_factors: Optional[EmissionsData] = None,
     ) -> "DefaultSyntheticFirms":
         n_firms_per_industry = industry_data["industry_vectors"]["Number of Firms"].values
         # number of firms per industry is at most the number of employees per industry
@@ -160,6 +233,46 @@ class DefaultSyntheticFirms(SyntheticFirms):
         )
 
         firm_data["Employees ID"] = [[] for _ in range(n_firms)]
+
+        if emission_factors is not None:
+            emitting_industries = ["B05a", "B05b", "B05c", "C19"]
+            # get indices of emitting industries
+            emitting_indices = [list(industries).index(industry) for industry in emitting_industries]
+            emitting_intermediate_inputs = used_intermediate_inputs[:, emitting_indices]
+            input_emissions = emitting_intermediate_inputs @ emission_factors.emissions_array
+            firm_data["Input Emissions"] = input_emissions
+
+            capital_emissions = used_capital_inputs[:, emitting_indices] @ emission_factors.emissions_array
+            firm_data["Capital Emissions"] = capital_emissions
+
+            # decompose emissions of oil, gas, coal and refined products emissions
+            for i, name in enumerate(["Coal", "Gas", "Oil", "Refined Products"]):
+                firm_data[f"{name} Input Emissions"] = (
+                    used_intermediate_inputs[:, emitting_indices[i]] * emission_factors.emissions_array[i]
+                )
+                # same for capital emissions
+                firm_data[f"{name} Capital Emissions"] = (
+                    used_capital_inputs[:, emitting_indices[i]] * emission_factors.emissions_array[i]
+                )
+
+            firm_data.loc[
+                firm_data["Industry"] == emitting_indices[-1],
+                ["Input Emissions", "Capital Emissions"],
+            ] = 0.0
+
+            zero_columns = [
+                "Oil Input Emissions",
+                "Gas Input Emissions",
+                "Coal Input Emissions",
+                "Oil Capital Emissions",
+                "Gas Capital Emissions",
+                "Coal Capital Emissions",
+            ]
+
+            firm_data.loc[
+                firm_data["Industry"] == emitting_indices[-1],
+                zero_columns,
+            ] = 0.0
 
         return cls(
             country_name=country_name,

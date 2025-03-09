@@ -1,0 +1,961 @@
+FRA:
+  banks:
+    functions:
+      demography:
+        name:
+          desc: The function used for determining bank demography.
+          options: NoBankDemography,DefaultBankDemography
+          type: str
+          value: DefaultBankDemography
+      interest_rates:
+        name:
+          desc: The function used for setting interest rates.
+          options: DefaultInterestRatesSetter
+          type: str
+          value: DefaultInterestRatesSetter
+        parameters:
+          interest_noise_std:
+            desc: The standard deviation of noise added to each banks interest rate.
+            options: ''
+            type: float
+            value: 0.0
+    parameters:
+      capital_requirement_coefficient:
+        desc: The banks capital requirement coefficient. A capital requirement coefficient
+          of 3% corresponds to the maximum leverage ratio (tier 1 capital in relation
+          to total exposure) as recommended in the Basel III framework.
+        options: ''
+        type: float
+        value: 0.03
+      debt_service_to_income_ratio_mortgage:
+        desc: The banks DSTI ratio for mortgages.
+        options: ''
+        type: float
+        value: 0.6
+      loan_to_income_ratio_mortgage:
+        desc: The banks LTI ratio for mortgages.
+        options: ''
+        type: float
+        value: 0.2
+      loan_to_net_wealth_ratio:
+        desc: The banks Loan-to-Wealth ratio for household consumption loans.
+        options: ''
+        type: float
+        value: 0.2
+      loan_to_value_ratio:
+        desc: The banks loan-to-value ratio for firm loans.
+        options: ''
+        type: float
+        value: 0.6
+      loan_to_value_ratio_mortgage:
+        desc: The banks loan-to-value ratio for mortgages.
+        options: ''
+        type: float
+        value: 0.5
+  central_bank:
+    functions:
+      policy_rate:
+        name:
+          desc: The function used for setting the central bank policy rate.
+          options: ConstantPolicyRate
+          type: str
+          value: ConstantPolicyRate
+  central_government:
+    functions:
+      social_benefits:
+        name:
+          desc: The function used for setting the amount of social benefits paid by
+            the central government.
+          options: ConstantSocialBenefitsSetter,DefaultSocialBenefitsSetter
+          type: str
+          value: ConstantSocialBenefitsSetter
+  credit_market:
+    functions:
+      clearing:
+        name:
+          desc: The function used for clearing the credit market.
+          options: NoCreditMarketClearer,DefaultCreditMarketClearer
+          type: str
+          value: NoCreditMarketClearer
+        parameters:
+          firms_max_number_of_banks_visiting:
+            desc: The maximum number of banks each firm looking for credit visits.
+            options: ''
+            type: int
+            value: 5
+          households_max_number_of_banks_visiting:
+            desc: The maximum number of banks each household looking for credit visits.
+            options: ''
+            type: int
+            value: 5
+  economy:
+    functions:
+      growth:
+        name:
+          desc: The function used for setting how growth is centrally forecasted.
+          options: GrowthForecastingConstant,GrowthForecastingAutoReg,GrowthForecastingOLS
+          type: str
+          value: GrowthForecastingConstant
+        parameters:
+          value:
+            desc: The default value for central economic growth.
+            options: ''
+            type: float
+            value: 0.0
+      house_price_index:
+        name:
+          desc: The function used for setting how the house price index is centrally
+            forecasted.
+          options: HPIForecastingConstant,HPIForecastingAutoReg,HPIForecastingOLS
+          type: str
+          value: HPIForecastingConstant
+        parameters:
+          value:
+            desc: The default value for house price index growth.
+            options: ''
+            type: float
+            value: 0.0
+      inflation:
+        name:
+          desc: The function used for setting how inflation is centrally forecasted.
+          options: InflationForecastingConstant,InflationForecastingAutoReg,InflationForecastingOLS
+          type: str
+          value: InflationForecastingConstant
+        parameters:
+          value:
+            desc: The default value for inflation.
+            options: ''
+            type: float
+            value: 0.0
+      sentiment:
+        name:
+          desc: The function used for setting how sector sentiment is centrally forecasted.
+          options: ConstantSentimentSetter
+          type: str
+          value: ConstantSentimentSetter
+        parameters:
+          value:
+            desc: The default value for firm sentiment.
+            options: ''
+            type: float
+            value: 0.0
+  firms:
+    functions:
+      bought_goods_distributor:
+        name:
+          desc: The function used by firms to distribute bought goods between intermediate
+            inputs and capital goods.
+          options: BoughtGoodsDistributorEvenly,BoughtGoodsDistributorIIPrio
+          type: str
+          value: BoughtGoodsDistributorIIPrio
+      demand_estimator:
+        name:
+          desc: The function used by firms to estimate their future demand for goods.
+          options: DefaultDemandEstimator
+          type: str
+          value: DefaultDemandEstimator
+      demand_for_goods:
+        name:
+          desc: The function used by firms to calculate their demand for goods.
+          options: DefaultDemandSetter,DemandExcessSetter
+          type: str
+          value: DefaultDemandSetter
+      demography:
+        name:
+          desc: The function used for handling firm entry and exit.
+          options: NoFirmDemography,DefaultFirmDemography
+          type: str
+          value: DefaultFirmDemography
+      desired_labour:
+        name:
+          desc: The function used to calculate the desired amount of labour for each
+            firm.
+          options: DefaultDesiredLabourSetter
+          type: str
+          value: DefaultDesiredLabourSetter
+      growth_estimator:
+        name:
+          desc: The function used to estimate growth for each firm.
+          options: ZeroGrowthEstimator,DefaultGrowthEstimator
+          type: str
+          value: DefaultGrowthEstimator
+      offered_wage_setter:
+        name:
+          desc: The function used to set the offered wage to individuals by each firm.
+          options: DefaultOfferedWageSetter
+          type: str
+          value: DefaultOfferedWageSetter
+        parameters:
+          labour_market_tightness_markup_scale:
+            desc: A parameter determining the impact of previous failure to hire workers
+              on current firm wage setting.
+            options: ''
+            type: float
+            value: 0.5
+          markup_time_span:
+            desc: The time range that is considered when calculating the previous
+              average failure to find workers.
+            options: ''
+            type: int
+            value: 4
+      prices:
+        name:
+          desc: The function used to set prices.
+          options: ConstantPriceSetter,SupplyDemandPriceSetter,CANVASPriceSetter
+          type: str
+          value: CANVASPriceSetter
+        parameters:
+          price_setting_noise_std:
+            desc: The standard deviation of the noise affecting firms price setting.
+            options: ''
+            type: float
+            value: 0.05
+          price_setting_speed:
+            desc: The speed at which the price can be adjusted. Only applicable to
+              CANVASPriceSetter.
+            options: ''
+            type: float
+            value: 1.0
+      production:
+        name:
+          desc: The function used to produce goods.
+          options: PureLeontief,CriticalAndImportantLeontief,CriticalLeontief,Linear
+          type: str
+          value: PureLeontief
+        parameters:
+          production_noise_std:
+            desc: The standard deviation of the noise affecting firm production.
+            options: ''
+            type: float
+            value: 0.0
+      target_capital_inputs:
+        name:
+          desc: The function used to setting firms desired capital inputs.
+          options: UnconstrainedTargetCapitalInputsSetter,FinancialTargetCapitalInputsSetter
+          type: str
+          value: UnconstrainedTargetCapitalInputsSetter
+        parameters:
+          target_capital_inputs_fraction:
+            desc: A parameter determining the influence of the current and initial
+              stock of capital inputs when setting the firms desired capital inputs.
+            options: ''
+            type: str
+            value: 0.0
+      target_credit:
+        name:
+          desc: The function for setting the firms target loans.
+          options: DefaultTargetCreditSetter
+          type: str
+          value: DefaultTargetCreditSetter
+      target_intermediate_inputs:
+        name:
+          desc: The function for setting the firms target intermediate inputs.
+          options: UnconstrainedTargetIntermediateInputsSetter,FinancialTargetIntermediateInputsSetter
+          type: str
+          value: UnconstrainedTargetIntermediateInputsSetter
+        parameters:
+          target_intermediate_inputs_fraction:
+            desc: A parameter determining the influence of the current and initial
+              stock of intermediate inputs when setting the firms desired intermediate
+              inputs.
+            options: ''
+            type: float
+            value: 0.0
+      wage_setter:
+        name:
+          desc: The function for setting the wages paid to employed individuals.
+          options: DefaultFirmWageSetter
+          type: str
+          value: DefaultFirmWageSetter
+        parameters:
+          labour_market_tightness_markup_scale:
+            desc: A parameter determining the influence on previous failure to attract
+              workforce when setting wages.
+            options: ''
+            type: float
+            value: 0.0
+          markup_time_span:
+            desc: The time range (in months) over which the previous failure to attract
+              workforce is considered.
+            options: ''
+            type: int
+            value: 4
+    parameters:
+      capital_inputs_delay:
+        desc: The delay in months between acquiring new capital inputs and being able
+          to use them in production.
+        options: ''
+        type: list[int]
+        value:
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+      depreciation_rates:
+        desc: The rate of depreciation of firm inventory each month.
+        options: ''
+        type: list[float]
+        value:
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+  government_entities:
+    functions:
+      consumption:
+        name:
+          desc: The function used for setting the consumption of the central government.
+          options: ConstantGovernmentConsumptionSetter,DefaultGovernmentConsumptionSetter
+          type: str
+          value: ConstantGovernmentConsumptionSetter
+  households:
+    functions:
+      financial_assets:
+        name:
+          desc: The function for setting household income from financial assets.
+          options: ConstantFinancialAssets,DefaultFinancialAssets
+          type: str
+          value: ConstantFinancialAssets
+      consumption:
+        name:
+          desc: The function for setting household consumption.
+          options: DefaultHouseholdConsumption
+          type: str
+          value: DefaultHouseholdConsumption
+        parameters:
+          consumption_smoothing_fraction:
+            desc: A parameter determining the influence of a household smoothing factor
+              when setting household consumption.
+            options: ''
+            type: float
+            value: 0.0
+          consumption_smoothing_window:
+            desc: The time frame over which consumption is smoothed.
+            options: ''
+            type: int
+            value: 12
+      insolvency:
+        name:
+          desc: The function used for handling household insolvency
+          options: DefaultHouseholdInsolvencyHandler
+          type: str
+          value: DefaultHouseholdInsolvencyHandler
+      property:
+        name:
+          desc: The function used for calculating household demand for property.
+          options: DefaultHouseholdDemandForProperty
+          type: str
+          value: DefaultHouseholdDemandForProperty
+        parameters:
+          cost_comparison_temperature:
+            desc: A parameter determining the influence of the costs in renting vs
+              buying when households decide between renting and buying.
+            options: ''
+            type: float
+            value: 1.0
+          maximum_price_income_coefficient:
+            desc: A parameter determining the maximum amount a households is willing
+              to pay for a new property.
+            options: ''
+            type: float
+            value: 5.0
+          maximum_price_income_exponent:
+            desc: A parameter determining the maximum amount a households is willing
+              to pay for a new property.
+            options: ''
+            type: float
+            value: 1.0
+          maximum_price_noise_std:
+            desc: The standard deviation of the noise affecting the households total
+              amount willing to pay for a property.
+            options: ''
+            type: float
+            value: 0.3
+          probability_stay_in_owned_property:
+            desc: The households probability to stay in the property they are currently
+              owning.
+            options: ''
+            type: float
+            value: 0.5
+          probability_stay_in_rented_property:
+            desc: The households probability to stay in the property they are currently
+              renting.
+            options: ''
+            type: float
+            value: 0.5
+          psychological_pressure_of_renting:
+            desc: A psychological mark-up on the cost of renting.
+            options: ''
+            type: float
+            value: 0.1
+          rental_yield_btl_temperature:
+            desc: A parameter governing the influence of the cost of renting vs the
+              cost of taking out a mortgage when deciding whether to buy-to-let.
+            options: ''
+            type: float
+            value: 1.0
+      rent:
+        name:
+          desc: The function used to setting rent.
+          options: ConstantRentSetter,DefaultRentSetter
+          type: str
+          value: ConstantRentSetter
+        parameters:
+          new_property_rent_markup:
+            desc: The rent mark-up imposed on properties newly on the rental market.
+            options: ''
+            type: float
+            value: 0.1
+          offered_rent_decrease:
+            desc: The percentage decrease in offered rent each month a property remains
+              on the rental market.
+            options: ''
+            type: float
+            value: 0.03
+          partial_rent_inflation_indexation:
+            desc: The indexation on inflation when updating rent.
+            options: ''
+            type: float
+            value: 0.0
+      target_credit:
+        name:
+          desc: The function for setting household target credit.
+          options: DefaultHouseholdTargetCredit
+          type: str
+          value: DefaultHouseholdTargetCredit
+        parameters:
+          consumption_expansion_quantile:
+            desc: The quantile of households under which they apply for consumption
+              expansion loans relative to the fraction between wealth in real assets
+              and income.
+            options: ''
+            type: float
+            value: 0.0
+      wealth:
+        name:
+          desc: The function used for updating household wealth.
+          options: DefaultWealthSetter
+          type: str
+          value: DefaultWealthSetter
+        parameters:
+          other_real_assets_depreciation_rate:
+            desc: The depreciation rate of other real assets.
+            options: ''
+            type: float
+            value: 0.05
+      social_transfers:
+        name:
+          desc: The function for distribution household social transfers.
+          options: EqualSocialTransfersSetter,ConstantSocialTransfersSetter,DefaultSocialTransfersSetter
+          type: str
+          value: EqualSocialTransfersSetter
+        parameters:
+          independents:
+            desc: The household characteristics determining their social transfers.
+            options: Income,Debt
+            type: list[str]
+            value:
+              - Income
+              - Debt
+    parameters:
+      take_consumption_weights_by_income_quantile:
+        desc: Whether household income is taken into account when setting household
+          consumption weights.
+        options: ''
+        type: bool
+        value: false
+  housing_market:
+    functions:
+      clearing:
+        name:
+          desc: The function for clearing the housing market.
+          options: NoHousingMarketClearer,DefaultHousingMarketClearer
+          type: str
+          value: NoHousingMarketClearer
+      value:
+        name:
+          desc: The function for setting the property value.
+          options: DefaultPropertyValueSetter
+          type: str
+          value: DefaultPropertyValueSetter
+        parameters:
+          random_fluctuation_std:
+            desc: The standard deviation of the noise impacting the value of properties.
+            options: ''
+            type: float
+            value: 0.0
+  individuals:
+    functions:
+      demography:
+        name:
+          desc: The function for setting individual demography.
+          options: NoAging
+          type: str
+          value: NoAging
+      income:
+        name:
+          desc: The function for setting individual income.
+          options: DefaultIncomeSetter
+          type: str
+          value: DefaultIncomeSetter
+      labour_inputs:
+        name:
+          desc: The function for updating individual productivity.
+          options: ConstantIndividualsLabourInputsSetter,ScaledIndividualsProductivitySetter
+          type: str
+          value: ScaledIndividualsProductivitySetter
+        parameters:
+          decrease_unemployed:
+            desc: The decrease in labour productivity of individuals when unemployed.
+            options: ''
+            type: float
+            value: 0.0
+          increase_employed:
+            desc: The increase in labour productivity of individuals when employed.
+            options: ''
+            type: float
+            value: 0.0
+      reservation_wages:
+        name:
+          desc: The function for setting individual reservation wages.
+          options: DefaultReservationWageSetter
+          type: str
+          value: DefaultReservationWageSetter
+        parameters:
+          unemployed_reservation_wage_timespan:
+            desc: The time span of received wages considered when setting reservation
+              wages of unemployed individuals.
+            options: ''
+            type: float
+            value: 0.0
+  labour_market:
+    functions:
+      clearing:
+        name:
+          desc: The function for clearing the labour market.
+          options: NoLabourMarketClearer,DefaultLabourMarketClearer
+          type: str
+          value: DefaultLabourMarketClearer
+        parameters:
+          allow_switching_industries:
+            desc: Whether individuals switch employment industries or not.
+            options: ''
+            type: bool
+            value: true
+          consider_reservation_wages:
+            desc: Whether reservation wages are taken into account when scouting for
+              new employees.
+            options: ''
+            type: bool
+            value: true
+          firing_cost_fraction:
+            desc: The fraction of the current employment income it costs to fire an
+              individual.
+            options: ''
+            type: float
+            value: 0.0
+          firing_speed:
+            desc: The speed of firing.
+            options: ''
+            type: float
+            value: 1.0
+          hiring_cost_fraction:
+            desc: The fraction of the current employment income it costs to hire an
+              individual.
+            options: ''
+            type: float
+            value: 0.0
+          hiring_speed:
+            desc: The speed of hiring.
+            options: ''
+            type: float
+            value: 1.0
+          individuals_quitting:
+            desc: Whether individuals are quitting based on their comparative employment
+              income.
+            options: ''
+            type: bool
+            value: false
+          individuals_quitting_temperature:
+            desc: A parameter determining the likelihood of individuals quitting based
+              on their comparative employment income.
+            options: ''
+            type: float
+            value: 1.0
+          optimised_hiring:
+            desc: Whether or not individuals are hired at random or based on the productivity
+              they contribute.
+            options: ''
+            type: bool
+            value: true
+          random_firing_probability:
+            desc: A probability of getting fired at random.
+            options: ''
+            type: float
+            value: 0.0
+          sorted_firing:
+            desc: Whether or not firing individuals begins with the individual contributing
+              the least productivity.
+            options: ''
+            type: bool
+            value: true
+ROW:
+  ROW:
+    functions:
+      exports:
+        name:
+          desc: The function for setting the amount of exports from the rest-of-the-world.
+          options: ConstantRoWExportsSetter,DefaultRoWExportsSetter
+          type: str
+          value: ConstantRoWExportsSetter
+      imports:
+        name:
+          desc: The function for setting the amount of imports into the rest-of-the-world.
+          options: ConstantRoWImportsSetter,DefaultRoWImportsSetter
+          type: str
+          value: ConstantRoWImportsSetter
+      inflation:
+        name:
+          desc: The function for updating inflation in the rest-of-the-world.
+          options: DefaultRoWInflationSetter
+          type: str
+          value: DefaultRoWInflationSetter
+      prices:
+        name:
+          desc: The function for setting the prices offered by the rest-of-the-world.
+          options: ConstantRoWPriceSetter,InflationRoWPriceSetter
+          type: str
+          value: ConstantRoWPriceSetter
+creator:
+  desc: The creator of the simulation run.
+  options: ''
+  type: str
+  value: sam
+date:
+  desc: The time of initiation of the simulation run.
+  options: ''
+  type: str
+  value: 22/09/2023 14:11:18
+description:
+  desc: The unique identifier of the simulation run.
+  options: ''
+  type: str
+  value: default
+goods_market:
+  goods_market:
+    functions:
+      clearing:
+        name:
+          desc: The function for clearing the goods market.
+          options: NoGoodsMarketClearer,DefaultGoodsMarketClearer,ProRataGoodsMarketClearer
+          type: str
+          value: ProRataGoodsMarketClearer
+        parameters:
+          trade_temperature:
+            desc: The influence of the offered price in making the decision of which country to buy from.
+            options: ''
+            type: float
+            value: 0.0
+          price_temperature:
+            desc: The influence of the offered price in making the decision of who
+              to buy from.
+            options: ''
+            type: float
+            value: 1.0
+          prio_domestic_sellers:
+            desc: Whether to prioritise selling domestically.
+            options: ''
+            type: bool
+            value: false
+          prio_high_prio_buyers:
+            desc: Whether to prioritise firms (or other high-priority agents) when
+              choosing buyers.
+            options: ''
+            type: bool
+            value: true
+          prio_high_prio_sellers:
+            desc: Whether to prioritise firms (or other high-priority agents) when
+              choosing sellers.
+            options: ''
+            type: bool
+            value: false
+          prio_real_countries:
+            desc: Whether to prioritise real (non rest-of-the-world) countries when
+              choosing buyers or sellers.
+            options: ''
+            type: bool
+            value: false
+          probability_keeping_previous_seller:
+            desc: The probability of buying from the same seller again if possible.
+            options: ''
+            type: float
+            value: 0.2
+init:
+  FRA:
+    banks:
+      parameters:
+        household_consumption_expansion_loan_maturity:
+          desc: The initial loan maturity in months for household consumption expansion
+            loans.
+          options: ''
+          type: int
+          value: 12
+        household_payday_loan_maturity:
+          desc: The initial loan maturity in months for household payday loans.
+          options: ''
+          type: int
+          value: 1
+        initial_markup_interest_rate_household_consumption_loans:
+          desc: The initial markup on the central bank policy rate determining the
+            interest rate on household consumption loans.
+          options: ''
+          type: float
+          value: 0.01
+        initial_markup_interest_rate_overdraft_households:
+          desc: The initial markup on the central bank policy rate determining the
+            interest rate on household deposits overdrafts.
+          options: ''
+          type: float
+          value: 0.01
+        initial_markup_mortgage_interest_rate:
+          desc: The initial markup on the central bank policy rate determining the
+            interest rate on mortgages.
+          options: ''
+          type: float
+          value: 0.1
+        long_term_firm_loan_maturity:
+          desc: The initial loan maturity in months for long-term firm loans.
+          options: ''
+          type: int
+          value: 60
+        mortgage_maturity:
+          desc: The initial loan maturity in months for mortgages.
+          options: ''
+          type: int
+          value: 120
+        short_term_firm_loan_maturity:
+          desc: The initial loan maturity in months for short-term firm loans.
+          options: ''
+          type: int
+          value: 12
+    central_government:
+      functions:
+        household_social_transfers:
+          parameters:
+            independents:
+              desc: The household characteristics determining the amount of received
+                social transfers.
+              options: Income,Debt
+              type: list[str]
+              value:
+              - Income
+              - Debt
+            steps:
+              desc: The number of quantiles for each household characteristic determining
+                the amount of received social transfers.
+              options: ''
+              type: int
+              value: 0
+        social_housing:
+          name:
+            desc: The function used for setting social housing rent offered by the
+              central government.
+            options: DefaultSocialHousing
+            type: str
+            value: DefaultSocialHousing
+          parameters:
+            rent_as_fraction_of_unemployment_rate:
+              desc: The fraction of the current unemployment rate that is the default
+                social housing rent.
+              options: ''
+              type: float
+              value: 0.25
+    firms:
+      functions:
+        target_production:
+          name:
+            desc: The function for setting the firms target production.
+            options: DefaultTargetProductionSetter
+            type: str
+            value: DefaultTargetProductionSetter
+          parameters:
+            consider_financials:
+              desc: Whether the current financial situation of the firm is taken into
+                account when setting target production.
+              options: ''
+              type: bool
+              value: false
+            existing_inventory_fraction:
+              desc: How much existing inventory of the finalised good is taken into
+                account when setting production targets.
+              options: ''
+              type: float
+              value: 0.0
+            maximum_debt_to_equity_ratio:
+              desc: The maximum debt to equity ratio when setting firm target production.
+              options: ''
+              type: float
+              value: 2.0
+            maximum_growth_rate:
+              desc: The highest possible output growth rate feasible in one month.
+              options: ''
+              type: float
+              value: 0.1
+            target_inventory_to_production_fraction:
+              desc: The target fraction between inventory and production.
+              options: ''
+              type: float
+              value: 0.0
+      parameters:
+        assume_zero_initial_debt:
+          desc: Whether to initialize firms with zero debts.
+          options: ''
+          type: bool
+          value: true
+        assume_zero_initial_deposits:
+          desc: Whether to initialize firms with zero deposits.
+          options: ''
+          type: bool
+          value: true
+        capital_inputs_utilisation_rate:
+          desc: The capital utilisation rate of firms.
+          options: ''
+          type: float
+          value: 1.0
+        intermediate_inputs_utilisation_rate:
+          desc: The intermediate inputs utilisation rate of firms.
+          options: ''
+          type: float
+          value: 1.0
+    households:
+      functions:
+        saving_rates:
+          name:
+            desc: The function for setting household saving rates.
+            options: AverageSavingRatesSetter,ConstantSavingRatesSetter,DefaultSavingRatesSetter
+            type: str
+            value: ConstantSavingRatesSetter
+          parameters:
+            independents:
+              desc: The household characteristics determining their saving rate.
+              options: Income,Debt
+              type: list[str]
+              value:
+                - Income
+                - Debt
+        wealth:
+          parameters:
+            independents:
+              desc: The household characteristics determining the way they distribute
+                new wealth.
+              options: Income,Debt
+              type: list[str]
+              value:
+                - Income
+                - Debt
+
+model:
+  country_names:
+    desc: The set of countries we are running the simulation for.
+    options: FRA,DEU
+    type: list[str]
+    value:
+    - FRA
+  exchange_rates_type:
+    desc: How exchange rates are set.
+    options: constant,exogenous
+    type: str
+    value: constant
+  industries:
+    desc: The set of industries we are running the simulation for.
+    options: ''
+    type: list[str]
+    value:
+    - A
+    - B
+    - C
+    - D
+    - E
+    - F
+    - G
+    - H
+    - I
+    - J
+    - K
+    - L
+    - M
+    - N
+    - O
+    - P
+    - Q
+    - R_S
+  scale:
+    desc: How many real agents correspond to one synthetic agent in the simulation.
+    options: ''
+    type: int
+    value: 10000
+  single_bank:
+    desc: Whether there is only a single bank in the model.
+    options: ''
+    type: bool
+    value: false
+  single_firm_per_industry:
+    desc: Whether there is only a single firm operating in each industry.
+    options: ''
+    type: bool
+    value: false
+  single_government_entity:
+    desc: Whether there is only a single government entity in the model.
+    options: ''
+    type: bool
+    value: false
+  t_max:
+    desc: The number of time steps (=months) the model is run for.
+    options: ''
+    type: int
+    value: 60
+  year:
+    desc: The time of initiation will be January of that year.
+    options: ''
+    type: int
+    value: 2014
+  prune_date:
+    desc: The year of start of the pruned data. Must be smaller than the year of
+      initiation.
+    options: ''
+    type: int
+    value: 2010
+    format: "%Y"
+purpose:
+  desc: The purpose of doing this simulation.
+  options: ''
+  type: str
+  value: 'Default unit test config.'

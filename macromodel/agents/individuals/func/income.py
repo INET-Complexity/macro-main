@@ -1,3 +1,19 @@
+"""Individual income determination and calculation.
+
+This module implements strategies for calculating individual incomes from
+various sources through:
+- Employment earnings
+- Social benefits
+- Investment returns (firms/banks)
+- Dividend income
+
+The implementation handles:
+- Income source identification
+- Tax adjustments
+- Inflation effects
+- Activity status impacts
+"""
+
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -6,6 +22,22 @@ from macromodel.agents.individuals.individual_properties import ActivityStatus
 
 
 class IncomeSetter(ABC):
+    """Abstract base class for individual income calculation.
+
+    This class defines strategies for computing individual incomes from
+    multiple sources based on:
+    - Employment status
+    - Investment positions
+    - Social benefits
+    - Economic conditions
+
+    The calculations consider:
+    - Activity status effects
+    - Tax implications
+    - Price level changes
+    - Investment returns
+    """
+
     @abstractmethod
     def compute_expected_income(
         self,
@@ -22,6 +54,25 @@ class IncomeSetter(ABC):
         income_taxes: float,
         tau_firm: float,
     ) -> np.ndarray:
+        """Calculate expected future income for individuals.
+
+        Args:
+            current_individual_activity_status (np.ndarray): Activity status by individual
+            current_wage (np.ndarray): Current wages by individual
+            individual_social_benefits (np.ndarray): Benefits by individual
+            expected_firm_profits (np.ndarray): Expected profits by firm
+            corr_invested_firms (np.ndarray): Individual-firm investment links
+            expected_bank_profits (np.ndarray): Expected profits by bank
+            corr_invested_banks (np.ndarray): Individual-bank investment links
+            cpi (float): Current price index
+            expected_inflation (float): Expected inflation rate
+            dividend_payout_ratio (float): Share of profits paid as dividends
+            income_taxes (float): Personal income tax rate
+            tau_firm (float): Corporate tax rate
+
+        Returns:
+            np.ndarray: Expected income by individual
+        """
         pass
 
     def compute_income(
@@ -38,10 +89,43 @@ class IncomeSetter(ABC):
         income_taxes: float,
         tau_firm: float,
     ) -> np.ndarray:
+        """Calculate current period income for individuals.
+
+        Args:
+            current_individual_activity_status (np.ndarray): Activity status by individual
+            current_wage (np.ndarray): Current wages by individual
+            individual_social_benefits (np.ndarray): Benefits by individual
+            firm_profits (np.ndarray): Current profits by firm
+            corr_invested_firms (np.ndarray): Individual-firm investment links
+            bank_profits (np.ndarray): Current profits by bank
+            corr_invested_banks (np.ndarray): Individual-bank investment links
+            cpi (float): Current price index
+            dividend_payout_ratio (float): Share of profits paid as dividends
+            income_taxes (float): Personal income tax rate
+            tau_firm (float): Corporate tax rate
+
+        Returns:
+            np.ndarray: Current income by individual
+        """
         pass
 
 
 class DefaultIncomeSetter(IncomeSetter):
+    """Default implementation of individual income calculation.
+
+    This class implements income computation through:
+    - Activity-based income determination
+    - Investment return calculation
+    - Tax and inflation adjustment
+    - Benefit incorporation
+
+    The approach:
+    - Differentiates by activity status
+    - Applies appropriate tax rates
+    - Adjusts for price levels
+    - Includes all income sources
+    """
+
     def compute_expected_income(
         self,
         current_individual_activity_status: np.ndarray,
@@ -57,6 +141,34 @@ class DefaultIncomeSetter(IncomeSetter):
         income_taxes: float,
         tau_firm: float,
     ) -> np.ndarray:
+        """Calculate expected future income for individuals.
+
+        Computes income based on:
+        - Employment status (wages)
+        - Investment positions (dividends)
+        - Social benefits
+        Adjusted for:
+        - Expected inflation
+        - Tax rates
+        - Price levels
+
+        Args:
+            current_individual_activity_status (np.ndarray): Activity status by individual
+            current_wage (np.ndarray): Current wages by individual
+            individual_social_benefits (np.ndarray): Benefits by individual
+            expected_firm_profits (np.ndarray): Expected profits by firm
+            corr_invested_firms (np.ndarray): Individual-firm investment links
+            expected_bank_profits (np.ndarray): Expected profits by bank
+            corr_invested_banks (np.ndarray): Individual-bank investment links
+            cpi (float): Current price index
+            expected_inflation (float): Expected inflation rate
+            dividend_payout_ratio (float): Share of profits paid as dividends
+            income_taxes (float): Personal income tax rate
+            tau_firm (float): Corporate tax rate
+
+        Returns:
+            np.ndarray: Expected income by individual
+        """
         income = np.zeros_like(current_individual_activity_status)
 
         # Employed individuals
@@ -104,6 +216,32 @@ class DefaultIncomeSetter(IncomeSetter):
         income_taxes: float,
         tau_firm: float,
     ) -> np.ndarray:
+        """Calculate current period income for individuals.
+
+        Computes income based on:
+        - Employment status (wages)
+        - Investment positions (dividends)
+        - Social benefits
+        Adjusted for:
+        - Current price levels
+        - Tax rates
+
+        Args:
+            current_individual_activity_status (np.ndarray): Activity status by individual
+            current_wage (np.ndarray): Current wages by individual
+            individual_social_benefits (np.ndarray): Benefits by individual
+            firm_profits (np.ndarray): Current profits by firm
+            corr_invested_firms (np.ndarray): Individual-firm investment links
+            bank_profits (np.ndarray): Current profits by bank
+            corr_invested_banks (np.ndarray): Individual-bank investment links
+            cpi (float): Current price index
+            dividend_payout_ratio (float): Share of profits paid as dividends
+            income_taxes (float): Personal income tax rate
+            tau_firm (float): Corporate tax rate
+
+        Returns:
+            np.ndarray: Current income by individual
+        """
         income = np.zeros_like(current_individual_activity_status)
 
         # Employed individuals
