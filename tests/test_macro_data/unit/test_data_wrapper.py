@@ -364,7 +364,25 @@ class TestCreator:
             zero_initial_deposits=False,
         )
 
-        assert True
+        canada = creator.synthetic_countries["CAN"]
+
+        firm_input_emissions = canada.firms.firm_data["Input Emissions"].sum()
+        firm_capital_emissions = canada.firms.firm_data["Capital Emissions"].sum()
+
+        assert firm_input_emissions > 0
+        assert firm_capital_emissions > 0
+
+        household_emissions = canada.population.household_data["Consumption Emissions"].sum()
+
+        assert household_emissions > 0
+
+        household_investment_emissions = canada.population.household_data["Investment Emissions"].sum()
+
+        assert household_investment_emissions > 0
+
+        government_consumption_emissions = canada.government_entities.gov_entity_data["Consumption Emissions"].sum()
+
+        assert government_consumption_emissions > 0
 
 
 def check_country_credit(country: SyntheticCountry):

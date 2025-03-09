@@ -1,3 +1,41 @@
+"""
+Module for reading and processing World Bank economic data.
+
+This module provides functionality to read and analyze various economic indicators
+from the World Bank database. It handles a wide range of economic data including
+GDP, tax rates, unemployment, inflation, and other key economic indicators.
+
+Key Features:
+    - GDP and population statistics
+    - Tax rates (VAT, export taxes)
+    - Labor market indicators (unemployment, participation rates)
+    - Inflation and price indices
+    - Government debt data
+    - Income inequality measures (Gini coefficients)
+    - Financial sector health indicators (NPL ratios)
+
+Example:
+    ```python
+    from pathlib import Path
+    from macro_data.configuration.countries import Country
+
+    # Initialize reader
+    reader = WorldBankReader(path=Path("path/to/world_bank_data"))
+
+    # Get GDP data for a country
+    gdp = reader.get_historic_gdp(country=Country.USA, year=2020)
+
+    # Get VAT rate
+    vat = reader.get_tau_vat(country=Country.GBR, year=2020)
+    ```
+
+Note:
+    - Uses standardized World Bank data files
+    - Handles missing data through proxies and interpolation
+    - Supports data pruning for specific date ranges
+    - Includes forced values for certain tax rates where data is unavailable
+"""
+
 import logging
 import warnings
 from datetime import date
@@ -29,22 +67,50 @@ forced_vat = {
 
 class WorldBankReader:
     """
-    A class for reading and retrieving economic data from the World Bank dataset.
+    Reader class for World Bank economic data.
 
-    Methods:
-        __init__(self, path: Path): Initializes a WorldBankReader instance.
-        get_unemployment_rate(self, country (Country), year: int) -> float: Retrieves the unemployment rate for a specific country and year.
-        get_participation_rate(self, country (Country), year: int) -> float: Retrieves the participation rate for a specific country and year.
-        get_tau_vat(self, country (Country), year: int) -> float: Retrieves the VAT tax rate for a specific country and year.
-        get_tau_exp(self, country (Country), year: int) -> float: Retrieves the export tax rate for a specific country and year.
-        get_gini_coef(self, country (Country), year: int) -> float: Retrieves the Gini coefficient for a specific country and year.
-        get_historic_gdp(self, country (Country), year: int) -> float: Retrieves the historic GDP for a specific country and year.
-        get_current_monthly_gdp(self, country (Country), year: int) -> float: Retrieves the current monthly GDP for a specific country and year.
-        get_log_inflation(self, country (Country), start_year: int = 1970, end_year: int = 2024) -> pd.DataFrame: Retrieves the log inflation data for a specific country within a given time range.
-        prune(self, prune_date: int | str | pd.Timestamp, date_format: str = "%Y-%m-%d") -> None: Prunes the data based on a given prune date.
+    This class provides methods to read and process various economic indicators
+    from World Bank datasets. It handles data loading, scaling, and provides
+    access to a wide range of economic statistics.
+
+    Args:
+        path (Path): Path to directory containing World Bank data files
+
+    Attributes:
+        data (dict[str, pd.DataFrame]): Dictionary of loaded World Bank datasets
+        files_with_codes (dict[str, str]): Mapping of data categories to file names
+
+    Key Methods:
+        - GDP and Growth:
+            - get_historic_gdp: Get historical GDP values
+            - get_current_scaled_gdp: Get scaled current GDP
+        - Labor Market:
+            - get_unemployment_rate: Get unemployment rates
+            - get_participation_rate: Get labor force participation
+        - Taxes:
+            - get_tau_vat: Get VAT rates
+            - get_tau_exp: Get export tax rates
+        - Prices and Inflation:
+            - get_log_inflation: Get log inflation rates
+            - get_inflation: Get raw inflation data
+        - Other Indicators:
+            - get_gini_coef: Get income inequality measures
+            - get_central_gov_debt: Get government debt data
+            - get_npl_ratios: Get non-performing loan ratios
     """
 
     def __init__(self, path: Path):
+        """
+        Initialize the WorldBankReader with data path.
+
+        Args:
+            path (Path): Path to directory containing World Bank data files
+
+        Note:
+            - Loads data files specified in files_with_codes
+            - Special handling for certain files that don't require row skipping
+            - Uses ISO-8859-1 encoding for file reading
+        """
         self.files_with_codes = self.get_files_with_codes()
 
         self.data = {}
@@ -69,6 +135,18 @@ class WorldBankReader:
 
     @staticmethod
     def get_files_with_codes() -> dict[str, str]:
+        """
+        Get mapping of data categories to file names.
+
+        Returns:
+            dict[str, str]: Dictionary mapping data categories to their file names,
+                           including unemployment, tax rates, GDP, and other indicators
+
+        Note:
+            File names follow World Bank API naming conventions:
+            - API_* files are direct World Bank indicators
+            - Other files are supplementary data sources
+        """
         return {
             "unemployment": "API_SL.UEM.TOTL.ZS_DS2_en_csv_v2_4325868",
             "participation": "API_SL.TLF.CACT.NE.ZS_DS2_en_csv_v2_4354787",
@@ -89,6 +167,21 @@ class WorldBankReader:
         }
 
     def get_central_gov_debt(self, country: str, year: int) -> float:
+        """
+        Get central government debt for a country and year.
+
+        Args:
+            country (str): Country code (ISO 3-letter)
+            year (int): Year to get debt data for
+
+        Returns:
+            float: Central government debt value
+
+        Note:
+            - Returns 0.0 for Argentina and Taiwan
+            - Falls back to previous year's value if data not available
+            - Returns 0.0 for year 1959
+        """
         df = self.data["gov_debt"].set_index("Country Code", drop=True)
         if country == "ARG":
             return 0.0
@@ -103,6 +196,19 @@ class WorldBankReader:
             return float(val)
 
     def get_population(self, country: Country, year: int) -> float:
+        """
+        Get total population for a country and year.
+
+        Args:
+            country (Country): Country to get population for
+            year (int): Year to get population data for
+
+        Returns:
+            float: Total population count
+
+        Note:
+            Uses World Bank's total population indicator (SP.POP.TOTL)
+        """
         df = self.data["population"].set_index("Country Code")
         return df.loc[country, str(year)]
 
@@ -135,14 +241,19 @@ class WorldBankReader:
 
     def get_tau_vat(self, country: Country, year: int) -> float:
         """
-        Retrieves the VAT tax rate for a specific country and year.
+        Get VAT (Value Added Tax) rate for a country and year.
 
-        Parameters:
-            country (Country): The country code for the desired country.
-            year (int): The year for the data.
+        Args:
+            country (Country): Country to get VAT rate for
+            year (int): Year to get tax rate for
 
         Returns:
-            float: The VAT tax rate for the specified country and year.
+            float: VAT rate as decimal
+
+        Note:
+            - Uses forced_vat values for countries with missing or unreliable data
+            - Tax rate is expressed as a decimal (e.g., 0.20 for 20% VAT)
+            - Returns 0.0 if data not available and country not in forced_vat
         """
         df = self.data["tau_vat"]
         if country in forced_vat:
@@ -181,14 +292,19 @@ class WorldBankReader:
 
     def get_historic_gdp(self, country: Country, year: int) -> float:
         """
-        Retrieves the historic GDP for a specific country and year.
+        Get historical GDP value for a country and year.
 
-        Parameters:
-            country (Country): The country code for the desired country.
-            year (int): The year for the data.
+        Args:
+            country (Country): Country to get GDP for
+            year (int): Year to get GDP data for
 
         Returns:
-            float: The historic GDP for the specified country and year.
+            float: GDP value in local currency units (LCU)
+
+        Note:
+            - Uses World Bank's GDP indicator (NY.GDP.MKTP.CN)
+            - Values are in current local currency units
+            - Returns raw value without scaling
         """
         df = self.data["historic_gdp"]
         df = df.loc[df["Country Code"] == country].iloc[:, 4:]
@@ -196,15 +312,21 @@ class WorldBankReader:
 
     def get_current_scaled_gdp(self, country: Country, year: int, rescale_factor: float = 4.0) -> float:
         """
-        Retrieves the current monthly GDP for a specific country and year.
+        Get scaled current GDP value for a country and year.
 
-        Parameters:
-            country (Country): The country code for the desired country.
-            year (int): The year for the data.
-            rescale_factor (float): The factor to rescale the GDP by (default: 4.0 for 4 quarters).
+        Args:
+            country (Country): Country to get GDP for
+            year (int): Year to get GDP data for
+            rescale_factor (float, optional): Factor to scale GDP by.
+                                            Defaults to 4.0 for quarterly data.
 
         Returns:
-            float: The current monthly GDP for the specified country and year.
+            float: Scaled GDP value in local currency units (LCU)
+
+        Note:
+            - Uses historic GDP values divided by rescale_factor
+            - Typically used to convert annual to quarterly values
+            - Values are in current local currency units
         """
         return self.get_historic_gdp(country, year) / rescale_factor
 
@@ -253,13 +375,19 @@ class WorldBankReader:
 
     def get_unemployment_rate(self, country: str) -> pd.DataFrame:
         """
-        Retrieves the unemployment rate for a specific country.
+        Get time series of unemployment rates.
 
-        Parameters:
-            country (Country): The country code for the desired country.
+        Args:
+            country (str): Country to get unemployment rates for
 
         Returns:
-            pd.DataFrame: A DataFrame containing the unemployment rate for the specified country.
+            pd.DataFrame: DataFrame with dates as index and unemployment rates
+                         as values (in decimal form)
+
+        Note:
+            - Returns quarterly data
+            - Uses World Bank's total unemployment indicator (SL.UEM.TOTL.ZS)
+            - Forward fills missing values
         """
         df = self.data["unemployment"]
         df = df.loc[df["Country Code"] == country]

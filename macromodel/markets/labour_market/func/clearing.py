@@ -1,3 +1,42 @@
+"""Labour market clearing mechanisms and algorithms.
+
+This module implements various algorithms for matching workers with firms in
+the labour market. It provides an abstract base class for market clearing
+and several concrete implementations with different matching strategies.
+
+Key Components:
+1. Market Clearing Strategies:
+   - Default clearing with productivity-based matching
+   - No-op clearing for testing
+   - Poledna-style clearing with optimized matching
+   - Random and deterministic firing mechanisms
+
+2. Employment Dynamics:
+   - Hiring processes with speed constraints
+   - Firing with productivity considerations
+   - Random separations
+   - Voluntary quits
+
+3. Matching Features:
+   - Industry-specific matching
+   - Reservation wage consideration
+   - Productivity-based sorting
+   - Employment transition costs
+
+4. Market Frictions:
+   - Hiring and firing speeds
+   - Industry switching costs
+   - Search and matching frictions
+   - Employment adjustment costs
+
+The module supports various labour market features including:
+- Multi-industry employment
+- Wage bargaining
+- Productivity-based sorting
+- Employment protection
+- Labour mobility
+"""
+
 from abc import ABC, abstractmethod
 from typing import Callable, Tuple
 
@@ -12,6 +51,28 @@ from macromodel.agents.individuals.individuals import Individuals
 
 
 class LabourMarketClearer(ABC):
+    """Abstract base class for labour market clearing mechanisms.
+
+    This class defines the interface for market clearing algorithms that
+    match workers with firms. It supports various matching strategies and
+    market frictions.
+
+    Attributes:
+        hiring_speed: Rate at which firms can hire new workers
+        firing_speed: Rate at which firms can fire workers
+        random_firing_probability: Chance of random separations
+        sorted_firing: Whether to use productivity-based firing order
+        optimised_hiring: Whether to use optimized matching in hiring
+        allow_switching_industries: Whether workers can change industries
+        consider_reservation_wages: Whether to respect wage floors
+        firing_cost_fraction: Severance pay as fraction of wage
+        hiring_cost_fraction: Hiring costs as fraction of wage
+        individuals_quitting: Whether voluntary quits are allowed
+        individuals_quitting_temperature: Quit decision randomness
+        compare_with_normalised_inputs: Use normalized productivity
+        round_target_employment: Round employment targets
+    """
+
     def __init__(
         self,
         hiring_speed: float,
@@ -28,6 +89,23 @@ class LabourMarketClearer(ABC):
         compare_with_normalised_inputs: float,
         round_target_employment: bool,
     ):
+        """Initialize the market clearer with specified parameters.
+
+        Args:
+            hiring_speed: Rate of hiring (0-1)
+            firing_speed: Rate of firing (0-1)
+            random_firing_probability: Random separation rate
+            sorted_firing: Use productivity-based firing
+            optimised_hiring: Use optimized matching
+            allow_switching_industries: Allow industry changes
+            consider_reservation_wages: Use wage floors
+            firing_cost_fraction: Severance cost ratio
+            hiring_cost_fraction: Hiring cost ratio
+            individuals_quitting: Allow voluntary quits
+            individuals_quitting_temperature: Quit randomness
+            compare_with_normalised_inputs: Use normalized values
+            round_target_employment: Round targets
+        """
         self.hiring_speed = hiring_speed
         self.firing_speed = firing_speed
         self.random_firing_probability = random_firing_probability
@@ -49,26 +127,93 @@ class LabourMarketClearer(ABC):
         households: Households,
         individuals: Individuals,
     ) -> tuple[np.ndarray, int, int, int, int]:
+        """Clear the labour market by matching workers with firms.
+
+        Args:
+            firms: Firm agents with job openings
+            households: Household agents
+            individuals: Individual agents seeking employment
+
+        Returns:
+            tuple containing:
+            - np.ndarray: Labour costs by firm
+            - int: Number of new hires
+            - int: Number of random firings
+            - int: Number of voluntary quits
+            - int: Number of regular firings
+        """
         pass
 
 
 class NoLabourMarketClearer(LabourMarketClearer):
+    """Null implementation that performs no market clearing.
+
+    This class implements a no-op market clearer that always returns
+    zeros. It's useful for testing and as a neutral baseline.
+    """
+
     def clear(
         self,
         firms: Firms,
         households: Households,
         individuals: Individuals,
     ) -> tuple[np.ndarray, int, int, int, int]:
+        """Return zeros without performing any matching.
+
+        Args:
+            firms: Ignored
+            households: Ignored
+            individuals: Ignored
+
+        Returns:
+            tuple: (Zero costs, zero counts)
+        """
         return np.zeros(firms.ts.current("n_firms")), 0, 0, 0, 0
 
 
 class DefaultLabourMarketClearer(LabourMarketClearer):
+    """Default implementation using productivity-based matching.
+
+    This class implements a market clearing mechanism that matches
+    workers with firms based on productivity and wages. It processes
+    separations first, then handles new hires.
+
+    The clearing process:
+    1. Process random firings
+    2. Handle voluntary quits
+    3. Process regular firings
+    4. Match new hires
+    5. Calculate costs
+    """
+
     def clear(
         self,
         firms: Firms,
         households: Households,
         individuals: Individuals,
     ) -> tuple[np.ndarray, int, int, int, int]:
+        """Clear the market using productivity-based matching.
+
+        This method executes the full market clearing sequence:
+        1. Random separations
+        2. Voluntary quits
+        3. Productivity-based firing
+        4. New hiring
+        5. Cost calculation
+
+        Args:
+            firms: Firm agents with labour demand
+            households: Household agents
+            individuals: Individual agents
+
+        Returns:
+            tuple containing:
+            - np.ndarray: Total labour costs by firm
+            - int: Number of new hires
+            - int: Number of random firings
+            - int: Number of voluntary quits
+            - int: Number of regular firings
+        """
         if self.compare_with_normalised_inputs:
             prev_labour_inputs = firms.ts.current("normalised_labour_inputs")
             desired_labour_inputs = firms.ts.current("desired_labour_inputs")
@@ -163,6 +308,27 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
         firm_industries: np.ndarray,
         average_industry_productivity: np.ndarray,
     ) -> tuple[np.ndarray, int]:
+        """Process productivity-based firing decisions.
+
+        This method handles regular (non-random) separations based on
+        productivity differences and firm labour demand.
+
+        Args:
+            firm_employments: List of employee arrays by firm
+            current_individuals_activity: Activity status array
+            individuals_corresponding_firm: Firm assignments
+            prev_individuals_productivity: Worker productivity
+            desired_labour_inputs: Target labour by firm
+            prev_labour_inputs: Current labour by firm
+            current_individual_wages: Worker wages
+            firm_industries: Industry by firm
+            average_industry_productivity: Productivity by industry
+
+        Returns:
+            tuple:
+            - np.ndarray: Firing costs by firm
+            - int: Number of workers fired
+        """
         firing_costs = np.zeros_like(desired_labour_inputs)
         num_newly_fired = 0
         excess_productivity = prev_labour_inputs - desired_labour_inputs
@@ -209,6 +375,29 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
         current_individual_wages: np.ndarray,
         firm_productivity: float,
     ) -> tuple[float, int]:
+        """Fire workers in specified order until target reached.
+
+        This method processes the firing queue for a specific firm,
+        considering productivity and firing speed constraints.
+
+        Args:
+            current_individuals_activity: Activity status array
+            excess_productivity: Excess labour by firm
+            firm_employments: List of employee arrays by firm
+            firm_id: ID of firing firm
+            ind_firing_queue: Ordered list of workers to fire
+            individuals_corresponding_firm: Firm assignments
+            initial_excess_productivity: Initial excess labour
+            labour_supply_lost: Cumulative labour reduction
+            prev_individuals_productivity: Worker productivity
+            current_individual_wages: Worker wages
+            firm_productivity: Firm's productivity level
+
+        Returns:
+            tuple:
+            - float: Total firing costs
+            - int: Number of workers fired
+        """
         firing_costs = 0.0
         num_newly_fired = 0
         for i_to_fire in range(len(firm_employments[firm_id]) - 1):
@@ -251,6 +440,19 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
         firm_id: int,
         prev_individuals_productivity: np.ndarray,
     ) -> np.ndarray:
+        """Create ordered list of workers to fire.
+
+        This method determines the order in which workers should be
+        fired, based on productivity if sorted firing is enabled.
+
+        Args:
+            firm_employments: List of employee arrays by firm
+            firm_id: ID of firing firm
+            prev_individuals_productivity: Worker productivity
+
+        Returns:
+            np.ndarray: Ordered array of worker IDs to fire
+        """
         if self.sorted_firing:
             return sort_employees_by_productivity(
                 current_firm_employments=firm_employments[firm_id],
@@ -279,6 +481,31 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
         current_individual_wages: np.ndarray,  # noqa
         average_industry_productivity: np.ndarray,
     ) -> tuple[np.ndarray, int]:
+        """Match unemployed workers with firms needing labour.
+
+        This method implements the hiring process, matching available
+        workers with firms based on productivity and wages.
+
+        Args:
+            firm_employments: List of employee arrays by firm
+            firm_industries: Industry by firm
+            current_individuals_activity: Activity status array
+            current_individuals_industry: Worker industry
+            individuals_corresponding_firm: Firm assignments
+            prev_individuals_productivity: Worker productivity
+            desired_labour_inputs: Target labour by firm
+            prev_labour_inputs: Current labour by firm
+            offered_wage_function: Wage offer calculator
+            offered_wage: Array to store offered wages
+            individual_reservation_wages: Minimum acceptable wages
+            current_individual_wages: Current wages
+            average_industry_productivity: Productivity by industry
+
+        Returns:
+            tuple:
+            - np.ndarray: Hiring costs by firm
+            - int: Number of new hires
+        """
         if not self.allow_switching_industries:
             raise NotImplementedError("haven't done this yet")
         hiring_costs = np.zeros_like(desired_labour_inputs)
@@ -360,6 +587,26 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
         offered_wage: np.ndarray,
         average_industry_productivity: np.ndarray,
     ) -> int | None:
+        """Find suitable unemployed worker for a position.
+
+        This method searches for an appropriate worker to fill a
+        position, considering industry match and wages.
+
+        Args:
+            unemployed_ind: Array of unemployed worker IDs
+            prev_individuals_productivity: Worker productivity
+            current_individuals_industry: Worker industry
+            firm_industry: Hiring firm's industry
+            firm_missing_productivity: Required productivity
+            firm_id: ID of hiring firm
+            offered_wage_function: Wage offer calculator
+            individual_reservation_wages: Minimum wages
+            offered_wage: Array to store offered wages
+            average_industry_productivity: Industry productivity
+
+        Returns:
+            int | None: ID of chosen worker or None if none found
+        """
         # If reservation wages are taken into account
         current_offered_wage = offered_wage_function(firm_id, prev_individuals_productivity)
         if self.consider_reservation_wages:
@@ -403,10 +650,20 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
         return ind
 
 
+@njit
 def sort_employees_by_productivity(
     current_firm_employments: np.ndarray,
     prev_individuals_productivity: np.ndarray,
 ) -> np.ndarray:
+    """Sort employees by their productivity level.
+
+    Args:
+        current_firm_employments: Array of employee IDs
+        prev_individuals_productivity: Worker productivity
+
+    Returns:
+        np.ndarray: Sorted array of employee IDs
+    """
     return np.array(current_firm_employments)[np.argsort(prev_individuals_productivity[current_firm_employments])]
 
 
@@ -419,6 +676,22 @@ def random_firing(
     random_firing_probability: float,
     firing_cost_fraction: float,
 ) -> tuple[np.ndarray, int]:
+    """Process random separations across all firms.
+
+    Args:
+        number_of_firms: Total number of firms
+        current_individuals_activity: Activity status array
+        individuals_corresponding_firm: Firm assignments
+        firm_employments: List of employee arrays by firm
+        current_individual_wages: Worker wages
+        random_firing_probability: Chance of random firing
+        firing_cost_fraction: Severance cost ratio
+
+    Returns:
+        tuple:
+        - np.ndarray: Random firing costs by firm
+        - int: Number of random firings
+    """
     firing_costs = np.zeros(number_of_firms)
     num_newly_randomly_fired = 0
     if random_firing_probability == 0.0:
@@ -457,6 +730,20 @@ def random_quitting(
     individuals_corresponding_household: np.ndarray,
     individuals_quitting_temperature: float,
 ) -> int:
+    """Process voluntary quits based on wages and wealth.
+
+    Args:
+        current_individuals_activity: Activity status array
+        individuals_corresponding_firm: Firm assignments
+        firm_employments: List of employee arrays by firm
+        current_individual_wages: Worker wages
+        current_household_wealth: Household wealth
+        individuals_corresponding_household: Household assignments
+        individuals_quitting_temperature: Quit randomness
+
+    Returns:
+        int: Number of voluntary quits
+    """
     num_newly_randomly_quit = 0
     employed_individuals: np.ndarray = current_individuals_activity == ActivityStatus.EMPLOYED  # noqa
     individual_indices = np.arange(employed_individuals.shape[0])
@@ -487,6 +774,14 @@ def fire_individual(
     individuals_corresponding_firm: np.ndarray,
     firm_employments: list,
 ) -> None:
+    """Process the firing of a single worker.
+
+    Args:
+        individual_id: ID of worker to fire
+        current_individuals_activity: Activity status array
+        individuals_corresponding_firm: Firm assignments
+        firm_employments: List of employee arrays by firm
+    """
     current_individuals_activity[individual_id] = ActivityStatus.UNEMPLOYED
     corresponding_firm = individuals_corresponding_firm[individual_id]
     try:
@@ -505,6 +800,17 @@ def hire_individual(
     firm_industry: int,
     ind_chosen: int,
 ) -> None:
+    """Process the hiring of a single worker.
+
+    Args:
+        firm_employments: List of employee arrays by firm
+        current_individuals_activity: Activity status array
+        individuals_corresponding_firm: Firm assignments
+        current_individuals_industry: Worker industry
+        firm_id: ID of hiring firm
+        firm_industry: Industry of hiring firm
+        ind_chosen: ID of worker to hire
+    """
     assert current_individuals_activity[ind_chosen] == ActivityStatus.UNEMPLOYED
     current_individuals_activity[ind_chosen] = ActivityStatus.EMPLOYED
     individuals_corresponding_firm[ind_chosen] = firm_id
@@ -513,6 +819,12 @@ def hire_individual(
 
 
 def check_employed_correspondence(activity_array: np.ndarray, firm_employments: list):
+    """Verify consistency of employment records.
+
+    Args:
+        activity_array: Activity status array
+        firm_employments: List of employee arrays by firm
+    """
     all_employments = np.concatenate(firm_employments)
     all_employments = np.sort(all_employments)
 
@@ -526,6 +838,13 @@ def check_employed_correspondence(activity_array: np.ndarray, firm_employments: 
 
 
 def check_employed_in_list(activity_array: np.ndarray, corresponding_firm: np.ndarray, firm_employments: list):
+    """Check if employed workers are in firm lists.
+
+    Args:
+        activity_array: Activity status array
+        corresponding_firm: Firm assignments
+        firm_employments: List of employee arrays by firm
+    """
     employed = activity_array == ActivityStatus.EMPLOYED
     ind_indices = np.arange(activity_array.shape[0])
     emp_indices = ind_indices[employed]
@@ -551,12 +870,33 @@ def check_employed_in_list(activity_array: np.ndarray, corresponding_firm: np.nd
 
 
 class PolednaLabourMarketClearer(LabourMarketClearer):
+    """Optimized implementation using Poledna-style matching.
+
+    This class implements an efficient market clearing mechanism
+    using optimized matching algorithms for both hiring and firing.
+    """
+
     def clear(
         self,
         firms: Firms,
         households: Households,
         individuals: Individuals,
     ) -> tuple[np.ndarray, int, int, int, int]:
+        """Clear the market using optimized matching.
+
+        Args:
+            firms: Firm agents with labour demand
+            households: Household agents
+            individuals: Individual agents
+
+        Returns:
+            tuple containing:
+            - np.ndarray: Total labour costs by firm
+            - int: Number of new hires
+            - int: Number of random firings
+            - int: Number of voluntary quits
+            - int: Number of regular firings
+        """
         if self.compare_with_normalised_inputs:
             prev_labour_inputs = firms.ts.current("normalised_labour_inputs")
             desired_labour_inputs = firms.ts.current("desired_labour_inputs")
@@ -596,7 +936,6 @@ class PolednaLabourMarketClearer(LabourMarketClearer):
                 individuals_corresponding_household=individuals_corresponding_household,
                 individuals_quitting_temperature=self.individuals_quitting_temperature,
             )
-
         else:
             num_newly_randomly_quit = 0
 
@@ -673,6 +1012,33 @@ def firing(
     firing_speed: float,
     firing_cost_fraction: float,
 ) -> Tuple[np.ndarray, int]:
+    """Process optimized firing decisions using numba acceleration.
+
+    This function implements an optimized version of the firing process,
+    using numba for performance. It calculates excess employment and
+    processes separations in a vectorized manner.
+
+    Args:
+        individuals_corresponding_firm: Array mapping workers to firms
+        prev_individuals_productivity: Previous worker productivity
+        desired_labour_inputs: Target labour input by firm
+        prev_labour_inputs: Current labour input by firm
+        current_individual_wages: Current worker wages
+        firm_industries: Industry assignments for firms
+        average_industry_productivity: Productivity by industry
+        firing_speed: Rate at which firms can fire workers
+        firing_cost_fraction: Severance pay as fraction of wage
+
+    Returns:
+        tuple:
+        - np.ndarray: Firing costs by firm
+        - int: Total number of workers fired
+
+    Note:
+        This implementation uses numba's just-in-time compilation for
+        performance optimization. The function operates directly on
+        numpy arrays for efficiency.
+    """
     firing_costs = np.zeros(desired_labour_inputs.shape)
     excess_employees = np.round(
         firing_speed
@@ -696,24 +1062,6 @@ def firing(
     return firing_costs, int(excess_employees.sum())  # noqa
 
 
-# @njit(
-#     types.Tuple((float64[:], int64, List(List(int64))))(
-#         int64[:],  # firm industries
-#         float64[:],  # current individuals industry
-#         int64[:],  # individuals corresponding firm
-#         float64[:],  # prev individuals productivity
-#         boolean[:],  # current individuals activity
-#         float64[:],  # desired labour inputs
-#         float64[:],  # prev labour inputs
-#         float64[:],  # offered wage
-#         float64[:],  # individual reservation wages
-#         float64[:],  # current individual wages
-#         float64[:],  # average industry productivity
-#         float64,  # hiring speed
-#         float64,  # hiring cost fraction
-#     ),
-#     cache=True,
-# )
 @njit
 def hiring(
     firm_industries: np.ndarray,
@@ -730,6 +1078,38 @@ def hiring(
     hiring_speed: float,
     hiring_cost_fraction: float,
 ) -> Tuple[np.ndarray, int, list]:
+    """Process optimized hiring decisions using numba acceleration.
+
+    This function implements an optimized version of the hiring process,
+    using numba for performance. It matches unemployed workers with
+    firms having excess demand for labour.
+
+    Args:
+        firm_industries: Industry assignments for firms
+        current_individuals_industry: Current worker industries
+        individuals_corresponding_firm: Array mapping workers to firms
+        prev_individuals_productivity: Previous worker productivity
+        current_ind_ea: Array indicating economically active workers
+        desired_labour_inputs: Target labour input by firm
+        prev_labour_inputs: Current labour input by firm
+        offered_wage: Array to store offered wages
+        individual_reservation_wages: Minimum acceptable wages
+        current_individual_wages: Current worker wages
+        average_industry_productivity: Productivity by industry
+        hiring_speed: Rate at which firms can hire workers
+        hiring_cost_fraction: Hiring costs as fraction of wage
+
+    Returns:
+        tuple:
+        - np.ndarray: Hiring costs by firm
+        - int: Total number of new hires
+        - list: Lists of new hires by firm
+
+    Note:
+        This implementation uses numba's just-in-time compilation for
+        performance optimization. The function operates directly on
+        numpy arrays and uses numba-compatible data structures.
+    """
     hiring_costs, num_newly_joining = (
         np.zeros_like(desired_labour_inputs, np.float64),
         0,

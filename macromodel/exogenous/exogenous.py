@@ -1,3 +1,31 @@
+"""Exogenous data management module.
+
+This module manages external economic data that influences the model but is not
+determined within it. It serves as the bridge between historical/external data
+and the dynamic simulation, providing:
+
+1. Historical Data Management:
+   - Pre-simulation economic indicators
+   - Calibration period data
+   - Time series organization and splitting
+
+2. Economic Indicators:
+   - Inflation rates (CPI, PPI)
+   - National accounts (GDP components)
+   - Labor market metrics (unemployment, vacancy)
+   - House price indices
+   - Exchange rates
+
+3. Simulation Support:
+   - Initial conditions for model start
+   - Calibration data for parameter estimation
+   - Reference points for model validation
+   - External constraints and benchmarks
+
+The module ensures proper temporal alignment and organization of external data,
+critical for model initialization and ongoing calibration.
+"""
+
 import h5py
 import numpy as np
 import pandas as pd
@@ -8,6 +36,37 @@ from macromodel.exogenous.exogenous_ts import create_exogenous_timeseries
 
 
 class Exogenous:
+    """External economic data manager.
+
+    This class handles the organization and provision of external economic data
+    that influences but is not determined by the model. It splits historical
+    data into pre-simulation and simulation periods, maintaining proper temporal
+    alignment and data organization.
+
+    Attributes:
+        country_name (str): Associated country identifier
+        inflation (pd.DataFrame): CPI and PPI inflation data
+        national_accounts (pd.DataFrame): GDP and components data
+        unemployment_rate (pd.DataFrame): Labor market unemployment data
+        vacancy_rate (pd.DataFrame): Labor market vacancy data
+        house_price_index (pd.DataFrame): Property market indices
+        exchange_rates_data (pd.DataFrame): Currency exchange rates
+        inflation_before (pd.DataFrame): Pre-simulation inflation data
+        inflation_during (pd.DataFrame): Simulation period inflation data
+        national_accounts_before (pd.DataFrame): Pre-simulation national accounts
+        national_accounts_during (pd.DataFrame): Simulation period accounts
+        unemployment_rate_before (pd.DataFrame): Pre-simulation unemployment
+        unemployment_rate_during (pd.DataFrame): Simulation period unemployment
+        vacancy_rate_before (pd.DataFrame): Pre-simulation vacancy rates
+        vacancy_rate_during (pd.DataFrame): Simulation period vacancy rates
+        house_price_index_before (pd.DataFrame): Pre-simulation house prices
+        house_price_index_during (pd.DataFrame): Simulation period house prices
+        exchange_rates_data_before (pd.DataFrame): Pre-simulation exchange rates
+        exchange_rates_data_during (pd.DataFrame): Simulation period rates
+        ts (TimeSeries): Organized time series of all exogenous data
+        compiled_historic_data (pd.DataFrame): Combined pre-simulation data
+    """
+
     def __init__(
         self,
         country_name: str,
@@ -21,6 +80,20 @@ class Exogenous:
         house_price_index: pd.DataFrame,
         exchange_rates_data: pd.DataFrame,
     ):
+        """Initialize exogenous data manager.
+
+        Args:
+            country_name (str): Country identifier
+            initial_year (int): Start year for simulation
+            initial_quarter (int): Start quarter for simulation
+            t_max (int): Maximum simulation periods
+            inflation (pd.DataFrame): Inflation rate data
+            national_accounts (pd.DataFrame): National accounts data
+            unemployment_rate (pd.DataFrame): Unemployment rate data
+            vacancy_rate (pd.DataFrame): Vacancy rate data
+            house_price_index (pd.DataFrame): House price indices
+            exchange_rates_data (pd.DataFrame): Exchange rate data
+        """
         self.country_name = country_name
         self.inflation = inflation
         self.national_accounts = national_accounts
@@ -31,12 +104,11 @@ class Exogenous:
 
         offset = 0
 
-        # Cutting off inflation
+        # Split data into before/during simulation periods
         start_ind = np.where(self.inflation.index == str(initial_year) + "-Q" + str(initial_quarter))[0][0]
         self.inflation_before = self.inflation.iloc[0:start_ind]
         self.inflation_during = self.inflation.iloc[start_ind : start_ind + t_max - offset]
 
-        # Cutting off GDP decomp
         if len(self.national_accounts) > 0:
             self.national_accounts_before = self.national_accounts.loc[
                 self.national_accounts.index < pd.Timestamp(initial_year, 3 * initial_quarter - 2, 1)
@@ -48,22 +120,19 @@ class Exogenous:
             self.national_accounts_before = pd.DataFrame()
             self.national_accounts_during = pd.DataFrame()
 
-        # Cutting off unemployment rate
         start_ind = np.where(self.unemployment_rate.index == str(initial_year) + "-Q" + str(initial_quarter))[0][0]
         self.unemployment_rate_before = self.unemployment_rate.iloc[0:start_ind]
         self.unemployment_rate_during = self.unemployment_rate.iloc[start_ind : start_ind + t_max - offset]
 
-        # Cutting off vacancy rate
         start_ind = np.where(self.vacancy_rate.index == str(initial_year) + "-Q" + str(initial_quarter))[0][0]
         self.vacancy_rate_before = self.vacancy_rate.iloc[0:start_ind]
         self.vacancy_rate_during = self.vacancy_rate.iloc[start_ind : start_ind + t_max - offset]
 
-        # Cutting off the housing price index
         start_ind = np.where(self.house_price_index.index == str(initial_year) + "-Q" + str(initial_quarter))[0][0]
         self.house_price_index_before = self.house_price_index.iloc[0:start_ind]
         self.house_price_index_during = self.house_price_index.iloc[start_ind : start_ind + t_max - offset]
 
-        # Cutting-off exchange rates
+        # Process exchange rates
         self.exchange_rates_data = self.exchange_rates_data.T
         self.exchange_rates_data = self.exchange_rates_data.loc[:, country_name]
         self.exchange_rates_data.index = [ind for ind in self.exchange_rates_data.index]
@@ -76,7 +145,7 @@ class Exogenous:
             self.exchange_rates_data.index >= pd.Timestamp(initial_year, 3 * initial_quarter - 2, 1)
         ]
 
-        # Put it all together in a time series object
+        # Create time series and compile historic data
         self.ts = create_exogenous_timeseries(
             inflation_during=self.inflation_during,
             national_accounts_during=self.national_accounts_during,
@@ -86,7 +155,6 @@ class Exogenous:
             exchange_rates_data_during=self.exchange_rates_data_during,
         )
 
-        # Compile historic data
         self.compiled_historic_data = pd.concat(
             [
                 self.inflation_before,
@@ -111,6 +179,21 @@ class Exogenous:
         initial_year: int,
         t_max: int,
     ):
+        """Create instance from synthetic country data.
+
+        Factory method that constructs an Exogenous instance using
+        preprocessed synthetic country data.
+
+        Args:
+            synthetic_country (SyntheticCountry): Preprocessed country data
+            exchange_rates (ExchangeRates): Exchange rate dynamics
+            country_name (str): Country identifier
+            initial_year (int): Start year
+            t_max (int): Maximum periods
+
+        Returns:
+            Exogenous: Initialized exogenous data manager
+        """
         exogenous_data = synthetic_country.exogenous_data
         return cls(
             country_name=country_name,
@@ -126,9 +209,15 @@ class Exogenous:
         )
 
     def reset(self) -> None:
+        """Reset time series to initial state."""
         self.ts.reset()
 
-    def save_to_h5(self, group: h5py.Group):
+    def save_to_h5(self, group: h5py.Group) -> None:
+        """Save exogenous data to HDF5.
+
+        Args:
+            group (h5py.Group): HDF5 group to save to
+        """
         self.ts.write_to_h5("exogenous", group)
 
     # def compile_historic_data(self) -> pd.DataFrame:

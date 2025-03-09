@@ -1,3 +1,32 @@
+"""Module for preprocessing synthetic firm data.
+
+This module provides a framework for preprocessing and organizing firm-level data
+that will be used to initialize behavioral models. Key preprocessing includes:
+
+1. Firm Data Organization:
+   - Industry classification
+   - Employee allocation
+   - Financial data processing
+   - Production parameters
+
+2. Initial State Processing:
+   - Balance sheet data
+   - Production capacity
+   - Input requirements
+   - Financial positions
+
+3. Parameter Processing:
+   - Productivity metrics
+   - Cost structures
+   - Tax parameters
+   - Interest rates
+
+Note:
+    This module is NOT used for simulating firm behavior. It only handles
+    the preprocessing and organization of firm data that will later be used
+    to initialize behavioral models in the simulation package.
+"""
+
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -12,8 +41,7 @@ from macro_data.processing.synthetic_credit_market.loan_data import (
 
 
 class SyntheticFirms(ABC):
-    """
-    Represents a synthetic firms object.
+    """Container for preprocessed firm-level data.
 
     The firm data is stored in a pandas DataFrame with the following columns:
         - Industry: The industry of the firm.
@@ -40,22 +68,23 @@ class SyntheticFirms(ABC):
         - Corporate Taxes Paid: The corporate taxes paid of the firm (in LCU).
         - Debt Installments: The debt installments of the firm (in LCU).
 
-    Args:
-        country_name (str): The name of the country.
-        scale (int): The scale of the synthetic firms.
-        year (int): The year of the synthetic firms.
-        industries (list[str]): The list of industries.
-        number_of_firms_by_industry (np.ndarray): The number of firms by industry.
-        firm_data (pd.DataFrame): The firm data.
-        intermediate_inputs_stock (np.ndarray): The intermediate inputs stock.
-        used_intermediate_inputs (np.ndarray): The used intermediate inputs.
-        capital_inputs_stock (np.ndarray): The capital inputs stock.
-        used_capital_inputs (np.ndarray): The used capital inputs.
-        total_firm_deposits (float): The total firm deposits.
-        total_firm_debt (float): The total firm debt.
-        capital_inputs_productivity_matrix (np.ndarray): The capital inputs productivity matrix.
-        intermediate_inputs_productivity_matrix (np.ndarray): The intermediate inputs productivity matrix.
-        capital_inputs_depreciation_matrix (np.ndarray): The capital inputs depreciation matrix.
+    Attributes:
+        country_name (str): Country identifier for data collection
+        scale (int): Scaling factor for synthetic data
+        year (int): Reference year for preprocessing
+        industries (list[str]): List of industry classifications
+        number_of_firms_by_industry (np.ndarray): Firm count by industry
+        firm_data (pd.DataFrame): Main data container with firm information
+        intermediate_inputs_stock (np.ndarray): Initial intermediate input inventory
+        used_intermediate_inputs (np.ndarray): Initial input usage
+        capital_inputs_stock (np.ndarray): Initial capital stock
+        used_capital_inputs (np.ndarray): Initial capital usage
+        total_firm_deposits (float): Aggregate firm deposits
+        total_firm_debt (float): Aggregate firm debt
+        capital_inputs_productivity_matrix (np.ndarray): Capital productivity parameters
+        intermediate_inputs_productivity_matrix (np.ndarray): Input productivity parameters
+        capital_inputs_depreciation_matrix (np.ndarray): Capital depreciation rates
+        labour_productivity_by_industry (np.ndarray): Labor productivity by industry
     """
 
     @abstractmethod
@@ -130,3 +159,7 @@ class SyntheticFirms(ABC):
         short_term_loans: ShorttermLoans,
         tax_data: TaxData,
     ) -> None: ...
+
+    @property
+    def total_emissions(self):
+        return self.firm_data["Input Emissions"] + self.firm_data["Capital Emissions"]

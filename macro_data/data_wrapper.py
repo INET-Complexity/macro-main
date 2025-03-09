@@ -1,7 +1,43 @@
+"""
+This module provides the DataWrapper class, which is responsible for creating and managing synthetic economic data
+for the INET macroeconomic model. It serves as the primary interface for data preprocessing and management,
+handling multiple countries, industries, and various economic indicators.
+
+The DataWrapper is a crucial component that:
+1. Creates synthetic country-level economic data
+2. Manages synthetic rest-of-world data
+3. Handles exchange rates and trade proportions
+4. Processes emissions data
+5. Provides calibration data for model validation
+
+Example usage:
+    ```python
+    from macro_data.configuration_utils import default_data_configuration
+    from macro_data import DataWrapper
+
+    # Create configuration for multiple countries
+    data_config = default_data_configuration(
+        countries=["FRA", "CAN", "USA"],
+        proxy_country_dict={"CAN": "FRA", "USA": "FRA"}
+    )
+
+    # Initialize DataWrapper with configuration
+    creator = DataWrapper.from_config(
+        configuration=data_config,
+        raw_data_path="path/to/raw/data",
+        single_hfcs_survey=True
+    )
+
+    # Save processed data
+    creator.save("path/to/save/data.pkl")
+    ```
+"""
+
 import pickle as pkl
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -21,6 +57,10 @@ from macro_data.readers import (
     DataReaders,
     compile_industry_data,
 )
+from macro_data.readers.emissions.emissions_reader import (
+    EmissionsData,
+    EmissionsEnergyFactors,
+)
 from macro_data.readers.exogenous_data import ExogenousCountryData
 from macro_data.readers.io_tables.icio_reader import ICIOReader
 
@@ -28,21 +68,30 @@ from macro_data.readers.io_tables.icio_reader import ICIOReader
 @dataclass
 class DataWrapper:
     """
-    This class is used to create all the synthetic data for the INET model.
-    The wrapper contains all the synthetic data needed to run the model. It contains a dictionary of synthetic
-    countries, a synthetic rest of the world, exchange rates, trade proportions by origin and destination
-    and a data configuration.
+    A comprehensive data container and generator for synthetic economic data used in the macromodel.
 
-    Each synthetic country is itself a dataclass that contains the synthetically generated data for a single country
-    and all of the agents that make it up.
+    This class handles the creation and management of synthetic data for multiple countries, including:
+    - Synthetic country-level economic data
+    - Rest of world data
+    - Exchange rates and trade proportions
+    - Emissions data and factors
+    - Calibration data for model validation
+
+    The DataWrapper can be initialized either from a configuration (using from_config) or loaded from
+    a saved pickle file (using init_from_pickle). It supports both EU and non-EU countries, with
+    proxy mechanisms for non-EU countries.
 
     Attributes:
-        synthetic_countries (dict[str, SyntheticCountry]): The synthetic countries.
-        synthetic_rest_of_the_world (SyntheticRestOfTheWorld): The synthetic rest of the world.
-        exchange_rates (pd.DataFrame): The exchange rates.
-        origin_trade_proportions (pd.DataFrame): The trade proportions by origin.
-        destination_trade_proportions (pd.DataFrame): The trade proportions by destination.
-        configuration (DataConfiguration): The data configuration.
+        synthetic_countries (dict[str, SyntheticCountry]): Dictionary mapping country codes to synthetic country data
+        synthetic_rest_of_the_world (SyntheticRestOfTheWorld): Synthetic data for rest of world
+        exchange_rates (pd.DataFrame): Exchange rates between countries
+        origin_trade_proportions (pd.DataFrame): Trade proportions by origin country
+        destination_trade_proportions (pd.DataFrame): Trade proportions by destination country
+        configuration (DataConfiguration): Configuration settings for data generation
+        calibration_data (pd.DataFrame): Data used for model calibration
+        industries (list[str]): List of industry codes
+        emission_factors (dict[str, float]): Emission factors by type
+        emissions_energy_factors (Optional[EmissionsEnergyFactors]): Energy-related emission factors
     """
 
     synthetic_countries: dict[str, SyntheticCountry]
@@ -54,20 +103,25 @@ class DataWrapper:
     calibration_data: pd.DataFrame
     industries: list[str]
     emission_factors: dict[str, float]
+    emissions_energy_factors: Optional[EmissionsEnergyFactors] = None
 
     @property
     def all_country_names(self) -> list[str]:
         """
+        Get a list of all country names, including the Rest of World (ROW).
+
         Returns:
-            list[str]: A list of all the country names.
+            list[str]: List of all country codes including ROW
         """
         return list(self.synthetic_countries.keys()) + ["ROW"]
 
     @property
     def n_industries(self):
         """
+        Get the number of industries in the model.
+
         Returns:
-            int: The number of industries.
+            int: The total number of industries being modeled
         """
         return len(self.industries)
 
@@ -80,17 +134,25 @@ class DataWrapper:
         single_icio_survey: bool = True,
     ) -> "DataWrapper":
         """
-        Initializes a DataWrapper object with the given parameters. The DataWrapper will contain all the synthetic data
-        needed to run the model.
+        Create a DataWrapper instance from a configuration.
+
+        This is the primary method for initializing a new DataWrapper. It processes raw data according
+        to the provided configuration to create synthetic data for all specified countries.
 
         Args:
-            configuration (DataConfiguration): The data configuration.
-            raw_data_path (Path | str): The path to the raw data.
-            single_hfcs_survey (bool, optional): Whether to use a single HFCS survey. Defaults to True.
-            single_icio_survey (bool, optional): Whether to use a single ICIO survey. Defaults to True.
+            configuration (DataConfiguration): Configuration specifying countries, industries, and other settings
+            raw_data_path (Path | str): Path to the directory containing raw data files
+            single_hfcs_survey (bool, optional): Whether to use a single Household Finance and Consumption Survey.
+                                               Defaults to True.
+            single_icio_survey (bool, optional): Whether to use a single Inter-Country Input-Output table.
+                                               Defaults to True.
 
         Returns:
-            DataWrapper: The initialized DataWrapper.
+            DataWrapper: Initialized DataWrapper instance with processed synthetic data
+
+        Raises:
+            ValueError: If a non-EU country doesn't have a proxy EU country specified
+            ValueError: If attempting to disaggregate industries when aggregate_industries is True
         """
         # ensure that string paths are paths
         if isinstance(raw_data_path, str):
@@ -152,6 +214,18 @@ class DataWrapper:
 
         # override industries
         industries = readers.icio[year].industries
+
+        emission_factors = readers.emissions.get_emissions_factors(year)
+
+        add_emissions = False
+
+        if all([emitting_ind in industries for emitting_ind in ["B05a", "B05b", "B05c"]]):
+            emission_factors["coke_refining"] = get_coke_refining_emissions(
+                readers.icio[year], emission_factors, country_names + ["ROW"], year
+            )
+            add_emissions = True
+        else:
+            emission_factors["coke_refining"] = np.mean(list(emission_factors.values()))
 
         single_firm_dict = {
             country: configuration.country_configs[country].single_firm_per_industry for country in country_names
@@ -216,6 +290,13 @@ class DataWrapper:
                 country_industry_data=industry_data[country],
                 year_range=year_range,
                 goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
+                emission_factors=(
+                    EmissionsData.from_readers(
+                        emission_factors, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country, year)
+                    )
+                    if add_emissions
+                    else None
+                ),
             )
             for country in country_names
             if country.is_eu_country
@@ -236,6 +317,13 @@ class DataWrapper:
                     goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
                     quarter=quarter,
                     proxy_inflation_data=proxy_inflation[country],
+                    emission_factors=(
+                        EmissionsData.from_readers(
+                            emission_factors, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country, year)
+                        )
+                        if add_emissions
+                        else None
+                    ),
                 )
 
         row_exports_growth = calibration_data[("ROW", "Exports (Growth)")]
@@ -262,15 +350,6 @@ class DataWrapper:
         origin_trade_proportions = readers.icio[year].get_origin_trade_proportions()
         destination_trade_proportions = readers.icio[year].get_destination_trade_proportions()
 
-        emission_factors = readers.emissions.get_emissions_factors(year)
-
-        if all([emitting_ind in industries for emitting_ind in ["B05a", "B05b", "B05c"]]):
-            emission_factors["coke_refining"] = get_coke_refining_emissions(
-                readers.icio[year], emission_factors, country_names + ["ROW"], year
-            )
-        else:
-            emission_factors["coke_refining"] = np.mean(list(emission_factors.values()))
-
         return cls(
             synthetic_countries=synthetic_countries,
             synthetic_rest_of_the_world=synthetic_row,
@@ -281,18 +360,23 @@ class DataWrapper:
             calibration_data=calibration_data,
             industries=industries,
             emission_factors=emission_factors,
+            emissions_energy_factors=(
+                EmissionsEnergyFactors.from_readers(readers.icio[year], country_names) if add_emissions else None
+            ),
         )
 
     @classmethod
     def init_from_pickle(cls, path: str | Path) -> "DataWrapper":
         """
-        Initialise the DataWrapper from a pickle file.
+        Load a previously saved DataWrapper from a pickle file.
+
+        This method is useful for loading preprocessed data without having to regenerate it.
 
         Args:
-            path (str or Path): The path to the pickle file.
+            path (str | Path): Path to the pickle file containing the saved DataWrapper
 
         Returns:
-            DataWrapper: The wrapper.
+            DataWrapper: The loaded DataWrapper instance
         """
         if isinstance(path, str):
             path = Path(path)
@@ -304,10 +388,13 @@ class DataWrapper:
 
     def save(self, path: str | Path) -> None:
         """
-        Save the synthetic data to a pickle file.
+        Save the DataWrapper instance to a pickle file.
+
+        This method saves all synthetic data and configuration to a file for later use.
+        The saved file can be loaded using init_from_pickle.
 
         Args:
-            path (str or Path): The path to the pickle file.
+            path (str | Path): Path where the pickle file should be saved
         """
         if isinstance(path, str):
             path = Path(path)
@@ -317,6 +404,12 @@ class DataWrapper:
 
     @property
     def calibration_before(self):
+        """
+        Get calibration data for periods before the configured year and quarter.
+
+        Returns:
+            pd.DataFrame: Calibration data for earlier periods
+        """
         year = self.configuration.year
         quarter = self.configuration.quarter
         calibration_index = self.calibration_data.index
@@ -325,6 +418,13 @@ class DataWrapper:
 
     @property
     def calibration_during(self):
+        """
+        Get calibration data for the configured year and quarter.
+        This is the data used for in-sample calibration.
+
+        Returns:
+            pd.DataFrame: Calibration data for the current period
+        """
         year = self.configuration.year
         quarter = self.configuration.quarter
         calibration_index = self.calibration_data.index
@@ -333,22 +433,25 @@ class DataWrapper:
 
 
 def add_row_to_calibration(
-    calibration_data: pd.DataFrame, industry_data: dict[str | Country, dict[str, pd.DataFrame]], year: int, quarter: int
+    calibration_data: pd.DataFrame,
+    industry_data: dict[str | Country, dict[str, pd.DataFrame]],
+    year: int,
+    quarter: int,
 ) -> pd.DataFrame:
     """
-    Add the Rest of the World data to the calibration data.
-    This computes the Rest of the World exports and imports based on the exports and imports of the other countries,
-    along with PPI data.
+    Add Rest of World (ROW) data to the calibration dataset.
+
+    This function computes and adds ROW exports, imports, and PPI data to the calibration dataset
+    based on the data from other countries.
 
     Args:
-        calibration_data (pd.DataFrame): The calibration data.
-        industry_data (dict[str | Country, dict[str, pd.DataFrame]]): The industry data.
-        year (int): The year.
-        quarter (int): The quarter.
+        calibration_data (pd.DataFrame): Existing calibration data for all countries
+        industry_data (dict[str | Country, dict[str, pd.DataFrame]]): Industry-level data by country
+        year (int): The year for calibration
+        quarter (int): The quarter for calibration
 
     Returns:
-        pd.DataFrame: The calibration data with the Rest of the World data added.
-
+        pd.DataFrame: Calibration data with ROW information added
     """
     countries = list(calibration_data.columns.get_level_values(0).unique())
 
@@ -412,20 +515,23 @@ def add_row_to_calibration(
 
 
 def country_scaled_exports(
-    country: str | Country, industry_data: dict[str | Country, dict[str, pd.DataFrame]], scaled_exports: pd.DataFrame
+    country: str | Country,
+    industry_data: dict[str | Country, dict[str, pd.DataFrame]],
+    scaled_exports: pd.DataFrame,
 ) -> pd.DataFrame:
     """
-    Takes a time-series indicating the relative scaling of the exports of a country (with 1 for the base time period)
-    and multiplies by the exports of the country at the base time period to get a dataframe with the scaled exports,
-    with the industry numbers as columns and the time periods as rows.
+    Scale country exports based on a time series of relative export values.
+
+    Takes a time series indicating the relative scaling of exports (normalized to 1 at base period)
+    and multiplies by the base period exports to get scaled exports by industry over time.
 
     Args:
-        country (str | Country): The country.
-        industry_data (dict[str | Country, dict[str, pd.DataFrame]]): The industry data.
-        scaled_exports (pd.DataFrame): The scaled exports.
+        country (str | Country): The country code or Country object
+        industry_data (dict[str | Country, dict[str, pd.DataFrame]]): Industry data by country
+        scaled_exports (pd.DataFrame): Time series of relative export scales
 
     Returns:
-        pd.DataFrame: The scaled exports.
+        pd.DataFrame: Scaled exports by industry over time
     """
     exports = industry_data[country]["industry_vectors"]["Exports in USD"]
     scaled = scaled_exports[country]
@@ -433,17 +539,23 @@ def country_scaled_exports(
 
 
 def country_scaled_imports(
-    country: str | Country, industry_data: dict[str | Country, dict[str, pd.DataFrame]], scaled_imports: pd.DataFrame
+    country: str | Country,
+    industry_data: dict[str | Country, dict[str, pd.DataFrame]],
+    scaled_imports: pd.DataFrame,
 ) -> pd.DataFrame:
     """
-    Takes a time-series indicating the relative scaling of the imports of a country (with 1 for the base time period)
-    and multiplies by the imports of the country at the base time period to get a dataframe with the scaled imports,
-    with the industry numbers as columns and the time periods as rows.
+    Scale country imports based on a time series of relative import values.
+
+    Takes a time series indicating the relative scaling of imports (normalized to 1 at base period)
+    and multiplies by the base period imports to get scaled imports by industry over time.
 
     Args:
-        country (str | Country): The country.
-        industry_data (dict[str | Country, dict[str, pd.DataFrame]]): The industry data.
-        scaled_imports (pd.DataFrame): The scaled imports.
+        country (str | Country): The country code or Country object
+        industry_data (dict[str | Country, dict[str, pd.DataFrame]]): Industry data by country
+        scaled_imports (pd.DataFrame): Time series of relative import scales
+
+    Returns:
+        pd.DataFrame: Scaled imports by industry over time
     """
     imports = industry_data[country]["industry_vectors"]["Imports in USD"]
     scaled = scaled_imports[country]
@@ -451,15 +563,51 @@ def country_scaled_imports(
 
 
 def get_country_coke_refining_emissions(
-    icio_reader: ICIOReader, emission_factors_array: np.ndarray, country: str | Country, year: int
+    icio_reader: ICIOReader,
+    emission_factors_array: np.ndarray,
+    country: str | Country,
+    year: int,
 ):
-    coefficients = (1 / icio_reader.get_intermediate_inputs_matrix(country)).loc["C19", ["B05a", "B05b", "B05c"]]
+    """
+    Calculate coke refining emissions for a specific country.
+
+    Computes emissions from coke refining activities based on input-output relationships
+    and emission factors for coal, gas, and oil.
+
+    Args:
+        icio_reader (ICIOReader): Reader for inter-country input-output tables
+        emission_factors_array (np.ndarray): Array of emission factors
+        country (str | Country): The country to calculate emissions for
+        year (int): The year for calculation
+
+    Returns:
+        float: Calculated coke refining emissions for the country
+    """
+    coefficients = (1 / icio_reader.get_intermediate_inputs_matrix(country)).loc[["B05a", "B05b", "B05c"], "C19"]
     return coefficients @ emission_factors_array
 
 
 def get_coke_refining_emissions(
-    icio_reader: ICIOReader, emission_factors: dict[str, float], countries: list[str | Country], year: int
+    icio_reader: ICIOReader,
+    emission_factors: dict[str, float],
+    countries: list[str | Country],
+    year: int,
 ):
+    """
+    Calculate average coke refining emissions across multiple countries.
+
+    This function computes the mean coke refining emissions across a list of countries
+    using their respective emission factors for coal, gas, and oil.
+
+    Args:
+        icio_reader (ICIOReader): Reader for inter-country input-output tables
+        emission_factors (dict[str, float]): Dictionary of emission factors by type
+        countries (list[str | Country]): List of countries to include in calculation
+        year (int): The year for calculation
+
+    Returns:
+        float: Average coke refining emissions across specified countries
+    """
     factors_array = np.array(
         [
             emission_factors["coal"],
