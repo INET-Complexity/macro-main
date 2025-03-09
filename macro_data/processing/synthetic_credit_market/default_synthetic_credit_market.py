@@ -1,3 +1,29 @@
+"""Module for preprocessing default credit market relationship data.
+
+This module provides utility functions for preprocessing credit relationship data
+between banks and borrowers. Key preprocessing includes:
+
+1. Firm Loan Data:
+   - Long-term loan preprocessing
+   - Initial loan value calculations
+   - Bank-firm relationship mapping
+
+2. Household Loan Data:
+   - Consumer loan preprocessing
+   - Mortgage loan preprocessing
+   - Bank-household relationship mapping
+
+3. Parameter Processing:
+   - Interest rate application
+   - Maturity period setting
+   - Initial state organization
+
+Note:
+    This module is NOT used for simulating credit market behavior. It only handles
+    the preprocessing and organization of data that will later be used to initialize
+    behavioral models in the simulation package.
+"""
+
 import pandas as pd
 
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
@@ -8,22 +34,27 @@ from macro_data.processing.synthetic_population.synthetic_population import (
 
 
 def create_firm_loan_df(firms: SyntheticFirms, banks: SyntheticBanks, firm_loan_maturity: int = 60) -> pd.DataFrame:
-    """
-    Create a DataFrame of firm loans.
-    Loans are created for all firms with debt, and are set with a loan status of 2 (firm loan).
+    """Preprocess firm loan relationship data.
 
-    The corresponding loan value is set to the firm's debt, and the loan interest rate is set to the long-term
-    loan of the corresponding bank.
+    This function organizes initial firm loan data by:
+    1. Identifying firms with debt
+    2. Matching with corresponding banks
+    3. Setting initial loan parameters
 
-    Loan maturity is set exogenously (default: 60 months).
+    The preprocessed data includes:
+    - Loan type (2 for firm loans)
+    - Initial and current loan values
+    - Bank-firm relationships
+    - Interest rates
+    - Maturity periods
 
     Args:
-        firms (SyntheticFirms): Object containing firm data.
-        banks (SyntheticBanks): Object containing bank data.
-        firm_loan_maturity (int, optional): Loan maturity in months. Defaults to 60.
+        firms (SyntheticFirms): Firm data container
+        banks (SyntheticBanks): Bank data container
+        firm_loan_maturity (int, optional): Initial maturity. Defaults to 60.
 
     Returns:
-        pd.DataFrame: DataFrame containing firm loan information.
+        pd.DataFrame: Preprocessed firm loan relationship data
     """
     selection = firms.firm_data["Debt"] > 0
     data_sel = firms.firm_data.loc[selection]
@@ -50,23 +81,27 @@ def create_firm_loan_df(firms: SyntheticFirms, banks: SyntheticBanks, firm_loan_
 def create_household_loan_df(
     synthetic_population: SyntheticPopulation, synthetic_banks: SyntheticBanks, consumption_loan_maturity: int = 12
 ) -> pd.DataFrame:
-    """
-    Create a DataFrame of household loans based on synthetic population data and synthetic bank data.
+    """Preprocess household consumer loan relationship data.
 
-    Loans are created for all households with debt, and are set with a loan status of 4 (household loan).
+    This function organizes initial household loan data by:
+    1. Identifying households with non-mortgage debt
+    2. Matching with corresponding banks
+    3. Setting initial loan parameters
 
-    The corresponding loan value is set to the household's debt, and the loan interest rate is set to the consumption
-    loan interest rate of the corresponding bank.
+    The preprocessed data includes:
+    - Loan type (4 for consumer loans)
+    - Initial and current loan values
+    - Bank-household relationships
+    - Interest rates
+    - Maturity periods
 
-    Loan maturity is set exogenously (default: 12 months).
-
-    Parameters:
-        synthetic_population (SyntheticPopulation): Object containing synthetic population data.
-        synthetic_banks (SyntheticBanks): Object containing synthetic bank data.
-        consumption_loan_maturity (int, optional): Maturity period of the loans in months. Defaults to 12.
+    Args:
+        synthetic_population (SyntheticPopulation): Population data container
+        synthetic_banks (SyntheticBanks): Bank data container
+        consumption_loan_maturity (int, optional): Initial maturity. Defaults to 12.
 
     Returns:
-        pd.DataFrame: DataFrame containing household loan information.
+        pd.DataFrame: Preprocessed household loan relationship data
     """
     debt_col = "Outstanding Balance of other Non-Mortgage Loans"
     selection = synthetic_population.household_data[debt_col] > 0
@@ -94,22 +129,27 @@ def create_household_loan_df(
 def create_mortgage_loan_df(
     synthetic_population: SyntheticPopulation, synthetic_banks: SyntheticBanks, mortgage_loan_maturity: int = 120
 ) -> pd.DataFrame:
-    """
-    Create a DataFrame of mortgage loan data based on the synthetic population and synthetic banks.
+    """Preprocess household mortgage loan relationship data.
 
-    Loans are created for all households with mortgage debt (including mortgages on their own property and mortgages on rental properties),
-    and are set with a loan status of 5 (mortgage loan).
+    This function organizes initial mortgage data by:
+    1. Identifying households with mortgage debt
+    2. Matching with corresponding banks
+    3. Setting initial loan parameters
 
-    The corresponding loan value is set to the household's mortgage debt, and the loan interest rate is set to the mortgage loan interest rate
-    of the corresponding bank.
+    The preprocessed data includes:
+    - Loan type (5 for mortgages)
+    - Initial and current loan values
+    - Bank-household relationships
+    - Interest rates
+    - Maturity periods
 
-    Parameters:
-        synthetic_population (SyntheticPopulation): The synthetic population data.
-        synthetic_banks (SyntheticBanks): The synthetic banks data.
-        mortgage_loan_maturity (int, optional): The maturity period of the mortgage loan in months. Defaults to 120.
+    Args:
+        synthetic_population (SyntheticPopulation): Population data container
+        synthetic_banks (SyntheticBanks): Bank data container
+        mortgage_loan_maturity (int, optional): Initial maturity. Defaults to 120.
 
     Returns:
-        pd.DataFrame: The DataFrame containing the mortgage loan data.
+        pd.DataFrame: Preprocessed mortgage relationship data
     """
     debt_columns = ["Outstanding Balance of HMR Mortgages", "Outstanding Balance of Mortgages on other Properties"]
 
