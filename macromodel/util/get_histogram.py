@@ -1,9 +1,52 @@
+"""Histogram computation utilities for data analysis.
+
+This module provides utilities for computing normalized histograms from
+numerical data, with support for scaling and normalization. It's used
+throughout the model for analyzing distributions of various economic
+metrics.
+
+The module supports:
+- Normalized histogram computation
+- Optional value scaling
+- Configurable bin counts
+- Empty data handling
+- Range normalization
+"""
+
 from typing import Optional
 
 import numpy as np
 
 
 def get_histogram(values: np.ndarray, scale: Optional[int], bins: int = 40, normalise: bool = False) -> np.ndarray:
+    """Compute a normalized histogram from numerical data.
+
+    This function creates a histogram from input values, with options
+    for scaling, normalization, and bin configuration. It handles
+    edge cases like empty arrays and zero-range data.
+
+    Args:
+        values: Input data array to histogram
+        scale: Optional scaling factor for values (e.g., 1000 for thousands)
+        bins: Number of histogram bins (default: 40)
+        normalise: Whether to normalize values to [0,1] range (default: False)
+
+    Returns:
+        np.ndarray: 2xN array containing:
+            - Row 0: Normalized bin counts (sums to 1)
+            - Row 1: Bin edges
+            For empty input, returns array of NaN values
+
+    Example:
+        hist = get_histogram(
+            values=data,
+            scale=1000,
+            bins=50,
+            normalise=True
+        )
+        counts = hist[0, :-1]  # Normalized counts
+        edges = hist[1, :]     # Bin edges
+    """
     if len(values) == 0:
         return np.full((2, bins + 1), np.nan)
     if normalise:

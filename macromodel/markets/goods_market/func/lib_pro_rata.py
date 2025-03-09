@@ -1,3 +1,38 @@
+"""Pro-rata market clearing utility functions.
+
+This module implements a proportional (pro-rata) market clearing mechanism where
+supply and demand are matched based on relative shares rather than individual
+matches. This approach ensures fair distribution of goods when supply and demand
+are imbalanced.
+
+Key Features:
+1. Supply Collection:
+   - Aggregate real and nominal supply by country
+   - Calculate average prices
+   - Handle trade proportions and priorities
+
+2. Demand Collection:
+   - Aggregate real and nominal demand by country
+   - Convert between value types
+   - Apply trade proportion constraints
+
+3. Even Distribution:
+   - Proportional allocation when supply > demand
+   - Fair rationing when demand > supply
+   - Priority-based distribution
+
+4. Excess Demand Handling:
+   - Track unfulfilled demand
+   - Distribute excess demand proportionally
+   - Update seller capacity utilization
+
+The pro-rata mechanism is particularly useful for:
+- Ensuring fair allocation in supply-constrained markets
+- Handling large numbers of buyers and sellers efficiently
+- Maintaining stable trade relationships
+- Managing priority-based distribution
+"""
+
 from typing import Optional, Tuple
 
 import numpy as np
@@ -10,6 +45,26 @@ from macromodel.markets.goods_market.value_type import ValueType
 # @njit(float64[:](float64[:], int64[:], int64), parallel=True, cache=True)
 @njit(cache=True)
 def get_split_sum(val: np.ndarray, groups: np.ndarray, n_industries: int) -> np.ndarray:
+    """Calculate sum of values by industry group.
+
+    This function efficiently computes the sum of values for each industry
+    group using parallel processing. It's optimized with Numba for performance
+    on large datasets.
+
+    Args:
+        val: Array of values to sum
+        groups: Array of industry indices for each value
+        n_industries: Total number of industries
+
+    Returns:
+        np.ndarray: Array of sums for each industry
+
+    Example:
+        val = [100, 200, 300, 400]
+        groups = [0, 0, 1, 1]
+        n_industries = 2
+        Returns: [300, 700]  # Sum for industry 0 and 1
+    """
     split_sum = np.zeros(n_industries)
     for _g in prange(n_industries):
         split_sum[_g] = val[groups == _g].sum()
@@ -31,6 +86,40 @@ def collect_seller_info(
     np.ndarray,
     np.ndarray,
 ]:
+    """Collect and aggregate seller information across all participants.
+
+    This function gathers supply information from all sellers, considering
+    priorities, trade proportions, and value types. It calculates both real
+    and nominal supply totals and average prices.
+
+    Args:
+        goods_market_participants: Dict mapping country names to lists of trading agents
+        n_industries: Number of industries
+        high_prio_only: Whether to only consider high-priority sellers
+        from_country: Optional specific country index to collect from
+        trade_proportions: Optional array of trade proportion constraints
+        exclude_row: Whether to exclude Rest of World
+        use_initial: Whether to use initial rather than remaining goods
+
+    Returns:
+        Tuple containing:
+        - Dict mapping countries to real supply arrays
+        - Aggregate real supply array
+        - Dict mapping countries to nominal supply arrays
+        - Aggregate nominal supply array
+        - Average price array by industry
+
+    Example:
+        For steel industry across three countries:
+        1. Collect supply:
+           Country A: 1000 units at $100/unit
+           Country B: 500 units at $120/unit
+           Country C: 300 units at $90/unit
+        2. Calculate aggregates:
+           Total real supply: 1800 units
+           Total nominal: $189,000
+           Average price: $105/unit
+    """
     init_field, rem_field = "Initial Goods", "Remaining Goods"
     if use_initial:
         rem_field = "Initial Goods"
@@ -69,22 +158,6 @@ def collect_seller_info(
                         n_industries,
                     )
 
-                    """
-                    print("\n")
-                    print("Seller information for %s", country_name)
-                    print("Transactor %s", transactor)
-                    print(
-                        "Total %s: %.2e",
-                        rem_field,
-                        get_split_sum(
-                            transactor.transactor_seller_states[rem_field]
-                                * transactor.transactor_seller_states["Prices"],
-                            transactor.transactor_seller_states["Industries"],
-                            n_industries,
-                        )
-                    )
-                    """
-
     # Calculate the average price
     aggr_real_supply = np.stack(list(total_real_supply.values()), axis=0).sum(axis=0)
     aggr_nominal_supply = np.stack(list(total_nominal_supply.values()), axis=0).sum(axis=0)
@@ -114,6 +187,42 @@ def collect_buyer_info(
     exclude_row: bool = False,
     with_value_type: Optional[ValueType] = None,
 ) -> Tuple[dict[str, np.ndarray], np.ndarray, dict[str, np.ndarray], np.ndarray]:
+    """Collect and aggregate buyer information across all participants.
+
+    This function gathers demand information from all buyers, handling both
+    real and nominal value types. It converts between value types using
+    average prices and applies trade proportion constraints.
+
+    Args:
+        goods_market_participants: Dict mapping country names to lists of trading agents
+        average_price: Array of average prices by industry
+        n_industries: Number of industries
+        high_prio_only: Whether to only consider high-priority buyers
+        to_country: Optional specific country index to collect from
+        trade_proportions: Optional array of trade proportion constraints
+        exclude_row: Whether to exclude Rest of World
+        with_value_type: Optional filter for specific value type
+
+    Returns:
+        Tuple containing:
+        - Dict mapping countries to real demand arrays
+        - Aggregate real demand array
+        - Dict mapping countries to nominal demand arrays
+        - Aggregate nominal demand array
+
+    Example:
+        For steel industry across two countries:
+        1. Collect demand:
+           Country A:
+           - Real buyers: 800 units
+           - Nominal buyers: $100,000 (at $100/unit = 1000 units)
+           Country B:
+           - Real buyers: 400 units
+           - Nominal buyers: $60,000 (at $100/unit = 600 units)
+        2. Calculate aggregates:
+           Total real demand: 2800 units
+           Total nominal: $280,000
+    """
     init_field, rem_field = "Initial Goods", "Remaining Goods"
     if trade_proportions is None:
         trade_proportions = np.ones(n_industries)
@@ -188,6 +297,57 @@ def clear_evenly(
     exclude_row: bool = False,
     with_buyer_value_type: Optional[ValueType] = None,
 ) -> None:
+    """Execute pro-rata market clearing across all participants.
+
+    This function implements proportional market clearing where supply and
+    demand are matched based on relative shares. It handles both cases where
+    supply exceeds demand and vice versa, ensuring fair distribution.
+
+    The clearing process:
+    1. When supply > demand:
+       - Each seller provides proportional to their supply
+       - Each buyer receives their full demand
+       - Sellers keep excess inventory
+
+    2. When demand > supply:
+       - Each seller provides their full supply
+       - Each buyer receives proportional to their demand
+       - Buyers maintain excess demand records
+
+    Args:
+        goods_market_participants: Dict mapping country names to lists of trading agents
+        n_industries: Number of industries
+        total_real_supply: Dict mapping countries to real supply arrays
+        aggr_real_supply: Aggregate real supply array
+        average_goods_price: Array of average prices by industry
+        total_real_demand: Dict mapping countries to real demand arrays
+        aggr_real_demand: Aggregate real demand array
+        sell_high_prio_only: Whether to only process high-priority sellers
+        buy_high_prio_only: Whether to only process high-priority buyers
+        from_country: Optional specific source country
+        to_country: Optional specific destination country
+        trade_proportions: Optional array of trade proportion constraints
+        exclude_row: Whether to exclude Rest of World
+        with_buyer_value_type: Optional filter for specific buyer value type
+
+    Example:
+        For steel industry:
+        1. Supply > Demand case:
+           Supply: 1000 units
+           Demand: 800 units
+           Result:
+           - Each seller provides 80% of their supply
+           - Buyers get 100% of demand
+           - 200 units remain in inventory
+
+        2. Demand > Supply case:
+           Supply: 800 units
+           Demand: 1000 units
+           Result:
+           - Sellers provide 100% of supply
+           - Each buyer gets 80% of demand
+           - 200 units of excess demand recorded
+    """
     if from_country is None:
         from_country_names = list(goods_market_participants.keys())
         if exclude_row:
@@ -435,6 +595,40 @@ def distribute_excess_demand_evenly(
     goods_market_participants: dict[str, list[Agent]],
     n_industries: int,
 ) -> None:
+    """Distribute excess demand proportionally across sellers.
+
+    This function handles unfulfilled demand by allocating it to sellers
+    based on their initial production capacity and prices. This helps track
+    market pressures and potential capacity constraints.
+
+    The process:
+    1. Calculate initial supply and price metrics
+    2. Determine total excess demand
+    3. Allocate excess demand to sellers proportionally
+    4. Update seller excess demand records
+
+    Args:
+        goods_market_participants: Dict mapping country names to lists of trading agents
+        n_industries: Number of industries
+
+    Example:
+        For steel industry:
+        1. Initial state:
+           - Total supply: 800 units
+           - Total demand: 1000 units
+           - Excess demand: 200 units
+           - Seller A capacity: 500 units (62.5%)
+           - Seller B capacity: 300 units (37.5%)
+
+        2. Allocation:
+           - Seller A gets 125 units of excess demand (62.5% of 200)
+           - Seller B gets 75 units of excess demand (37.5% of 200)
+
+        This information helps:
+        - Plan capacity adjustments
+        - Set production targets
+        - Identify supply bottlenecks
+    """
     # Collect initial values
     _, _, total_nominal_supply, aggr_nominal_supply, average_price = collect_seller_info(
         goods_market_participants=goods_market_participants,

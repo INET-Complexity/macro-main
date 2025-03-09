@@ -1,2 +1,0 @@
-class TestLabourMarket:
-    pass

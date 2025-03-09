@@ -1,3 +1,40 @@
+"""Module for harmonizing household and bank financial data.
+
+This module harmonizes financial data from different sources:
+1. Household Survey Data:
+   - Reported deposit holdings
+   - Outstanding loan balances
+   - Financial asset information
+   - Debt service payments
+
+2. Banking System Data:
+   - Aggregate household deposits
+   - Retail loan portfolio
+   - Balance sheet totals
+   - Customer account data
+
+The harmonization process involves:
+1. Data Validation:
+   - Checking total deposits match across sources
+   - Validating loan balances
+   - Ensuring consistent customer counts
+
+2. Data Reconciliation:
+   - Scaling household deposits to match bank totals
+   - Adjusting loan balances for consistency
+   - Computing account distributions
+
+3. Optimal Assignment:
+   - Minimizing discrepancy between data sources
+   - Preserving financial relationships
+   - Recording final assignments
+
+Note:
+    This module focuses on harmonizing financial data from different sources
+    to create a consistent initial state. The actual financial market dynamics
+    are implemented in the simulation package.
+"""
+
 import numpy as np
 import scipy as sp
 from scipy.optimize import linear_sum_assignment as lsa
@@ -12,15 +49,21 @@ def match_households_with_banks_random(
     population: SyntheticPopulation,
     banks: SyntheticBanks,
 ) -> None:
-    """
-    Matches households with banks based on a random selection.
+    """Initialize household-bank relationships with random assignment.
+
+    This function provides a simple initialization mechanism that:
+    1. Randomly assigns households to banks
+    2. Records assignments in household data
+    3. Updates bank customer lists
+
+    Useful for:
+    - Initial data setup
+    - Testing and validation
+    - Cases where optimal harmonization is not required
 
     Args:
-        population (SyntheticPopulation): The synthetic population data.
-        banks (SyntheticBanks): The synthetic banks data.
-
-    Returns:
-        None
+        population (SyntheticPopulation): Household financial data
+        banks (SyntheticBanks): Bank balance sheet data
     """
     bank_by_household = np.random.choice(
         range(banks.number_of_banks),
@@ -37,6 +80,24 @@ def match_households_with_banks_optimal(
     population: SyntheticPopulation,
     banks: SyntheticBanks,
 ) -> None:
+    """Harmonize household and bank financial data using optimal assignment.
+
+    This function reconciles financial data by:
+    1. Scaling household data to match bank totals
+    2. Allocating accounts based on bank size
+    3. Using linear sum assignment to minimize discrepancies
+    4. Recording harmonized relationships
+
+    The optimization:
+    - Minimizes differences between reported values
+    - Respects bank balance sheet constraints
+    - Maintains consistent financial totals
+    - Preserves deposit-loan relationships
+
+    Args:
+        population (SyntheticPopulation): Household financial data
+        banks (SyntheticBanks): Bank balance sheet data
+    """
     # rescale
     rescale(population, "Wealth in Deposits", banks, "Deposits from Households")
     rescale(population, "Debt", banks, "Loans to Households")
@@ -101,6 +162,24 @@ def match_households_with_banks_optimal(
 
 
 def rescale(population: SyntheticPopulation, households_field: str, banks: SyntheticBanks, banks_field: str):
+    """Reconcile household financial data with bank totals.
+
+    This function ensures consistency between sources by:
+    1. Checking if bank totals need initialization
+    2. Scaling household values to match bank totals
+    3. Maintaining relative proportions
+
+    Used for:
+    - Deposit total reconciliation
+    - Loan balance harmonization
+    - Balance sheet validation
+
+    Args:
+        population (SyntheticPopulation): Household financial data
+        households_field (str): Field in household data to reconcile
+        banks (SyntheticBanks): Bank balance sheet data
+        banks_field (str): Field in bank data to match
+    """
     if banks.bank_data[banks_field].values.sum() == 0:
         banks.bank_data[banks_field] = np.full(
             banks.bank_data.shape[0],
