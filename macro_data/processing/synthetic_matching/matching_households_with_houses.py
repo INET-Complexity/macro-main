@@ -1,31 +1,30 @@
-"""Module for matching households with housing units in the property market.
+"""Module for harmonizing household and housing unit data.
 
-This module handles the matching of households with housing units based on ownership
-and rental relationships. It uses preprocessed data about:
-1. Households:
-   - Tenure status (owner/renter)
-   - Property ownership
+This module harmonizes housing data from different sources:
+1. Household Survey Data:
+   - Reported property ownership
+   - Rental payments
+   - Housing wealth
+   - Tenure status
+
+2. Property Register Data:
+   - Housing unit values
    - Rental income
-   - Housing preferences
+   - Ownership records
+   - Social housing status
 
-2. Housing Units:
-   - Property values
-   - Rental rates
-   - Ownership status
-   - Social housing designation
-
-The matching process involves:
+The harmonization process involves:
 1. Owner-Occupied Housing:
-   - Identifying homeowners
-   - Assigning property values
-   - Computing imputed rents
-   - Recording ownership relationships
+   - Reconciling ownership records
+   - Harmonizing property values
+   - Adjusting imputed rents
+   - Validating relationships
 
 2. Rental Market:
-   - Processing landlord properties
-   - Setting rental rates
-   - Handling social housing
-   - Matching renters with units
+   - Reconciling landlord holdings
+   - Harmonizing rental income
+   - Adjusting rental rates
+   - Matching tenant records
 
 3. Data Validation:
    - Removing outliers
@@ -34,8 +33,8 @@ The matching process involves:
    - Validating relationships
 
 Note:
-    This module focuses on the initial matching of households with housing units.
-    The actual housing market dynamics (buying, selling, rental agreements)
+    This module focuses on harmonizing housing data from different sources
+    to create a consistent initial state. The actual housing market dynamics
     are implemented in the simulation package.
 """
 
@@ -59,40 +58,40 @@ def set_housing_df(
     social_housing_rent: float,
     total_imputed_rent: float,
 ) -> pd.DataFrame:
-    """Create and initialize the housing market dataset.
+    """Create and harmonize the housing market dataset.
 
-    This function processes housing market data through several steps:
+    This function reconciles housing data through several steps:
     1. Owner-Occupied Properties:
-       - Identify homeowners from population data
-       - Set property values and relationships
-       - Compute imputed rents
+       - Reconciling ownership records with survey data
+       - Harmonizing property values across sources
+       - Computing consistent imputed rents
 
     2. Rental Properties:
-       - Process landlord holdings
-       - Set rental rates and property values
-       - Handle social housing allocation
+       - Reconciling landlord holdings with property records
+       - Harmonizing rental income with payments
+       - Adjusting for tax effects
+       - Validating social housing data
 
     3. Data Cleaning:
-       - Remove outliers in values and rents
-       - Impute missing data points
-       - Validate price-rent relationships
-       - Ensure social housing compliance
+       - Removing outliers in values and rents
+       - Imputing missing data points
+       - Validating price-rent relationships
+       - Ensuring data consistency
 
-    4. Market Matching:
-       - Match renters with available properties
-       - Record tenant-landlord relationships
-       - Update household records
+    4. Market Reconciliation:
+       - Harmonizing tenant-property relationships
+       - Recording consistent ownership data
+       - Updating household records
 
     Args:
-        synthetic_population (SyntheticPopulation): Population data with
-            household information
+        synthetic_population (SyntheticPopulation): Household survey data
         rental_income_taxes (float): Tax rate on rental income
         social_housing_rent (float): Standardized social housing rent
         total_imputed_rent (float): Total imputed rent for owned properties
 
     Returns:
-        pd.DataFrame: Complete housing market data with ownership and
-            rental relationships
+        pd.DataFrame: Harmonized housing market data with consistent
+            ownership and rental relationships
     """
     owners_df = create_owners_df(synthetic_population)
 
@@ -162,31 +161,31 @@ def set_housing_df(
 
 
 def create_owners_df(synthetic_population: SyntheticPopulation) -> pd.DataFrame:
-    """Create dataset of owner-occupied properties.
+    """Create harmonized dataset of owner-occupied properties.
 
-    This function processes homeowner data by:
-    1. Identifying owner-occupiers from tenure status
-    2. Assigning unique property identifiers
-    3. Setting property values from household data
-    4. Establishing ownership relationships
+    This function reconciles ownership data by:
+    1. Matching survey responses with property records
+    2. Harmonizing property identifiers
+    3. Reconciling property values
+    4. Validating ownership relationships
 
     The process ensures:
-    - Each owner has a unique property ID
-    - Property values match household records
-    - Ownership relationships are properly recorded
-    - Owner-occupancy status is flagged
+    - Ownership records match across sources
+    - Property values are consistent
+    - Relationships are properly recorded
+    - Data is properly validated
 
     Args:
-        synthetic_population (SyntheticPopulation): Population data with
-            household tenure information
+        synthetic_population (SyntheticPopulation): Household survey data
+            with tenure information
 
     Returns:
-        pd.DataFrame: Owner-occupied property dataset with:
+        pd.DataFrame: Harmonized owner-occupied property dataset with:
             - House ID: Unique property identifier
             - Is Owner-Occupied: Always True for this dataset
             - Corresponding Owner Household ID: Owner identifier
             - Corresponding Inhabitant Household ID: Same as owner
-            - Value: Property value from household data
+            - Value: Harmonized property value
             - Rent: NaN (filled later with imputed rent)
     """
     # Handle households owning their house
@@ -221,18 +220,19 @@ def create_rental_df(
     rental_income: np.ndarray,
     rental_income_taxes: float,
 ) -> pd.DataFrame:
-    """Create dataset of rental properties.
+    """Create harmonized dataset of rental properties.
 
-    This function processes rental property data by:
-    1. Creating entries for each rental unit
-    2. Assigning property values from landlord data
-    3. Computing rental rates from income data
-    4. Establishing ownership relationships
+    This function reconciles rental property data by:
+    1. Harmonizing property records with landlord data
+    2. Reconciling property values across sources
+    3. Adjusting rental income for consistency
+    4. Validating ownership relationships
 
-    The process assumes:
-    - Equal distribution of landlord property values
-    - Uniform rental rates across landlord properties
-    - Tax-adjusted rental income allocation
+    The process ensures:
+    - Property holdings match across sources
+    - Rental income is consistently recorded
+    - Tax effects are properly handled
+    - Values are properly distributed
 
     Args:
         num_additional_properties (np.ndarray): Properties per landlord
@@ -243,12 +243,12 @@ def create_rental_df(
         rental_income_taxes (float): Tax rate on rental income
 
     Returns:
-        pd.DataFrame: Rental property dataset with:
+        pd.DataFrame: Harmonized rental property dataset with:
             - House ID: Unique property identifier
             - Is Owner-Occupied: Always False
             - Corresponding Owner Household ID: Landlord identifier
-            - Rent: Computed rental rate
-            - Value: Allocated property value
+            - Rent: Harmonized rental rate
+            - Value: Reconciled property value
     """
     number_available_properties = num_additional_properties.sum()
     rental_df = pd.DataFrame(index=range(number_available_properties))
@@ -286,24 +286,23 @@ def create_rental_df(
 
 
 def housing_info_from_population(rental_income_taxes: float, synthetic_population: SyntheticPopulation):
-    """Extract housing market information from population data.
+    """Extract and harmonize housing market information from population data.
 
-    This function processes population data to:
-    1. Identify renters and rental demand
-    2. Process landlord property holdings
-    3. Adjust rental income for tax effects
-    4. Handle social housing allocation
+    This function reconciles housing data by:
+    1. Validating rental supply and demand
+    2. Harmonizing property holdings
+    3. Adjusting rental income for consistency
+    4. Processing social housing allocation
 
     The process ensures:
-    - Rental supply matches demand where possible
-    - Social housing fills supply gaps
-    - Tax effects are properly accounted for
-    - Property allocations are consistent
+    - Supply and demand are reconciled
+    - Social housing data is consistent
+    - Tax effects are properly handled
+    - Property allocations match
 
     Args:
         rental_income_taxes (float): Tax rate on rental income
-        synthetic_population (SyntheticPopulation): Population data with
-            housing information
+        synthetic_population (SyntheticPopulation): Household survey data
 
     Returns:
         tuple:
@@ -335,23 +334,28 @@ def housing_info_from_population(rental_income_taxes: float, synthetic_populatio
 
 
 def set_social_housing_renters(
-    num_other_properties_owned: int, num_renters: int, synthetic_population: SyntheticPopulation
+    num_other_properties_owned: int,
+    num_renters: int,
+    synthetic_population: SyntheticPopulation,
 ):
-    """
-    Assigns renters to social housing in case there are more renters than properties.
+    """Harmonize social housing data with rental market information.
 
-    This function identifies the current renters in the synthetic population and sorts them by their income.
-    It then selects the renters with the lowest income until the number of renters matches the number of properties.
-    The tenure status of these renters is updated to -1, indicating that they are now in social housing.
-    Their rent paid is also set to the social housing rent.
+    This function reconciles social housing data by:
+    1. Identifying eligible households from survey data
+    2. Matching with social housing records
+    3. Adjusting rental rates for consistency
+    4. Updating tenure status records
+
+    The process ensures:
+    - Social housing allocations are consistent
+    - Rental rates match policy
+    - Tenure status is properly recorded
+    - Data is properly validated
 
     Args:
-        num_other_properties_owned (int): The number of properties owned.
-        num_renters (int): The number of renters.
-        synthetic_population (SyntheticPopulation): An instance of the SyntheticPopulation class.
-
-    Returns:
-        None
+        num_other_properties_owned (int): Total private rental properties
+        num_renters (int): Total number of renters
+        synthetic_population (SyntheticPopulation): Household survey data
     """
     ind_curr_renting = np.flatnonzero(synthetic_population.household_data["Tenure Status of the Main Residence"] == 0)
     renters_now_in_sh_rel = np.argsort(synthetic_population.household_data["Income"].values[ind_curr_renting])[
@@ -368,25 +372,26 @@ def match_renters_to_properties(
     rental_income_taxes: float,
     max_matching_size: int = 1000,
 ) -> None:
-    """
-    Matches renters to properties based on their rent payments.
-    This will be done by identifying renters and the properties. The goal of this function is to match renters to properties
-    by minimising the difference between the rent paid by the household and the rent of the property.  Because the data is large,
-    the matching is done in chunks, with a maximum chunk size of max_matching_size. These chunks are obtained by sorting the data, as we expect
-    e.g. the rent paid by renters to be similar to the rent of the property they are matched to within each chunk.
+    """Harmonize tenant-property relationships in the rental market.
 
-    Then, the matching is done within each chunk using the linear sum assignment algorithm from scipy. The housing market data and household
-    data are updated to reflect this matching.
+    This function reconciles rental market data by:
+    1. Matching tenant records with property data
+    2. Harmonizing rental payments with income
+    3. Validating relationships for consistency
+    4. Updating all related records
 
-    The rental income of landlords is then computed to match the rent paid by the renters ex post.
+    The process ensures:
+    - Tenant-property relationships match
+    - Rental payments are consistent
+    - Tax effects are properly handled
+    - Data is properly validated
 
     Args:
-        synthetic_population (SyntheticPopulation): The synthetic population data.
-        housing_market_df (pd.DataFrame): The housing market data.
-        max_matching_size (int, optional): The maximum size of each matching chunk. Defaults to 1000.
-
-    Returns:
-        None
+        synthetic_population (SyntheticPopulation): Household survey data
+        housing_market_df (pd.DataFrame): Property register data
+        rental_income_taxes (float): Tax rate on rental income
+        max_matching_size (int, optional): Maximum chunk size for processing.
+            Defaults to 1000.
     """
     rented = ~housing_market_df["Is Owner-Occupied"]
     rent_rec = housing_market_df.loc[rented, "Rent"].values
@@ -395,17 +400,6 @@ def match_renters_to_properties(
 
     renters = synthetic_population.household_data["Tenure Status of the Main Residence"] == 0
     rent_paid = synthetic_population.household_data.loc[renters, "Rent Paid"].values
-
-    # # Step 1: Sort the arrays and keep track of the original indices
-    # sorted_indices_rec = np.argsort(rent_rec)
-    # sorted_indices_paid = np.argsort(rent_paid)
-    # rent_rec_sorted = rent_rec[sorted_indices_rec]
-    # rent_paid_sorted = rent_paid[sorted_indices_paid]
-
-    # Step 2: Split the sorted arrays into chunks
-    # chunk_size = max(1, int(len(rent_rec_sorted) / max_matching_size), int(len(rent_paid_sorted) / max_matching_size))
-    # rent_rec_split = np.array_split(rent_rec_sorted, chunk_size)
-    # rent_paid_split = np.array_split(rent_paid_sorted, chunk_size)
 
     n_split = int(len(rent_rec) / max_matching_size) if len(rent_rec) > max_matching_size else 1
     rent_rec_split = np.array_split(rent_rec, n_split)
@@ -423,10 +417,6 @@ def match_renters_to_properties(
         curr_properties, curr_renters = lsa(cost)
 
         # Step 4: Map the indices back to the original indices
-        # curr_properties = sorted_indices_rec[curr_properties + split_offset_rec]
-        # curr_renters = sorted_indices_paid[curr_renters + split_offset_paid]
-
-        # Step 5: Update the corr_renters_by_house_id_rel array
         corr_renters_by_house_id_rel[split_offset_rec + curr_properties] = renters_ind[curr_renters + split_offset_paid]
 
         split_offset_rec += len(curr_rent_rec)
