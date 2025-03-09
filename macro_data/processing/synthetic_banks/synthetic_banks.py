@@ -1,25 +1,27 @@
-"""Module for simulating banking system behavior in macroeconomic models.
+"""Module for preprocessing synthetic banking system data.
 
-This module provides an abstract base class for creating synthetic banking systems,
-which are essential components of macroeconomic simulations. It handles:
+This module provides an abstract base class for preprocessing and organizing banking system data
+that will be used to initialize behavioral models in the simulation package. Key preprocessing includes:
 
-1. Bank Creation and Management:
-   - Creation of multiple banks with specified equity levels
-   - Management of deposits and loans for households and firms
-   - Calculation of market shares and liabilities
+1. Data Collection and Organization:
+   - Bank balance sheet data preparation
+   - Initial deposit and loan allocation
+   - Interest rate parameter estimation
 
-2. Financial Operations:
-   - Interest rate setting for various financial products
-   - Profit calculation and tax payments
-   - Balance sheet management
+2. Relationship Data:
+   - Bank-firm connections
+   - Bank-household connections
+   - Market share calculations
 
-3. Relationship Management:
-   - Connections between banks and firms
-   - Connections between banks and households
-   - Management of different types of loans and deposits
+3. Financial Data Processing:
+   - Interest rate parameter estimation
+   - Balance sheet validation
+   - Data consistency checks
 
-The module supports both EU and non-EU country banking systems through
-appropriate parameterization and data handling.
+Note:
+    This module is NOT used for simulating bank behavior. It only handles
+    the preprocessing and organization of data that will later be used to initialize
+    behavioral models in the simulation package.
 """
 
 from abc import ABC, abstractmethod
@@ -33,50 +35,58 @@ from macro_data.processing.synthetic_population.synthetic_population import (
 
 
 class SyntheticBanks(ABC):
-    """Abstract base class representing a collection of synthetic banks in an economy.
+    """Abstract base class for preprocessing and organizing banking system data.
 
-    The bank data is stored in a pandas DataFrame with the following columns (one row per bank):
-        - Equity: The equity of the bank.
-        - Corresponding Firms ID: The IDs of the firms corresponding to the bank.
-        - Corresponding Households ID: The IDs of the households corresponding to the bank.
-        - Deposits from Households: The deposits from households.
-        - Mortgages to Households: The mortgages to households.
-        - Consumption Loans to Households: The consumption loans to households.
-        - Deposits from Firms: The deposits from firms.
-        - Loans to Firms: The loans to firms.
-        - Deposits: The deposits.
-        - Short-Term Interest Rates on Firm Loans: The short-term interest rates on firm loans.
-        - Long-Term Interest Rates on Firm Loans: The long-term interest rates on firm loans.
-        - Interest Rates on Household Payday Loans: The interest rates on household payday loans.
-        - Interest Rates on Household Consumption Loans: The interest rates on household consumption loans.
-        - Interest Rates on Mortgages: The interest rates on mortgages.
-        - Interest Rates on Firm Deposits: The interest rates on firm deposits.
-        - Overdraft Rate on Firm Deposits: The overdraft rate on firm deposits.
-        - Interest Rates on Household Deposits: The interest rates on household deposits.
-        - Overdraft Rate on Household Deposits: The overdraft rate on household deposits.
-        - Interest received from Loans: The interest received from loans.
-        - Interest received from Deposits: The interest received from deposits.
-        - Profits: The profits.
-        - Corporate Taxes Paid: The corporate taxes paid.
-        - Liability: The liability.
-        - Market Share: The market share.
+    This class provides a framework for collecting and organizing banking system data
+    that will be used to initialize behavioral models. It is NOT used for simulating
+    bank behavior - it only handles data preprocessing.
 
+    The preprocessed data is stored in a pandas DataFrame with the following columns:
+        - Equity: Initial bank equity
+        - Corresponding Firms ID: Firm-bank relationship mapping
+        - Corresponding Households ID: Household-bank relationship mapping
+        - Deposits from Households: Initial household deposits
+        - Mortgages to Households: Initial mortgage values
+        - Consumption Loans to Households: Initial consumer loan values
+        - Deposits from Firms: Initial firm deposits
+        - Loans to Firms: Initial firm loans
+        - Deposits: Total initial deposits
+        - Short-Term Interest Rates on Firm Loans: Initial rate parameters
+        - Long-Term Interest Rates on Firm Loans: Initial rate parameters
+        - Interest Rates on Household Payday Loans: Initial rate parameters
+        - Interest Rates on Household Consumption Loans: Initial rate parameters
+        - Interest Rates on Mortgages: Initial rate parameters
+        - Interest Rates on Firm Deposits: Initial rate parameters
+        - Overdraft Rate on Firm Deposits: Initial rate parameters
+        - Interest Rates on Household Deposits: Initial rate parameters
+        - Overdraft Rate on Household Deposits: Initial rate parameters
+        - Interest received from Loans: Initial interest calculations
+        - Interest received from Deposits: Initial interest calculations
+        - Profits: Initial profit calculations
+        - Corporate Taxes Paid: Initial tax calculations
+        - Liability: Initial liability calculations
+        - Market Share: Initial market share calculations
+
+    Note:
+        This is a data container class. The actual banking behavior (lending decisions,
+        rate setting, etc.) is implemented in the simulation package, which uses this
+        preprocessed data for initialization.
 
     Attributes:
-        country_name (str): Country identifier
-        year (int): Reference year for data
-        quarter (int): Reference quarter (1-4)
-        number_of_banks (int): Total number of banks in system
-        bank_data (pd.DataFrame): Complete bank-level data
-        firm_passthrough (float): Rate adjustment factor for firm loans
-        firm_ect (float): Error correction term for firm rates
-        firm_rate (float): Base rate for firm loans
-        hh_consumption_passthrough (float): Rate adjustment for consumer loans
-        hh_consumption_ect (float): Error correction for consumer rates
-        hh_consumption_rate (float): Base rate for consumer loans
-        hh_mortgage_passthrough (float): Rate adjustment for mortgages
-        hh_mortgage_ect (float): Error correction for mortgage rates
-        hh_mortgage_rate (float): Base mortgage rate
+        country_name (str): Country identifier for data collection
+        year (int): Reference year for preprocessing
+        quarter (int): Reference quarter for preprocessing
+        number_of_banks (int): Number of banks to preprocess data for
+        bank_data (pd.DataFrame): Preprocessed bank-level data
+        firm_passthrough (float): Estimated rate adjustment parameter
+        firm_ect (float): Estimated error correction parameter
+        firm_rate (float): Initial firm loan rate
+        hh_consumption_passthrough (float): Estimated consumer rate parameter
+        hh_consumption_ect (float): Estimated consumer ECT parameter
+        hh_consumption_rate (float): Initial consumer loan rate
+        hh_mortgage_passthrough (float): Estimated mortgage rate parameter
+        hh_mortgage_ect (float): Estimated mortgage ECT parameter
+        hh_mortgage_rate (float): Initial mortgage rate
     """
 
     @abstractmethod

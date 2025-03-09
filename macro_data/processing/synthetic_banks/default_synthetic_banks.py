@@ -1,26 +1,27 @@
-"""Module providing the default implementation of synthetic banking system.
+"""Module for preprocessing synthetic banking system data.
 
-This module implements the abstract SyntheticBanks class with a concrete implementation
-that supports both standard bank creation (using OECD/Eurostat data) and Compustat-based
-bank creation. Key features include:
+This module provides a concrete implementation for preprocessing banking system data
+that will be used to initialize behavioral models. Key preprocessing includes:
 
-1. Bank Creation:
-   - Support for single or multiple bank configurations
-   - Bank equity allocation based on real-world data
-   - Integration with Compustat data for detailed bank profiles
+1. Data Collection and Processing:
+   - Bank balance sheet data preparation
+   - Historical rate parameter estimation
+   - Initial state calculations
 
-2. Rate Management:
-   - Interest rate initialization for different products
-   - Rate adjustment mechanisms for firms and households
-   - Support for both EU and non-EU countries via proxy mechanisms
+2. Bank Data Organization:
+   - Standard bank data preprocessing
+   - Compustat-based data preprocessing
+   - Data validation and consistency checks
 
-3. Balance Sheet Management:
-   - Deposit and loan allocation
-   - Equity distribution
-   - Market share calculation
+3. Parameter Estimation:
+   - Interest rate parameters
+   - Balance sheet ratios
+   - Market share calculations
 
-The implementation supports both direct country data and proxy-based approaches
-for countries where direct data may not be available.
+Note:
+    This module is NOT used for simulating bank behavior. It preprocesses
+    data that will be used to initialize behavioral models in the simulation package.
+    The actual banking decisions and operations are implemented elsewhere.
 """
 
 from typing import Optional
@@ -42,22 +43,42 @@ from macro_data.readers.default_readers import DataReaders
 
 
 class DefaultSyntheticBanks(SyntheticBanks):
-    """Default implementation of the synthetic banking system.
+    """Default implementation for preprocessing banking system data.
 
-    This class provides a concrete implementation of the SyntheticBanks abstract base class,
-    offering two main initialization paths:
-    1. Standard initialization using OECD/Eurostat data
-    2. Compustat-based initialization for more detailed bank profiles
+    This class preprocesses and organizes banking system data by collecting historical
+    data and estimating parameters. These will be used to initialize behavioral models,
+    but this class does NOT implement any behavioral logic.
 
-    The implementation handles:
-    - Bank creation and equity allocation
-    - Interest rate initialization and management
-    - Balance sheet setup and maintenance
-    - Market share calculations
-    - Support for both EU and non-EU countries
+    The class provides two preprocessing paths:
+    1. Standard preprocessing using OECD/Eurostat data
+    2. Compustat-based preprocessing for detailed bank profiles
 
-    The class maintains all the data structures defined in the base class while providing
-    specific implementations for abstract methods.
+    The preprocessing includes:
+    - Bank balance sheet data organization
+    - Interest rate parameter estimation
+    - Relationship mapping (bank-firm, bank-household)
+    - Initial state calculations
+
+    Note:
+        This is a data container class. The actual banking behavior (lending,
+        rate setting, etc.) is implemented in the simulation package, which uses
+        these preprocessed parameters.
+
+    Attributes:
+        country_name (str): Country identifier for data collection
+        year (int): Reference year for preprocessing
+        number_of_banks (int): Number of banks to preprocess data for
+        bank_data (pd.DataFrame): Preprocessed bank-level data
+        quarter (int): Reference quarter for preprocessing
+        firm_passthrough (float): Estimated rate adjustment parameter
+        firm_ect (float): Estimated error correction parameter
+        firm_rate (float): Initial firm loan rate
+        hh_consumption_passthrough (float): Estimated consumer rate parameter
+        hh_consumption_ect (float): Estimated consumer ECT parameter
+        hh_consumption_rate (float): Initial consumer loan rate
+        hh_mortgage_passthrough (float): Estimated mortgage rate parameter
+        hh_mortgage_ect (float): Estimated mortgage ECT parameter
+        hh_mortgage_rate (float): Initial mortgage rate
     """
 
     def __init__(
@@ -77,23 +98,23 @@ class DefaultSyntheticBanks(SyntheticBanks):
         hh_mortgage_ect: float,
         hh_mortgage_rate: float,
     ):
-        """Initialize the default synthetic banking system.
+        """Initialize the banking system data container.
 
         Args:
-            country_name (str): Country identifier
-            year (int): Reference year for data
-            number_of_banks (int): Number of banks to create
-            bank_data (pd.DataFrame): Initial bank-level data
-            quarter (int): Reference quarter (1-4)
-            firm_passthrough (float): Rate adjustment factor for firm loans
-            firm_ect (float): Error correction term for firm rates
-            firm_rate (float): Base rate for firm loans
-            hh_consumption_passthrough (float): Rate adjustment for consumer loans
-            hh_consumption_ect (float): Error correction for consumer rates
-            hh_consumption_rate (float): Base rate for consumer loans
-            hh_mortgage_passthrough (float): Rate adjustment for mortgages
-            hh_mortgage_ect (float): Error correction for mortgage rates
-            hh_mortgage_rate (float): Base mortgage rate
+            country_name (str): Country identifier for data collection
+            year (int): Reference year for preprocessing
+            number_of_banks (int): Number of banks to preprocess data for
+            bank_data (pd.DataFrame): Initial data to preprocess
+            quarter (int): Reference quarter for preprocessing
+            firm_passthrough (float): Estimated rate adjustment parameter
+            firm_ect (float): Estimated error correction parameter
+            firm_rate (float): Initial firm loan rate
+            hh_consumption_passthrough (float): Estimated consumer rate parameter
+            hh_consumption_ect (float): Estimated consumer ECT parameter
+            hh_consumption_rate (float): Initial consumer loan rate
+            hh_mortgage_passthrough (float): Estimated mortgage rate parameter
+            hh_mortgage_ect (float): Estimated mortgage ECT parameter
+            hh_mortgage_rate (float): Initial mortgage rate
         """
         super().__init__(
             country_name,
@@ -126,31 +147,32 @@ class DefaultSyntheticBanks(SyntheticBanks):
         exchange_rate_from_eur: float = 1.0,
         proxy_eu_country: Optional[Country] = None,
     ) -> "DefaultSyntheticBanks":
-        """Create a synthetic banking system from data readers.
+        """Create a preprocessed banking system data container using standard data sources.
 
-        This method supports two initialization paths based on the banks_data_configuration:
-        1. Standard initialization using OECD/Eurostat data
-        2. Compustat-based initialization (if specified in configuration)
+        This method preprocesses data using OECD/Eurostat sources to prepare:
+        1. Bank balance sheet data (scaled appropriately)
+        2. Initial rate parameters
+        3. Bank relationship mappings
 
-        For standard initialization:
-        - Number of banks is based on actual bank branches (scaled)
-        - Bank equity is distributed evenly across banks
-        - Interest rates are initialized from policy rates
+        For standard preprocessing:
+        - Number of banks is derived from actual bank branches (scaled)
+        - Bank equity is distributed based on historical data
+        - Rate parameters are estimated from historical rates
 
         Args:
-            single_bank (bool): Whether to create a single bank regardless of data
-            country_name (Country): Country to create banks for
-            year (int): Reference year
+            single_bank (bool): Whether to preprocess data for a single bank
+            country_name (Country): Country to preprocess data for
+            year (int): Reference year for preprocessing
             readers (DataReaders): Data source readers
-            scale (int): Scaling factor for number of banks
-            banks_data_configuration (BanksDataConfiguration): Bank setup configuration
-            quarter (int): Reference quarter (1-4)
-            inflation_data (pd.DataFrame): Inflation data for rate calculations
-            exchange_rate_from_eur (float, optional): Exchange rate from EUR. Defaults to 1.0.
-            proxy_eu_country (Optional[Country], optional): EU country to use as proxy. Defaults to None.
+            scale (int): Scaling factor for bank numbers
+            banks_data_configuration (BanksDataConfiguration): Preprocessing configuration
+            quarter (int): Reference quarter for preprocessing
+            inflation_data (pd.DataFrame): Historical inflation data
+            exchange_rate_from_eur (float, optional): Exchange rate for conversion. Defaults to 1.0.
+            proxy_eu_country (Optional[Country], optional): EU country for proxy data. Defaults to None.
 
         Returns:
-            DefaultSyntheticBanks: Initialized banking system
+            DefaultSyntheticBanks: Container with preprocessed banking system data
         """
         if banks_data_configuration.constructor == "Compustat":
             return cls.from_readers_compustat(
@@ -231,32 +253,32 @@ class DefaultSyntheticBanks(SyntheticBanks):
         exchange_rate_from_eur: float = 1.0,
         proxy_eu_country: Optional[Country] = None,
     ) -> "DefaultSyntheticBanks":
-        """Create a synthetic banking system using Compustat data.
+        """Create a preprocessed banking system data container using Compustat data.
 
-        This method creates banks using detailed Compustat data, which provides:
-        - Actual bank balance sheet information
-        - Real-world deposit and loan distributions
-        - Historical equity levels
+        This method preprocesses detailed Compustat data to prepare:
+        1. Historical balance sheet information
+        2. Actual deposit and loan distributions
+        3. Historical equity levels and ratios
 
-        The method:
-        1. Fetches and filters Compustat bank data
-        2. Samples banks based on configuration
-        3. Scales equity to match country totals
-        4. Initializes rates and other parameters
+        The preprocessing steps:
+        1. Fetch and filter relevant Compustat bank data
+        2. Sample and scale data appropriately
+        3. Align with country-level totals
+        4. Estimate initial parameters
 
         Args:
-            country_name (Country): Country to create banks for
-            year (int): Reference year
+            country_name (Country): Country to preprocess data for
+            year (int): Reference year for preprocessing
             readers (DataReaders): Data source readers
-            single_bank (bool): Whether to create a single bank
-            scale (int): Scaling factor for number of banks
-            quarter (int): Reference quarter (1-4)
-            inflation_data (pd.DataFrame): Inflation data for rate calculations
-            exchange_rate_from_eur (float, optional): Exchange rate from EUR. Defaults to 1.0.
-            proxy_eu_country (Optional[Country], optional): EU country to use as proxy. Defaults to None.
+            single_bank (bool): Whether to preprocess data for a single bank
+            scale (int): Scaling factor for bank numbers
+            quarter (int): Reference quarter for preprocessing
+            inflation_data (pd.DataFrame): Historical inflation data
+            exchange_rate_from_eur (float, optional): Exchange rate for conversion. Defaults to 1.0.
+            proxy_eu_country (Optional[Country], optional): EU country for proxy data. Defaults to None.
 
         Returns:
-            DefaultSyntheticBanks: Initialized banking system using Compustat data
+            DefaultSyntheticBanks: Container with preprocessed banking system data
         """
         compustat_data = readers.compustat_banks.get_country_data(
             country=country_name, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country_name, year)
@@ -328,32 +350,38 @@ class DefaultSyntheticBanks(SyntheticBanks):
 
     @classmethod
     def initialise_rates(cls, country_name, inflation_data, proxy_eu_country, quarter, readers, year):
-        """Initialize interest rates for all bank products.
+        """Preprocess and estimate initial interest rate parameters.
 
         This method:
-        1. Fits rate models for firms, households, and mortgages
-        2. Calculates base rates and adjustment factors
-        3. Handles proxy country data if needed
+        1. Collects historical rate data
+        2. Estimates rate adjustment parameters
+        3. Calculates initial rates for different products
+
+        The preprocessing includes parameter estimation for:
+        - Firm loan rates
+        - Consumer loan rates
+        - Mortgage rates
+        - Default parameters when data is insufficient
 
         Args:
-            country_name (Country): Target country
-            inflation_data (pd.DataFrame): Inflation data for calculations
-            proxy_eu_country (Optional[Country]): EU country to use as proxy
+            country_name (Country): Country to process data for
+            inflation_data (pd.DataFrame): Historical inflation data
+            proxy_eu_country (Optional[Country]): EU country for proxy data
             quarter (int): Reference quarter
             readers (DataReaders): Data source readers
             year (int): Reference year
 
         Returns:
-            tuple: Nine parameters for rate calculations:
-                - firm_ect: Error correction term for firm rates
-                - firm_passthrough: Rate adjustment for firm loans
-                - firm_rate: Base rate for firm loans
-                - hh_consumption_ect: Error correction for consumer rates
-                - hh_consumption_passthrough: Rate adjustment for consumer loans
-                - hh_consumption_rate: Base rate for consumer loans
-                - hh_mortgage_ect: Error correction for mortgage rates
-                - hh_mortgage_passthrough: Rate adjustment for mortgages
-                - hh_mortgage_rate: Base rate for mortgages
+            tuple: Nine estimated parameters:
+                - firm_ect: Estimated error correction for firm rates
+                - firm_passthrough: Estimated adjustment for firm rates
+                - firm_rate: Initial firm rate
+                - hh_consumption_ect: Estimated consumer rate ECT
+                - hh_consumption_passthrough: Estimated consumer rate adjustment
+                - hh_consumption_rate: Initial consumer rate
+                - hh_mortgage_ect: Estimated mortgage ECT
+                - hh_mortgage_passthrough: Estimated mortgage adjustment
+                - hh_mortgage_rate: Initial mortgage rate
         """
         if country_name.is_eu_country:
             data_country = country_name
