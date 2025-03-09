@@ -1,3 +1,20 @@
+"""Household consumption behavior implementation.
+
+This module implements household consumption decisions through:
+- Target consumption calculation
+- Income-based consumption allocation
+- Consumption smoothing mechanisms
+- Minimum consumption thresholds
+- Tax-adjusted spending
+
+The implementation handles:
+- Consumption smoothing over time
+- Income and saving rate effects
+- Price level adjustments
+- Industry-specific allocations
+- Tax considerations
+"""
+
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -5,6 +22,21 @@ from numba import boolean, float64, int64, njit
 
 
 class HouseholdConsumption(ABC):
+    """Abstract base class for household consumption behavior.
+
+    Defines interface for computing target consumption levels based on:
+    - Income and saving rates
+    - Historical consumption patterns
+    - Price level changes
+    - Industry allocations
+    - Tax considerations
+
+    Attributes:
+        consumption_smoothing_fraction (float): Weight on historical consumption
+        consumption_smoothing_window (int): Periods for smoothing calculation
+        minimum_consumption_fraction (float): Floor on consumption/income ratio
+    """
+
     def __init__(
         self,
         consumption_smoothing_fraction: float,
@@ -32,10 +64,40 @@ class HouseholdConsumption(ABC):
         take_consumption_weights_by_income_quantile: bool,
         tau_vat: float,
     ) -> np.ndarray:
+        """Calculate target consumption levels.
+
+        Args:
+            expected_inflation (float): Expected inflation rate
+            current_cpi (float): Current price index
+            initial_cpi (float): Initial price index
+            historic_consumption_sum (np.ndarray): Past consumption totals
+            saving_rates (np.ndarray): Household saving rates
+            income (np.ndarray): Household income
+            household_benefits (np.ndarray): Social benefits received
+            consumption_weights (np.ndarray): Industry consumption shares
+            consumption_weights_by_income (np.ndarray): Income-based weights
+            exogenous_total_consumption (np.ndarray): External consumption target
+            current_time (int): Current period
+            take_consumption_weights_by_income_quantile (bool): Use income quintiles
+            tau_vat (float): Value added tax rate
+
+        Returns:
+            np.ndarray: Target consumption by household and industry
+        """
         pass
 
 
 class DefaultHouseholdConsumption(HouseholdConsumption):
+    """Default implementation of household consumption behavior.
+
+    Implements consumption decisions based on:
+    - Income and saving rates
+    - Historical consumption smoothing
+    - Minimum consumption thresholds
+    - Industry-specific allocations
+    - Tax adjustments
+    """
+
     def compute_target_consumption(
         self,
         expected_inflation: float,
@@ -52,6 +114,33 @@ class DefaultHouseholdConsumption(HouseholdConsumption):
         take_consumption_weights_by_income_quantile: bool,
         tau_vat: float,
     ) -> np.ndarray:
+        """Calculate target consumption using default behavior.
+
+        Determines consumption targets based on:
+        - Income after savings
+        - Historical consumption patterns
+        - Minimum consumption thresholds
+        - Industry allocation weights
+        - Tax considerations
+
+        Args:
+            expected_inflation (float): Expected inflation rate
+            current_cpi (float): Current price index
+            initial_cpi (float): Initial price index
+            historic_consumption_sum (np.ndarray): Past consumption totals
+            saving_rates (np.ndarray): Household saving rates
+            income (np.ndarray): Household income
+            household_benefits (np.ndarray): Social benefits received
+            consumption_weights (np.ndarray): Industry consumption shares
+            consumption_weights_by_income (np.ndarray): Income-based weights
+            exogenous_total_consumption (np.ndarray): External consumption target
+            current_time (int): Current period
+            take_consumption_weights_by_income_quantile (bool): Use income quintiles
+            tau_vat (float): Value added tax rate
+
+        Returns:
+            np.ndarray: Target consumption by household and industry
+        """
         return self._compute_target_consumption(
             historic_consumption_sum=historic_consumption_sum,
             saving_rates=saving_rates,
@@ -97,38 +186,31 @@ class DefaultHouseholdConsumption(HouseholdConsumption):
         consumption_smoothing_fraction: float,
         minimum_consumption_fraction: float,
     ) -> np.ndarray:
+        """Internal method for consumption calculation.
+
+        Implements the core consumption calculation logic with:
+        - Historical smoothing
+        - Income-based allocation
+        - Minimum thresholds
+        - Tax adjustments
+
+        Args:
+            historic_consumption_sum (np.ndarray): Past consumption totals
+            saving_rates (np.ndarray): Household saving rates
+            income (np.ndarray): Household income
+            household_benefits (np.ndarray): Social benefits received
+            consumption_weights (np.ndarray): Industry consumption shares
+            consumption_weights_by_income (np.ndarray): Income-based weights
+            take_consumption_weights_by_income_quantile (bool): Use income quintiles
+            tau_vat (float): Value added tax rate
+            consumption_smoothing_window (int): Periods for smoothing
+            consumption_smoothing_fraction (float): Smoothing weight
+            minimum_consumption_fraction (float): Consumption floor
+
+        Returns:
+            np.ndarray: Target consumption by household and industry
+        """
         smoothing_window = min(consumption_smoothing_window, len(historic_consumption_sum))
-        # target_consumption = np.zeros((len(income), len(consumption_weights)))
-        # if take_consumption_weights_by_income_quantile:
-        #     pass
-        #     """
-        #     quintiles = partition_into_quintiles(income)
-        #     historic_consumption_sum = np.array(historic_consumption)[1:][-smoothing_window:].sum(axis=0)
-        #     for q in range(5):
-        #         cons = (
-        #             consumption_weights_by_income[:, q]
-        #             if take_consumption_weights_by_income_quantile
-        #             else consumption_weights
-        #         )
-        #         ind = np.where(quintiles == q)[0]
-        #         target_consumption[ind] = (
-        #             1.0
-        #             / (1 + tau_vat)
-        #             * np.outer(
-        #                 cons,
-        #                 np.maximum(
-        #                     minimum_consumption_fraction * (1 - saving_rates[ind]) * household_benefits[ind],
-        #                     (1 - saving_rates[ind]) * income[ind],
-        #                     consumption_smoothing_fraction
-        #                     * (1 + tau_vat)
-        #                     * (1 / smoothing_window)
-        #                     * historic_consumption_sum[ind],
-        #                 ),
-        #             ).T
-        #         )
-        #     return np.maximum(0.0, target_consumption)
-        #     """
-        # else:
         target_consumption = (
             1.0
             / (1 + tau_vat)
@@ -148,6 +230,15 @@ class DefaultHouseholdConsumption(HouseholdConsumption):
 
 
 class ExogenousHouseholdConsumption(HouseholdConsumption):
+    """Exogenous household consumption implementation.
+
+    Implements consumption decisions based on:
+    - External consumption targets
+    - Price level adjustments
+    - Income-based allocation
+    - Tax considerations
+    """
+
     def compute_target_consumption(
         self,
         expected_inflation: float,
@@ -164,6 +255,32 @@ class ExogenousHouseholdConsumption(HouseholdConsumption):
         take_consumption_weights_by_income_quantile: bool,
         tau_vat: float,
     ) -> np.ndarray:
+        """Calculate target consumption using exogenous targets.
+
+        Determines consumption based on:
+        - External consumption targets
+        - Price level changes
+        - Income-based allocation
+        - Tax adjustments
+
+        Args:
+            expected_inflation (float): Expected inflation rate
+            current_cpi (float): Current price index
+            initial_cpi (float): Initial price index
+            historic_consumption_sum (np.ndarray): Past consumption totals
+            saving_rates (np.ndarray): Household saving rates
+            income (np.ndarray): Household income
+            household_benefits (np.ndarray): Social benefits received
+            consumption_weights (np.ndarray): Industry consumption shares
+            consumption_weights_by_income (np.ndarray): Income-based weights
+            exogenous_total_consumption (np.ndarray): External consumption target
+            current_time (int): Current period
+            take_consumption_weights_by_income_quantile (bool): Use income quintiles
+            tau_vat (float): Value added tax rate
+
+        Returns:
+            np.ndarray: Target consumption by household and industry
+        """
         target_consumption = np.maximum(
             0.0,
             (

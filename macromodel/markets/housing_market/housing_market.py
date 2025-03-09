@@ -1,3 +1,11 @@
+"""Core implementation of the housing market mechanism.
+
+This module provides the central implementation of the housing market, managing
+the interaction between buyers and sellers across properties and countries.
+It handles market clearing, property management, and tracking of market metrics
+over time.
+"""
+
 import warnings
 from copy import deepcopy
 from pathlib import Path
@@ -22,6 +30,45 @@ from macromodel.util.get_histogram import get_histogram
 
 
 class HousingMarket:
+    """Housing market model implementing property transactions and rental agreements.
+
+    This class implements a comprehensive housing market model that handles both
+    property sales and rental agreements. It manages property valuations, market
+    clearing mechanisms, and tracks various market metrics over time.
+
+    Key Features:
+    1. Property Management:
+       - Track property ownership and occupancy
+       - Update property valuations
+       - Monitor rental status
+       - Handle property transactions
+
+    2. Market Clearing:
+       - Match buyers with sellers
+       - Match tenants with landlords
+       - Process transactions
+       - Update ownership records
+
+    3. Market Analysis:
+       - Track price-to-value ratios
+       - Monitor rent-to-value ratios
+       - Calculate market statistics
+       - Generate market reports
+
+    4. Time Series Tracking:
+       - Property values over time
+       - Transaction volumes
+       - Price and rent distributions
+       - Market efficiency metrics
+
+    The model supports:
+    - Owner-occupied and rental properties
+    - Multiple property ownership
+    - Vacant properties
+    - Price discovery mechanisms
+    - Market clearing algorithms
+    """
+
     def __init__(
         self,
         country_name: str,
@@ -30,6 +77,33 @@ class HousingMarket:
         ts: TimeSeries,
         states: dict[str, pd.DataFrame],
     ):
+        """Initialize a housing market instance.
+
+        Creates a new housing market with specified parameters and initial state.
+        The market tracks both the physical properties and their economic
+        characteristics over time.
+
+        Args:
+            country_name: Name of the country/region for this market
+            scale: Scale factor for market size normalization
+            functions: Dict of market functions (valuation, clearing, etc.)
+            ts: Time series object for tracking market evolution
+            states: Dict containing property and transaction data
+                - properties: DataFrame of all properties and their attributes
+                - current_sales: DataFrame of ongoing transactions
+
+        Example:
+            market = HousingMarket(
+                country_name="USA",
+                scale=1000,
+                functions=market_functions,
+                ts=market_timeseries,
+                states={
+                    "properties": property_data,
+                    "current_sales": pd.DataFrame()
+                }
+            )
+        """
         self.country_name = country_name
         self.scale = scale
         self.functions = functions
@@ -46,6 +120,26 @@ class HousingMarket:
         scale: int,
         country_name: str,
     ) -> "HousingMarket":
+        """Create a housing market instance from pickled synthetic market data.
+
+        This class method initializes a housing market using pre-generated
+        synthetic data, typically used for simulation or testing purposes.
+        It handles data preprocessing and state initialization.
+
+        Args:
+            synthetic_housing_market: Pre-generated synthetic market data
+            housing_market_configuration: Configuration parameters
+            scale: Scale factor for market size normalization
+            country_name: Name of the country/region
+
+        Returns:
+            HousingMarket: New housing market instance initialized with
+                synthetic data
+
+        Note:
+            The synthetic data should include property characteristics,
+            ownership information, and market conditions.
+        """
         # Get corresponding functions
         functions = functions_from_model(
             housing_market_configuration.functions, loc="macromodel.markets.housing_market"
@@ -100,6 +194,20 @@ class HousingMarket:
         )
 
     def reset(self, configuration: HousingMarketConfiguration) -> None:
+        """Reset the housing market to its initial state.
+
+        This method restores the market to its original configuration,
+        useful for running multiple simulations or scenarios. It resets
+        both the time series data and the market states.
+
+        Args:
+            configuration: New configuration parameters to apply
+                after reset
+
+        Note:
+            This preserves the original market structure while allowing
+            for new configuration parameters.
+        """
         self.ts.reset()
         update_functions(
             model=configuration.functions, loc="macromodel.agents.housing_market", functions=self.functions
@@ -114,6 +222,26 @@ class HousingMarket:
         data: pd.DataFrame,
         config: dict[str, Any],
     ) -> "HousingMarket":
+        """Create a housing market instance from raw market data.
+
+        This class method initializes a housing market using actual market
+        data, providing flexibility in data sources and market setup.
+        It handles data preprocessing and state initialization.
+
+        Args:
+            country_name: Name of the country/region
+            scale: Scale factor for market size normalization
+            data: DataFrame containing property and market data
+            config: Configuration dictionary including function specifications
+
+        Returns:
+            HousingMarket: New housing market instance initialized with
+                the provided data
+
+        Note:
+            The input data should include all necessary property attributes
+            and market conditions for proper initialization.
+        """
         # Get corresponding functions and parameters
         functions = get_functions(
             config["functions"],
@@ -152,6 +280,22 @@ class HousingMarket:
         )
 
     def update_property_value(self) -> None:
+        """Update the values of all properties in the market.
+
+        This method applies the configured valuation function to update property
+        values based on market conditions and property characteristics. It also
+        records the new values in the time series for tracking.
+
+        The update process:
+        1. Apply valuation function to current property values
+        2. Store new values in property states
+        3. Update time series records
+        4. Generate value distribution histogram
+
+        Note:
+            The specific valuation logic is defined in the configured
+            value function, allowing for different valuation models.
+        """
         self.states["properties"].loc[:, "Value"] = self.functions["value"].compute_value(
             current_property_values=self.states["properties"]["Value"].values
         )
@@ -164,6 +308,24 @@ class HousingMarket:
         max_price_willing_to_pay: np.ndarray,
         max_rent_willing_to_pay: np.ndarray,
     ) -> None:
+        """Clear the housing market by matching buyers/renters with sellers/landlords.
+
+        This method executes the market clearing algorithm to match properties
+        with potential buyers or renters based on their preferences and
+        constraints. It handles both sales and rental transactions.
+
+        Args:
+            household_main_residence_tenure_status: Array indicating each
+                household's current residence status (owner/renter/none)
+            max_price_willing_to_pay: Array of maximum purchase prices each
+                household is willing/able to pay
+            max_rent_willing_to_pay: Array of maximum rents each household
+                is willing/able to pay
+
+        Note:
+            The specific matching logic is defined in the configured
+            clearing function, allowing for different clearing mechanisms.
+        """
         self.states["current_sales"] = self.functions["clearing"].clear(
             housing_data=self.states["properties"],
             household_main_residence_tenure_status=household_main_residence_tenure_status,
@@ -173,6 +335,24 @@ class HousingMarket:
 
     @staticmethod
     def _perform_linear_regression(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """Perform linear regression with error handling.
+
+        This utility method fits a linear relationship between two arrays,
+        handling edge cases and numerical issues. Used primarily for
+        price-value and rent-value relationship calculations.
+
+        Args:
+            x: Independent variable array
+            y: Dependent variable array
+
+        Returns:
+            np.ndarray: Regression coefficients [slope, intercept]
+                Returns [0, 0] if input arrays are empty
+
+        Note:
+            Suppresses warnings during fitting to handle potential
+            numerical instabilities.
+        """
         if len(x) == 0 or len(y) == 0:
             return np.zeros(2)
         with warnings.catch_warnings():
@@ -180,6 +360,21 @@ class HousingMarket:
             return np.array(np.polyfit(x, y, deg=1))
 
     def compute_observed_fraction_value_price(self) -> np.ndarray:
+        """Calculate the relationship between property values and sale prices.
+
+        This method analyzes completed sales transactions to determine the
+        current relationship between property values and actual sale prices.
+        It uses linear regression to estimate the value-to-price ratio.
+
+        Returns:
+            np.ndarray: Regression coefficients [slope, intercept] representing
+                the relationship between property values and sale prices.
+                Returns current ratio if no sales occurred.
+
+        Note:
+            The ratio helps track market efficiency and price discovery,
+            with deviations from 1.0 indicating potential market imbalances.
+        """
         current_sells = self.states["current_sales"].loc[self.states["current_sales"]["sales_types"] == "Sell"]
         self.ts.price_value_histogram.append(
             get_histogram(
@@ -195,6 +390,21 @@ class HousingMarket:
         )
 
     def compute_observed_fraction_rent_value(self) -> np.ndarray:
+        """Calculate the relationship between property values and rental rates.
+
+        This method analyzes completed rental agreements to determine the
+        current relationship between property values and rental rates.
+        It uses linear regression to estimate the rent-to-value ratio.
+
+        Returns:
+            np.ndarray: Regression coefficients [slope, intercept] representing
+                the relationship between property values and rental rates.
+                Returns current ratio if no rentals occurred.
+
+        Note:
+            The ratio helps track rental market efficiency and yield rates,
+            providing insights into investment returns and market balance.
+        """
         current_rentals = self.states["current_sales"].loc[self.states["current_sales"]["sales_types"] == "Rental"]
         self.ts.rent_value_histogram.append(
             get_histogram(
@@ -215,6 +425,34 @@ class HousingMarket:
         household_received_mortgages: np.ndarray,
         household_financial_wealth: np.ndarray,
     ) -> None:
+        """Process and finalize housing market transactions.
+
+        This method executes the actual property transfers and rental
+        agreements after market clearing. It updates ownership records,
+        occupancy status, and financial positions for all parties.
+
+        The process handles:
+        1. Property Sales:
+           - Verify buyer's financial capacity
+           - Transfer ownership
+           - Update occupancy
+           - Record transaction details
+
+        2. Rental Agreements:
+           - Update tenant records
+           - Record rental relationships
+           - Handle vacancy changes
+           - Update market statistics
+
+        Args:
+            household_states: Dict containing household status information
+            household_received_mortgages: Array of approved mortgage amounts
+            household_financial_wealth: Array of household wealth levels
+
+        Note:
+            This method ensures all market clearing outcomes are properly
+            reflected in the system state.
+        """
         total_number_of_bought_houses = 0
         total_number_of_newly_rented_houses = 0
         for index, sale in self.states["current_sales"].iterrows():
@@ -308,7 +546,23 @@ class HousingMarket:
         self.ts.total_number_of_newly_rented_houses.append([total_number_of_newly_rented_houses])
 
     def compute_total_property_value(self) -> float:
+        """Calculate the total value of all properties in the market.
+
+        Returns:
+            float: Sum of all property values in the market
+        """
         return self.states["properties"]["Value"].sum()
 
     def save_to_h5(self, group: h5py.Group):
+        """Save market state to HDF5 format.
+
+        This method persists the current market state to disk using HDF5
+        format, allowing for efficient storage and retrieval of market data.
+
+        Args:
+            group: HDF5 group to save the market data into
+
+        Note:
+            Saves both current market state and time series data.
+        """
         self.ts.write_to_h5("housing_market", group)
