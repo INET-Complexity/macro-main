@@ -1,3 +1,62 @@
+"""Module for managing synthetic population data in macroeconomic simulations.
+
+This module provides the abstract base class for synthetic population generation and management.
+It defines the core data structures and interfaces for representing households and individuals
+in a macroeconomic simulation, with a focus on:
+
+1. Population Structure:
+   - Household composition and relationships
+   - Individual demographics and employment
+   - Financial status and wealth distribution
+   - Housing tenure and property ownership
+
+2. Economic Attributes:
+   - Income sources (employment, transfers, assets)
+   - Wealth composition (real assets, financial assets)
+   - Debt obligations and credit relationships
+   - Consumption and saving patterns
+
+3. Data Management:
+   - Data validation and cleaning
+   - Missing value imputation
+   - Statistical modeling of relationships
+   - Scale factor adjustments
+
+4. Market Relationships:
+   - Employment connections with firms
+   - Banking relationships
+   - Housing market participation
+   - Investment behavior
+
+The module supports both EU and non-EU country data, with capabilities for:
+- Data harmonization across sources
+- Consistent initialization of economic relationships
+- Preservation of aggregate economic constraints
+- Environmental impact tracking
+
+Note:
+    This module focuses on preprocessing and organizing population data for
+    initialization. The actual behavioral dynamics are implemented in the
+    simulation package.
+
+Example:
+    ```python
+    from macro_data.processing.synthetic_population import SyntheticPopulation
+
+    class CustomPopulation(SyntheticPopulation):
+        def __init__(self, country_name, scale, ...):
+            super().__init__(...)
+
+        def compute_household_income(self, total_social_transfers):
+            # Custom income computation logic
+            pass
+
+        def compute_household_wealth(self):
+            # Custom wealth computation logic
+            pass
+    ```
+"""
+
 from abc import ABC, abstractmethod
 from typing import Optional
 
@@ -157,6 +216,21 @@ class SyntheticPopulation(ABC):
         unemployment_labour_inputs_fraction: float = 0.3,
         override: bool = True,
     ) -> None:
+        """Set individual labor input values based on employment status and firm production.
+
+        This method assigns labor input values to individuals based on their employment status:
+        1. Employed: Inputs proportional to income within their firm
+        2. Unemployed: Fraction of industry mean inputs
+        3. Inactive: Zero inputs
+
+        Args:
+            firm_production (np.ndarray): Production values for each firm
+            firm_employees (pd.DataFrame): Mapping of employees to firms
+            unemployment_labour_inputs_fraction (float, optional): Fraction of mean
+                industry inputs for unemployed. Defaults to 0.3.
+            override (bool, optional): Whether to override existing values with
+                uniform inputs. Defaults to True.
+        """
         if override:
             self.individual_data["Labour Inputs"] = 1.0
         else:
@@ -197,15 +271,25 @@ class SyntheticPopulation(ABC):
 
     @property
     def industry_consumption_before_vat(self):
+        """Calculate household consumption by industry before VAT.
+
+        This property computes the pre-tax consumption allocation across industries
+        based on household income and consumption weights.
+
+        Returns:
+            np.ndarray: Matrix of household consumption by industry before VAT
+        """
         return ...
 
     @property
     def investment_weights(self) -> np.ndarray:
-        """
-        Returns the investment weights.
+        """Calculate normalized investment weights by industry.
+
+        This property computes the share of investment allocated to each industry,
+        ensuring the weights sum to 1.
 
         Returns:
-            np.ndarray: The investment weights.
+            np.ndarray: Normalized investment weights by industry
         """
         return self.investment / self.investment.sum()
 
@@ -214,14 +298,40 @@ class SyntheticPopulation(ABC):
         self,
         total_social_transfers: float,
         independents: Optional[list[str]] = None,
-    ) -> None: ...
+    ) -> None:
+        """Compute and update household income from all sources.
+
+        This method should:
+        1. Calculate employee income from individual data
+        2. Process social transfers based on household characteristics
+        3. Include rental income from real estate
+        4. Add income from financial assets
+        5. Update the household_data DataFrame with results
+
+        Args:
+            total_social_transfers (float): Total social transfers to be distributed
+                across households based on their characteristics.
+            independents (Optional[list[str]], optional): List of independent variables
+                to use in social transfer allocation models. Defaults to None.
+        """
+        pass
 
     @property
-    def number_of_households(self):
+    def number_of_households(self) -> int:
+        """Get the total number of households.
+
+        Returns:
+            int: Number of rows in household_data
+        """
         return self.household_data.shape[0]
 
     @property
     def number_employees_by_industry(self) -> np.ndarray:
+        """Calculate the number of employed individuals by industry.
+
+        Returns:
+            np.ndarray: Array of employee counts for each industry
+        """
         number_employees_by_industry = np.zeros(len(self.industries))
         for industry_ind in range(len(self.industries)):
             number_employees_by_industry[industry_ind] = int(
@@ -235,44 +345,175 @@ class SyntheticPopulation(ABC):
         return number_employees_by_industry.astype(int)
 
     def set_consumption_weights(self, consumption_weights: np.ndarray) -> None:
+        """Set the consumption weights for household expenditure allocation.
+
+        Args:
+            consumption_weights (np.ndarray): New consumption weights by industry
+        """
         self.consumption_weights = consumption_weights.copy()
 
     @abstractmethod
     def set_debt_installments(
         self, consumption_installments: np.ndarray, ce_installments: np.ndarray, mortgage_installments: np.ndarray
-    ) -> None: ...
+    ) -> None:
+        """Set household debt installment payments.
+
+        This method should:
+        1. Process consumption loan payments
+        2. Handle consumer electronics installments
+        3. Account for mortgage payments
+        4. Update total debt service in household_data
+        5. Ensure payment consistency with loan balances
+
+        Args:
+            consumption_installments (np.ndarray): Monthly payments for consumption loans
+            ce_installments (np.ndarray): Monthly payments for consumer electronics
+            mortgage_installments (np.ndarray): Monthly payments for mortgages
+        """
+        pass
 
     @abstractmethod
-    def set_household_saving_rates(self, independents: Optional[list[str]] = None) -> None: ...
+    def set_household_saving_rates(self, independents: Optional[list[str]] = None) -> None:
+        """Compute and set household saving rates.
+
+        This method should:
+        1. Process consumption share data
+        2. Handle missing values through imputation
+        3. Fit saving rate models using household characteristics
+        4. Ensure rates are economically reasonable
+        5. Update the household_data DataFrame
+
+        Args:
+            independents (Optional[list[str]], optional): List of independent variables
+                to use in saving rate models. Defaults to None.
+        """
+        pass
 
     @abstractmethod
-    def compute_household_wealth(self, independents: Optional[list[str]] = None) -> None: ...
+    def compute_household_wealth(self, independents: Optional[list[str]] = None) -> None:
+        """Compute and update household wealth components.
+
+        This method should:
+        1. Calculate real asset wealth (property, vehicles, businesses)
+        2. Process financial asset wealth (deposits, investments)
+        3. Account for all debt types (mortgages, loans)
+        4. Compute net wealth positions
+        5. Update wealth distribution models
+
+        Args:
+            independents (Optional[list[str]], optional): List of independent variables
+                to use in wealth distribution models. Defaults to None.
+        """
+        pass
 
     def set_income(self) -> None:
+        """Set total individual income by combining employment and unemployment benefits.
+
+        This method:
+        1. Fills missing values with zeros
+        2. Combines employee income and unemployment benefits
+        3. Updates the Income column in individual_data
+        """
         self.individual_data["Income"] = (
             self.individual_data["Employee Income"].fillna(0.0).values
             + self.individual_data["Income from Unemployment Benefits"].fillna(0.0).values
         )
 
-    def restrict(self): ...
+    @abstractmethod
+    def restrict(self) -> None:
+        """Restrict household data to essential columns.
 
+        This method should:
+        1. Filter household_data to RESTRICT_COLS
+        2. Ensure data consistency after restriction
+        3. Preserve key relationships
+        4. Handle any missing required columns
+        """
+        pass
+
+    @abstractmethod
     def normalise_household_consumption(
         self,
         iot_hh_consumption: np.ndarray | pd.Series,
         vat: float,
         positive_saving_rates_only: bool = True,
         independents: Optional[list[str]] = None,
-    ): ...
+    ) -> None:
+        """Normalize household consumption to match aggregate targets.
+
+        This method should:
+        1. Scale consumption to match IOT totals
+        2. Account for VAT in consumption values
+        3. Maintain reasonable saving rates
+        4. Preserve consumption patterns by income group
+        5. Update household consumption shares
+
+        Args:
+            iot_hh_consumption (np.ndarray | pd.Series): Target household consumption from IOT
+            vat (float): Value-added tax rate
+            positive_saving_rates_only (bool, optional): Whether to enforce positive
+                saving rates. Defaults to True.
+            independents (Optional[list[str]], optional): Independent variables for
+                consumption models. Defaults to None.
+        """
+        pass
 
     def set_household_investment_rates(
         self,
         capital_formation_taxrate: float,
         default_investment_rates: np.ndarray | float = 0.2,
-    ) -> None: ...
+    ) -> None:
+        """Initialize household investment rates.
+
+        This method sets initial investment rates for households, which can be
+        later adjusted through normalization to match aggregate targets.
+
+        Args:
+            capital_formation_taxrate (float): Tax rate on capital formation
+            default_investment_rates (np.ndarray | float, optional): Initial
+                investment rates. Defaults to 0.2.
+        """
+        self.household_data["Investment Rate"] = default_investment_rates
 
     def normalise_household_investment(
         self, tau_cf: float, iot_hh_investment: np.ndarray | pd.Series, positive_investment_rates: bool = True
-    ) -> None: ...
+    ) -> None:
+        inv_weights = iot_hh_investment / iot_hh_investment.sum()
+        income = self.household_data["Income"].values
+        investment_rate = self.household_data["Investment Rate"].values
+
+        current_hh_investment = default_target_investment(
+            income_=income, investment_rate=investment_rate, tau_cf_=tau_cf, investment_weights_=inv_weights
+        )
+
+        factor = iot_hh_investment.sum() / current_hh_investment.sum()
+
+        self.household_data["Investment Rate"] = factor * investment_rate
+
+        self.investment *= factor
+
+        # set initial investment
+        self.household_data["Investment"] = (self.household_data["Income"] * self.household_data["Investment Rate"]) / (
+            1 + tau_cf
+        )
+
+    def get_current_hh_investment_by_industry(self, tau_cf: float) -> np.ndarray:
+        """Calculate current household investment by industry.
+
+        This method computes the current investment allocation across industries
+        based on household income, investment rates, and industry weights.
+
+        Args:
+            tau_cf (float): Capital formation tax rate
+
+        Returns:
+            np.ndarray: Current investment values by industry
+        """
+        income = self.household_data["Income"].values
+        investment_rate = self.household_data["Investment Rate"].values
+        return default_target_investment(
+            income_=income, investment_rate=investment_rate, tau_cf_=tau_cf, investment_weights_=self.investment_weights
+        )
 
     def match_consumption_weights_by_income(
         self,
@@ -283,3 +524,69 @@ class SyntheticPopulation(ABC):
     ) -> None: ...
 
     def set_wealth_distribution_function(self, independents: Optional[list[str]] = None) -> None: ...
+
+    def add_emissions(
+        self, emission_factors_array: np.ndarray, emitting_indices: list[int] | np.ndarray, tau_cf: float
+    ) -> None:
+        """Calculate and add emissions data to household records.
+
+        This method computes emissions from:
+        1. Household consumption
+        2. Investment activities
+        3. Specific fuel types (coal, gas, oil, refined products)
+
+        Args:
+            emission_factors_array (np.ndarray): Emission factors by source
+            emitting_indices (list[int] | np.ndarray): Indices of emitting sectors
+            tau_cf (float): Capital formation tax rate
+        """
+        consumption_emissions = self.industry_consumption_before_vat[:, emitting_indices] @ emission_factors_array
+        self.household_data["Consumption Emissions"] = consumption_emissions
+
+        investment_emissions = (
+            self.get_current_hh_investment_by_industry(tau_cf)[:, emitting_indices] @ emission_factors_array
+        )
+
+        self.household_data["Investment Emissions"] = investment_emissions
+
+        # decompose in oil, gas, coal and refined products emissions
+        for i, name in enumerate(["Coal", "Gas", "Oil", "Refined Products"]):
+            self.household_data[f"{name} Consumption Emissions"] = (
+                self.industry_consumption_before_vat[:, emitting_indices[i]] * emission_factors_array[i]
+            )
+            # investment
+            self.household_data[f"{name} Investment Emissions"] = (
+                self.get_current_hh_investment_by_industry(tau_cf)[:, emitting_indices[i]] * emission_factors_array[i]
+            )
+
+    @property
+    def total_emissions(self) -> float:
+        """Calculate total household emissions.
+
+        Returns:
+            float: Sum of consumption and investment emissions
+        """
+        return self.household_data["Consumption Emissions"] + self.household_data["Investment Emissions"]
+
+
+def default_target_investment(
+    income_: np.ndarray,
+    investment_weights_: np.ndarray,
+    investment_rate: np.ndarray,
+    tau_cf_: float,
+) -> np.ndarray:
+    """Calculate default target investment.
+
+    This function computes the target investment allocation across industries
+    based on income, investment rates, and industry weights.
+
+    Args:
+        income_ (np.ndarray): Household income
+        investment_weights_ (np.ndarray): Investment weights by industry
+        investment_rate (np.ndarray): Investment rate by industry
+        tau_cf_ (float): Capital formation tax rate
+
+    Returns:
+        np.ndarray: Target investment values by industry
+    """
+    return 1.0 / (1 + tau_cf_) * np.outer(investment_weights_, investment_rate * income_).T

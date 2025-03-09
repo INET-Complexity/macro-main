@@ -1,3 +1,40 @@
+"""
+This module provides functionality for reading and processing Eurostat economic data.
+It handles various economic indicators including financial balance sheets, GDP,
+debt ratios, interest rates, and sectoral growth rates across European countries.
+
+Key Features:
+- Read and process multiple Eurostat datasets
+- Handle country code conversions (Alpha-2 to Alpha-3)
+- Support for financial indicators and ratios
+- GDP and sectoral growth calculations
+- Proxy mechanisms for missing data
+- Data pruning capabilities
+
+Example:
+    ```python
+    from pathlib import Path
+    from macro_data.readers.economic_data.eurostat_reader import EuroStatReader
+    from macro_data.configuration.countries import Country
+
+    # Initialize reader with data directory
+    reader = EuroStatReader(
+        path=Path("path/to/eurostat/data"),
+        country_code_path=Path("path/to/country_codes.csv"),
+        proxy_country="GBR"
+    )
+
+    # Get various economic indicators
+    gdp = reader.get_quarterly_gdp("FRA", 2020, 1)
+    debt_ratio = reader.nonfin_firm_debt_ratios("DEU", 2020)
+    growth = reader.get_perc_sectoral_growth("ITA")
+    ```
+
+Note:
+    Most monetary values are in millions of national currency units.
+    Ratios and rates are typically returned as decimals (e.g., 0.05 for 5%).
+"""
+
 import warnings
 from datetime import date
 from pathlib import Path
@@ -10,7 +47,21 @@ from macro_data.configuration.countries import Country
 from macro_data.readers.util.prune_util import DataFilterWarning, prune_index
 
 
-def get_perc_growth_series(country: str, growth_df: pd.DataFrame, series_name: Optional[str] = None):
+def get_perc_growth_series(country: str, growth_df: pd.DataFrame, series_name: Optional[str] = None) -> pd.Series:
+    """
+    Extract and format percentage growth series for a specific country.
+
+    Args:
+        country (str): Country code to extract data for
+        growth_df (pd.DataFrame): DataFrame containing growth data
+        series_name (Optional[str]): Name to assign to resulting series
+
+    Returns:
+        pd.Series: Time series of growth rates with datetime index
+
+    Note:
+        Expects DataFrame with 'TIME' column for dates and country columns
+    """
     df = growth_df.copy()
     df.rename(columns={"TIME": "Country"}, inplace=True)
     df.set_index("Country", inplace=True)
@@ -24,44 +75,33 @@ def get_perc_growth_series(country: str, growth_df: pd.DataFrame, series_name: O
 
 class EuroStatReader:
     """
-    A class for reading and retrieving economic data from EuroStat.
+    A class for reading and processing Eurostat economic data.
+
+    This class handles various economic indicators including:
+    1. Financial balance sheets and ratios
+    2. GDP and sectoral growth
+    3. Debt and deposit statistics
+    4. Interest rates and bond yields
+    5. Household and firm statistics
 
     Args:
-        path (Path | str): The path to the directory containing the data files.
-        country_code_path (Path | str): The path to the country code CSV file.
+        path (Path | str): Path to directory containing Eurostat data files
+        country_code_path (Path | str): Path to CSV file containing country code mappings
+        total_output (Optional[dict[str, float]]): Dictionary of total output by country for scaling
+        proxy_country (str): Country to use as proxy when data is missing (default: "GBR")
 
     Attributes:
-        c_map (pd.DataFrame): The country code mapping DataFrame.
-        files_with_codes (dict[str, str]): A dictionary mapping data file names to their codes.
-        data (dict[str, pd.DataFrame]): A dictionary containing the loaded data files.
+        c_map (pd.DataFrame): Country code mapping DataFrame
+        remap_2_to_3 (dict): Mapping from Alpha-2 to Alpha-3 country codes
+        remap_3_to_2 (dict): Mapping from Alpha-3 to Alpha-2 country codes
+        proxy_country (str): Country used for proxying missing data
+        total_output (Optional[dict[str, float]]): Total output by country
+        data (dict[str, pd.DataFrame]): Dictionary of loaded Eurostat datasets
 
-    Methods:
-        get_files_with_codes(): Returns the dictionary mapping data file names to their codes.
-        country_code_switch(codes): Converts 2-digit country codes to 3-digit country codes.
-        find_value(df, country, year): Finds the value for a specific country and year in a DataFrame.
-        nonfin_firm_debt_ratios(country, year): Returns the non-financial firm debt ratios for a specific country and year.
-        get_total_nonfin_firm_debt(country, year): Returns the total non-financial firm debt for a specific country and year.
-        get_total_fin_firm_debt(country, year): Returns the total financial firm debt for a specific country and year.
-        nonfin_firm_deposit_ratios(country, year): Returns the non-financial firm deposit ratios for a specific country and year.
-        get_quarterly_gdp(country, year, quarter): Returns the quarterly GDP for a specific country, year, and quarter.
-        get_monthly_gdp(country, year, month): Returns the monthly GDP for a specific country, year, and month.
-        get_total_nonfin_firm_deposits(country, year): Returns the total non-financial firm deposits for a specific country and year.
-        get_total_bank_equity(country, year): Returns the total bank equity for a specific country and year.
-        cb_debt_ratios(country, year): Returns the central bank debt ratios for a specific country and year.
-        cb_equity_ratios(country, year): Returns the central bank equity ratios for a specific country and year.
-        general_gov_debt_ratios(country, year): Returns the general government debt ratios for a specific country and year.
-        central_gov_debt_ratios(country, year): Returns the central government debt ratios for a specific country and year.
-        shortterm_interest_rates(country, year, months): Returns the short-term interest rates for a specific country, year, and number of months.
-        longterm_central_gov_bond_rates(country, year): Returns the long-term central government bond rates for a specific country and year.
-        dividend_payout_ratio(country, year): Returns the dividend payout ratio for a specific country and year.
-        firm_risk_premium(country, year): Returns the firm risk premium for a specific country and year.
-        number_of_households(country, year): Returns the number of households for a specific country and year.
-        taxrate_on_capital_formation(country, year): Returns the tax rate on capital formation for a specific country and year.
-        get_perc_sectoral_growth(country): Returns the percentage sectoral growth for a specific country.
-        get_total_industry_debt_and_deposits(country_name): Returns the total industry debt and deposits for a specific country.
-        get_imputed_rent_fraction_of_country(country, year): Returns the imputed rent fraction for a specific country and year.
-        get_imputed_rent_fraction(country_names, year): Returns the imputed rent fraction for a specific list of countries and year.
-        prune(prune_date): Prunes the data to only include data from a specific date.
+    Note:
+        - Handles special cases for Greece (GR -> EL) and UK (GB -> UK)
+        - Most monetary values are in millions of national currency
+        - Ratios and rates are typically returned as decimals
     """
 
     def __init__(
@@ -95,6 +135,20 @@ class EuroStatReader:
 
     @staticmethod
     def get_files_with_codes() -> dict[str, str]:
+        """
+        Get mapping of data categories to file names.
+
+        Returns:
+            dict[str, str]: Dictionary mapping data categories to their file names
+
+        Note:
+            File categories include:
+            - Financial indicators (debt ratios, equity ratios)
+            - Economic indicators (GDP, CPI)
+            - Input-output tables
+            - Sectoral growth rates
+            - Balance sheets and transactions
+        """
         return {
             "central_bank_debt_ratio": "eurostat_cbdebt_ratios",
             "central_bank_equity_ratio": "eurostat_cbequity_ratios",
@@ -120,36 +174,39 @@ class EuroStatReader:
             "investment_percentage_of_gdp": "tec00132_linear",
         }
 
-    def country_code_switch(self, codes: pd.Series):
+    def country_code_switch(self, codes: pd.Series) -> pd.Series:
         """
-        Converts a list of Alpha-2 country codes to Alpha-3 country codes.
+        Convert Alpha-2 country codes to Alpha-3 format.
 
         Args:
-            codes (list): A list of Alpha-2 country codes.
+            codes (pd.Series): Series of Alpha-2 country codes
 
         Returns:
-            list: A list of corresponding Alpha-3 country codes.
+            pd.Series: Series of corresponding Alpha-3 country codes
+
+        Note:
+            Uses the remap_2_to_3 dictionary for conversion
         """
         return codes.map(lambda x: self.remap_2_to_3.get(x, x))
 
     @staticmethod
     def find_value(df: pd.DataFrame, country: Country, year: str, return_last_value: bool = True) -> Optional[float]:
         """
-        Find the value in the given DataFrame for the specified country and year.
+        Find value in DataFrame for specific country and year.
 
         Args:
-            df (pd.DataFrame): The DataFrame containing the data.
-            country (str): The name of the country.
-            year (str): The year.
-            return_last_value (bool): Whether to return the last value if the data is not found.
+            df (pd.DataFrame): DataFrame containing the data
+            country (Country): Country to find data for
+            year (str): Year to find data for
+            return_last_value (bool): Whether to return last available value if year not found (default: True)
 
         Returns:
-            float: The value found in the DataFrame.
+            Optional[float]: Found value, or None if not found and return_last_value is False
 
-        Raises:
-            ValueError: If multiple data points are found for the given country and year.
+        Note:
+            - If country not found, returns mean value for the year
+            - If year not found and return_last_value True, returns last available value
         """
-
         country_data = df.loc[df["geo"] == country]
 
         if country_data.empty:
@@ -165,21 +222,33 @@ class EuroStatReader:
 
     def nonfin_firm_debt_ratios(self, country: Country, year: int) -> float:
         """
-        Calculate the non-financial firm debt ratio for a specific country and year.
+        Get non-financial firm debt ratios for a specific country and year.
 
         Args:
-            country (str): The name of the country.
-            year (int): The year for which the debt ratio is calculated.
+            country (Country): Country to get debt ratios for
+            year (int): Year to get debt ratios for
 
         Returns:
-            float: The non-financial firm debt ratio.
+            float: Non-financial firm debt ratio as a decimal
 
+        Note:
+            Returns ratio of total non-financial firm debt to GDP
         """
         df = self.data["firm_debt_ratio"]
         return self.find_value(df, country, str(year)) / 100.0
 
     # historic domestic
     def get_total_nonfin_firm_debt(self, country: Country | str, year: int) -> float:
+        """
+        Get total non-financial firm debt for a specific country and year.
+
+        Args:
+            country (Country | str): Country to get debt for
+            year (int): Year to get debt for
+
+        Returns:
+            float: Total non-financial firm debt in millions of national currency
+        """
         if isinstance(country, str):
             country = Country(country)
         df = self.data["financial_balance_sheets"]
@@ -199,6 +268,16 @@ class EuroStatReader:
             return np.nan
 
     def get_total_fin_firm_debt(self, country: Country | str, year: int) -> float:
+        """
+        Get total financial firm debt for a specific country and year.
+
+        Args:
+            country (Country | str): Country to get debt for
+            year (int): Year to get debt for
+
+        Returns:
+            float: Total financial firm debt in millions of national currency
+        """
         if isinstance(country, str):
             country = Country(country)
         df = self.data["financial_balance_sheets"]
@@ -209,6 +288,20 @@ class EuroStatReader:
         return float(df[str(year)].values[0]) * 1e6
 
     def get_total_household_deposits(self, country: str, year: int, proxy_country: str = "FRA") -> float:
+        """
+        Get total household deposits for a specific country and year.
+
+        Args:
+            country (str): Country to get deposits for
+            year (int): Year to get deposits for
+            proxy_country (str): Country to use as proxy if data not available (default: "FRA")
+
+        Returns:
+            float: Total household deposits in millions of national currency
+
+        Note:
+            If data not available for specified country, uses proxy country scaled by total output ratio
+        """
         df = self.data["financial_balance_sheets"]
         country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[
@@ -227,6 +320,20 @@ class EuroStatReader:
         return float(val[0]) * 1e6
 
     def get_total_household_fixed_assets(self, country: str, year: int, proxy_country: str = "GBR") -> float:
+        """
+        Get total household fixed assets for a specific country and year.
+
+        Args:
+            country (str): Country to get fixed assets for
+            year (int): Year to get fixed assets for
+            proxy_country (str): Country to use as proxy if data not available (default: "GBR")
+
+        Returns:
+            float: Total household fixed assets in millions of national currency
+
+        Note:
+            If data not available for specified country, uses proxy country scaled by total output ratio
+        """
         df = self.data["non_financial_balance_sheets"]
         country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[df[r"freq,unit,nace_r2,asset10,geo\TIME_PERIOD"] == "A,CRC_MNAC,TOTAL,N111N," + country_name_short]
@@ -242,10 +349,34 @@ class EuroStatReader:
         return float(val[0]) * 1e6
 
     def nonfin_firm_deposit_ratios(self, country: Country, year: int) -> float:
+        """
+        Get non-financial firm deposit ratios for a specific country and year.
+
+        Args:
+            country (Country): Country to get deposit ratios for
+            year (int): Year to get deposit ratios for
+
+        Returns:
+            float: Non-financial firm deposit ratio as a decimal
+
+        Note:
+            Returns ratio of total non-financial firm deposits to GDP
+        """
         df = self.data["firm_deposits_ratio"]
         return self.find_value(df, country, str(year)) / 100.0
 
     def get_quarterly_gdp(self, country: Country, year: int, quarter: int) -> float:
+        """
+        Get quarterly GDP for a specific country, year, and quarter.
+
+        Args:
+            country (Country): Country to get GDP for
+            year (int): Year to get GDP for
+            quarter (int): Quarter to get GDP for (1-4)
+
+        Returns:
+            float: Quarterly GDP in millions of national currency
+        """
         df = self.data["gdp"]
         return (
             df.loc[
@@ -256,6 +387,20 @@ class EuroStatReader:
         )
 
     def get_monthly_gdp(self, country: Country, year: int, month: int) -> float:
+        """
+        Get monthly GDP for a specific country, year, and month.
+
+        Args:
+            country (Country): Country to get GDP for
+            year (int): Year to get GDP for
+            month (int): Month to get GDP for (1-12)
+
+        Returns:
+            float: Monthly GDP in millions of national currency
+
+        Note:
+            Interpolates quarterly GDP to monthly values using linear interpolation
+        """
         start_quarter = (month - 1) // 3 + 1
         start = self.get_quarterly_gdp(country, year, start_quarter)
 
@@ -268,6 +413,16 @@ class EuroStatReader:
 
     # historic domestic
     def get_total_nonfin_firm_deposits(self, country: Country | str, year: int) -> float:
+        """
+        Get total non-financial firm deposits for a specific country and year.
+
+        Args:
+            country (Country | str): Country to get deposits for
+            year (int): Year to get deposits for
+
+        Returns:
+            float: Total non-financial firm deposits in millions of national currency
+        """
         if isinstance(country, str):
             country = Country(country)
         df = self.data["financial_balance_sheets"]
@@ -286,6 +441,20 @@ class EuroStatReader:
 
     # historic domestic
     def get_total_bank_equity(self, country: str, year: int, proxy_country: str = "FRA") -> float:
+        """
+        Get total bank equity for a specific country and year.
+
+        Args:
+            country (str): Country to get bank equity for
+            year (int): Year to get bank equity for
+            proxy_country (str): Country to use as proxy if data not available (default: "FRA")
+
+        Returns:
+            float: Total bank equity in millions of national currency
+
+        Note:
+            If data not available for specified country, uses proxy country scaled by total output ratio
+        """
         df = self.data["financial_balance_sheets"]
         country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[
@@ -305,22 +474,88 @@ class EuroStatReader:
             return self.get_total_bank_equity(proxy_country, year)
 
     def cb_debt_ratios(self, country: Country, year: int) -> float:
+        """
+        Get central bank debt ratios for a specific country and year.
+
+        Args:
+            country (Country): Country to get debt ratios for
+            year (int): Year to get debt ratios for
+
+        Returns:
+            float: Central bank debt ratio as a decimal
+
+        Note:
+            Returns ratio of central bank debt to GDP
+        """
         df = self.data["central_bank_debt_ratio"]
         return self.find_value(df, country, str(year)) / 100.0
 
     def cb_equity_ratios(self, country: Country, year: int) -> float:
+        """
+        Get central bank equity ratios for a specific country and year.
+
+        Args:
+            country (Country): Country to get equity ratios for
+            year (int): Year to get equity ratios for
+
+        Returns:
+            float: Central bank equity ratio as a decimal
+
+        Note:
+            Returns ratio of central bank equity to GDP
+        """
         df = self.data["central_bank_equity_ratio"]
         return self.find_value(df, country, str(year)) / 100.0
 
     def general_gov_debt_ratios(self, country: Country, year: int) -> float:
+        """
+        Get general government debt ratios for a specific country and year.
+
+        Args:
+            country (Country): Country to get debt ratios for
+            year (int): Year to get debt ratios for
+
+        Returns:
+            float: General government debt ratio as a decimal
+
+        Note:
+            Returns ratio of general government debt to GDP
+        """
         df = self.data["general_gov_debt_ratio"]
         return self.find_value(df, country, str(year)) / 100
 
     def central_gov_debt_ratios(self, country: Country, year: int) -> float:
+        """
+        Get central government debt ratios for a specific country and year.
+
+        Args:
+            country (Country): Country to get debt ratios for
+            year (int): Year to get debt ratios for
+
+        Returns:
+            float: Central government debt ratio as a decimal
+
+        Note:
+            Returns ratio of central government debt to GDP
+        """
         df = self.data["central_gov_debt_ratio"]
         return self.find_value(df, country, str(year)) / 100
 
     def shortterm_interest_rates(self, country: Country | str, year: int, months: int) -> float:
+        """
+        Get short-term interest rates for a specific country and year.
+
+        Args:
+            country (Country | str): Country to get interest rates for
+            year (int): Year to get interest rates for
+            months (int): Number of months for interest rate term (0, 1, 3, 6, or 12)
+
+        Returns:
+            float: Short-term interest rate as a decimal
+
+        Note:
+            Returns money market interest rates for specified term length
+        """
         assert months in [0, 1, 3, 6, 12]
         df = self.data["shortterm_interest_rates"]
 
@@ -338,6 +573,19 @@ class EuroStatReader:
         )
 
     def longterm_central_gov_bond_rates(self, country: Country, year: int) -> float:
+        """
+        Get long-term central government bond rates for a specific country and year.
+
+        Args:
+            country (Country): Country to get bond rates for
+            year (int): Year to get bond rates for
+
+        Returns:
+            float: Long-term government bond rate as a decimal
+
+        Note:
+            Returns yield on long-term (typically 10-year) government bonds
+        """
         df = self.data["longterm_central_gov_bond_rates"]
         return self.find_value(df, country, str(year)) / 100
 
@@ -350,12 +598,17 @@ class EuroStatReader:
         """
         Calculate the dividend payout ratio for a given country and year.
 
-        Parameters:
-        - country (str): The name of the country.
-        - year (int): The year for which to calculate the dividend payout ratio.
+        Args:
+            country (str | Country): Country to get payout ratio for
+            year (int): Year to get payout ratio for (defaults to 2011 if not 2010/2011)
+            proxy_country (Country): Country to use as proxy if data not available (default: "FRA")
 
         Returns:
-        - float: The dividend payout ratio.
+            float: Dividend payout ratio as a decimal
+
+        Note:
+            - Returns ratio of (household property income + household surplus) to firm surplus
+            - Only 2010 and 2011 data available, defaults to 2011 for other years
         """
         if year not in [2010, 2011]:
             # print("Warning: Using the 2011 data for the dividend payout ratio.")
@@ -382,12 +635,16 @@ class EuroStatReader:
         """
         Calculate the firm risk premium for a given country and year.
 
-        Parameters:
-        country (str): The country for which the risk premium is calculated.
-        year (int): The year for which the risk premium is calculated.
+        Args:
+            country (Country): Country to get risk premium for
+            year (int): Year to get risk premium for
 
         Returns:
-        float: The calculated firm risk premium.
+            float: Monthly firm risk premium as a decimal
+
+        Note:
+            Returns spread between firm borrowing rate and Euribor rate,
+            converted to monthly rate
         """
         euribor_rate = self.shortterm_interest_rates("EA", year, 3)
 
@@ -411,10 +668,33 @@ class EuroStatReader:
         return (1 + annual_premium) ** (1.0 / 12) - 1.0
 
     def number_of_households(self, country: Country, year: int) -> float:
+        """
+        Get number of households for a specific country and year.
+
+        Args:
+            country (Country): Country to get household count for
+            year (int): Year to get household count for
+
+        Returns:
+            float: Number of households (in thousands)
+        """
         df = self.data["number_of_households"].set_index("geo")
         return int(df.loc[country, str(year)] * 1000)
 
     def taxrate_on_capital_formation(self, country: Country, year: int) -> float:
+        """
+        Get tax rate on capital formation for a specific country and year.
+
+        Args:
+            country (Country): Country to get tax rate for
+            year (int): Year to get tax rate for
+
+        Returns:
+            float: Tax rate on capital formation as a decimal
+
+        Note:
+            Returns ratio of taxes on capital formation to total capital formation
+        """
         capform_df = self.data["capital_formation"]
 
         df = self.data["iot_tables"]
@@ -430,10 +710,16 @@ class EuroStatReader:
         Retrieves the percentage sectoral growth data for a specific country.
 
         Args:
-            country (str): The name of the country.
+            country (Country): Country to get sectoral growth for
 
         Returns:
-            pd.DataFrame: A DataFrame containing the percentage sectoral growth data.
+            pd.DataFrame: DataFrame containing growth rates by sector over time,
+                         with sectors as columns and time as index
+
+        Note:
+            - Growth rates are in decimal form (divided by 100)
+            - Includes sectors B, C, D, F and services
+            - Service sector growth rate is applied to sectors A, E, G-S
         """
         # Get growth rates
         data_b = get_perc_growth_series(country=country, growth_df=self.data["perc_growth_sector_B"], series_name="B")
@@ -477,6 +763,22 @@ class EuroStatReader:
     def get_total_industry_debt_and_deposits(
         self, country: Country, proxy_country: Optional[Country] = None
     ) -> pd.DataFrame:
+        """
+        Get total industry debt and deposits time series for a specific country.
+
+        Args:
+            country (Country): Country to get data for
+            proxy_country (Optional[Country]): Country to use as proxy if data not available
+
+        Returns:
+            pd.DataFrame: DataFrame with monthly time series of total debt and deposits
+
+        Raises:
+            ValueError: If no data available and no proxy country provided
+
+        Note:
+            Returns monthly data from 1970 to 2024, using annual values repeated monthly
+        """
         try:
             dates, total_deposits, total_debt = [], [], []
             for year in range(1970, 2024):
@@ -502,6 +804,19 @@ class EuroStatReader:
                 raise ValueError("No data available for the given country. Please provide a proxy country.")
 
     def get_imputed_rent_fraction_of_country(self, country: Country, year: int) -> float:
+        """
+        Get imputed rent fraction for a specific country and year.
+
+        Args:
+            country (Country): Country to get rent fraction for
+            year (int): Year to get rent fraction for
+
+        Returns:
+            float: Imputed rent fraction as a decimal
+
+        Note:
+            Returns ratio of imputed rent (CPA_L68A) to total real estate services (CPA_L68A + CPA_L68B)
+        """
         df = self.data["real_estate_services"].set_index("freq,unit,stk_flow,induse,prod_na,geo\TIME_PERIOD")
         country_name_short = country.to_two_letter_code()
         return float(df.at["A,MIO_NAC,TOTAL,P3_S14,CPA_L68A," + country_name_short, str(year)]) / (
@@ -514,6 +829,22 @@ class EuroStatReader:
         country_name: str,
         year: int,
     ) -> dict[str, float]:
+        """
+        Get investment fractions by sector for a specific country and year.
+
+        Args:
+            country_name (str): Country to get investment fractions for
+            year (int): Year to get investment fractions for
+
+        Returns:
+            dict[str, float]: Dictionary with investment fractions by sector
+                             (keys: "Firm", "Household", "Government")
+
+        Note:
+            - Returns normalized fractions (sum to 1)
+            - Falls back to proxy country if data not available
+            - Uses previous year's data if year > 2011
+        """
         df = self.data["investment_percentage_of_gdp"].copy()
         df_country = df.loc[df["geo"] == country_name]
         if len(df_country) == 0:
@@ -536,11 +867,38 @@ class EuroStatReader:
         country_names: list[Country],
         year: int,
     ) -> dict[str, float]:
+        """
+        Get imputed rent fractions for multiple countries and a specific year.
+
+        Args:
+            country_names (list[Country]): List of countries to get rent fractions for
+            year (int): Year to get rent fractions for
+
+        Returns:
+            dict[str, float]: Dictionary mapping country codes to their imputed rent fractions
+
+        Note:
+            Includes "ROW" (rest of world) entry with mean of all countries' fractions
+        """
         fractions = {c: self.get_imputed_rent_fraction_of_country(c, year) for c in country_names}
         fractions[Country("ROW")] = np.mean(list(fractions.values()))
         return fractions
 
     def prune(self, prune_date: date):
+        """
+        Prune data to only include entries after specified date.
+
+        Args:
+            prune_date (date): Date to prune data from
+
+        Returns:
+            EuroStatReader: Self for method chaining
+
+        Note:
+            - Modifies data in place
+            - Handles both time period columns and date-based columns
+            - Warns if no data remains after pruning
+        """
         # Eurostat
         for key, value in self.data.items():
             if "TIME_PERIOD" in value.columns:
@@ -559,6 +917,18 @@ class EuroStatReader:
 
 
 def convert_date(date_value: str | int):
+    """
+    Convert various date formats to pandas datetime.
+
+    Args:
+        date_value (str | int): Date value to convert, can be year (int) or string format
+
+    Returns:
+        pd.Timestamp: Converted date
+
+    Note:
+        Handles both yearly dates (int) and quarterly dates (e.g., '2012-Q1')
+    """
     if isinstance(date_value, int):
         return pd.to_datetime(date_value, format="%Y")
     # Check if the date is in quarterly format like '2012-Q1'

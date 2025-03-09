@@ -1,3 +1,49 @@
+"""Economy module for tracking and managing aggregate economic metrics.
+
+This module implements the tracking and computation of key macroeconomic indicators
+and aggregates across the entire economy. It serves as the central point for:
+
+1. Price Level Tracking:
+   - Consumer Price Index (CPI)
+   - Producer Price Index (PPI)
+   - Capital Formation Price Index (CFPI)
+   - House Price Index (HPI)
+   - Industry-specific price levels
+
+2. Growth Metrics:
+   - GDP components (output, expenditure, income approaches)
+   - Sectoral growth rates
+   - Total economic growth
+   - Value added by industry
+
+3. Labor Market Indicators:
+   - Unemployment rate
+   - Labor force participation
+   - Job reallocation metrics
+   - Vacancy rates
+
+4. International Trade:
+   - Import/export volumes
+   - Trade balances by country
+   - Exchange rate effects
+
+5. Market Aggregates:
+   - Housing market metrics
+   - Credit market conditions
+   - Goods market clearing
+
+The module provides mechanisms for:
+- Computing price indices and inflation rates
+- Tracking GDP components and growth
+- Managing international trade flows
+- Recording labor market conditions
+- Calculating market-specific aggregates
+
+Implementation focuses on maintaining consistency across different
+measurement approaches (output, expenditure, income) while handling
+temporal evolution and cross-market interactions.
+"""
+
 from typing import Any, Optional
 
 import h5py
@@ -18,6 +64,51 @@ from macromodel.util.function_mapping import functions_from_model, update_functi
 
 
 class Economy:
+    """Manages and tracks aggregate economic metrics and market-level interactions.
+
+    This class serves as the central coordinator for tracking and computing
+    macroeconomic indicators, market conditions, and aggregate metrics across
+    the entire economy. It integrates data from all economic agents and markets
+    to maintain consistent economic accounting.
+
+    Key responsibilities include:
+    1. Price Level Management:
+       - Computing and tracking various price indices (CPI, PPI, CFPI)
+       - Calculating inflation rates across sectors
+       - Managing industry-specific price levels
+
+    2. Economic Growth Tracking:
+       - Computing GDP through multiple approaches
+       - Tracking sectoral and total growth rates
+       - Managing value-added calculations
+
+    3. Labor Market Monitoring:
+       - Tracking unemployment and participation rates
+       - Computing job market dynamics
+       - Recording vacancy statistics
+
+    4. International Trade:
+       - Managing import/export flows
+       - Computing trade balances
+       - Tracking exchange rate effects
+
+    5. Market Integration:
+       - Recording housing market metrics
+       - Tracking credit conditions
+       - Managing goods market clearing
+
+    Attributes:
+        country_name (str): Name identifier for the economy
+        all_country_names (list[str]): List of all countries in the model
+        n_industries (int): Number of industrial sectors
+        functions (dict[str, Any]): Economic function implementations
+        ts (TimeSeries): Time series data for economic metrics
+
+    The class maintains consistency between different measurement approaches
+    while handling temporal evolution and cross-market interactions. It ensures
+    proper accounting of economic flows and stocks across all sectors.
+    """
+
     def __init__(
         self,
         country_name: str,
@@ -26,6 +117,15 @@ class Economy:
         functions: dict[str, Any],
         ts: TimeSeries,
     ):
+        """Initialize an Economy instance.
+
+        Args:
+            country_name (str): Name identifier for the economy
+            all_country_names (list[str]): List of all countries in the model
+            n_industries (int): Number of industrial sectors
+            functions (dict[str, Any]): Economic function implementations
+            ts (TimeSeries): Time series data for economic metrics
+        """
         self.country_name = country_name
         self.all_country_names = all_country_names
         self.n_industries = n_industries
@@ -47,6 +147,33 @@ class Economy:
         exogenous: Exogenous,
         industry_vectors: pd.DataFrame,
     ):
+        """Create an Economy instance from agent-level data and configurations.
+
+        This factory method constructs an Economy by aggregating initial conditions
+        from various economic agents and markets. It computes starting values for:
+        - Price levels and production
+        - Sales and intermediate inputs
+        - Tax revenues and capital formation
+        - Operating surplus and wages
+        - Activity status and inflation rates
+        - Housing market conditions
+        - Trade flows and growth rates
+
+        Args:
+            country_name (str): Name identifier for the economy
+            all_country_names (list[str]): List of all countries in the model
+            economy_configuration (EconomyConfiguration): Model parameters
+            firms (Firms): Collection of producing firms
+            households (Households): Collection of household units
+            individuals (Individuals): Population of individual agents
+            government_entities (GovernmentEntities): Public sector bodies
+            central_government (CentralGovernment): Fiscal authority
+            exogenous (Exogenous): External economic conditions
+            industry_vectors (pd.DataFrame): Industry-level initial conditions
+
+        Returns:
+            Economy: Newly constructed Economy instance with initialized metrics
+        """
         initial_firm_prices = firms.ts.current("price")
         initial_total_output = (firms.ts.current("price") * firms.ts.current("production")).sum()
         initial_sectoral_firm_sales = np.bincount(
@@ -172,6 +299,15 @@ class Economy:
         )
 
     def reset(self, configuration: EconomyConfiguration) -> None:
+        """Reset the economy's state and update function configurations.
+
+        Resets all time series data and updates economic functions based on
+        the provided configuration. This ensures a clean state for new simulations
+        while maintaining consistent function implementations.
+
+        Args:
+            configuration (EconomyConfiguration): New model parameters
+        """
         self.ts.reset()
         update_functions(
             model=configuration.functions,
@@ -199,6 +335,36 @@ class Economy:
         assume_zero_growth: bool = False,
         assume_zero_noise: bool = False,
     ) -> None:
+        """Set economic forecasts and estimates for key indicators.
+
+        Computes and sets forecasts for inflation (CPI, PPI), economic growth,
+        and house price appreciation. Uses historical data and exogenous factors
+        to generate estimates within specified bounds.
+
+        The method handles:
+        - CPI inflation forecasting
+        - PPI inflation forecasting
+        - Economic growth projection
+        - House price index growth estimation
+
+        Args:
+            exogenous_growth (np.ndarray): External growth factors
+            exogenous_inflation (pd.DataFrame): External inflation data
+            exogenous_hpi_growth (pd.DataFrame): External house price growth
+            forecasting_window (int): Number of periods to forecast
+            exogenous_cpi_inflation_during (np.ndarray): CPI inflation factors
+            exogenous_ppi_inflation_during (np.ndarray): PPI inflation factors
+            exogenous_growth_during (np.ndarray): Growth factors during period
+            default_growth (float, optional): Fallback growth rate. Defaults to 0.005.
+            default_inflation (float, optional): Fallback inflation. Defaults to 0.0.
+            default_hpi_growth (float, optional): Fallback HPI growth. Defaults to 0.0.
+            min_inflation (float, optional): Lower inflation bound. Defaults to -0.1.
+            max_inflation (float, optional): Upper inflation bound. Defaults to 0.1.
+            min_growth (float, optional): Lower growth bound. Defaults to -0.2.
+            max_growth (float, optional): Upper growth bound. Defaults to 0.2.
+            assume_zero_growth (bool, optional): Force zero growth. Defaults to False.
+            assume_zero_noise (bool, optional): Eliminate random variation. Defaults to False.
+        """
         # Forecast CPI inflation
         historic_cpi_inflation = np.concatenate(
             (
@@ -320,6 +486,17 @@ class Economy:
     def compute_number_of_employed_individuals(
         current_individual_activity_status: np.ndarray,
     ) -> int:
+        """Calculate the total number of employed individuals.
+
+        Counts individuals with employment status in the current period,
+        used for labor market statistics and economic indicators.
+
+        Args:
+            current_individual_activity_status (np.ndarray): Array of activity statuses
+
+        Returns:
+            int: Count of employed individuals
+        """
         return int(np.sum(current_individual_activity_status == ActivityStatus.EMPLOYED))
 
     def compute_price_indicators(
@@ -332,6 +509,27 @@ class Economy:
         government_nominal_amount_spent: np.ndarray,
         firms_real_amount_bought_as_capital_goods: np.ndarray,
     ) -> None:
+        """Compute and update various price indices for the economy.
+
+        Calculates and records:
+        1. Industry-specific goods prices
+        2. Producer Price Index (PPI)
+        3. Consumer Price Index (CPI)
+        4. Capital Formation Price Index (CFPI)
+
+        The method uses real and nominal transaction data from firms,
+        households, and government to compute weighted average prices
+        and construct price indices relative to initial conditions.
+
+        Args:
+            firm_real_amount_bought (np.ndarray): Physical quantities bought by firms
+            firm_nominal_amount_spent (np.ndarray): Money spent by firms
+            household_real_amount_bought (np.ndarray): Physical quantities bought by households
+            household_nominal_amount_spent (np.ndarray): Money spent by households
+            government_real_amount_bought (np.ndarray): Physical quantities bought by government
+            government_nominal_amount_spent (np.ndarray): Money spent by government
+            firms_real_amount_bought_as_capital_goods (np.ndarray): Capital goods quantities
+        """
         # Current good prices
         current_goods_prices = np.zeros(self.n_industries)
         for g in range(self.n_industries):
@@ -405,6 +603,16 @@ class Economy:
             )
 
     def compute_inflation(self) -> None:
+        """Calculate and record various inflation measures.
+
+        Computes period-over-period inflation rates for:
+        - Consumer Price Index (CPI)
+        - Producer Price Index (PPI)
+        - Capital Formation Price Index (CFPI)
+        - Industry-specific price levels
+
+        All rates are calculated as percentage changes from previous period.
+        """
         # CPI inflation
         self.ts.cpi_inflation.append([self.ts.current("cpi")[0] / self.ts.prev("cpi")[0] - 1.0])
 
@@ -426,6 +634,17 @@ class Economy:
         prev_production: np.ndarray,
         industries: np.ndarray,
     ) -> None:
+        """Calculate and record economic growth rates.
+
+        Computes both aggregate and sectoral growth rates based on
+        production volumes. Handles special cases where previous
+        production was zero.
+
+        Args:
+            current_production (np.ndarray): Current period production volumes
+            prev_production (np.ndarray): Previous period production volumes
+            industries (np.ndarray): Industry indices for sectoral mapping
+        """
         # Total growth
         if prev_production.sum() == 0.0:
             self.ts.total_growth.append([0.0])
@@ -453,6 +672,15 @@ class Economy:
         current_property_values: np.ndarray,
         previous_property_values: np.ndarray,
     ) -> None:
+        """Calculate and record house price index and growth.
+
+        Computes the change in aggregate property values and updates
+        both the house price inflation rate and index level.
+
+        Args:
+            current_property_values (np.ndarray): Current property valuations
+            previous_property_values (np.ndarray): Previous property valuations
+        """
         if previous_property_values.sum() == 0:
             self.ts.hpi_inflation.append([0.0])
         else:
@@ -469,6 +697,27 @@ class Economy:
         government_nominal_amount_spent: np.ndarray,
         industry: Optional[int],
     ) -> np.ndarray:
+        """Calculate weighted average price across all buyers or for a specific industry.
+
+        Computes the average price as the ratio of total nominal spending to
+        total real quantities purchased. Handles both economy-wide averages
+        and industry-specific calculations.
+
+        If no transactions occurred or if total quantities are zero, returns
+        the current price (PPI for economy-wide, industry price for specific sector).
+
+        Args:
+            firm_real_amount_bought (np.ndarray): Physical quantities bought by firms
+            firm_nominal_amount_spent (np.ndarray): Money spent by firms
+            household_real_amount_bought (np.ndarray): Physical quantities bought by households
+            household_nominal_amount_spent (np.ndarray): Money spent by households
+            government_real_amount_bought (np.ndarray): Physical quantities bought by government
+            government_nominal_amount_spent (np.ndarray): Money spent by government
+            industry (Optional[int]): Industry index, or None for economy-wide average
+
+        Returns:
+            np.ndarray: Computed average price(s)
+        """
         if industry is None:
             if (
                 firm_real_amount_bought.sum() + household_real_amount_bought.sum() + government_real_amount_bought.sum()
@@ -519,6 +768,19 @@ class Economy:
         government_entities: GovernmentEntities,
         tau_export: float,
     ) -> None:
+        """Record international trade flows and balances.
+
+        Tracks bilateral trade flows between countries, computing:
+        - Exports before and after taxes by destination
+        - Imports by source country and sector
+        - Total trade volumes and balances
+
+        Args:
+            firms (Firms): Collection of producing firms
+            households (Households): Collection of household units
+            government_entities (GovernmentEntities): Public sector bodies
+            tau_export (float): Export tax rate
+        """
         # Exports
         firm_industries = firms.states["Industry"]
         exports_before_taxes = np.zeros(self.n_industries)
@@ -559,6 +821,25 @@ class Economy:
         num_ind_newly_joining: int,
         num_ind_newly_leaving: int,
     ) -> None:
+        """Calculate and record key labor market indicators.
+
+        Computes and updates:
+        1. Unemployment rate and its growth
+        2. Labor force participation rate and its growth
+        3. Job vacancy rate and its growth
+        4. Job reallocation rate and its growth
+
+        The method tracks both levels and dynamics of labor market
+        conditions, handling special cases where denominators may be zero.
+
+        Args:
+            current_individual_activity_status (np.ndarray): Current activity status
+            current_firm_labour_inputs (np.ndarray): Actual labor employed
+            current_desired_firm_labour_inputs (np.ndarray): Desired labor demand
+            num_ind_employed_before_cleaning (int): Prior employment count
+            num_ind_newly_joining (int): New hires count
+            num_ind_newly_leaving (int): Separations count
+        """
         # The unemployment rate
         self.ts.unemployment_rate.append(
             [
@@ -634,6 +915,18 @@ class Economy:
         imp_rent_paid: np.ndarray,
         rental_income: np.ndarray,
     ) -> None:
+        """Calculate and record rental market totals.
+
+        Updates aggregate measures for:
+        - Total real rent payments
+        - Total imputed rent
+        - Total rental income received
+
+        Args:
+            real_rent_paid (np.ndarray): Actual rent payments
+            imp_rent_paid (np.ndarray): Imputed rent values
+            rental_income (np.ndarray): Income from rental properties
+        """
         self.ts.total_real_rent_paid.append([real_rent_paid.sum()])
         self.ts.total_imp_rent_paid.append([imp_rent_paid.sum()])
         self.ts.total_real_rent_rec.append([rental_income.sum()])
@@ -659,6 +952,42 @@ class Economy:
         running_multiple_countries: bool,
         always_adjust: bool = True,
     ) -> None:
+        """Calculate GDP through multiple approaches and record components.
+
+        Computes GDP using three approaches:
+        1. Output approach: Production less intermediate consumption
+        2. Expenditure approach: Final spending components
+        3. Income approach: Factor payments and operating surplus
+
+        Also calculates and records:
+        - Sectoral value added and growth rates
+        - GDP components and their growth rates
+        - Trade balance adjustments
+        - Consistency checks between approaches
+
+        The method maintains National Accounts identities and handles
+        adjustments for multi-country scenarios.
+
+        Args:
+            total_output (float): Total production value
+            sectoral_sales (np.ndarray): Sales by industry
+            sectoral_intermediate_consumption (np.ndarray): Intermediate inputs
+            taxes_on_products (float): Product taxes net of subsidies
+            taxes_on_production (float): Production taxes
+            rent_paid (float): Actual rent payments
+            rent_imputed (float): Imputed rent values
+            hh_consumption (float): Household consumption
+            gov_consumption (float): Government consumption
+            change_in_inventories (float): Inventory changes
+            gross_fixed_capital_formation (float): Fixed investment
+            exports (float): Export value
+            imports (float): Import value
+            operating_surplus (float): Operating surplus and mixed income
+            wages (float): Compensation of employees
+            rent_received (float): Rental income received
+            running_multiple_countries (bool): Multi-country simulation flag
+            always_adjust (bool, optional): Force trade adjustments. Defaults to True.
+        """
         self.ts.gdp_output.append(
             [
                 total_output
@@ -960,28 +1289,73 @@ class Economy:
             )
 
     def save_to_h5(self, group: h5py.Group):
+        """Save economy time series data to HDF5 format.
+
+        Args:
+            group (h5py.Group): HDF5 group to save data into
+        """
         self.ts.write_to_h5("economy", group)
 
     def total_imports(self):
+        """Get aggregate imports time series.
+
+        Returns:
+            float: Total imports value
+        """
         return self.ts.get_aggregate("imports")
 
     def total_exports(self):
+        """Get aggregate exports time series.
+
+        Returns:
+            float: Total exports value
+        """
         return self.ts.get_aggregate("exports")
 
     def total_cpi_inflation(self):
+        """Get aggregate CPI inflation time series.
+
+        Returns:
+            float: CPI inflation rate
+        """
         return self.ts.get_aggregate("cpi")
 
     def total_ppi_inflation(self):
+        """Get aggregate PPI inflation time series.
+
+        Returns:
+            float: PPI inflation rate
+        """
         return self.ts.get_aggregate("ppi")
 
     def total_cfpi_inflation(self):
+        """Get aggregate CFPI inflation time series.
+
+        Returns:
+            float: CFPI inflation rate
+        """
         return self.ts.get_aggregate("cfpi")
 
     def unemployment_rate(self):
+        """Get unemployment rate time series.
+
+        Returns:
+            float: Unemployment rate
+        """
         return self.ts.get_aggregate("unemployment_rate")
 
     def gdp_expenditure(self):
+        """Get GDP expenditure approach time series.
+
+        Returns:
+            float: GDP value from expenditure approach
+        """
         return self.ts.get_aggregate("gdp_expenditure")
 
     def gdp_output(self):
+        """Get GDP output approach time series.
+
+        Returns:
+            float: GDP value from output approach
+        """
         return self.ts.get_aggregate("gdp_output")
