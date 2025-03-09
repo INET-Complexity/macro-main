@@ -1,3 +1,27 @@
+"""Module for simulating banking system behavior in macroeconomic models.
+
+This module provides an abstract base class for creating synthetic banking systems,
+which are essential components of macroeconomic simulations. It handles:
+
+1. Bank Creation and Management:
+   - Creation of multiple banks with specified equity levels
+   - Management of deposits and loans for households and firms
+   - Calculation of market shares and liabilities
+
+2. Financial Operations:
+   - Interest rate setting for various financial products
+   - Profit calculation and tax payments
+   - Balance sheet management
+
+3. Relationship Management:
+   - Connections between banks and firms
+   - Connections between banks and households
+   - Management of different types of loans and deposits
+
+The module supports both EU and non-EU country banking systems through
+appropriate parameterization and data handling.
+"""
+
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -9,8 +33,7 @@ from macro_data.processing.synthetic_population.synthetic_population import (
 
 
 class SyntheticBanks(ABC):
-    """
-    Abstract base class representing a collection of synthetic banks.
+    """Abstract base class representing a collection of synthetic banks in an economy.
 
     The bank data is stored in a pandas DataFrame with the following columns (one row per bank):
         - Equity: The equity of the bank.
@@ -40,58 +63,20 @@ class SyntheticBanks(ABC):
 
 
     Attributes:
-        country_name (str): The name of the country.
-        year (int): The year of the data.
-        number_of_banks (int): The number of banks.
-        bank_data (pd.DataFrame): The bank data.
-        quarter (int): The quarter of the data.
-        firm_passthrough (float): The firm passthrough.
-        firm_ect (float): The firm ECT.
-        firm_rate (float): The firm rate.
-
-        hh_consumption_passthrough (float): The household consumption passthrough.
-        hh_consumption_ect (float): The household consumption ECT.
-        hh_consumption_rate (float): The household consumption rate.
-
-        hh_mortgage_passthrough (float): The household mortgage passthrough.
-        hh_mortgage_ect (float): The household mortgages ECT.
-        hh_mortgage_rate (float): The household mortgages rate.
-
-    Methods:
-        __init__(self, country_name: str, year: int,
-         number_of_banks: int,
-          bank_data: pd.DataFrame): Initializes the SyntheticBanks object.
-        create_agents(self, bank_equity: float) -> None: Creates agents with the specified bank equity.
-        initialise_deposits_and_loans(self, synthetic_population: SyntheticPopulation,
-         synthetic_firms: SyntheticFirms) -> None: Initializes the deposits and loans for households and firms.
-        set_deposits_from_firms(self, firm_deposits: np.ndarray) -> None: Sets the deposits from firms.
-        set_deposits_from_households(self, household_deposits: np.ndarray) -> None: Sets the deposits from households.
-        set_loans_to_firms(self, firm_debt: np.ndarray) -> None: Sets the loans to firms.
-        set_loans_to_households(self, household_mortgage_debt: np.ndarray,
-         household_other_debt: np.ndarray) -> None: Sets the loans to households.
-        set_bank_equity(self, bank_equity: float) -> None: Sets the bank equity.
-        set_bank_deposits(self, firm_deposits: np.ndarray,
-                            household_deposits: np.ndarray,
-                            firm_debt: np.ndarray,
-                            household_debt: np.ndarray) -> None: Sets the bank deposits.
-        initialise_rates_profits_liabilities(self, readers: DataReaders,
-                                             bank_markup_interest_rate_household_consumption_loans: float,
-                                             bank_markup_interest_rate_mortgages: float,
-                                             bank_markup_interest_rate_overdraft_household: float): Initializes the rates, profits, and liabilities for the banks.
-        set_initial_interest_rates(self, central_bank_policy_rate: float,
-                                    bank_markup_interest_rate_short_term_firm_loans: float,
-                                    bank_markup_interest_rate_long_term_firm_loans: float,
-                                    bank_markup_interest_rate_household_payday_loans: float,
-                                    bank_markup_interest_rate_household_consumption_loans: float,
-                                    bank_markup_interest_rate_mortgages: float,
-                                    bank_markup_interest_rate_overdraft_firm: float,
-                                    bank_markup_interest_rate_overdraft_household: float) -> None: Sets the initial interest rates for the banks.
-        set_interest_received_from_loans(self) -> None: Sets the interest received from loans.
-        set_interest_received_from_deposits(self, central_bank_policy_rate: float) -> None: Sets the interest received from deposits.
-        set_profits(self) -> None: Sets the profits for the banks.
-        set_corporate_taxes_paid(self, tau_bank: float) -> None: Sets the corporate taxes paid by the banks.
-        set_market_share(self) -> None: Sets the market share for the banks.
-        set_liability(self) -> None: Sets the liability for the banks.
+        country_name (str): Country identifier
+        year (int): Reference year for data
+        quarter (int): Reference quarter (1-4)
+        number_of_banks (int): Total number of banks in system
+        bank_data (pd.DataFrame): Complete bank-level data
+        firm_passthrough (float): Rate adjustment factor for firm loans
+        firm_ect (float): Error correction term for firm rates
+        firm_rate (float): Base rate for firm loans
+        hh_consumption_passthrough (float): Rate adjustment for consumer loans
+        hh_consumption_ect (float): Error correction for consumer rates
+        hh_consumption_rate (float): Base rate for consumer loans
+        hh_mortgage_passthrough (float): Rate adjustment for mortgages
+        hh_mortgage_ect (float): Error correction for mortgage rates
+        hh_mortgage_rate (float): Base mortgage rate
     """
 
     @abstractmethod
@@ -112,6 +97,24 @@ class SyntheticBanks(ABC):
         hh_mortgage_ect: float,
         hh_mortgage_rate: float,
     ) -> None:
+        """Initialize a synthetic banking system.
+
+        Args:
+            country_name (str): Country identifier
+            year (int): Reference year for data
+            number_of_banks (int): Number of banks to create
+            bank_data (pd.DataFrame): Initial bank-level data
+            quarter (int): Reference quarter (1-4)
+            firm_passthrough (float): Rate adjustment factor for firm loans
+            firm_ect (float): Error correction term for firm rates
+            firm_rate (float): Base rate for firm loans
+            hh_consumption_passthrough (float): Rate adjustment for consumer loans
+            hh_consumption_ect (float): Error correction for consumer rates
+            hh_consumption_rate (float): Base rate for consumer loans
+            hh_mortgage_passthrough (float): Rate adjustment for mortgages
+            hh_mortgage_ect (float): Error correction for mortgage rates
+            hh_mortgage_rate (float): Base mortgage rate
+        """
         # Parameters
         self.country_name = country_name
         self.year = year
@@ -137,6 +140,19 @@ class SyntheticBanks(ABC):
     def initialise_deposits_and_loans(
         self, synthetic_population: SyntheticPopulation, firm_deposits: np.ndarray, firm_debt: np.ndarray
     ) -> None:
+        """Initialize the deposits and loans for all banks in the system.
+
+        This method sets up the initial state of bank balance sheets by:
+        1. Setting household deposits based on their wealth allocation
+        2. Setting household loans (mortgages and other debt)
+        3. Setting firm deposits and loans
+        4. Calculating total bank deposits
+
+        Args:
+            synthetic_population (SyntheticPopulation): Population data including household wealth
+            firm_deposits (np.ndarray): Array of firm deposit amounts
+            firm_debt (np.ndarray): Array of firm debt amounts
+        """
         # Set initial household deposits
         household_deposits = synthetic_population.household_data["Wealth in Deposits"].values
         self.set_deposits_from_households(household_deposits=household_deposits)
@@ -170,14 +186,29 @@ class SyntheticBanks(ABC):
 
     @abstractmethod
     def set_deposits_from_firms(self, firm_deposits: np.ndarray) -> None:
+        """Set the initial deposits from firms for each bank.
+
+        Args:
+            firm_deposits (np.ndarray): Array of deposit amounts by firm
+        """
         pass
 
     @abstractmethod
     def set_deposits_from_households(self, household_deposits: np.ndarray) -> None:
+        """Set the initial deposits from households for each bank.
+
+        Args:
+            household_deposits (np.ndarray): Array of deposit amounts by household
+        """
         pass
 
     @abstractmethod
     def set_loans_to_firms(self, firm_debt: np.ndarray) -> None:
+        """Set the initial loans to firms for each bank.
+
+        Args:
+            firm_debt (np.ndarray): Array of debt amounts by firm
+        """
         pass
 
     @abstractmethod
@@ -186,10 +217,21 @@ class SyntheticBanks(ABC):
         household_mortgage_debt: np.ndarray,
         household_other_debt: np.ndarray,
     ) -> None:
+        """Set the initial loans to households for each bank.
+
+        Args:
+            household_mortgage_debt (np.ndarray): Array of mortgage debt by household
+            household_other_debt (np.ndarray): Array of non-mortgage debt by household
+        """
         pass
 
     @abstractmethod
     def set_bank_equity(self, bank_equity: float) -> None:
+        """Set the equity level for each bank.
+
+        Args:
+            bank_equity (float): Equity amount to set for each bank
+        """
         pass
 
     @abstractmethod
@@ -200,6 +242,20 @@ class SyntheticBanks(ABC):
         firm_debt: np.ndarray,
         household_debt: np.ndarray,
     ) -> None:
+        """Set the total deposits for each bank.
+
+        Calculates and sets total deposits by combining:
+        - Firm deposits
+        - Household deposits
+        - Firm debt
+        - Household debt
+
+        Args:
+            firm_deposits (np.ndarray): Array of firm deposit amounts
+            household_deposits (np.ndarray): Array of household deposit amounts
+            firm_debt (np.ndarray): Array of firm debt amounts
+            household_debt (np.ndarray): Array of household debt amounts
+        """
         pass
 
     def initialise_rates_profits_liabilities(
@@ -211,6 +267,22 @@ class SyntheticBanks(ABC):
         mortgage_markup: float,
         household_overdraft_markup: float,
     ):
+        """Initialize bank rates, profits, and liabilities.
+
+        This method sets up the complete financial structure of banks by:
+        1. Setting interest rates for all products
+        2. Calculating interest income from loans and deposits
+        3. Computing profits and taxes
+        4. Setting liabilities and market shares
+
+        Args:
+            policy_rate (float): Central bank policy rate
+            tau_bank (float): Bank tax rate
+            risk_premium (float): Risk premium for loans
+            consumption_loans_markup (float): Markup for consumer loans
+            mortgage_markup (float): Markup for mortgages
+            household_overdraft_markup (float): Markup for household overdrafts
+        """
         bank_markup_interest_rate_short_term_firm_loans = risk_premium
         bank_markup_interest_rate_long_term_firm_loans = risk_premium
         bank_markup_interest_rate_household_payday_loans = risk_premium
@@ -251,6 +323,24 @@ class SyntheticBanks(ABC):
         bank_markup_interest_rate_overdraft_firm: float,
         bank_markup_interest_rate_overdraft_household: float,
     ) -> None:
+        """Set initial interest rates for all bank products.
+
+        This method initializes rates for:
+        - Firm loans (short and long term)
+        - Household loans (payday, consumption, mortgages)
+        - Deposits (firm and household)
+        - Overdrafts
+
+        Args:
+            central_bank_policy_rate (float): Base rate from central bank
+            bank_markup_interest_rate_short_term_firm_loans (float): Markup for short-term firm loans
+            bank_markup_interest_rate_long_term_firm_loans (float): Markup for long-term firm loans
+            bank_markup_interest_rate_household_payday_loans (float): Markup for payday loans
+            bank_markup_interest_rate_household_consumption_loans (float): Markup for consumer loans
+            bank_markup_interest_rate_mortgages (float): Markup for mortgages
+            bank_markup_interest_rate_overdraft_firm (float): Markup for firm overdrafts
+            bank_markup_interest_rate_overdraft_household (float): Markup for household overdrafts
+        """
         # Short-term interest rates for firm loans
         self.bank_data["Short-Term Interest Rates on Firm Loans"] = self.firm_rate
 
@@ -279,6 +369,15 @@ class SyntheticBanks(ABC):
         self.bank_data["Overdraft Rate on Household Deposits"] = self.hh_consumption_rate
 
     def set_interest_received_from_loans(self) -> None:
+        """Calculate and set the interest income received from all loans.
+
+        This method computes the total interest income from:
+        - Firm loans (short and long term)
+        - Household loans (mortgages, consumption, payday)
+        - Overdraft facilities
+
+        The calculated interest income is stored in the bank_data DataFrame.
+        """
         self.bank_data["Interest received from Loans"] = (
             self.bank_data["Long-Term Interest Rates on Firm Loans"] * self.bank_data["Loans to Firms"]
             + self.bank_data["Interest Rates on Household Consumption Loans"]
@@ -287,6 +386,17 @@ class SyntheticBanks(ABC):
         )
 
     def set_interest_received_from_deposits(self, central_bank_policy_rate: float) -> None:
+        """Calculate and set the interest income received from deposits.
+
+        This method computes interest income from:
+        - Household deposits
+        - Firm deposits
+        - Interbank deposits
+
+        Args:
+            central_bank_policy_rate (float): Base rate from central bank used
+                for deposit rate calculations
+        """
         self.bank_data["Interest received from Deposits"] = (
             central_bank_policy_rate * self.bank_data["Deposits"]
             + self.bank_data["Overdraft Rate on Firm Deposits"] * np.maximum(0, -self.bank_data["Deposits from Firms"])
@@ -299,14 +409,34 @@ class SyntheticBanks(ABC):
         )
 
     def set_profits(self) -> None:
+        """Calculate and set bank profits.
+
+        Computes profits by:
+        1. Adding all interest income (from loans and deposits)
+        2. Subtracting interest expenses
+        3. Subtracting operational costs
+        4. Adjusting for any extraordinary items
+        """
         self.bank_data["Profits"] = (
             self.bank_data["Interest received from Loans"] + self.bank_data["Interest received from Deposits"]
         )
 
     def set_corporate_taxes_paid(self, tau_bank: float) -> None:
+        """Calculate and set corporate taxes paid by banks.
+
+        Args:
+            tau_bank (float): Corporate tax rate applicable to banks
+        """
         self.bank_data["Corporate Taxes Paid"] = tau_bank * np.maximum(0.0, self.bank_data["Profits"])
 
     def set_market_share(self) -> None:
+        """Calculate and set market share for each bank.
+
+        Market share is computed based on:
+        - Total assets
+        - Total deposits
+        - Number of customers (firms and households)
+        """
         total_amount_of_loans_and_deposits = (
             np.absolute(self.bank_data["Loans to Firms"]).sum()
             + np.absolute(self.bank_data["Consumption Loans to Households"]).sum()
@@ -326,6 +456,13 @@ class SyntheticBanks(ABC):
             self.bank_data["Market Share"] = np.full(len(self.bank_data), 1.0 / len(self.bank_data))
 
     def set_liability(self) -> None:
+        """Calculate and set total liabilities for each bank.
+
+        Liabilities include:
+        - Customer deposits (firm and household)
+        - Interbank borrowing
+        - Other funding sources
+        """
         self.bank_data["Liability"] = (
             self.bank_data["Equity"]
             + np.maximum(0, self.bank_data["Deposits from Firms"])
