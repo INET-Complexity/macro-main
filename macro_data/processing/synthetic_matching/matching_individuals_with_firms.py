@@ -1,3 +1,40 @@
+"""Module for harmonizing individual and firm employment data.
+
+This module matches and harmonizes employment data from different sources:
+1. Individual Data Source:
+   - Actual wages from household surveys
+   - Industry of employment
+   - Activity status
+   - Employment income
+
+2. Firm Data Source:
+   - Total labor expenses
+   - Number of employees
+   - Industry classification
+   - Production data
+
+The harmonization process involves:
+1. Data Validation:
+   - Checking employment numbers match across sources
+   - Ensuring industry totals align
+   - Validating activity status
+
+2. Data Reconciliation:
+   - Scaling individual wages to match firm labor expenses
+   - Adjusting for tax effects
+   - Computing per-position wages from total expenses
+
+3. Optimal Matching:
+   - Minimizing discrepancy between data sources
+   - Preserving industry-specific relationships
+   - Recording final assignments
+
+Note:
+    This module focuses on harmonizing employment data from different sources
+    to create a consistent initial state. The actual labor market dynamics
+    are implemented in the simulation package.
+"""
+
 import numpy as np
 import scipy as sp
 from scipy.optimize import linear_sum_assignment as lsa
@@ -15,27 +52,34 @@ def preprocess(
     income_taxes: float,
     employee_social_contribution_taxes: float,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Preprocesses the data for matching individuals with firms.
+    """Preprocess and validate employment data from both sources.
 
-    This function performs a sanity check to ensure the number of employees in the industry matches the expected number.
-    It then rescales the income of the employees in the industry based on the total wages paid by the firms.
-    Finally, it creates two arrays representing the wages offered by each firm for each position
-    and the corresponding firm IDs.
+    This function ensures consistency between individual and firm data by:
+    1. Validating employment counts match between sources
+    2. Reconciling wage totals with firm labor expenses
+    3. Computing position wages from firm total expenses
+    4. Adjusting for tax effects
+
+    The preprocessing ensures that:
+    - Employment numbers match across sources
+    - Wage totals align with firm expenses
+    - Tax effects are properly accounted for
+    - Industry-specific relationships are maintained
 
     Args:
-        synthetic_population (SyntheticPopulation): An instance of the SyntheticPopulation class.
-        synthetic_firms (SyntheticFirms): An instance of the SyntheticFirms class.
-        industry_index (int): The index of the industry to be processed.
-        income_taxes (float): The income tax rate.
-        employee_social_contribution_taxes (float): The employee social contribution tax rate.
+        synthetic_population (SyntheticPopulation): Individual employment data
+        synthetic_firms (SyntheticFirms): Firm labor expense data
+        industry_index (int): Industry sector being processed
+        income_taxes (float): Income tax rate for reconciliation
+        employee_social_contribution_taxes (float): Social security tax rate
 
     Returns:
-        tuple[np.ndarray, np.ndarray]: A tuple containing two arrays. The first array represents the wages offered by each firm for each position.
-        The second array contains the firm IDs corresponding to each position.
+        tuple[np.ndarray, np.ndarray]:
+            - wages_offered: Array of wages derived from firm expenses
+            - pos_corr_firm: Array mapping positions to firm IDs
 
     Raises:
-        ValueError: If the number of employees in the industry does not match the expected number.
+        ValueError: If employment counts don't match between sources
     """
     # Sanity check
     ind_employees = np.flatnonzero(
@@ -97,26 +141,30 @@ def find_optimal_matching(
     pos_corr_firm: np.ndarray,
     normalise_employee_income: bool = True,
 ) -> None:
-    """
-    Finds the optimal matching of individuals to firms in a given industry.
+    """Find optimal matches to harmonize individual and firm data.
 
-    This function creates a cost matrix based on the distance between the income of each individual and the wages offered by each firm.
-    It then uses a linear sum assignemnt algorithm to find the optimal matching of individuals to firms, minimising the difference between
-    asked and offered wages.
-    The results are recorded in the data of the synthetic population and firms.
+    This function reconciles employment data by:
+    1. Creating a cost matrix from wage differences
+    2. Finding optimal assignments that minimize discrepancies
+    3. Recording harmonized relationships
+    4. Adjusting final wages to match firm expenses
+
+    The optimization:
+    - Minimizes differences between reported wages and firm expenses
+    - Maintains industry-specific relationships
+    - Accounts for tax effects in reconciliation
+    - Preserves firm-level employment totals
 
     Args:
-        synthetic_population (SyntheticPopulation): An instance of the SyntheticPopulation class.
-        synthetic_firms (SyntheticFirms): An instance of the SyntheticFirms class.
-        industry_index (int): The index of the industry to be processed.
-        income_taxes (float): The income tax rate.
-        employee_social_contribution_taxes (float): The employee social contribution tax rate.
-        wages_offered (np.ndarray): An array representing the wages offered by each firm for each position.
-        pos_corr_firm (np.ndarray): An array containing the firm IDs corresponding to each position.
-        normalise_employee_income (bool, optional): Whether to normalise the income of the employees. Defaults to True.
-
-    Returns:
-        None
+        synthetic_population (SyntheticPopulation): Individual employment data
+        synthetic_firms (SyntheticFirms): Firm labor expense data
+        industry_index (int): Industry sector being processed
+        income_taxes (float): Income tax rate for reconciliation
+        employee_social_contribution_taxes (float): Social security tax rate
+        wages_offered (np.ndarray): Wages derived from firm expenses
+        pos_corr_firm (np.ndarray): Array mapping positions to firms
+        normalise_employee_income (bool, optional): Whether to adjust wages
+            to match firm expenses. Defaults to True.
     """
     # Create a cost matrix
     in_industry = synthetic_population.individual_data["Employment Industry"] == industry_index
@@ -162,18 +210,26 @@ def match_individuals_with_firms_country(
     firms: SyntheticFirms,
     population: SyntheticPopulation,
 ):
-    """
-    Matches individuals with firms based on country, industries, and other parameters.
+    """Harmonize employment data across all industries in a country.
+
+    This function coordinates the complete data harmonization by:
+    1. Processing each industry sector
+    2. Validating employment data consistency
+    3. Reconciling wages with labor expenses
+    4. Computing final labor inputs
+
+    The process ensures:
+    - Industry-specific relationships are preserved
+    - Tax effects are properly handled
+    - Wage totals match firm expenses
+    - Employment counts are consistent
 
     Args:
-        industries (list[int] | np.ndarray): The industries to consider for matching.
-        income_taxes (float): The income tax rate.
-        employee_social_contribution_taxes (float): The employee social contribution tax rate.
-        firms (SyntheticFirms): An object that represents synthetic firms data.
-        population (SyntheticPopulation): An object that represents synthetic population data.
-
-    Returns:
-        None
+        industries (list[str] | np.ndarray): Industry sectors to process
+        income_taxes (float): Income tax rate for reconciliation
+        employee_social_contribution_taxes (float): Social security tax rate
+        firms (SyntheticFirms): Firm labor expense data
+        population (SyntheticPopulation): Individual employment data
     """
     for industry_index in range(len(industries)):
         wage_offered, pos_corr_firm = preprocess(
