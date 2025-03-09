@@ -1,3 +1,11 @@
+"""Module for preprocessing default synthetic government entity data.
+
+This module provides a default implementation for preprocessing government entity data
+using standard data sources such as OECD and national accounts. It handles the
+organization of government consumption and investment data using commonly available
+economic statistics.
+"""
+
 from typing import Optional
 
 import numpy as np
@@ -14,28 +22,50 @@ from macro_data.readers.exogenous_data import ExogenousCountryData
 
 
 class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
-    """
-    Represents a collection of synthetic government entities. These entities are used to represent government consumption.
+    """Default implementation for preprocessing government entity data.
 
-    Parameters:
-    - country_name (str): The name of the country.
-    - year (int): The year of the data.
-    - number_of_entities (int): The number of government entities.
-    - gov_entity_data (pd.DataFrame): The data for the government entities.
-    - government_consumption_model (Optional[LinearRegression]): The consumption model for the government (a linear
-    regression model to extrapolate government consumption growth).
+    This class provides a standard implementation for processing government entity
+    data using common data sources like OECD statistics and national accounts. It
+    organizes data about government consumption, investment, and environmental
+    impact using widely available economic indicators.
 
-    Attributes:
-    - country_name (str): The name of the country.
-    - year (int): The year of the data.
-    - number_of_entities (int): The number of government entities.
-    - gov_entity_data (pd.DataFrame): The data for the government entities.
-    - government_consumption_model (Optional[LinearRegression]): The consumption model for the government.
+    The preprocessing workflow includes:
+    1. Data Collection:
+       - OECD business demography statistics
+       - National accounts government consumption data
+       - Industry-level consumption patterns
+       - Environmental impact factors
 
+    2. Entity Structure:
+       - Entity count calculation based on economic size
+       - Optional single-entity consolidation
+       - Consumption allocation by industry
+       - Size-based distribution
 
-    Methods:
-    - create_from_readers: Creates an instance of SyntheticDefaultGovernmentEntities from data readers.
+    3. Growth Model:
+       - Historical consumption pattern analysis
+       - Growth rate calculation
+       - Linear regression model estimation
+       - Future consumption projection parameters
 
+    4. Environmental Impact:
+       - Fuel-specific consumption tracking
+       - Emission factor application
+       - Industry-specific impact calculation
+       - Total emissions aggregation
+
+    Args:
+        country_name (Country): Country identifier for data collection
+        year (int): Base year for preprocessing
+        number_of_entities (int): Number of government entities
+        gov_entity_data (pd.DataFrame): Preprocessed entity data
+        government_consumption_model (Optional[LinearRegression]): Model for
+            projecting consumption growth patterns
+
+    Note:
+        This implementation uses default data sources and standard preprocessing
+        methods. For specialized preprocessing needs, create a new implementation
+        of the base SyntheticGovernmentEntities class.
     """
 
     def __init__(
@@ -67,6 +97,29 @@ class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
         create_model: bool = False,
         emission_factors: Optional[EmissionsData] = None,
     ):
+        """Create preprocessed government entity data from standard data sources.
+
+        This method processes government entity data using default data sources:
+        1. Extracts historical consumption from national accounts
+        2. Calculates growth rates and estimates model parameters
+        3. Determines entity count based on economic indicators
+        4. Processes industry-specific consumption patterns
+        5. Applies emission factors if environmental tracking is enabled
+
+        Args:
+            readers (DataReaders): Access to standard data sources
+            country_name (Country): Country to process data for
+            year (int): Base year for preprocessing
+            quarter (int): Base quarter for preprocessing
+            exogenous_country_data (ExogenousCountryData): External economic data
+            industry_data (dict[str, pd.DataFrame]): Industry-level statistics
+            single_government_entity (bool): Whether to consolidate into one entity
+            create_model (bool): Whether to estimate growth model. Defaults to False
+            emission_factors (Optional[EmissionsData]): Environmental impact data
+
+        Returns:
+            DefaultSyntheticGovernmentEntities: Container with preprocessed data
+        """
         if exogenous_country_data:
             total_gov_consumption = exogenous_country_data.national_accounts["Real Government Consumption (Value)"]
             total_gov_consumption = total_gov_consumption.loc[total_gov_consumption.index < f"{year}-Q{quarter}"]
