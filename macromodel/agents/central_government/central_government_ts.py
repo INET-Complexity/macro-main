@@ -1,3 +1,19 @@
+"""Time series management for Central Government agent.
+
+This module handles the creation and management of time series data
+for the central government agent, including:
+- Fiscal variables (revenue, deficit, debt)
+- Tax collections by type
+- Social benefits and transfers
+- Public housing income
+
+The time series provide historical tracking of:
+- Government financial position
+- Tax revenue streams
+- Social benefit payments
+- Public sector operations
+"""
+
 import numpy as np
 import pandas as pd
 
@@ -8,6 +24,24 @@ def create_central_government_timeseries(
     data: pd.DataFrame,
     number_of_unemployed_individuals: int,
 ) -> TimeSeries:
+    """Create time series objects for central government variables.
+
+    Initializes time series tracking for:
+    - Fiscal position (debt, deficit, revenue)
+    - Tax collections by type
+    - Social benefits and transfers
+    - Public housing income
+
+    Args:
+        data (pd.DataFrame): Initial government data including historical
+            values for all tracked variables
+        number_of_unemployed_individuals (int): Count of unemployed people
+            for per-person benefit calculation
+
+    Returns:
+        TimeSeries: Initialized time series containing all government
+            variables with their initial values
+    """
     return TimeSeries(
         debt=np.array([float(data["Debt"].iloc[0])]),
         unemployment_benefits_by_individual=[

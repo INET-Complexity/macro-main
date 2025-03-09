@@ -1,3 +1,29 @@
+"""Module for preprocessing firm-specific data utilities.
+
+This module provides utility functions for preprocessing firm-level data that will
+be used to initialize behavioral models. Key preprocessing includes:
+
+1. Firm Size Processing:
+   - Power-law distribution fitting
+   - Employee allocation
+   - Size distribution estimation
+
+2. Financial Data Processing:
+   - Wage calculations
+   - Production allocation
+   - Balance sheet construction
+
+3. Parameter Processing:
+   - Input requirements
+   - Productivity metrics
+   - Initial state parameters
+
+Note:
+    This module is NOT used for simulating firm behavior. It only handles
+    the preprocessing and organization of firm-specific data that will later
+    be used to initialize behavioral models in the simulation package.
+"""
+
 import logging
 from functools import reduce
 
@@ -14,24 +40,29 @@ def draw_industry_firm_sizes(
     number_employees: int,
     firm_size_zeta_shape: float,
 ) -> np.ndarray:
-    """
-    Draw firm sizes for an industry based on the number of employees. The size distribution within each industry is
-    assumed to be a discrete power-law distribution, with a normalisation constant that is the Riemann zeta function.
+    """Preprocess firm size distribution for an industry.
 
-    In other words, the probability of a firm having n employees is
+    This function generates a realistic firm size distribution using a power-law
+    model, which is commonly observed in empirical firm size data. The distribution
+    is used to initialize the firm size structure within each industry.
+
+    The size distribution follows a discrete power-law with probability:
     ..math::
         p(n) = \frac{1}{n^{\zeta(s)} \zeta(s)}
 
-    where the exponent is s.
+    where s is the shape parameter controlling the distribution's tail.
+
+    Note:
+        This is a preprocessing function. The actual firm growth dynamics are
+        implemented in the simulation package.
 
     Args:
-        n_firms_in_industry (int): The number of firms in the industry.
-        number_employees (int): The total number of employees in the industry.
-        firm_size_zeta_shape (float): The shape parameter of the zeta distribution for firm sizes.
+        n_firms_in_industry (int): Number of firms to generate sizes for
+        number_employees (int): Total employees to distribute
+        firm_size_zeta_shape (float): Power-law shape parameter
 
     Returns:
-        np.ndarray: An array of firm sizes, where each element represents the number of employees in a firm.
-
+        np.ndarray: Array of preprocessed firm sizes
     """
     employees_by_industry_range = np.arange(1, number_employees + 1)
     if len(employees_by_industry_range) == 0:
@@ -153,22 +184,27 @@ def add_number_employees_random(
     n_firms_per_industry: np.ndarray | list,
     n_industries: int,
 ):
-    """
-    Adds the number of employees to the firm_data DataFrame based on the given firm size and industry data.
-    This first computes a priori firm sizes from power-law distributions with parameters given by the firm size zetas, then
-    distributes the remainder of employees (unmatched employees) among firms in each industry.
+    """Preprocess employee allocation across firms.
 
-    Finally, the "Number of Employees" column in the firm_data DataFrame is updated with the computed firm sizes.
+    This function distributes employees across firms within each industry using
+    power-law size distributions. The preprocessing steps include:
+    1. Computing initial firm sizes from power-law distributions
+    2. Distributing remaining employees to maintain industry totals
+    3. Updating the firm data with allocated employees
+
+    Note:
+        This is a preprocessing function. The actual labor market dynamics are
+        implemented in the simulation package.
 
     Args:
-        firm_data (pd.DataFrame): The DataFrame containing firm data.
-        firm_size_zetas (np.ndarray | list | dict[int, float]): The firm size zetas for each industry.
-        n_employees_per_industry (np.ndarray | list): The number of employees per industry.
-        n_firms_per_industry (np.ndarray | list): The number of firms per industry.
-        n_industries (int): The total number of industries.
+        firm_data (pd.DataFrame): Firm data container to update
+        firm_size_zetas (np.ndarray | list | dict[int, float]): Power-law parameters
+        n_employees_per_industry (np.ndarray | list): Industry employment totals
+        n_firms_per_industry (np.ndarray | list): Industry firm counts
+        n_industries (int): Number of industries
 
     Returns:
-        pd.DataFrame: The firm_data DataFrame with the "Number of Employees" column updated.
+        pd.DataFrame: Updated firm data with employee allocations
     """
     firm_data["Number of Employees"] = 0
     for industry in range(n_industries):
@@ -208,24 +244,28 @@ def add_wages(
     labour_compensation: np.ndarray,
     tau_sif: float,
 ) -> pd.DataFrame:
-    """
-    Add wages information to the firm_data DataFrame based on the given parameters.
-    Wages are computed as the total labour compensation for each industry divided by the number of employees in that industry.
+    """Preprocess wage data for firms.
 
-    Wages paid by firms are computed according to their total number of employees, and include the tax rate tau_sif.
+    This function initializes wage-related data for each firm based on industry
+    labor compensation and tax rates. The preprocessing includes:
+    1. Computing base wages from industry compensation
+    2. Calculating gross wages with employer taxes
+    3. Distributing wages proportionally to firm size
 
-    Wages received by employees do not include the employer tax rate tau_sif, but are taxed later.
+    Note:
+        This is a preprocessing function. The actual wage setting behavior is
+        implemented in the simulation package.
 
-    Parameters:
-        firm_data (pd.DataFrame): The DataFrame containing firm data.
-        n_employees_per_industry (list | np.ndarray): The number of employees per industry.
-        n_firms (int): The total number of firms.
-        n_industries (int): The total number of industries.
-        labour_compensation (np.ndarray): The compensation for each industry.
-        tau_sif (float): The tax rate.
+    Args:
+        firm_data (pd.DataFrame): Firm data container to update
+        n_employees_per_industry (list | np.ndarray): Industry employment totals
+        n_firms (int): Total number of firms
+        n_industries (int): Number of industries
+        labour_compensation (np.ndarray): Industry labor compensation
+        tau_sif (float): Employer social insurance tax rate
 
     Returns:
-        pd.DataFrame: The updated firm_data DataFrame with added wage information.
+        pd.DataFrame: Updated firm data with wage information
     """
     firm_data["Total Wages"] = 0
     firm_data["Total Wages Paid"] = 0
@@ -246,21 +286,31 @@ def add_wages(
 
 
 def add_production(
-    firm_data: pd.DataFrame, n_employees_per_industry: list | np.ndarray, n_industries: int, output: np.ndarray
+    firm_data: pd.DataFrame,
+    n_employees_per_industry: list | np.ndarray,
+    n_industries: int,
+    output: np.ndarray,
 ) -> pd.DataFrame:
-    """
-    Allocate production values to firms based on the total industry output and proportionally to the number of employees.
+    """Preprocess production data for firms.
 
-    Production is in real terms, so we use the production value in USD and set the price to 1USD.
+    This function initializes production-related data for each firm based on
+    industry output and employment. The preprocessing includes:
+    1. Allocating industry output to firms
+    2. Setting initial production levels
+    3. Converting to real terms (USD)
 
-    Parameters:
-        firm_data (pd.DataFrame): The DataFrame containing firm data.
-        n_employees_per_industry (list | np.ndarray): The number of employees per industry.
-        n_industries (int): The number of industries.
-        output (np.ndarray): The industry output values.
+    Note:
+        This is a preprocessing function. The actual production decisions are
+        implemented in the simulation package.
+
+    Args:
+        firm_data (pd.DataFrame): Firm data container to update
+        n_employees_per_industry (list | np.ndarray): Industry employment totals
+        n_industries (int): Number of industries
+        output (np.ndarray): Industry output values
 
     Returns:
-        pd.DataFrame: The updated firm_data DataFrame with production values added.
+        pd.DataFrame: Updated firm data with production values
     """
     firm_data["Production"] = np.nan
     for industry in range(n_industries):
@@ -331,29 +381,32 @@ def initialise_basic_firm_fields(
     tau_sif: float,
     assume_initial_unit: bool = False,
 ):
-    """
-    Initializes basic fields for each firm in the firm_data DataFrame.
-    First, firms are assigned to industries based on the number of firms per industry. Then, the number of employees of each firm
-    is computed based on the number of employees per industry and the firm size zetas. Wages are computed based on the number of
-    employees and the labour compensation for each industry. Finally, production values are computed based on the number of
-    employees and the industry output.
+    """Preprocess basic firm data using industry statistics.
 
-    Prices are initialised to 1 in USD and then converted to the local currency using the exchange rate.
+    This function initializes fundamental firm-level data using industry-level
+    statistics. The preprocessing includes:
+    1. Industry assignment
+    2. Employee allocation using power-law distributions
+    3. Wage computation from labor compensation
+    4. Production allocation from industry output
+    5. Price initialization and currency conversion
 
-    The corresponding firm data is returned.
+    Note:
+        This is a preprocessing function. The actual firm behavior is
+        implemented in the simulation package.
 
-    Parameters:
-        firm_data (pd.DataFrame): The DataFrame containing firm data.
-        industry_data (dict[str, pd.DataFrame]): A dictionary mapping industry names to industry data DataFrames.
-        n_employees_per_industry (np.ndarray | list): An array or list containing the number of employees per industry.
-        n_firms_per_industry (NDArrayInt | list[int]): An array or list containing the number of firms per industry.
-        firm_size_zetas (dict[int, float]): A dictionary mapping firm sizes to zeta values.
-        exchange_rate (float): The exchange rate.
-        tau_sif (float): The tau_sif value.
-        assume_initial_unit (bool): Flag indicating whether to assume an initial unit.
+    Args:
+        firm_data (pd.DataFrame): Firm data container to update
+        industry_data (dict[str, pd.DataFrame]): Industry-level statistics
+        n_employees_per_industry (np.ndarray | list): Industry employment totals
+        n_firms_per_industry (NDArrayInt | list[int]): Industry firm counts
+        firm_size_zetas (dict[int, float]): Power-law parameters
+        exchange_rate (float): USD to local currency rate
+        tau_sif (float): Employer social insurance tax rate
+        assume_initial_unit (bool): Whether to use unit labor productivity
 
     Returns:
-        pd.DataFrame: The firm_data DataFrame with the initialized fields.
+        pd.DataFrame: Preprocessed firm data
     """
     n_industries = len(n_employees_per_industry)
     n_firms = sum(n_firms_per_industry)
@@ -398,28 +451,34 @@ def function_parameters_dependent_initialisation(
     initial_inventory_to_input_fraction: float,
     intermediate_inputs_utilisation_rate: float,
 ):
-    """
-    Perform parameter-dependent initialization of firm data.
+    """Preprocess firm data based on functional parameters.
 
-    This depends on parameters that depend on the functions used to run the simulation, as they are used to compute
-    the initial values of inventories and input usage.
+    This function initializes firm-level data that depends on various functional
+    parameters. The preprocessing includes:
+    1. Inventory level initialization
+    2. Input stock calculations
+    3. Capital stock computations
+    4. Financial position setup
+
+    Note:
+        This is a preprocessing function. The actual firm behavior and parameter
+        evolution are implemented in the simulation package.
 
     Args:
-        firm_data (pd.DataFrame): DataFrame containing firm data.
-        intermediate_inputs_productivity_matrix (np.ndarray): Matrix of intermediate inputs productivity.
-        capital_inputs_depreciation_matrix (np.ndarray): Matrix of capital inputs depreciation.
-        capital_inputs_productivity_matrix (np.ndarray): Matrix of capital inputs productivity.
-        total_firm_deposits (float): Total firm deposits.
-        total_firm_debt (float): Total firm debt.
-        assume_zero_initial_debt (bool): Flag indicating whether to assume zero initial debt.
-        assume_zero_initial_deposits (bool): Flag indicating whether to assume zero initial deposits.
-        capital_inputs_utilisation_rate (float): Capital inputs utilization rate.
-        initial_inventory_to_input_fraction (float): Fraction of initial inventory to input.
-        intermediate_inputs_utilisation_rate (float): Intermediate inputs utilization rate.
+        firm_data (pd.DataFrame): Firm data container to update
+        intermediate_inputs_productivity_matrix (np.ndarray): Input productivity
+        capital_inputs_depreciation_matrix (np.ndarray): Capital depreciation
+        capital_inputs_productivity_matrix (np.ndarray): Capital productivity
+        total_firm_deposits (float): Aggregate firm deposits
+        total_firm_debt (float): Aggregate firm debt
+        assume_zero_initial_debt (bool): Whether to start with zero debt
+        assume_zero_initial_deposits (bool): Whether to start with zero deposits
+        capital_inputs_utilisation_rate (float): Initial capital utilization
+        initial_inventory_to_input_fraction (float): Initial inventory ratio
+        intermediate_inputs_utilisation_rate (float): Initial input utilization
 
     Returns:
-        Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: Tuple containing capital inputs stock,
-        intermediate inputs stock, used capital inputs, and used intermediate inputs.
+        tuple: Preprocessed capital stock, input stock, and utilization data
     """
     # This needs to be moved to the macromodel package
     # note that firm_data, intermediate_inputs_productivity_matrix, capital_inputs_depreciation_matrix,

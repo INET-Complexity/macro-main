@@ -1,3 +1,14 @@
+"""This module implements the core simulation engine for the macroeconomic model.
+
+The simulation handles multiple countries, their interactions through goods markets,
+exchange rates, and rest-of-world effects. It provides functionality to:
+- Initialize a simulation from preprocessed economic data
+- Run time-stepped iterations of the economic model
+- Reset the simulation state
+- Save and load simulation states
+- Track various economic metrics across countries
+"""
+
 import logging
 from copy import deepcopy
 from dataclasses import dataclass
@@ -20,6 +31,28 @@ from macromodel.timestep import Timestep
 
 @dataclass
 class Simulation:
+    """A multi-country macroeconomic simulation engine.
+
+    This class orchestrates the simulation of multiple interacting economies, including:
+    - Multiple country-level economic models
+    - Rest of world interactions
+    - Global goods market clearing
+    - Exchange rate dynamics
+
+    The simulation can be stepped through time, with each iteration updating all
+    economic actors and markets in sequence. Results can be saved for later analysis.
+
+    Attributes:
+        countries (dict[str, Country]): Dictionary of country models, keyed by country code
+        rest_of_the_world (RestOfTheWorld): Model for rest-of-world economic interactions
+        goods_market (GoodsMarket): Global goods market clearing mechanism
+        exchange_rates (ExchangeRates): Exchange rate dynamics between countries
+        timestep (Timestep): Current simulation timestep
+        configuration (SimulationConfiguration): Simulation parameters and settings
+        initial_year (int): Starting year of the simulation
+        aggregate_country_price_index (float): Aggregate price index across all countries
+    """
+
     countries: dict[str, Country]
     rest_of_the_world: RestOfTheWorld
     goods_market: GoodsMarket
@@ -35,6 +68,22 @@ class Simulation:
         datawrapper: DataWrapper,
         simulation_configuration: SimulationConfiguration,
     ):
+        """Initialize a simulation from preprocessed economic data.
+
+        This method creates a new simulation instance using preprocessed data from a DataWrapper
+        object and a simulation configuration. It sets up all countries, markets, and economic
+        relationships based on the provided data and configuration.
+
+        Args:
+            datawrapper (DataWrapper): Preprocessed economic data for all countries
+            simulation_configuration (SimulationConfiguration): Configuration parameters for the simulation
+
+        Returns:
+            Simulation: A new simulation instance initialized with the provided data
+
+        Raises:
+            ValueError: If a country in the simulation configuration is not found in the data
+        """
 
         data_configuration = datawrapper.configuration
         for country, country_sim_conf in simulation_configuration.country_configurations.items():
@@ -138,6 +187,15 @@ class Simulation:
         )
 
     def reset(self, configuration: Optional[SimulationConfiguration] = None) -> None:
+        """Reset the simulation to its initial state.
+
+        Resets all simulation components (countries, markets, etc.) to their initial states.
+        Optionally accepts a new configuration to modify simulation parameters during reset.
+
+        Args:
+            configuration (Optional[SimulationConfiguration]): New configuration to use after reset.
+                If None, uses the current configuration.
+        """
 
         if configuration is None:
             configuration = self.configuration
@@ -160,13 +218,25 @@ class Simulation:
 
     @property
     def t_max(self):
+        """int: Maximum number of timesteps to simulate."""
         return self.configuration.t_max
 
     @property
     def random_seed(self):
+        """Optional[int]: Random seed used for reproducible simulations."""
         return self.configuration.seed
 
     def iterate(self):
+        """Execute one timestep of the simulation.
+
+        Performs a complete iteration of the economic model, including:
+        1. Exchange rate updates
+        2. Country-level economic processes
+        3. Labor market clearing
+        4. Housing and credit market clearing
+        5. Goods market clearing
+        6. Metric updates and recording
+        """
         # self.exchange_rates.set_current_exchange_rates(current_year=self.timestep.year)
 
         for ind, country in enumerate(self.countries.values()):
@@ -227,6 +297,7 @@ class Simulation:
 
     @property
     def aggregate_nominal_production(self) -> float:
+        """float: Total nominal production across all countries in the simulation."""
         return np.sum(
             [
                 (
@@ -240,6 +311,7 @@ class Simulation:
 
     @property
     def total_real_production(self) -> float:
+        """float: Total real (quantity) production across all countries."""
         return np.sum(
             [
                 (self.countries[c].firms.ts.current("production") + self.countries[c].firms.ts.prev("inventory")).sum()
@@ -249,25 +321,51 @@ class Simulation:
 
     @property
     def production_price_index(self) -> float:
+        """float: Aggregate production price index across all countries."""
         current_production = [self.countries[c].firms.ts.current("production").sum() for c in self.countries.keys()]
         initial_production = [self.countries[c].firms.ts.initial("production").sum() for c in self.countries.keys()]
         return np.sum(current_production) / np.sum(initial_production)
 
-    def run(self):
+    def run(self) -> None:
+        """Run the complete simulation for the configured number of timesteps.
+
+        Executes the simulation from the current state until t_max iterations
+        have been completed. Each iteration represents one time period in the model.
+        """
         for _ in range(self.t_max):
             self.iterate()
 
     def save_random_seed(self, h5_file: h5py.File) -> None:
+        """Save the random seed to the HDF5 file metadata.
+
+        Args:
+            h5_file (h5py.File): Open HDF5 file to save to
+        """
         if self.random_seed:
             h5_file.attrs["random_seed"] = self.random_seed
         else:
             h5_file.attrs["random_seed"] = "no_seed"
 
     def save_configuration(self, h5_file: h5py.File) -> None:
+        """Save the simulation configuration to the HDF5 file metadata.
+
+        Args:
+            h5_file (h5py.File): Open HDF5 file to save to
+        """
         conf_string = self.configuration.model_dump()
         h5_file.attrs["configuration"] = str(conf_string)
 
     def save(self, save_dir: Path | str, file_name: str):
+        """Save the complete simulation state to an HDF5 file.
+
+        Saves all simulation data including country states, market states,
+        configuration, and random seed state to a file for later analysis
+        or continuation.
+
+        Args:
+            save_dir (Path | str): Directory to save the file in
+            file_name (str): Name of the output file
+        """
         if isinstance(save_dir, str):
             save_dir = Path(save_dir)
         with h5py.File(save_dir / file_name, "w") as f:
@@ -280,10 +378,24 @@ class Simulation:
                 country.save_to_h5(f)
 
     def shallow_df_dict(self):
+        """Create a dictionary of shallow (summary) DataFrames for each country.
+
+        Returns:
+            dict: Dictionary mapping country codes to summary DataFrames
+        """
         df_dict = {country: self.countries[country].shallow_output() for country in self.countries}
         return df_dict
 
     def shallow_hdf_save(self, save_dir: Path | str, file_name: str):
+        """Save a simplified version of the simulation results to an HDF5 file.
+
+        Saves summary statistics and key metrics for each country, using less
+        storage space than a full save.
+
+        Args:
+            save_dir (Path | str): Directory to save the file in
+            file_name (str): Name of the output file
+        """
         if isinstance(save_dir, str):
             save_dir = Path(save_dir)
         for country_name, country in self.countries.items():
@@ -293,21 +405,31 @@ class Simulation:
             industry_df.to_hdf(save_dir / file_name, key=f"{country_name}_industries", mode="a")
 
     def get_country_shallow_output(self, country: str):
+        """Get summary statistics for a specific country.
+
+        Args:
+            country (str): Country code to get data for
+
+        Returns:
+            pd.DataFrame: DataFrame containing summary statistics for the country
+        """
         return self.countries[country].shallow_output()
 
 
 def check_compatibility(
     country_data_configuration: CountryDataConfiguration, country_sim_configuration: CountryConfiguration
 ) -> bool:
-    """
-    Check the compatibility of the datawrapper and the simulation configuration for a given country.
+    """Check if data and simulation configurations are compatible for a country.
+
+    Verifies that key parameters in the data configuration match those in the
+    simulation configuration to ensure consistency in the model.
 
     Args:
-        country_data_configuration (CountryDataConfiguration): The data configuration.
-        country_sim_configuration (SimulationConfiguration): The simulation configuration.
+        country_data_configuration (CountryDataConfiguration): Configuration used in data preprocessing
+        country_sim_configuration (CountryConfiguration): Configuration for simulation
 
     Returns:
-        bool: True if the datawrapper and the simulation configuration are compatible, False otherwise.
+        bool: True if configurations are compatible, False otherwise
     """
     firm_data_conf = country_data_configuration.firms_configuration
 
@@ -326,4 +448,9 @@ def check_compatibility(
 
 @njit
 def set_seed(seed: int):
+    """Set the random seed for numba-compiled functions.
+
+    Args:
+        seed (int): Random seed value
+    """
     np.random.seed(seed)

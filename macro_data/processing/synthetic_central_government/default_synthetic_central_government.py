@@ -1,3 +1,29 @@
+"""Module for preprocessing synthetic central government data.
+
+This module provides a concrete implementation for preprocessing central government data
+that will be used to initialize behavioral models. Key preprocessing includes:
+
+1. Data Collection and Processing:
+   - Historical benefits data preparation
+   - Tax revenue data organization
+   - Initial state calculations
+
+2. Parameter Estimation:
+   - Benefits model estimation
+   - Tax revenue estimation
+   - Data validation and consistency checks
+
+3. Data Organization:
+   - Standard data preprocessing
+   - Exogenous data preprocessing
+   - Historical data processing
+
+Note:
+    This module is NOT used for simulating government behavior. It preprocesses
+    data that will be used to initialize behavioral models in the simulation package.
+    The actual government decisions and operations are implemented elsewhere.
+"""
+
 from typing import Optional
 
 import pandas as pd
@@ -11,6 +37,35 @@ from macro_data.readers.default_readers import DataReaders
 
 
 class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
+    """Default implementation for preprocessing central government data.
+
+    This class preprocesses and organizes central government data by collecting historical
+    data and estimating parameters. These will be used to initialize behavioral models,
+    but this class does NOT implement any behavioral logic.
+
+    The class provides two preprocessing paths:
+    1. Standard preprocessing using historical data
+    2. Exogenous data preprocessing when available
+
+    The preprocessing includes:
+    - Benefits data organization
+    - Tax revenue parameter estimation
+    - Initial state calculations
+    - Model parameter estimation
+
+    Note:
+        This is a data container class. The actual government behavior (spending,
+        tax policy, etc.) is implemented in the simulation package, which uses
+        these preprocessed parameters.
+
+    Attributes:
+        country_name (str): Country identifier for data collection
+        year (int): Reference year for preprocessing
+        central_gov_data (pd.DataFrame): Preprocessed government data
+        other_benefits_model (Optional[LinearRegression]): Model for estimating other benefits
+        unemployment_benefits_model (Optional[LinearRegression]): Model for estimating unemployment benefits
+    """
+
     def __init__(
         self,
         country_name: str,
@@ -19,16 +74,14 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
         other_benefits_model: Optional[LinearRegression],
         unemployment_benefits_model: Optional[LinearRegression],
     ):
-        """
-        Represents a synthetic central government.
+        """Initialize the central government data container.
 
-        Attributes:
-            country_name (str): The name of the country.
-            year (int): The year.
-            central_gov_data (pd.DataFrame): The central government data.
-            other_benefits_model (Optional[LinearRegression]): The model for other benefits (optional).
-            unemployment_benefits_model (Optional[LinearRegression]): A linear regression model to determine unemployment benefits,
-                                                                    based on e.g. unemployment rate and inflation (optional).
+        Args:
+            country_name (str): Country identifier for data collection
+            year (int): Reference year for preprocessing
+            central_gov_data (pd.DataFrame): Initial data to preprocess
+            other_benefits_model (Optional[LinearRegression]): Model for estimating other benefits
+            unemployment_benefits_model (Optional[LinearRegression]): Model for estimating unemployment benefits
         """
         super().__init__(
             country_name,
@@ -48,24 +101,29 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
         regression_window: int = 48,
         equity_injection: float = 0.0,
     ) -> SyntheticCentralGovernment:
-        """
-        Create a synthetic central government object from a DataReaders object.
+        """Create a preprocessed central government data container using standard data sources.
 
-        This first checks if exogenous data is available for the country and year. If so, it uses this data to fit a model
-        for unemployment benefits and other benefits. If not, it sets the models to None.
+        This method preprocesses data using historical sources to prepare:
+        1. Benefits data (unemployment and other benefits)
+        2. Initial debt levels
+        3. Parameter estimates for benefits models
 
-        Then it returns a SyntheticCentralGovernment object with the fitted models and the current values of the benefits.
+        The preprocessing steps:
+        1. Check for exogenous data availability
+        2. If available, estimate benefits models using historical data
+        3. If not available, use direct historical values
+        4. Prepare initial state data
 
-        Arguments:
-            readers (DataReaders): DataReaders object.
-            country_name (str): Name of the country.
-            year (int): Year.
-            year_range (int, optional): Number of years to use for fitting the benefits models. Defaults to 10.
-            regression_window (int, optional): Number of months to use for fitting the benefits models. Defaults to 48.
-            equity_injection (float, optional): Amount of equity injection. Defaults to 0.0.
+        Args:
+            readers (DataReaders): Data source readers
+            country_name (Country): Country to preprocess data for
+            year (int): Reference year for preprocessing
+            year_range (int, optional): Years of historical data to use. Defaults to 10.
+            regression_window (int, optional): Months of data for model estimation. Defaults to 48.
+            equity_injection (float, optional): Initial bank support level. Defaults to 0.0.
 
         Returns:
-            SyntheticCentralGovernment: Synthetic central government object.
+            SyntheticCentralGovernment: Container with preprocessed government data
         """
         country_exogenous_data = readers.get_exogenous_data(country_name)
         if country_exogenous_data is not None:
@@ -129,16 +187,19 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
 
 
 def build_unemployment_model(benefits_inflation_data: pd.DataFrame, regression_window: int = 48):
-    """
-    Build a linear regression model to predict the growth ratio of unemployment benefits based on
-    the real CPI inflation and the unemployment rate.
+    """Estimate a model for preprocessing unemployment benefits data.
 
-    Parameters:
-    - benefits_inflation_data (pd.DataFrame): DataFrame containing the benefits inflation data.
-    - regression_window (int): Number of months to consider for the regression window.
+    This function estimates parameters for preprocessing unemployment benefits by:
+    1. Computing historical growth ratios
+    2. Fitting a model based on inflation and unemployment
+    3. Preparing parameters for initialization
+
+    Args:
+        benefits_inflation_data (pd.DataFrame): Historical benefits and inflation data
+        regression_window (int, optional): Months of data for estimation. Defaults to 48.
 
     Returns:
-    - model (LinearRegression): The trained linear regression model if there is enough data, otherwise None.
+        LinearRegression: Estimated model for preprocessing, or None if insufficient data
     """
     benefits_inflation_data["Unemployment benefits growth ratio"] = (
         1 + benefits_inflation_data["Unemployment Benefits"].pct_change()
@@ -156,18 +217,20 @@ def build_unemployment_model(benefits_inflation_data: pd.DataFrame, regression_w
 
 
 def build_other_benefits_model(benefits_inflation_data: pd.DataFrame, regression_window: int = 48):
-    """
-    Build a linear regression model to predict the growth ratio of other benefits (i.e. benefits that are not
-    unemployment benefits) based on real CPI inflation and unemployment rate.
+    """Estimate a model for preprocessing other benefits data.
 
-    Parameters:
-        benefits_inflation_data (pd.DataFrame): DataFrame containing the benefits inflation data.
-        regression_window (int, optional): Number of months to consider for the regression window. Defaults to 48.
+    This function estimates parameters for preprocessing non-unemployment benefits by:
+    1. Computing historical growth ratios
+    2. Fitting a model based on inflation and unemployment
+    3. Preparing parameters for initialization
+
+    Args:
+        benefits_inflation_data (pd.DataFrame): Historical benefits and inflation data
+        regression_window (int, optional): Months of data for estimation. Defaults to 48.
 
     Returns:
-        model (LinearRegression): Linear regression model trained on the selected data, or None if no data is available.
+        LinearRegression: Estimated model for preprocessing, or None if insufficient data
     """
-    # select a regression window with a span of a given amount of months
     benefits_inflation_data["Other benefits growth ratio"] = (
         1 + benefits_inflation_data["Other Total Benefits"].pct_change()
     )

@@ -1,3 +1,32 @@
+"""Module for preprocessing default synthetic firm data.
+
+This module provides a concrete implementation for preprocessing firm-level data
+using standard data sources (OECD, Eurostat, Compustat). Key preprocessing includes:
+
+1. Data Source Integration:
+   - OECD economic indicators
+   - Eurostat business statistics
+   - Compustat firm-level data
+   - National accounts data
+
+2. Initial State Processing:
+   - Industry-level aggregates
+   - Firm size distributions
+   - Financial positions
+   - Production parameters
+
+3. Parameter Estimation:
+   - Productivity metrics
+   - Input-output relationships
+   - Tax rates
+   - Interest rates
+
+Note:
+    This module is NOT used for simulating firm behavior. It only handles
+    the preprocessing and organization of data from standard sources that will
+    later be used to initialize behavioral models in the simulation package.
+"""
+
 import logging
 from typing import Optional
 
@@ -23,6 +52,48 @@ from macro_data.readers.emissions.emissions_reader import EmissionsData
 
 
 class DefaultSyntheticFirms(SyntheticFirms):
+    """Container for preprocessed firm data using standard data sources.
+
+    This class provides a concrete implementation for preprocessing firm-level data
+    using standard data sources (OECD, Eurostat, Compustat). It processes and
+    organizes data about firms' characteristics, financial positions, and production
+    parameters. It does NOT implement any firm behavior - it only handles data
+    preprocessing.
+
+    The preprocessing workflow includes:
+    1. Data Collection:
+       - Reading from standard data sources
+       - Handling missing data
+       - Currency conversion
+       - Scale adjustment
+
+    2. Firm Structure:
+       - Industry classification
+       - Size distribution estimation
+       - Employee allocation
+       - Bank relationship mapping
+
+    3. Financial Processing:
+       - Balance sheet construction
+       - Income statement elements
+       - Tax calculations
+       - Interest computations
+
+    4. Production Parameters:
+       - Input requirements
+       - Productivity metrics
+       - Cost structures
+       - Initial inventory levels
+
+    Note:
+        This is a data container class. The actual firm behavior is implemented
+        in the simulation package, which uses this preprocessed data for
+        initialization.
+
+    Attributes:
+        Inherits all attributes from SyntheticFirms base class.
+    """
+
     def __init__(
         self,
         country_name: str,
