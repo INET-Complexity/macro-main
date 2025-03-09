@@ -1,3 +1,44 @@
+"""Module for matching households with housing units in the property market.
+
+This module handles the matching of households with housing units based on ownership
+and rental relationships. It uses preprocessed data about:
+1. Households:
+   - Tenure status (owner/renter)
+   - Property ownership
+   - Rental income
+   - Housing preferences
+
+2. Housing Units:
+   - Property values
+   - Rental rates
+   - Ownership status
+   - Social housing designation
+
+The matching process involves:
+1. Owner-Occupied Housing:
+   - Identifying homeowners
+   - Assigning property values
+   - Computing imputed rents
+   - Recording ownership relationships
+
+2. Rental Market:
+   - Processing landlord properties
+   - Setting rental rates
+   - Handling social housing
+   - Matching renters with units
+
+3. Data Validation:
+   - Removing outliers
+   - Imputing missing values
+   - Ensuring market consistency
+   - Validating relationships
+
+Note:
+    This module focuses on the initial matching of households with housing units.
+    The actual housing market dynamics (buying, selling, rental agreements)
+    are implemented in the simulation package.
+"""
+
 import numpy as np
 import pandas as pd
 import scipy as sp
@@ -18,29 +59,40 @@ def set_housing_df(
     social_housing_rent: float,
     total_imputed_rent: float,
 ) -> pd.DataFrame:
-    """
-    Set the housing market data. This is done by first handling owner-occupied property, where owners are identified through
-    the synthetic population data. The corresponding household data is then updated, to indicate owner-occupied property.
+    """Create and initialize the housing market dataset.
 
-    Next, the rental market data is created. This is done by first identifying the number of additional (avaiable for rent) properties and
-    the ids of the landlords (households with additional properties).
-    Rental income and property values are also computed, and are returned.
+    This function processes housing market data through several steps:
+    1. Owner-Occupied Properties:
+       - Identify homeowners from population data
+       - Set property values and relationships
+       - Compute imputed rents
 
-    These two datasets (owner-occupied and rental) are then combined into a single DataFrame, which is processed to remove outliers and to
-    fill missing values. Rent below the social housing rent is set to the social housing rent.
+    2. Rental Properties:
+       - Process landlord holdings
+       - Set rental rates and property values
+       - Handle social housing allocation
 
-    Imputed rent for household owners is set to the corresponding rental value of their home.
+    3. Data Cleaning:
+       - Remove outliers in values and rents
+       - Impute missing data points
+       - Validate price-rent relationships
+       - Ensure social housing compliance
 
-    Finally, renters are matched to properties, and the results are recorded.
+    4. Market Matching:
+       - Match renters with available properties
+       - Record tenant-landlord relationships
+       - Update household records
 
     Args:
-        synthetic_population (SyntheticPopulation): An instance of the SyntheticPopulation class.
-        rental_income_taxes (float): The rental income tax rate.
-        social_housing_rent (float): The social housing rent.
-        total_imputed_rent (float): The total imputed rent.
+        synthetic_population (SyntheticPopulation): Population data with
+            household information
+        rental_income_taxes (float): Tax rate on rental income
+        social_housing_rent (float): Standardized social housing rent
+        total_imputed_rent (float): Total imputed rent for owned properties
 
     Returns:
-        pd.DataFrame: A DataFrame containing the housing market data.
+        pd.DataFrame: Complete housing market data with ownership and
+            rental relationships
     """
     owners_df = create_owners_df(synthetic_population)
 
@@ -110,23 +162,32 @@ def set_housing_df(
 
 
 def create_owners_df(synthetic_population: SyntheticPopulation) -> pd.DataFrame:
-    """
-    Create a DataFrame of owners' information from the synthetic population.
-    Owners are identified through the synthetic population data, through tenure status == 1.
+    """Create dataset of owner-occupied properties.
 
-    House data is created, so that each owner has a corresponding house ID, owner-occupied status, corresponding owner household ID,
-    and the inhabitant household ID (which is the same as the owner household ID for owners).
-    Values of house data are created by merging the owner household ID with the value of the main residence from the household data.
+    This function processes homeowner data by:
+    1. Identifying owner-occupiers from tenure status
+    2. Assigning unique property identifiers
+    3. Setting property values from household data
+    4. Establishing ownership relationships
 
-    Rent is initialised to NaN, but will be filled later using imputed rent.
+    The process ensures:
+    - Each owner has a unique property ID
+    - Property values match household records
+    - Ownership relationships are properly recorded
+    - Owner-occupancy status is flagged
 
     Args:
-        synthetic_population (SyntheticPopulation): The synthetic population data.
+        synthetic_population (SyntheticPopulation): Population data with
+            household tenure information
 
     Returns:
-        pd.DataFrame: A DataFrame containing owners' information, including house ID,
-                      owner-occupied status, corresponding owner household ID,
-                      corresponding inhabitant household ID, value of the main residence, and rent.
+        pd.DataFrame: Owner-occupied property dataset with:
+            - House ID: Unique property identifier
+            - Is Owner-Occupied: Always True for this dataset
+            - Corresponding Owner Household ID: Owner identifier
+            - Corresponding Inhabitant Household ID: Same as owner
+            - Value: Property value from household data
+            - Rent: NaN (filled later with imputed rent)
     """
     # Handle households owning their house
     households_owning = synthetic_population.household_data["Tenure Status of the Main Residence"] == 1
@@ -160,31 +221,34 @@ def create_rental_df(
     rental_income: np.ndarray,
     rental_income_taxes: float,
 ) -> pd.DataFrame:
-    """
-    Create a rental DataFrame based on the given parameters.
-    A DataFrame is created, with a row for each rental property (of which there are num_additional_properties.sum()).
-    The index is set to start at id_start, and the house ID is set to the index + id_start.
-    The owner-occupied status is set to False, and the corresponding owner household ID is set to the landlord ID.
-    The inhabitant ID is not set, as this will be done through the matching.
+    """Create dataset of rental properties.
 
-    The rent of the house is computed from the rental income of the landlord, and the number of additional properties owned. It is assumed
-    that the landlord rents all their additional properties at the same price. The same assumption holds for the value of the property.
+    This function processes rental property data by:
+    1. Creating entries for each rental unit
+    2. Assigning property values from landlord data
+    3. Computing rental rates from income data
+    4. Establishing ownership relationships
+
+    The process assumes:
+    - Equal distribution of landlord property values
+    - Uniform rental rates across landlord properties
+    - Tax-adjusted rental income allocation
 
     Args:
-        num_additional_properties (np.ndarray): Array containing the number of additional properties for each landlord.
-        landlord_ids (np.ndarray | list): Array or list of landlord IDs.
-        property_values (np.ndarray): Array containing the values of the properties.
-        id_start (int): Starting ID for the rental properties.
-        rental_income (np.ndarray): Array containing the rental income for each landlord.
-        rental_income_taxes (float): Rental income tax rate.
+        num_additional_properties (np.ndarray): Properties per landlord
+        landlord_ids (np.ndarray | list): Unique landlord identifiers
+        property_values (np.ndarray): Total property values per landlord
+        id_start (int): Starting ID for rental properties
+        rental_income (np.ndarray): Rental income per landlord
+        rental_income_taxes (float): Tax rate on rental income
 
     Returns:
-        pd.DataFrame: Rental DataFrame with the following columns:
-            - "House ID": ID of the rental property.
-            - "Is Owner-Occupied": Boolean indicating if the property is owner-occupied.
-            - "Corresponding Owner Household ID": ID of the owner household.
-            - "Rent": Rental amount for the property.
-            - "Value": Value of the property.
+        pd.DataFrame: Rental property dataset with:
+            - House ID: Unique property identifier
+            - Is Owner-Occupied: Always False
+            - Corresponding Owner Household ID: Landlord identifier
+            - Rent: Computed rental rate
+            - Value: Allocated property value
     """
     number_available_properties = num_additional_properties.sum()
     rental_df = pd.DataFrame(index=range(number_available_properties))
@@ -222,23 +286,29 @@ def create_rental_df(
 
 
 def housing_info_from_population(rental_income_taxes: float, synthetic_population: SyntheticPopulation):
-    """
-    Calculate housing information from the synthetic population data.
+    """Extract housing market information from population data.
 
-    Renting households are identified through the tenure status of the main residence (== 0).
-    Rental income is readjusted to match the rent paid minus taxes.
-    The number of additional properties is computed, along with the ids of landlords (households with additional properties).
+    This function processes population data to:
+    1. Identify renters and rental demand
+    2. Process landlord property holdings
+    3. Adjust rental income for tax effects
+    4. Handle social housing allocation
+
+    The process ensures:
+    - Rental supply matches demand where possible
+    - Social housing fills supply gaps
+    - Tax effects are properly accounted for
+    - Property allocations are consistent
 
     Args:
-        rental_income_taxes (float): The tax rate applied to rental income.
-        synthetic_population (SyntheticPopulation): The synthetic population data.
+        rental_income_taxes (float): Tax rate on rental income
+        synthetic_population (SyntheticPopulation): Population data with
+            housing information
 
     Returns:
-        tuple: A tuple containing the following information:
-            - landlord_ids (numpy.ndarray): An array of landlord IDs.
-            - num_additional_properties (numpy.ndarray): An array of the number of additional properties owned by each landlord.
-            - property_values (numpy.ndarray): An array of the values of the additional properties.
-            - rental_income (numpy.ndarray): An array of the rental income from the additional properties.
+        tuple:
+            - landlord_ids (np.ndarray): Unique landlord identifiers
+            - num_additional_properties (np.ndarray): Properties per landlord
     """
     num_renters = int(np.sum(synthetic_population.household_data["Tenure Status of the Main Residence"] == 0))
     num_other_properties_owned = int(
