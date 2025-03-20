@@ -733,8 +733,8 @@ class Households(Agent):
             assumed_mortgage_maturity=assumed_mortgage_maturity,
             rental_income_taxes=rental_income_taxes,
         )
-        self.ts.max_price_willing_to_pay.append(max_price_willing_to_pay)
-        self.ts.max_rent_willing_to_pay.append(max_rent_willing_to_pay)
+        self.ts.max_price_willing_to_pay_mean.append([np.mean(max_price_willing_to_pay)])
+        self.ts.max_rent_willing_to_pay_mean.append([np.mean(max_rent_willing_to_pay)])
         
         # Add households_hoping_to_move to household states
         self.ts.households_hoping_to_move.append([np.sum(households_hoping_to_move)])
