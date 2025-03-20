@@ -735,6 +735,9 @@ class Households(Agent):
         )
         self.ts.max_price_willing_to_pay.append(max_price_willing_to_pay)
         self.ts.max_rent_willing_to_pay.append(max_rent_willing_to_pay)
+        
+        # Add households_hoping_to_move to household states
+        self.ts.households_hoping_to_move.append([np.sum(households_hoping_to_move)])
 
         # Set price of properties of households that are hoping to move
         ind_mhr_temp_sale = housing_data["Corresponding Owner Household ID"].isin(households_hoping_to_move)

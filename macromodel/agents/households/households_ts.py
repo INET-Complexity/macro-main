@@ -160,6 +160,7 @@ def create_households_timeseries(
         total_target_mortgage=[0.0],
         received_mortgages=np.full(len(data), np.nan),
         total_received_mortgages=[0.0],
+        households_hoping_to_move=[0.0],
         #
         debt_installments=data["Debt Installments"].values,
         total_debt_installments=[data["Debt Installments"].values.sum()],

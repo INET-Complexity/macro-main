@@ -67,6 +67,7 @@ def create_housing_market_timeseries(
             - total_number_of_houses_rented: Rented properties
             - total_number_of_houses_owner_occupied: Owner-occupied
             - total_number_of_houses_unoccupied: Vacant properties
+            - households_hoping_to_move: Households hoping to move
 
     Note:
         The histograms provide distributions of various metrics,
@@ -95,5 +96,5 @@ def create_housing_market_timeseries(
         total_number_of_houses_owner_occupied=[
             np.sum(data["Corresponding Inhabitant Household ID"] == data["Corresponding Owner Household ID"])
         ],
-        total_number_of_houses_unoccupied=[np.sum(data["Corresponding Inhabitant Household ID"] == -1)],
+        total_number_of_houses_unoccupied=[np.sum(data["Corresponding Inhabitant Household ID"] == -1)]
     )

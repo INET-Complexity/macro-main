@@ -1463,3 +1463,157 @@ class Country:
     def n_individuals(self) -> int:
         """int: Total number of individual agents in the economy."""
         return self.individuals.n_individuals
+
+    def deep_output(self):
+        """
+        Get a comprehensive set of output variables for a country.
+        Returns a pandas DataFrame with time series data for many economic indicators.
+        Still only two-dimensional so not too heavy to use for Monte Carlo runs
+        """
+        data_dict = {
+            # Firm-level variables - Direct method calls
+            "Sales": self.firms.total_sales(),
+            "Production": self.firms.total_production(),
+            "Taxes Paid on Production": self.firms.total_taxes_paid_on_production(),
+            "Used Input Costs": self.firms.total_used_input_costs(),
+            "Bought Input Costs": self.firms.total_bought_input_costs(),
+            "Operating Surplus": self.firms.total_operating_surplus(),
+            "Wages": self.firms.total_wages(),
+            "Inventory Changes": self.firms.total_inventory_change(),
+            "Profits": self.firms.total_profits(),
+            "Capital Bought": self.firms.total_capital_bought(),
+            
+            # Firm-level variables - Using get_aggregate
+            "Total Debt": self.firms.ts.get_aggregate("total_debt"),
+            "Total Deposits": self.firms.ts.get_aggregate("total_deposits"),
+            "Debt Installments": self.firms.ts.get_aggregate("debt_installments"),
+            "Desired Labour Inputs": self.firms.ts.get_aggregate("desired_labour_inputs"),
+            "Actual Labour Inputs": self.firms.ts.get_aggregate("labour_inputs"),
+            "Normalised Labour Inputs": self.firms.ts.get_aggregate("normalised_labour_inputs"),
+            
+            # Household variables - Direct method calls
+            "Household Consumption": self.households.total_consumption(),
+            "Consumption Expansion Loan Debt": self.households.consumption_loan_debt(),
+            "Mortgage Debt": self.households.mortgage_debt(),
+            
+            # Household variables - Using get_aggregate
+            "Household Income (Employee)": self.households.ts.get_aggregate("total_income_employee"),
+            "Household Income (Rental)": self.households.ts.get_aggregate("total_income_rental"),
+            "Household Income (Social Transfers)": self.households.ts.get_aggregate("total_income_social_transfers"),
+            "Household Income (Financial Assets)": self.households.ts.get_aggregate("total_income_financial_assets"),
+            "Household Debt Installments": self.households.ts.get_aggregate("total_debt_installments"),
+            
+            # Government variables - Direct method calls
+            "Government Consumption": self.government_entities.total_consumption(),
+            "Taxes on Products": self.central_government.total_taxes(),
+
+            # Government variables - Using get_aggregate
+            "Total Other Social Transfers": self.central_government.ts.get_aggregate("total_other_benefits"),
+            "Government Rent Received": self.central_government.ts.get_aggregate("total_rent_received"),
+            
+            # Economy-wide variables - Direct method calls
+            "Imports": self.economy.total_imports(),
+            "Exports": self.economy.total_exports(),
+            "PPI": self.economy.total_ppi_inflation(),
+            "CPI": self.economy.total_cpi_inflation(),
+            "CFPI": self.economy.total_cfpi_inflation(),
+            "Gross Output": self.firms.total_sales() + self.firms.total_taxes_paid_on_production(),
+            "Unemployment Rate": self.economy.unemployment_rate(),
+            
+            # Economy-wide variables - Using get_aggregate
+            "Total Growth": self.economy.ts.get_aggregate("total_growth"),
+            
+            # Financial variables - Using get_aggregate
+            "Central Bank Policy Rate": self.central_bank.ts.get_aggregate("policy_rate"),
+            
+            # Market variables - Using get_aggregate
+            "Total Real Rent Paid": self.economy.ts.get_aggregate("total_real_rent_paid"),
+            "Total Imputed Rent": self.economy.ts.get_aggregate("total_imp_rent_paid"),
+            "Total Rent Received": self.economy.ts.get_aggregate("total_real_rent_rec"),
+            #"Total Industry Supply": self.goods_market.ts.get_aggregate("total_industry_supply"), #not working
+            #"Total Industry Demand": self.goods_market.ts.get_aggregate("total_industry_demand"), #not working
+            
+            # Housing Market variables - Using get_aggregate
+            "Total Number of Houses Rented": self.housing_market.ts.get_aggregate("total_number_of_houses_rented"),
+            "Total Number of Houses Owner Occupied": self.housing_market.ts.get_aggregate("total_number_of_houses_owner_occupied"),
+            "Total Number of Houses Unoccupied": self.housing_market.ts.get_aggregate("total_number_of_houses_unoccupied"),
+            "Total Number of Houses Bought": self.housing_market.ts.get_aggregate("total_number_of_bought_houses"),
+            "Total Number of Newly Rented Houses": self.housing_market.ts.get_aggregate("total_number_of_newly_rented_houses"),
+            "Total Property Value": self.housing_market.compute_total_property_value(),
+            "Number of Households Hoping to Move": self.households.ts.get_aggregate("households_hoping_to_move"),
+            "Maximum Price Willing to Pay": self.households.ts.get_aggregate("max_price_willing_to_pay"),
+            "Maximum Rent Willing to Pay": self.households.ts.get_aggregate("max_rent_willing_to_pay"),
+            
+            # Credit Market variables - Using get_aggregate
+            "Total Short Term Loans": self.credit_market.ts.get_aggregate("total_outstanding_loans_granted_firms_short_term"),
+            "Total Long Term Loans": self.credit_market.ts.get_aggregate("total_outstanding_loans_granted_firms_long_term"),
+            "Total Consumption Expansion Loans": self.credit_market.ts.get_aggregate("total_outstanding_loans_granted_households_consumption"),
+            "Total Mortgage Loans": self.credit_market.ts.get_aggregate("total_outstanding_loans_granted_mortgages"),
+            "New Short Term Loans": self.credit_market.ts.get_aggregate("total_newly_loans_granted_firms_short_term"),
+            "New Long Term Loans": self.credit_market.ts.get_aggregate("total_newly_loans_granted_firms_long_term"),
+            "New Consumption Expansion Loans": self.credit_market.ts.get_aggregate("total_newly_loans_granted_households_consumption"),
+            "New Mortgage Loans": self.credit_market.ts.get_aggregate("total_newly_loans_granted_mortgages"),
+            
+            # Labour Market variables - Using get_aggregate
+            "Number of Employed Individuals (Before Clearing)": self.labour_market.ts.get_aggregate("num_employed_individuals_before_clearing"),
+            "Number of Individuals Newly Joining": self.labour_market.ts.get_aggregate("num_individuals_newly_joining"),
+            "Number of Individuals Newly Fired": self.labour_market.ts.get_aggregate("num_individuals_newly_fired"),
+            "Number of Individuals Newly Randomly Fired": self.labour_market.ts.get_aggregate("num_individuals_newly_randomly_fired"),
+            "Number of Individuals Newly Randomly Quit": self.labour_market.ts.get_aggregate("num_individuals_newly_randomly_quit"),
+            "Number of Individuals Newly Leaving": self.labour_market.ts.get_aggregate("num_individuals_newly_leaving"),
+            "Number of Employed Individuals by Sector": self.labour_market.ts.get_aggregate("num_employed_individuals_by_sector"),
+            "Average Individual Wages": self.individuals.ts.get_aggregate("employee_income"),
+            "Reservation Wages": self.individuals.ts.get_aggregate("reservation_wages"),
+            
+            # GDP and National Accounts variables - Using get_aggregate
+            "GDP (Output Approach)": self.economy.ts.get_aggregate("gdp_output"),
+            "GDP Growth (Output)": self.economy.ts.get_aggregate("gdp_output_growth"),
+            "GDP (Expenditure Approach)": self.economy.ts.get_aggregate("gdp_expenditure"),
+            "GDP Growth (Expenditure)": self.economy.ts.get_aggregate("gdp_expenditure_growth"),
+            "GDP (Income Approach)": self.economy.ts.get_aggregate("gdp_income"),
+            "GDP Growth (Income)": self.economy.ts.get_aggregate("gdp_income_growth"),
+            
+            # GDP Components - Using get_aggregate
+            "Total Output": self.economy.ts.get_aggregate("total_output"),
+            "Total Output Growth": self.economy.ts.get_aggregate("total_output_growth"),
+            "Total Intermediate Consumption": self.economy.ts.get_aggregate("total_intermediate_consumption"),
+            "Total Intermediate Consumption Growth": self.economy.ts.get_aggregate("total_intermediate_consumption_growth"),
+            "Gross Value Added": self.economy.ts.get_aggregate("total_gross_value_added"),
+            "Gross Value Added Growth": self.economy.ts.get_aggregate("total_gross_value_added_growth"),
+            
+            # Sectoral Value Added - Using get_aggregate
+            "Value Added - Agriculture": self.economy.ts.get_aggregate("total_gross_value_added_a"),
+            "Value Added - Industry": self.economy.ts.get_aggregate("total_gross_value_added_bcde"),
+            "Value Added - Manufacturing": self.economy.ts.get_aggregate("total_gross_value_added_c"),
+            "Value Added - Construction": self.economy.ts.get_aggregate("total_gross_value_added_f"),
+            "Value Added - Services": self.economy.ts.get_aggregate("total_gross_value_added_ghijklmnopqrstu"),
+            "Value Added - Trade": self.economy.ts.get_aggregate("total_gross_value_added_ghi"),
+            "Value Added - Information": self.economy.ts.get_aggregate("total_gross_value_added_j"),
+            "Value Added - Finance": self.economy.ts.get_aggregate("total_gross_value_added_k"),
+            "Value Added - Real Estate": self.economy.ts.get_aggregate("total_gross_value_added_l"),
+            "Value Added - Professional": self.economy.ts.get_aggregate("total_gross_value_added_mn"),
+            "Value Added - Public Admin": self.economy.ts.get_aggregate("total_gross_value_added_opq"),
+            "Value Added - Other Services": self.economy.ts.get_aggregate("total_gross_value_added_rstu"),
+            
+            # Taxes and Subsidies - Using get_aggregate
+            "Taxes Less Subsidies on Products": self.economy.ts.get_aggregate("total_taxes_less_subsidies_on_products"),
+            "Taxes on Production": self.economy.ts.get_aggregate("total_taxes_on_production"),
+            
+            # Final Consumption Expenditure - Using get_aggregate
+            "Household Final Consumption": self.economy.ts.get_aggregate("total_household_fce"),
+            "Government Final Consumption": self.economy.ts.get_aggregate("total_government_fce"),
+            "Gross Fixed Capital Formation": self.economy.ts.get_aggregate("total_gross_fixed_capital_formation"),
+            "Changes in Inventories": self.economy.ts.get_aggregate("total_changes_in_inventories"),
+        }
+        
+        if self.add_emissions:
+            data_dict.update({
+                # Emissions variables - Direct method calls
+                "Firm Input Emissions": self.firms.get_total_inputs_emissions(),
+                "Firm Capital Emissions": self.firms.get_total_capital_emissions(),
+                "Household Consumption Emissions": self.households.consumption_emissions(),
+                "Household Investment Emissions": self.households.investment_emissions(),
+                "Government Emissions": self.government_entities.emissions()
+            })
+        
+        return pd.DataFrame(data_dict)

@@ -415,6 +415,13 @@ class Simulation:
         """
         return self.countries[country].shallow_output()
 
+    def get_country_deep_output(self, country: str):
+        """Get a comprehensive set of output variables for a country.
+
+        Returns:
+            pd.DataFrame: DataFrame containing all economic indicators for the country
+        """
+        return self.countries[country].deep_output()
 
 def check_compatibility(
     country_data_configuration: CountryDataConfiguration, country_sim_configuration: CountryConfiguration
