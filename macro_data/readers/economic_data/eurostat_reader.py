@@ -428,16 +428,17 @@ class EuroStatReader:
         df = self.data["financial_balance_sheets"]
         country_name_short = country.to_two_letter_code()
         df = df.loc[df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S11,ASS,F2," + country_name_short]
-        if str(year) in df.columns:
-            res = df[str(year)].values[0]
-            if len(res) <= 2:
-                return np.nan
-            if " " in res:
-                return float(res[:-2]) * 1e6
-            else:
-                return float(res) * 1e6
-        else:
+        # Check if DataFrame is empty or year doesn't exist
+        if df.empty or str(year) not in df.columns:
             return np.nan
+            
+        res = df[str(year)].values[0]
+        if len(res) <= 2:
+            return np.nan
+        if " " in res:
+            return float(res[:-2]) * 1e6
+        else:
+            return float(res) * 1e6
 
     # historic domestic
     def get_total_bank_equity(self, country: str, year: int, proxy_country: str = "FRA") -> float:
