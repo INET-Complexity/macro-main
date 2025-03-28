@@ -150,7 +150,7 @@ def set_housing_df(
     rescale_factor = total_imputed_rent / housing_df.loc[owned_houses, "Rent"].sum()
     housing_df.loc[owned_houses, "Rent"] *= rescale_factor
 
-    owner_indices = synthetic_population.household_data["Tenure Status of the Main Residence"] == 1
+    owner_indices = synthetic_population.household_data["Tenure Status of the Main Residence"].isin([1, 2, 4])
     synthetic_population.household_data.loc[owner_indices, "Rent Imputed"] = housing_df.loc[owned_houses, "Rent"].values
 
     match_renters_to_properties(
@@ -189,7 +189,7 @@ def create_owners_df(synthetic_population: SyntheticPopulation) -> pd.DataFrame:
             - Rent: NaN (filled later with imputed rent)
     """
     # Handle households owning their house
-    households_owning = synthetic_population.household_data["Tenure Status of the Main Residence"] == 1
+    households_owning = synthetic_population.household_data["Tenure Status of the Main Residence"].isin([1, 2, 4])
     owners_df = pd.DataFrame(index=range(households_owning.sum()))
     owners_df["House ID"] = owners_df.index
 
@@ -338,20 +338,18 @@ def set_social_housing_renters(
     num_renters: int,
     synthetic_population: SyntheticPopulation,
 ):
-    """Harmonize social housing data with rental market information.
+    """Social housing allocation.
 
-    This function reconciles social housing data by:
-    1. Identifying eligible households from survey data
-    2. Matching with social housing records
-    3. Adjusting rental rates for consistency
-    4. Updating tenure status records
+    If there are more renters than surplus properties owned by owner-occupying households,
+    this function defines them as social renters:
+    1. Count how many renters there are
+    2. Count whether there are more renters than surplus properties
+    3. Assign those excess renters to social housing
+    4. Update those households' tenure status records
+    5. Update the rent they pay to the social housing rent level
 
-    The process ensures:
-    - Social housing allocations are consistent
-    - Rental rates match policy
-    - Tenure status is properly recorded
-    - Data is properly validated
-
+    This is a placeholder simplification pending further work to incorporate social housing data.
+    
     Args:
         num_other_properties_owned (int): Total private rental properties
         num_renters (int): Total number of renters
