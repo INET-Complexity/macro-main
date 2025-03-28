@@ -252,7 +252,7 @@ class EuroStatReader:
         if isinstance(country, str):
             country = Country(country)
         df = self.data["financial_balance_sheets"]
-        country_name_short = country.to_two_letter_code()
+        country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[
             df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S11,LIAB,F4," + country_name_short
         ]
@@ -281,7 +281,7 @@ class EuroStatReader:
         if isinstance(country, str):
             country = Country(country)
         df = self.data["financial_balance_sheets"]
-        country_name_short = country.to_two_letter_code()
+        country_name_short = country.self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[
             df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S12,LIAB,F4," + country_name_short
         ]
@@ -426,7 +426,7 @@ class EuroStatReader:
         if isinstance(country, str):
             country = Country(country)
         df = self.data["financial_balance_sheets"]
-        country_name_short = country.to_two_letter_code()
+        country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S11,ASS,F2," + country_name_short]
         # Check if DataFrame is empty or year doesn't exist
         if df.empty or str(year) not in df.columns:
@@ -819,7 +819,7 @@ class EuroStatReader:
             Returns ratio of imputed rent (CPA_L68A) to total real estate services (CPA_L68A + CPA_L68B)
         """
         df = self.data["real_estate_services"].set_index("freq,unit,stk_flow,induse,prod_na,geo\TIME_PERIOD")
-        country_name_short = country.to_two_letter_code()
+        country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         return float(df.at["A,MIO_NAC,TOTAL,P3_S14,CPA_L68A," + country_name_short, str(year)]) / (
             float(df.at["A,MIO_NAC,TOTAL,P3_S14,CPA_L68A," + country_name_short, str(year)])
             + float(df.at["A,MIO_NAC,TOTAL,P3_S14,CPA_L68B," + country_name_short, str(year)])
