@@ -44,3 +44,7 @@ def test__emissions(readers):
     assert data["coal"] > 0
     assert data["oil"] > 0
     assert data["gas"] > 0
+
+
+def test__readers_provincial_can(readers_provincial_can):
+    assert "CAN_AB" in readers_provincial_can.icio[2014].considered_countries
