@@ -5,6 +5,7 @@ import yaml
 
 from macro_data.configuration import DataConfiguration
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.readers import AGGREGATED_INDUSTRIES, ALL_INDUSTRIES
 from macro_data.readers.default_readers import DataReaders
 from macro_data.readers.exogenous_data import (
@@ -77,6 +78,45 @@ def readers_disagg_can(data_path):
         aggregate_industries=False,
         proxy_country_dict={canada: france},
         use_disagg_can_2014_reader=True,
+    )
+
+    return reader
+
+
+@pytest.fixture(scope="module", name="readers_provincial_can")
+def readers_provincial_can(data_path):
+    canada = Country("CAN")
+    france = Country("FRA")
+
+    regions_list = [
+        "CAN_AB",
+        "CAN_BC",
+        "CAN_MB",
+        "CAN_NB",
+        "CAN_NL",
+        "CAN_NS",
+        "CAN_ON",
+        "CAN_PE",
+        "CAN_QC",
+        "CAN_SK",
+    ]
+
+    regions = [Region.from_code(region) for region in regions_list]
+
+    regions_dict = {canada: regions}
+
+    reader = DataReaders.from_raw_data(
+        raw_data_path=data_path,
+        country_names=[Country("CAN")],
+        simulation_year=2014,
+        scale_dict={canada: 100000},
+        industries=ALL_INDUSTRIES,
+        force_single_hfcs_survey=True,
+        single_icio_survey=True,
+        aggregate_industries=False,
+        proxy_country_dict={canada: france},
+        use_provincial_can_reader=True,
+        regions_dict=regions_dict,
     )
 
     return reader
