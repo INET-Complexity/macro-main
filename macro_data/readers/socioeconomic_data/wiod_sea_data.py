@@ -1,10 +1,12 @@
 from datetime import date, datetime
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 
 import numpy as np
 import pandas as pd
 
+from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
 from macro_data.readers.io_tables.mappings import WIOD_AGGREGATE, WIOD_ALL
 from macro_data.readers.util.prune_util import prune_index
@@ -51,9 +53,11 @@ class WIODSEAReader:
         industries: list,
         exchange_rates: ExchangeRatesReader,
         value_added_dict: dict[str, pd.Series],
+        regions_dict: Optional[dict[Country, list[Region]]] = None,
     ) -> "WIODSEAReader":
         """
-        Aggregate socioeconomic data from a CSV file. Aggregation is done using a JSON file that maps sectors to aggregated sectors.
+        Aggregate socioeconomic data from a CSV file. Aggregation is done using a JSON file that maps sectors
+        to aggregated sectors.
 
         Args:
             path (Path | str): The path to the CSV file.
@@ -63,6 +67,7 @@ class WIODSEAReader:
             industries (list): The list of industries to include in the aggregation.
             exchange_rates (ExchangeRatesReader): The exchange rates reader.
             value_added_dict (dict[str, np.ndarray]): A dictionary containing the value added data.
+            regions_dict (Optional[dict[Country, list[Region]]]): A dictionary containing the regions for each country.
 
         Returns:
             WIOD_SEA_Data: An instance of the WIOD_SEA_Data class containing the aggregated data.
@@ -131,6 +136,18 @@ class WIODSEAReader:
             scale = np.copy(scale.values)
             for field in ["Value Added", "Labour Compensation", "Capital Compensation", "Capital Stock"]:
                 sea.loc[country, field] = (sea.loc[country, field] * scale).values
+
+        if regions_dict is not None:
+            for country, regions in regions_dict.items():
+                for region in regions:
+                    ratios = (value_added_dict[region] / value_added_dict[country]).values
+                    new = (sea.loc[country].copy().T * ratios).T
+                    new = pd.concat([new], keys=[region])
+                    new.index.names = sea.index.names
+                    new.columns.names = sea.columns.names
+                    # add the new rows to the sea dataframe
+                    sea = pd.concat([sea, new])
+                sea.drop(country, inplace=True)
 
         return cls(
             df=sea,
