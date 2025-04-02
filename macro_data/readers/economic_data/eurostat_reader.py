@@ -254,7 +254,9 @@ class EuroStatReader:
         Returns:
             float: Total non-financial firm debt in millions of national currency
         """
+        ratio = 1.0
         if isinstance(country, Region):
+            ratio = country.va_ratio
             country = country.parent_country
         if isinstance(country, str):
             country = Country(country)
@@ -268,9 +270,9 @@ class EuroStatReader:
             if len(res) <= 2:
                 return np.nan
             if " " in res:
-                return float(res[:-2]) * 1e6
+                return float(res[:-2]) * 1e6 * ratio
             else:
-                return float(res) * 1e6
+                return float(res) * 1e6 * ratio
         else:
             return np.nan
 
@@ -460,13 +462,13 @@ class EuroStatReader:
         country_name_short = country.to_two_letter_code()
         df = df.loc[df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S11,ASS,F2," + country_name_short]
         if str(year) in df.columns:
-            res = df[str(year)].values[0] * ratio
+            res = df[str(year)].values[0]
             if len(res) <= 2:
                 return np.nan
             if " " in res:
-                return float(res[:-2]) * 1e6
+                return float(res[:-2]) * 1e6 * ratio
             else:
-                return float(res) * 1e6
+                return float(res) * 1e6 * ratio
         else:
             return np.nan
 
@@ -842,7 +844,7 @@ class EuroStatReader:
             dates, total_deposits, total_debt = [], [], []
             for year in range(1970, 2024):
                 dep = self.get_total_nonfin_firm_deposits(country, year, ratio)
-                debt = self.get_total_nonfin_firm_debt(country, year, ratio)
+                debt = self.get_total_nonfin_firm_debt(country, year)
                 for month in range(1, 13):
                     dates.append(str(year) + "-" + str(month))
                     total_deposits.append(dep)
@@ -852,8 +854,8 @@ class EuroStatReader:
             return pd.DataFrame(
                 index=dates,
                 data={
-                    "Total Deposits": total_deposits * ratio,
-                    "Total Debt": total_debt * ratio,
+                    "Total Deposits": np.array(total_deposits, dtype=float) * ratio,
+                    "Total Debt": np.array(total_debt, dtype=float) * ratio,
                 },
             )
         except IndexError:
