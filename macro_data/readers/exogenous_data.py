@@ -38,6 +38,7 @@ class ExogenousCountryData:
         else:
             capital_formation_tax = readers.eurostat.taxrate_on_capital_formation(proxy_country, year)
 
+        print(f"\n=== Processing country: {country_name} ===")
         national_accounts_data = compile_national_accounts_data(
             national_accounts_growth,
             industry_vectors,
@@ -228,10 +229,25 @@ def compile_national_accounts_data(
         + initial_cf_tax * industry_vectors["Household Capital Inputs in LCU"].sum()
         + initial_exports_tax_paid
     )
+    print(f"\n=== GDP Calculation Debug ===")
+    print(f"initial_taxes_on_products breakdown:")
+    print(f"  - Taxes Less Subsidies: {industry_vectors['Taxes Less Subsidies in LCU'].sum()}")
+    print(f"  - VAT on Household Consumption: {initial_vat * industry_vectors['Household Consumption in LCU'].sum()}")
+    print(
+        f"  - CF Tax on Household Capital: {initial_cf_tax * industry_vectors['Household Capital Inputs in LCU'].sum()}"
+    )
+    print(f"  - Exports Tax: {initial_exports_tax_paid}")
+    print(f"  Total: {initial_taxes_on_products}")
 
     gross_fixed_capital_formation = (1 + initial_cf_tax) * industry_vectors[
         "Household Capital Inputs in LCU"
     ].sum() + industry_vectors["Firm Capital Inputs in LCU"].sum()
+    print(f"\ngross_fixed_capital_formation breakdown:")
+    print(
+        f"  - Household Capital (with CF tax): {(1 + initial_cf_tax) * industry_vectors['Household Capital Inputs in LCU'].sum()}"
+    )
+    print(f"  - Firm Capital: {industry_vectors['Firm Capital Inputs in LCU'].sum()}")
+    print(f"  Total: {gross_fixed_capital_formation}")
 
     gross_operating_surplus = (
         industry_vectors["Output in LCU"].sum()
@@ -239,6 +255,12 @@ def compile_national_accounts_data(
         - industry_vectors["Intermediate Inputs Use in LCU"].sum()
         - industry_vectors["Taxes Less Subsidies in LCU"].sum()
     )
+    print(f"\ngross_operating_surplus breakdown:")
+    print(f"  - Output: {industry_vectors['Output in LCU'].sum()}")
+    print(f"  - Labour Compensation: {industry_vectors['Labour Compensation in LCU'].sum()}")
+    print(f"  - Intermediate Inputs: {industry_vectors['Intermediate Inputs Use in LCU'].sum()}")
+    print(f"  - Taxes Less Subsidies: {industry_vectors['Taxes Less Subsidies in LCU'].sum()}")
+    print(f"  Total: {gross_operating_surplus}")
 
     # An initial sanity check
     gdp_output = (
@@ -247,6 +269,13 @@ def compile_national_accounts_data(
         - industry_vectors["Intermediate Inputs Use in LCU"].sum()
         + initial_taxes_on_products
     )
+    print(f"\ngdp_output breakdown:")
+    print(f"  - Output: {industry_vectors['Output in LCU'].sum()}")
+    print(f"  - Taxes Less Subsidies: {industry_vectors['Taxes Less Subsidies in LCU'].sum()}")
+    print(f"  - Intermediate Inputs: {industry_vectors['Intermediate Inputs Use in LCU'].sum()}")
+    print(f"  + Initial Taxes on Products: {initial_taxes_on_products}")
+    print(f"  Total: {gdp_output}")
+
     gdp_expenditure = (
         (1 + initial_vat) * industry_vectors["Household Consumption in LCU"].sum()
         + industry_vectors["Government Consumption in LCU"].sum()
@@ -256,9 +285,35 @@ def compile_national_accounts_data(
         + industry_vectors["Exports in LCU"].sum()
         - industry_vectors["Imports in LCU"].sum()
     )
+    print(f"\ngdp_expenditure breakdown:")
+    print(
+        f"  - Household Consumption (with VAT): {(1 + initial_vat) * industry_vectors['Household Consumption in LCU'].sum()}"
+    )
+    print(f"  - Government Consumption: {industry_vectors['Government Consumption in LCU'].sum()}")
+    print(
+        f"  - Household Capital (with CF tax): {(1 + initial_cf_tax) * industry_vectors['Household Capital Inputs in LCU'].sum()}"
+    )
+    print(f"  - Firm Capital: {industry_vectors['Firm Capital Inputs in LCU'].sum()}")
+    print(f"  - Exports Tax: {initial_exports_tax_paid}")
+    print(f"  + Exports: {industry_vectors['Exports in LCU'].sum()}")
+    print(f"  - Imports: {industry_vectors['Imports in LCU'].sum()}")
+    print(f"  Total: {gdp_expenditure}")
+
     gdp_income = (
         initial_taxes_on_products + gross_operating_surplus + industry_vectors["Labour Compensation in LCU"].sum()
     )
+    print(f"\ngdp_income breakdown:")
+    print(f"  - Initial Taxes on Products: {initial_taxes_on_products}")
+    print(f"  - Gross Operating Surplus: {gross_operating_surplus}")
+    print(f"  - Labour Compensation: {industry_vectors['Labour Compensation in LCU'].sum()}")
+    print(f"  Total: {gdp_income}")
+
+    print(f"\n=== GDP Comparison ===")
+    print(f"GDP Output: {gdp_output}")
+    print(f"GDP Expenditure: {gdp_expenditure}")
+    print(f"GDP Income: {gdp_income}")
+    print(f"Output vs Expenditure difference: {gdp_output - gdp_expenditure}")
+    print(f"Output vs Income difference: {gdp_output - gdp_income}")
 
     def get_growth(column: str):
         if column in national_accounts_growth.columns:
