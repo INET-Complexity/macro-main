@@ -45,6 +45,7 @@ import numpy as np
 import pandas as pd
 
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.readers.util.prune_util import DataFilterWarning, prune_index
 
 forced_vat = {
@@ -182,6 +183,10 @@ class WorldBankReader:
             - Falls back to previous year's value if data not available
             - Returns 0.0 for year 1959
         """
+        ratio = 1.0
+        if isinstance(country, Region):
+            ratio = country.va_ratio
+            country = country.parent_country
         df = self.data["gov_debt"].set_index("Country Code", drop=True)
         if country == "ARG":
             return 0.0
@@ -193,7 +198,7 @@ class WorldBankReader:
         if val == "..":
             return self.get_central_gov_debt(country, year - 1)
         else:
-            return float(val)
+            return float(val) * ratio
 
     def get_population(self, country: Country, year: int) -> float:
         """
@@ -210,7 +215,11 @@ class WorldBankReader:
             Uses World Bank's total population indicator (SP.POP.TOTL)
         """
         df = self.data["population"].set_index("Country Code")
-        return df.loc[country, str(year)]
+        ratio = 1.0
+        if isinstance(country, Region):
+            ratio = country.va_ratio
+            country = country.parent_country
+        return df.loc[country, str(year)] * ratio
 
     def get_participation_rate(self, country: Country) -> pd.DataFrame:
         """
@@ -222,6 +231,8 @@ class WorldBankReader:
         Returns:
             pd.DataFrame: A DataFrame containing the participation rate for the specified country.
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["participation"]
         df = df.loc[df["Country Code"] == country]
         data = []
@@ -255,9 +266,11 @@ class WorldBankReader:
             - Tax rate is expressed as a decimal (e.g., 0.20 for 20% VAT)
             - Returns 0.0 if data not available and country not in forced_vat
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["tau_vat"]
         if country in forced_vat:
-            return forced_vat[country]
+            return forced_vat[country] * ratio
         df = df.loc[df["Country Code"] == country][str(year)]
         return df.values[0] / 100.0
 
@@ -272,6 +285,8 @@ class WorldBankReader:
         Returns:
             float: The export tax rate for the specified country and year.
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["tau_exp"].fillna(0)
         df = df.loc[df["Country Code"] == country][str(year)]
         return df.values[0] / 100.0
@@ -287,6 +302,8 @@ class WorldBankReader:
         Returns:
             float: The Gini coefficient for the specified country and year.
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["gini_coefs"]
         return df.loc[df["Country Code"] == country][str(year)].values[0] / 100
 
@@ -306,9 +323,13 @@ class WorldBankReader:
             - Values are in current local currency units
             - Returns raw value without scaling
         """
+        ratio = 1.0
+        if isinstance(country, Region):
+            ratio = country.va_ratio
+            country = country.parent_country
         df = self.data["historic_gdp"]
         df = df.loc[df["Country Code"] == country].iloc[:, 4:]
-        return df.loc[:, str(year)].values[0]
+        return df.loc[:, str(year)].values[0] * ratio
 
     def get_current_scaled_gdp(self, country: Country, year: int, rescale_factor: float = 4.0) -> float:
         """
@@ -342,6 +363,8 @@ class WorldBankReader:
         Returns:
             pd.DataFrame: A DataFrame containing the log growth of inflation for the specified country and time range.
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         # Get CPI and PPI data
         data_cpi = self.data["cpi"].loc[self.data["cpi"]["Country Code"] == country]
         data_ppi = self.data["ppi"].loc[self.data["ppi"]["Country Code"] == country]
@@ -389,6 +412,8 @@ class WorldBankReader:
             - Uses World Bank's total unemployment indicator (SL.UEM.TOTL.ZS)
             - Forward fills missing values
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["unemployment"]
         df = df.loc[df["Country Code"] == country]
         df = df.drop(columns=["Country Code", "Country Name", "Indicator Name", "Indicator Code", "Unnamed: 66"])
@@ -401,6 +426,8 @@ class WorldBankReader:
         return df
 
     def get_inflation(self, country: str) -> pd.DataFrame:
+        if isinstance(country, Region):
+            country = country.parent_country
         if country == "ARG":
             inflation_arg = 1.0 + self.data["inflation_arg"].set_index("Date") / 100.0
             inflation_arg.index = pd.to_datetime(inflation_arg.index)
@@ -456,6 +483,8 @@ class WorldBankReader:
         return data_df.astype(float)
 
     def get_tau_exp(self, country: str, year: int, default_value: float = 0.0) -> float:
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["tau_exp"]
         val = df.loc[df["Country Code"] == country, str(year)].values
         if len(val) == 0 or np.isnan(val[0]):
@@ -500,6 +529,8 @@ class WorldBankReader:
                 self.data[key] = value.loc[:, mask]
 
     def get_npl_ratios(self, country: Country | str) -> pd.DataFrame:
+        if isinstance(country, Region):
+            country = country.parent_country
         npl_ratio = self.data["npl_ratios"].set_index("Country Code", drop=True).loc[[country]]
         new_cols = [str(y) + " [YR" + str(y) + "]" for y in range(1960, 2022)]
         npl_ratio = npl_ratio.loc[:, new_cols]
