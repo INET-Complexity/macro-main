@@ -230,3 +230,52 @@ def all_exogenous_data(readers):
     country_names = [Country("FRA")]
     all_exogenous_data = create_all_exogenous_data(readers, country_names)
     return all_exogenous_data
+
+
+@pytest.fixture
+def canada_disagg_config(data_config_path):
+    """Fixture for Canadian provincial disaggregation configuration."""
+    with open(data_config_path, "r") as f:
+        config_dict = yaml.safe_load(f)
+
+    configuration = DataConfiguration(**config_dict)
+    configuration.can_disaggregation = True
+    configuration.aggregate_industries = False
+    configuration.prune_date = None
+    configuration.seed = 0
+
+    # Get the base configuration (France's config) to copy for all regions
+    france = Country("FRA")
+    base_config = configuration.country_configs[france]
+
+    # Define Canadian provinces
+    provinces = [
+        Region.from_code("CAN_AB", "Alberta"),
+        Region.from_code("CAN_BC", "British Columbia"),
+        Region.from_code("CAN_MB", "Manitoba"),
+        Region.from_code("CAN_NB", "New Brunswick"),
+        Region.from_code("CAN_NL", "Newfoundland and Labrador"),
+        Region.from_code("CAN_NS", "Nova Scotia"),
+        Region.from_code("CAN_ON", "Ontario"),
+        Region.from_code("CAN_PE", "Prince Edward Island"),
+        Region.from_code("CAN_QC", "Quebec"),
+        Region.from_code("CAN_SK", "Saskatchewan"),
+    ]
+
+    # Add Canada as the parent country
+    canada = Country("CAN")
+    configuration.country_configs[canada] = base_config
+    configuration.country_configs[canada].eu_proxy_country = france
+
+    # Add configurations for all provinces
+    for province in provinces:
+        configuration.country_configs[province] = base_config
+        configuration.country_configs[province].eu_proxy_country = france
+
+    # Set up the aggregation structure
+    configuration.aggregation_structure = {canada: provinces}
+
+    # Remove France's config since we don't need it for this test
+    del configuration.country_configs[france]
+
+    return configuration
