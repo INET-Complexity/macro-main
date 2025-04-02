@@ -141,6 +141,7 @@ class WIODSEAReader:
             for country, regions in regions_dict.items():
                 for region in regions:
                     ratios = (value_added_dict[region] / value_added_dict[country]).values
+                    region._va_ratio = value_added_dict[region].sum() / value_added_dict[country].sum()
                     new = (sea.loc[country].copy().T * ratios).T
                     new = pd.concat([new], keys=[region])
                     new.index.names = sea.index.names

@@ -48,6 +48,7 @@ from typing import Optional
 import pandas as pd
 
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.readers.util.prune_util import prune_index
 
 
@@ -280,6 +281,8 @@ class IMFReader:
         - Returns None for Argentina (uses central bank data instead)
         - Rates are returned as decimals
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         if isinstance(country, str):
             country = Country(country)
         if country.value == "ARG":  # using CB data instead
