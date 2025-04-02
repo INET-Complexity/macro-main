@@ -8,6 +8,7 @@ from macro_data import DataWrapper, SyntheticCountry
 from macro_data.configuration import DataConfiguration
 from macro_data.configuration.countries import Country
 from macro_data.readers import ALL_INDUSTRIES
+from macro_data.configuration.region import Region
 
 TEST_PATH = Path(__file__).parent.parent.resolve()
 
@@ -383,6 +384,16 @@ class TestCreator:
         government_consumption_emissions = canada.government_entities.gov_entity_data["Consumption Emissions"].sum()
 
         assert government_consumption_emissions > 0
+
+    def test__create_can_provincial(self, canada_disagg_config):
+        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
+        creator = DataWrapper.from_config(
+            configuration=canada_disagg_config,
+            raw_data_path=raw_data_path,
+            single_hfcs_survey=True,
+        )
+
+        assert True
 
 
 def check_country_credit(country: SyntheticCountry):

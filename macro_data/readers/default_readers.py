@@ -116,7 +116,7 @@ class DataReaders:
     def from_raw_data(
         cls,
         raw_data_path: Path | str,
-        country_names: list[Country],
+        country_names: list[Country | Region],
         simulation_year: int,
         scale_dict: dict[Country, int],
         industries: list[str],
@@ -131,6 +131,10 @@ class DataReaders:
         use_provincial_can_reader: bool = False,
         regions_dict: dict[Country, list[Region]] = None,
     ):
+        if regions_dict:
+            all_regions = [region for regions in regions_dict.values() for region in regions]
+            country_names = list(set(country_names) - set(all_regions))
+
         if proxy_country_dict is None:
             proxy_country_dict = {country: country for country in country_names}
 
@@ -436,6 +440,8 @@ class DataReaders:
         )
 
     def get_national_accounts_growth(self, country: Country) -> pd.DataFrame:
+        if isinstance(country, Region):
+            country = country.parent_country
         imf_growth = self.imf_reader.get_na_growth_rates(country)
         oecd_growth = self.oecd_econ.get_na_growth_rates(country)
 
