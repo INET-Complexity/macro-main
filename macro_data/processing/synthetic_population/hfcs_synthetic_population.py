@@ -20,6 +20,7 @@ from macro_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
     default_target_investment,
 )
+from macro_data.processing.synthetic_population.utils import ensure_minimum_workers_in_industries
 from macro_data.readers.default_readers import DataReaders
 from macro_data.readers.exogenous_data import ExogenousCountryData
 from macro_data.readers.io_tables.industries import ALL_INDUSTRIES
@@ -300,6 +301,8 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         investment = household_investment
 
         individual_data["Corresponding Firm ID"] = np.nan
+
+        individual_data = ensure_minimum_workers_in_industries(individual_data, n_industries=len(industries))
 
         return cls(
             country_name=country_name,
