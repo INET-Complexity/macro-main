@@ -4,7 +4,7 @@ This module matches and harmonizes employment data from different sources:
 1. Individual Data Source:
    - Actual wages from household surveys
    - Industry of employment
-   - Activity status
+   - Activity status (1: employed, 2: unemployed, 3: inactive)
    - Employment income
 
 2. Firm Data Source:
