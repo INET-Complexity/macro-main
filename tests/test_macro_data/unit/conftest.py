@@ -239,7 +239,7 @@ def canada_disagg_config(data_config_path):
         config_dict = yaml.safe_load(f)
 
     configuration = DataConfiguration(**config_dict)
-    configuration.can_disaggregation = True
+    configuration.can_disaggregation = False
     configuration.aggregate_industries = False
     configuration.prune_date = None
     configuration.seed = 0
@@ -247,6 +247,14 @@ def canada_disagg_config(data_config_path):
     # Get the base configuration (France's config) to copy for all regions
     france = Country("FRA")
     base_config = configuration.country_configs[france]
+
+    base_config.single_firm_per_industry = True
+    base_config.single_bank = True
+    base_config.single_government_entity = True
+
+    base_config.firms_configuration.constructor = "Default"
+
+    base_config.scale = 1000
 
     # Define Canadian provinces
     provinces = [

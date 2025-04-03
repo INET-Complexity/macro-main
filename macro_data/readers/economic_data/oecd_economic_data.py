@@ -52,6 +52,7 @@ from scipy.optimize import curve_fit
 from scipy.special import zetac
 
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.readers.economic_data.oecd_mappings import INDUSTRY_MAPPING
 from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE
 from macro_data.readers.util.prune_util import DataFilterWarning
@@ -286,7 +287,7 @@ class OECDEconData:
 
     def read_business_demography(
         self,
-        country: Country,
+        country: Country | Region,
         output: pd.Series,
         year: int,
     ) -> np.ndarray:
@@ -306,6 +307,9 @@ class OECDEconData:
             - Special handling for DEU (2012 onwards)
             - Special handling for AUS (2010-2014)
         """
+
+        if isinstance(country, Region):
+            country = country.parent_country
 
         # Load data
 
@@ -379,7 +383,7 @@ class OECDEconData:
         z = 1 / (x**a * zetac(a))
         return z / sum(z)
 
-    def find_sector_code(self, code: str) -> int:
+    def find_sector_code(self, code: str) -> int | None:
         """
         Find internal sector code from OECD industry code.
 
@@ -401,7 +405,7 @@ class OECDEconData:
 
     def read_firm_size_zetas(
         self,
-        country: str,
+        country: str | Region,
         year: int,
     ) -> dict[int, np.ndarray] | None:
         """
@@ -421,6 +425,9 @@ class OECDEconData:
             - Returns None if insufficient data for fitting
             - Handles different size classes and industry codes
         """
+        if isinstance(country, Region):
+            country = country.parent_country
+
         sizes = ["1-9", "10-19", "20-49", "50-249", "250"]
         size_means = [np.mean([int(v) for v in s.split("-")]) for s in sizes]
 
@@ -466,7 +473,7 @@ class OECDEconData:
     @staticmethod
     def find_closest_year(df: pd.DataFrame, year: int) -> int:
         """
-        Find closest available year in DataFrame to target year.
+        Find the closest available year in DataFrame to target year.
 
         Args:
             df (pd.DataFrame): DataFrame containing time series data
@@ -479,7 +486,7 @@ class OECDEconData:
         min_year = min(years, key=lambda x: abs(x - year))
         return df.loc[df["YEA"] == min_year]
 
-    def read_tau_sif(self, country: Country | str, year: int) -> float:
+    def read_tau_sif(self, country: Country | str | Region, year: int) -> float:
         """
         Get social insurance tax rate (firm contribution) for a country and year.
 
@@ -493,6 +500,8 @@ class OECDEconData:
         Note:
             Uses force_tau_sif values for countries with missing or unreliable data
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         if isinstance(country, str):
             country = Country(country)
         if country.value in force_tau_sif:
@@ -503,7 +512,7 @@ class OECDEconData:
             df = self.find_closest_year(df, year)
         return df.loc[df["RATE_THRESH"] == "01_MR", "Value"].iloc[0] / 100.0
 
-    def read_tau_siw(self, country: Country | str, year: int) -> float:
+    def read_tau_siw(self, country: Country | str | Region, year: int) -> float:
         """
         Get social insurance tax rate (worker contribution) for a country and year.
 
@@ -517,6 +526,8 @@ class OECDEconData:
         Note:
             Uses force_tau_siw values for countries with missing or unreliable data
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         if isinstance(country, str):
             country = Country(country)
         if country.value in force_tau_siw:
@@ -527,7 +538,7 @@ class OECDEconData:
             df = self.find_closest_year(df, year)
         return df.loc[df["RATE_THRESH"] == "01_MR", "Value"].iloc[0] / 100.0
 
-    def read_tau_firm(self, country: Country | str, year: int) -> float:
+    def read_tau_firm(self, country: Country | str | Region, year: int) -> float:
         """
         Get corporate tax rate for a country and year.
 
@@ -541,6 +552,8 @@ class OECDEconData:
         Note:
             Uses force_tau_firm values for countries with missing or unreliable data
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         if isinstance(country, str):
             country = Country(country)
         if country.value in force_tau_firm:
@@ -552,7 +565,7 @@ class OECDEconData:
         df.set_index("CORP_TAX", inplace=True)
         return df.loc["COMB_CIT_RATE", "Value"] / 100.0
 
-    def read_tau_income(self, country: Country, year: int) -> float:
+    def read_tau_income(self, country: Country | Region, year: int) -> float:
         """
         Get personal income tax rate for a country and year.
 
@@ -572,12 +585,15 @@ class OECDEconData:
         # df = df.loc[df["ALL_IN"] == "ALL_IN_RATE_SING_NO_CH"]
         # return df["Value"].values[0] / 100.0
 
+        if isinstance(country, Region):
+            country = country.parent_country
+
         if country in force_tau_income:
             return force_tau_income[country]
         else:
             return 0.09  # OECD average
 
-    def read_short_term_interest_rates(self, country: Country, year: int) -> float:
+    def read_short_term_interest_rates(self, country: Country | Region, year: int) -> float:
         """
         Get short-term interest rates for a country and year.
 
@@ -591,6 +607,10 @@ class OECDEconData:
         Note:
             Returns mean of monthly rates for the year
         """
+
+        if isinstance(country, Region):
+            country = country.parent_country
+
         df = self.data["short_term_interest_rates"]
         df = df.loc[df["LOCATION"] == country]
         df = df.loc[df["FREQUENCY"] == "Q"]
@@ -603,7 +623,7 @@ class OECDEconData:
         else:
             raise ValueError("Multiple values found for short-term interest rates.")
 
-    def read_long_term_interest_rates(self, country: Country, year: int) -> float:
+    def read_long_term_interest_rates(self, country: Country | Region, year: int) -> float:
         """
         Get long-term interest rates for a country and year.
 
@@ -617,6 +637,8 @@ class OECDEconData:
         Note:
             Returns mean of monthly rates for the year
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["long_term_interest_rates"]
         df = df.loc[df["LOCATION"] == country]
         df = df.loc[df["FREQUENCY"] == "Q"]
@@ -629,7 +651,7 @@ class OECDEconData:
         else:
             raise ValueError("Multiple values found for long-term interest rates.")
 
-    def get_bank_demographics(self, country: Country, year: int, code: str) -> float:
+    def get_bank_demographics(self, country: Country | Region, year: int, code: str) -> float:
         """
         Get bank demographic data for a specific metric.
 
@@ -644,6 +666,7 @@ class OECDEconData:
         Note:
             Handles missing data by finding closest available year
         """
+
         df = self.data["bank_demography"]
 
         sel = df.loc[(df["COU"] == country) & (df["ITEM"] == code)]
@@ -751,7 +774,7 @@ class OECDEconData:
         """
         return self.get_bank_demographics(country, year, "BT25TE") * 1_000_000
 
-    def unemployment_benefits_gdp_pct(self, country: Country, year: int) -> float:
+    def unemployment_benefits_gdp_pct(self, country: Country | Region, year: int) -> float:
         """
         Get unemployment benefits as percentage of GDP.
 
@@ -765,6 +788,8 @@ class OECDEconData:
         Note:
             Returns 0.0 if data not available
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["total_unemployment_benefits_perc_gdp"]
         if country.value in df["LOCATION"].values:
             value = df.loc[(df["LOCATION"] == country) & (df["TIME"] == year), "Value"].iloc[0]

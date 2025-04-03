@@ -4,6 +4,8 @@ from macro_data.configuration.countries import Country
 from macro_data.readers.default_readers import prune_icio_dict
 from macro_data.readers.exogenous_data import create_all_exogenous_data
 
+import numpy as np
+
 
 def test__prune_icio_dict():
     dummy_dict = {
@@ -48,3 +50,21 @@ def test__emissions(readers):
 
 def test__readers_provincial_can(readers_provincial_can):
     assert "CAN_AB" in readers_provincial_can.icio[2014].considered_countries
+    iot = readers_provincial_can.icio[2014].iot
+
+    nontot_rows = iot.index.get_level_values(0) != "TOTAL"
+
+    non_tot_cols = iot.columns.get_level_values(0) != "TOTAL"
+
+    ind_cols = iot.columns.get_level_values(1).isin(readers_provincial_can.icio[2014].industries)
+
+    # compute output from sums over columns
+    output_column = iot.loc[nontot_rows, ("TOTAL", "Output")]
+    output_from_sums = iot.loc[nontot_rows, non_tot_cols].sum(axis=1)
+
+    assert np.allclose(output_column, output_from_sums, rtol=1e-5)
+
+    intermediate_inputs_sum = iot.loc[nontot_rows, ind_cols].sum(axis=0)
+    intermediate_inputs = iot.loc[("TOTAL", "Intermediate Inputs"), ind_cols]
+
+    assert np.allclose(intermediate_inputs_sum, intermediate_inputs, rtol=1e-5)
