@@ -21,7 +21,7 @@ from macro_data.readers.economic_data.ons_reader import ONSReader
 from macro_data.readers.economic_data.policy_rates import PolicyRatesReader
 from macro_data.readers.economic_data.world_bank_reader import WorldBankReader
 from macro_data.readers.emissions.emissions_reader import EmissionsReader
-from macro_data.readers.io_tables.icio_reader import ICIOReader, normalise_iot
+from macro_data.readers.io_tables.icio_reader import ICIOReader, normalise_iot, split_gfcf_column
 from macro_data.readers.io_tables.industries import AGGREGATED_INDUSTRIES
 from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE, ICIO_ALL
 from macro_data.readers.population_data.compustat_banks_reader import (
@@ -227,10 +227,24 @@ class DataReaders:
 
             countries_and_regions = list(countries_set)
 
-            df = normalise_iot(
-                iot=df,
-                industries=industries,
+            # df = normalise_iot(
+            #     iot=df,
+            #     industries=industries,
+            #     considered_countries=countries_and_regions,
+            #     investment_fractions=get_investment_year(simulation_year, countries_and_regions),
+            # )
+
+            industry_cols = df.columns.get_level_values(1).isin(industries)
+            non_total_rows = df.index.get_level_values(0) != "TOTAL"
+
+            df.loc[("TOTAL", "Intermediate Inputs"), industry_cols] = df.loc[non_total_rows, industry_cols].sum(axis=0)
+
+            df.rename(columns={"OUT": "TOTAL"}, level=0, inplace=True)
+
+            df = split_gfcf_column(
                 considered_countries=countries_and_regions,
+                industries=industries,
+                iot=df,
                 investment_fractions=get_investment_year(simulation_year, countries_and_regions),
             )
 

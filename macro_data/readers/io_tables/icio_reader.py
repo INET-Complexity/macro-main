@@ -51,13 +51,10 @@ import numpy as np
 import pandas as pd
 
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
 from macro_data.readers.io_tables.industries import AGGREGATED_INDUSTRIES
-from macro_data.readers.io_tables.mappings import (
-    ICIO_AGGREGATE,
-    ICIO_AGGREGATE_INV,
-    ICIO_ALL,
-)
+from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE, ICIO_ALL
 from macro_data.readers.io_tables.util import aggregate_df
 
 
@@ -1000,13 +997,16 @@ def normalise_iot(
     """
     # Remove aggregates
     iot = iot.loc[iot.index != ("TOTAL", "Gross Output")]
+    iot = iot.loc[iot.index != ("TOTAL", "Output")]
     iot = iot.loc[:, iot.columns.get_level_values(1) != "Gross Output"]
+    iot = iot.loc[:, iot.columns.get_level_values(1) != "Output"]
     iot = iot.loc[:, iot.columns.get_level_values(0) != "TOTAL"]
 
     # Remove aggregates from non-industry columns
+    industry_columns = iot.columns.get_level_values(1).isin(industries)
     iot.loc[
         iot.index.get_level_values(0) == "TOTAL",
-        np.logical_not(iot.columns.get_level_values(1).isin(industries)),
+        np.logical_not(industry_columns),
     ] = np.nan
 
     # Remove sectors with negative VA
@@ -1024,19 +1024,19 @@ def normalise_iot(
     # Sums-up intermediate inputs into a new row
     iot.loc[
         ("TOTAL", "Intermediate Inputs"),
-        iot.columns.get_level_values(1).isin(industries),
+        industry_columns,
     ] = iot.loc[
         (iot.index != ("TOTAL", "Value Added")) & (iot.index.get_level_values(1) != "Taxes Less Subsidies"),
-        iot.columns.get_level_values(1).isin(industries),
+        industry_columns,
     ].sum(axis=0)
 
     # Sums-up taxes-less-subsidies into a new row
     iot.loc[
         ("TOTAL", "Taxes Less Subsidies"),
-        iot.columns.get_level_values(1).isin(industries),
+        industry_columns,
     ] = iot.loc[
         iot.index.get_level_values(1) == "Taxes Less Subsidies",
-        iot.columns.get_level_values(1).isin(industries),
+        industry_columns,
     ].sum(axis=0)
     iot = iot.loc[
         np.logical_not(
@@ -1072,6 +1072,19 @@ def normalise_iot(
         iot.loc[("TOTAL", "Value Added")].to_csv("va.csv")
         raise ValueError("Negative VA!")
 
+    iot = split_gfcf_column(considered_countries, industries, investment_fractions, iot)
+    iot.sort_index(axis=0, inplace=True)
+    iot.sort_index(axis=1, inplace=True)
+
+    return iot
+
+
+def split_gfcf_column(
+    considered_countries: list[Country | Region],
+    industries: list[str],
+    investment_fractions: dict[str | Country, dict[str, float]],
+    iot: pd.DataFrame,
+):
     # Split the total GFCF column
     for c in considered_countries:
         ind = iot.index.get_level_values(1).isin(industries)
@@ -1091,9 +1104,6 @@ def normalise_iot(
                 iot.columns.get_level_values(0) != c,
             ),
         ]
-    iot.sort_index(axis=0, inplace=True)
-    iot.sort_index(axis=1, inplace=True)
-
     return iot
 
 
