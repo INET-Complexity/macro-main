@@ -7,8 +7,8 @@ import yaml
 from macro_data import DataWrapper, SyntheticCountry
 from macro_data.configuration import DataConfiguration
 from macro_data.configuration.countries import Country
-from macro_data.readers import ALL_INDUSTRIES
 from macro_data.configuration.region import Region
+from macro_data.readers import ALL_INDUSTRIES
 
 TEST_PATH = Path(__file__).parent.parent.resolve()
 
