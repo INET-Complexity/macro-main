@@ -1,6 +1,7 @@
 import tempfile
 from pathlib import Path
 
+import numpy as np
 import pytest
 import yaml
 
@@ -393,7 +394,14 @@ class TestCreator:
             single_hfcs_survey=True,
         )
 
-        assert True
+        # check country gdp and credit
+        for country_name, country in creator.synthetic_countries.items():
+            check_country_gdp(country)
+            check_country_credit(country)
+
+            assert np.all(
+                country.population.individual_data["Employee Income"] >= 0
+            ), f"Negative employee income for {country_name}"
 
 
 def check_country_credit(country: SyntheticCountry):
