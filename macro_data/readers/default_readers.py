@@ -21,7 +21,13 @@ from macro_data.readers.economic_data.ons_reader import ONSReader
 from macro_data.readers.economic_data.policy_rates import PolicyRatesReader
 from macro_data.readers.economic_data.world_bank_reader import WorldBankReader
 from macro_data.readers.emissions.emissions_reader import EmissionsReader
-from macro_data.readers.io_tables.icio_reader import ICIOReader, normalise_iot, split_gfcf_column
+from macro_data.readers.icio_sea_matching import (
+    match_iot_with_sea,
+    add_investment_matrix_to_icio,
+    reconcile_value_added,
+    get_investment_fractions,
+)
+from macro_data.readers.io_tables.icio_reader import ICIOReader, split_gfcf_column
 from macro_data.readers.io_tables.industries import AGGREGATED_INDUSTRIES
 from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE, ICIO_ALL
 from macro_data.readers.population_data.compustat_banks_reader import (
@@ -248,7 +254,7 @@ class DataReaders:
                 investment_fractions=get_investment_year(simulation_year, countries_and_regions),
             )
 
-            icio[simulation_year].iot = df
+            icio[simulation_year].iot = df.sort_index()
             icio[simulation_year].considered_countries = countries_and_regions
 
             # country_names = all_countries
@@ -278,6 +284,13 @@ class DataReaders:
             country_names=country_names,
             value_added_dict=value_added_dict,
             aggregation_type="Aggregate" if aggregate_industries else "All",
+            regions_dict=regions_dict,
+        )
+
+        reconcile_value_added(
+            icio_reader=icio[simulation_year],
+            sea_reader=wiod_sea,
+            country_names=country_names,
             regions_dict=regions_dict,
         )
 
@@ -508,120 +521,3 @@ def prune_icio_dict(icio_dict: dict[int, Any], prune_date: date):
             DataFilterWarning,
         )
     return icio_dict
-
-
-def add_investment_matrix_to_icio(
-    icio_reader: ICIOReader,
-    sea_reader: WIODSEAReader,
-    country_names: list[str | Country],
-    yearly_factor: float = 4.0,
-    regions_dict: Optional[dict[Country, list[Region]]] = None,
-) -> None:
-    for country_name in country_names:
-        if regions_dict is None:
-            _add_country_investment(country_name, icio_reader, sea_reader, yearly_factor)
-        else:
-            # check if country is in regions_dict
-            if country_name in regions_dict:
-                for region in regions_dict[country_name]:
-                    _add_country_investment(region, icio_reader, sea_reader, yearly_factor)
-            else:
-                _add_country_investment(country_name, icio_reader, sea_reader, yearly_factor)
-
-
-def _add_country_investment(
-    country_name: Country | Region, icio_reader: ICIOReader, sea_reader: WIODSEAReader, yearly_factor: float = 4.0
-):
-    gfcf = icio_reader.get_firm_capital_inputs(country_name)
-    cap = sea_reader.get_values_in_usd(country_name, "Capital Compensation") / yearly_factor
-    investment_matrix = np.array([gfcf for _ in range(len(cap))]).T
-    investment_matrix = investment_matrix * cap[None, :]  # proportionally fitting CAP
-    investment_matrix *= gfcf.sum() / investment_matrix.sum()  # match GFCF exactly
-    investment_matrix = (
-        pd.DataFrame(
-            data=investment_matrix,
-            index=pd.MultiIndex.from_product(
-                [[country_name], icio_reader.industries],
-                names=["Country", "Industry"],
-            ),
-            columns=pd.MultiIndex.from_product(
-                [[country_name], icio_reader.industries],
-                names=["Country", "Industry"],
-            ),
-        )
-        .sort_index(axis=0)
-        .sort_index(axis=1)
-    )
-    icio_reader.investment_matrices[country_name] = investment_matrix
-
-
-def get_sea(
-    country_name: str,
-    field: str,
-    sea_reader: WIODSEAReader,
-) -> np.ndarray:
-    return sea_reader.df.loc[
-        sea_reader.df.index.get_level_values(0) == country_name,
-        field,
-    ].values
-
-
-def match_iot_with_sea(
-    icio_reader: ICIOReader,
-    sea_reader: WIODSEAReader,
-    country_names: list[str | Country | Region],
-    yearly_factor: float = 4.0,
-    regions_dict: Optional[dict[Country, list[Region]]] = None,
-) -> None:
-    for country_name in country_names:
-        if regions_dict is None:
-            _match_country_iot_with_sea(country_name, icio_reader, sea_reader, yearly_factor)
-        else:
-            if country_name in regions_dict:
-                for region in regions_dict[country_name]:
-                    _match_country_iot_with_sea(region, icio_reader, sea_reader, yearly_factor)
-            else:
-                _match_country_iot_with_sea(country_name, icio_reader, sea_reader, yearly_factor)
-
-
-def _match_country_iot_with_sea(
-    country_name: Country | Region, icio_reader: ICIOReader, sea_reader: WIODSEAReader, yearly_factor: float = 4.0
-):
-    sea_reader.df.loc[
-        sea_reader.df.index.get_level_values(0) == country_name,
-        "Capital Compensation",
-    ] = yearly_factor * icio_reader.investment_matrices[country_name].values.sum(axis=0)
-    new_va = yearly_factor * icio_reader.get_value_added(country_name)
-    va_factor = new_va / get_sea(country_name, "Value Added", sea_reader)
-    sea_reader.df.loc[
-        sea_reader.df.index.get_level_values(0) == country_name,
-        "Value Added",
-    ] = new_va
-    sea_reader.df.loc[
-        sea_reader.df.index.get_level_values(0) == country_name,
-        "Labour Compensation",
-    ] = get_sea(
-        country_name, "Value Added", sea_reader
-    ) - get_sea(country_name, "Capital Compensation", sea_reader)
-    sea_reader.df.loc[
-        sea_reader.df.index.get_level_values(0) == country_name,
-        "Capital Stock",
-    ] *= va_factor
-
-
-def get_investment_fractions(
-    country_names: list[Country | Region],
-    eurostat: EuroStatReader,
-    proxy_country_dict: dict[Country, Country],
-    year: int,
-) -> dict[Country, dict[str, float]]:
-    investment_fractions = {}
-    for country_name in country_names:
-        data_country = country_name
-        if isinstance(country_name, Region):
-            data_country = country_name.parent_country
-        if not data_country.is_eu_country:
-            data_country = proxy_country_dict[data_country]
-
-        investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(data_country, year=year)
-    return investment_fractions

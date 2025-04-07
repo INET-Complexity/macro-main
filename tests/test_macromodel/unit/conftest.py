@@ -6,6 +6,7 @@ import pytest
 import yaml
 
 from macro_data import DataWrapper
+from macro_data.configuration.region import Region
 from macro_data.configuration_utils import default_data_configuration
 from macromodel.agents.banks import Banks
 from macromodel.agents.central_bank import CentralBank
@@ -37,6 +38,8 @@ from macromodel.markets.goods_market.goods_market import GoodsMarket
 from macromodel.markets.housing_market.housing_market import HousingMarket
 from macromodel.markets.labour_market.labour_market import LabourMarket
 from macromodel.rest_of_the_world import RestOfTheWorld
+
+from macro_data.configuration.countries import Country as CountryCode
 
 
 @pytest.fixture(scope="module", name="test_config")
@@ -435,5 +438,53 @@ def instantiate_can_disagg_datawrapper() -> DataWrapper:
         proxy_country_dict={"CAN": "FRA"},
         use_disagg_can_2014_reader=True,
     )
+    raw_data_path = Path(__file__).parent.parent.parent / "test_macro_data" / "unit" / "sample_raw_data"
+    return DataWrapper.from_config(data_config, raw_data_path, single_hfcs_survey=True)
+
+
+@pytest.fixture(scope="module", name="can_provincial_datawrapper")
+def instantiate_can_provincial_datawrapper() -> DataWrapper:
+    data_config = default_data_configuration(
+        countries=["CAN"],
+        aggregate_industries=False,
+        proxy_country_dict={"CAN": "FRA"},
+        use_disagg_can_2014_reader=True,
+    )
+
+    data_config.can_disaggregation = False
+    data_config.aggregate_industries = False
+    data_config.prune_date = None
+    data_config.seed = 0
+
+    base_config = data_config.country_configs[CountryCode("CAN")]
+    base_config.single_firm_per_industry = True
+    base_config.single_bank = True
+    base_config.single_government_entity = True
+
+    base_config.firms_configuration.constructor = "Default"
+
+    base_config.scale = 1000
+
+    # Define Canadian provinces
+    provinces = [
+        Region.from_code("CAN_AB", "Alberta"),
+        Region.from_code("CAN_BC", "British Columbia"),
+        Region.from_code("CAN_MB", "Manitoba"),
+        Region.from_code("CAN_NB", "New Brunswick"),
+        Region.from_code("CAN_NL", "Newfoundland and Labrador"),
+        Region.from_code("CAN_NS", "Nova Scotia"),
+        Region.from_code("CAN_ON", "Ontario"),
+        Region.from_code("CAN_PE", "Prince Edward Island"),
+        Region.from_code("CAN_QC", "Quebec"),
+        Region.from_code("CAN_SK", "Saskatchewan"),
+    ]
+
+    # Add configurations for all provinces
+    for province in provinces:
+        data_config.country_configs[province] = base_config
+        data_config.country_configs[province].eu_proxy_country = CountryCode("FRA")
+
+    data_config.aggregation_structure = {CountryCode("CAN"): provinces}
+
     raw_data_path = Path(__file__).parent.parent.parent / "test_macro_data" / "unit" / "sample_raw_data"
     return DataWrapper.from_config(data_config, raw_data_path, single_hfcs_survey=True)

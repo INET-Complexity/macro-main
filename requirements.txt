@@ -16,3 +16,7 @@ statsmodels~=0.14.1
 tables~=3.9.2
 tqdm~=4.66.1
 strenum~=0.4.15
+
+yaml~=0.2.5
+macromodel~=1.0.0
+cvxpy~=1.6.0
