@@ -147,8 +147,13 @@ class WIODSEAReader:
                     new.index.names = sea.index.names
                     new.columns.names = sea.columns.names
                     # add the new rows to the sea dataframe
+                    new = new.fillna(0)
                     sea = pd.concat([sea, new])
                 sea.drop(country, inplace=True)
+
+        sea = sea.fillna(0)
+
+        sea.sort_index(inplace=True)
 
         return cls(
             df=sea,
@@ -175,6 +180,17 @@ class WIODSEAReader:
             np.ndarray: An array of values in USD.
         """
         return self.df.loc[country].loc[self.industries, field].values
+
+    def set_values_in_usd(self, country: str, field: str, values: np.ndarray) -> None:
+        """
+        Set the values of a specific field in USD for a given country and industry.
+
+        Args:
+            country (str): The name of the country.
+            field (str): The name of the field.
+            values (np.ndarray): An array of values in USD.
+        """
+        self.df.loc[country].loc[self.industries, field] = values
 
     #
     # def get_values_in_lcu(self, country: str, field: str) -> np.ndarray:
