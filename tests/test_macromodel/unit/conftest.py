@@ -1,13 +1,14 @@
 import os.path
+import pickle as pkl
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 import yaml
-import pickle as pkl
 
 from macro_data import DataWrapper
+from macro_data.configuration.countries import Country as CountryCode
 from macro_data.configuration.region import Region
 from macro_data.configuration_utils import default_data_configuration
 from macromodel.agents.banks import Banks
@@ -40,8 +41,6 @@ from macromodel.markets.goods_market.goods_market import GoodsMarket
 from macromodel.markets.housing_market.housing_market import HousingMarket
 from macromodel.markets.labour_market.labour_market import LabourMarket
 from macromodel.rest_of_the_world import RestOfTheWorld
-
-from macro_data.configuration.countries import Country as CountryCode
 
 
 @pytest.fixture(scope="module", name="test_config")
