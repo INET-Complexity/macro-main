@@ -44,6 +44,7 @@ import pandas as pd
 
 from macro_data.configuration import DataConfiguration
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.processing.synthetic_country import SyntheticCountry
 from macro_data.processing.synthetic_rest_of_the_world.default_synthetic_rest_of_the_world import (
     DefaultSyntheticRestOfTheWorld,
@@ -104,6 +105,7 @@ class DataWrapper:
     industries: list[str]
     emission_factors: dict[str, float]
     emissions_energy_factors: Optional[EmissionsEnergyFactors] = None
+    aggregation_structure: Optional[dict[Country, list[Country | Region]]] = None
 
     @property
     def all_country_names(self) -> list[str]:
@@ -368,6 +370,7 @@ class DataWrapper:
             emissions_energy_factors=(
                 EmissionsEnergyFactors.from_readers(readers.icio[year], country_names) if add_emissions else None
             ),
+            aggregation_structure=configuration.aggregation_structure,
         )
 
     @classmethod
