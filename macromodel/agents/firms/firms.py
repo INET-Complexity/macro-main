@@ -5,6 +5,7 @@ import h5py
 import numpy as np
 import pandas as pd
 
+import macromodel.util.get_histogram
 from macro_data import SyntheticFirms
 from macromodel.agents.agent import Agent
 from macromodel.agents.firms.firm_ts import FirmTimeSeries
@@ -519,7 +520,10 @@ class Firms(Agent):
         Returns:
             np.ndarray: Target intermediate input production for each firm
         """
-        return self.functions["target_production"].compute_constrained_intermediate_inputs_target_production(
+
+        target_intermediate_inputs = self.functions[
+            "target_production"
+        ].compute_constrained_intermediate_inputs_target_production(
             previous_production=self.ts.current("production"),
             current_target_production=self.ts.current("target_production"),
             current_limiting_labour_inputs=self.ts.current("labour_inputs"),
@@ -530,6 +534,10 @@ class Firms(Agent):
             previous_loans_applied_for=self.ts.current("target_short_term_credit")
             + self.ts.current("target_long_term_credit"),
         )
+
+        target_intermediate_inputs = fillna(target_intermediate_inputs)
+
+        return target_intermediate_inputs
 
     def compute_target_capital_inputs_production(self) -> np.ndarray:
         """Calculate target capital input production levels.
@@ -543,7 +551,10 @@ class Firms(Agent):
         Returns:
             np.ndarray: Target capital input production for each firm
         """
-        return self.functions["target_production"].compute_constrained_capital_inputs_target_production(
+
+        target_capital_inputs = self.functions[
+            "target_production"
+        ].compute_constrained_capital_inputs_target_production(
             previous_production=self.ts.current("production"),
             current_target_production=self.ts.current("target_production"),
             current_limiting_labour_inputs=self.ts.current("labour_inputs"),
@@ -554,6 +565,10 @@ class Firms(Agent):
             previous_loans_applied_for=self.ts.current("target_short_term_credit")
             + self.ts.current("target_long_term_credit"),
         )
+
+        target_capital_inputs = fillna(target_capital_inputs)
+
+        return target_capital_inputs
 
     def compute_desired_labour_inputs(self) -> np.ndarray:
         """Calculate desired labor inputs for production.
@@ -1841,3 +1856,16 @@ class Firms(Agent):
             float: Total production taxes
         """
         return self.ts.get_aggregate("taxes_paid_on_production")
+
+
+def fillna(array: np.ndarray, value: float = 0):
+    """Fill NaN values in an array with a specified value.
+
+    Args:
+        array (np.ndarray): Input array with potential NaN values.
+        value (float, optional): Value to replace NaN. Defaults to 0.
+
+    Returns:
+        np.ndarray: Array with NaN values replaced.
+    """
+    return np.where(np.isnan(array), value, array)
