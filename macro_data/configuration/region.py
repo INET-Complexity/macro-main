@@ -57,3 +57,6 @@ class Region(str):
                 return_schema=core_schema.str_schema(),
             ),
         )
+
+    def __getnewargs__(self):
+        return str(self), self._parent_country, self._name, self._va_ratio
