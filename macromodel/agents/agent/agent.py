@@ -308,7 +308,12 @@ class Agent:
                     * self.transactor_seller_states["Prices"]
                     * self.transactor_seller_states["Real Amount sold to " + country_name]
                 )
-            self.ts.real_excess_demand.append(self.transactor_seller_states["Real Excess Demand"])
+            excess_demand = np.where(
+                np.isnan(self.transactor_seller_states["Real Excess Demand"]),
+                0.0,
+                self.transactor_seller_states["Real Excess Demand"],
+            )
+            self.ts.real_excess_demand.append(excess_demand)
         else:
             self.ts.real_amount_sold.append(np.full(self.n_transactors_sell, np.nan))
             for country_name in self.all_country_names:
