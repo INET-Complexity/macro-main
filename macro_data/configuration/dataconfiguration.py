@@ -55,6 +55,7 @@ from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field
 
 from .countries import Country
+from .region import Region
 
 
 class FirmsDataConfiguration(BaseModel):
@@ -200,6 +201,8 @@ class DataConfiguration(BaseModel):
         aggregate_industries (bool): Whether to aggregate industries
         can_disaggregation (bool): Whether to enable Canadian industry disaggregation
         seed (int, optional): Random seed for reproducibility
+        aggregation_structure (dict[Country, list[Country | Region]], optional):
+            Maps parent entities to their components (regions/countries)
 
     Example:
         ```python
@@ -226,22 +229,48 @@ class DataConfiguration(BaseModel):
     aggregate_industries: bool = False
     can_disaggregation: bool = False
     seed: Optional[int] = None
+    aggregation_structure: Optional[dict[Country, list[Country | Region]]] = None
 
     def model_post_init(self, __context: Any) -> None:
         """
         Validate the configuration after initialization.
 
-        This method ensures that non-EU countries have proxy EU countries specified.
+        This method ensures that:
+        1. Non-EU countries have proxy EU countries specified
+        2. All components in aggregation_structure have corresponding configs
+        3. No component appears in multiple parent entities
 
         Args:
             __context (Any): Pydantic initialization context
 
         Raises:
-            ValueError: If a non-EU country doesn't have an EU proxy country specified
+            ValueError: If validation fails
         """
+        # Check EU proxy countries
         for country, country_config in self.country_configs.items():
             if country_config.eu_proxy_country is None and not country.is_eu_country:
                 raise ValueError(f"{country} is not in EU: please set an EU proxy country.")
+
+        # Validate aggregation structure if present
+        if self.aggregation_structure:
+            # Check that all components have configs
+            all_components = set()
+            for components in self.aggregation_structure.values():
+                all_components.update(components)
+
+            missing_configs = all_components - set(self.country_configs.keys())
+            if missing_configs:
+                raise ValueError(f"Missing configurations for components: {missing_configs}")
+
+            # Check for duplicate components
+            component_counts = {}
+            for components in self.aggregation_structure.values():
+                for component in components:
+                    component_counts[component] = component_counts.get(component, 0) + 1
+
+            duplicates = {comp: count for comp, count in component_counts.items() if count > 1}
+            if duplicates:
+                raise ValueError(f"Components appear in multiple parent entities: {duplicates}")
 
     @property
     def countries(self) -> list[Country]:
@@ -252,3 +281,46 @@ class DataConfiguration(BaseModel):
             list[Country]: List of configured countries
         """
         return list(self.country_configs.keys())
+
+    def get_components(self, entity: Country | Region) -> list[Country | Region]:
+        """
+        Get all components (regions/countries) for a given entity.
+
+        Args:
+            entity (Country | Region): The parent entity to get components for
+
+        Returns:
+            list[Country | Region]: List of components, or empty list if not found
+        """
+        if self.aggregation_structure and entity in self.aggregation_structure:
+            return self.aggregation_structure[entity]
+        return []
+
+    def is_aggregated(self, entity: Country | Region) -> bool:
+        """
+        Check if an entity is disaggregated into components.
+
+        Args:
+            entity (Country | Region): The entity to check
+
+        Returns:
+            bool: True if the entity has components, False otherwise
+        """
+        return bool(self.get_components(entity))
+
+    def get_parent(self, component: Country | Region) -> Optional[Country]:
+        """
+        Get the parent entity for a component.
+
+        Args:
+            component (Country | Region): The component to find the parent for
+
+        Returns:
+            Optional[Country]: The parent entity if found, None otherwise
+        """
+        if not self.aggregation_structure:
+            return None
+        for parent, components in self.aggregation_structure.items():
+            if component in components:
+                return parent
+        return None
