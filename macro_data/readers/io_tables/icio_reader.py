@@ -631,7 +631,10 @@ class ICIOReader:
             np.ndarray: Net taxes by industry, converted to sub-annual frequency
         """
         return (
-            self.iot.xs(country_name, axis=1, level=0).loc[("TOTAL", "Taxes Less Subsidies"), self.industries].values
+            self.iot.xs(country_name, axis=1, level=0)
+            .loc[("TOTAL", "Taxes Less Subsidies"), self.industries]
+            .fillna(0)
+            .values
         ) / self.yearly_factor
 
     def get_taxes_less_subsidies_rates(self, country_name: str) -> np.ndarray:
