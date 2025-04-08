@@ -1,6 +1,7 @@
+import random
+
 import numpy as np
 import pandas as pd
-import random
 
 
 def ensure_minimum_workers_in_industries(individual_data: pd.DataFrame, n_industries: int) -> pd.DataFrame:

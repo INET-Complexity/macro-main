@@ -1,8 +1,8 @@
 from typing import Optional
 
+import cvxpy as cp
 import numpy as np
 import pandas as pd
-import cvxpy as cp
 
 from macro_data.configuration.countries import Country
 from macro_data.configuration.region import Region
