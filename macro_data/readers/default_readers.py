@@ -22,10 +22,10 @@ from macro_data.readers.economic_data.policy_rates import PolicyRatesReader
 from macro_data.readers.economic_data.world_bank_reader import WorldBankReader
 from macro_data.readers.emissions.emissions_reader import EmissionsReader
 from macro_data.readers.icio_sea_matching import (
-    match_iot_with_sea,
     add_investment_matrix_to_icio,
-    reconcile_value_added,
     get_investment_fractions,
+    match_iot_with_sea,
+    reconcile_value_added,
 )
 from macro_data.readers.io_tables.icio_reader import ICIOReader, split_gfcf_column
 from macro_data.readers.io_tables.industries import AGGREGATED_INDUSTRIES
