@@ -44,6 +44,7 @@ import numpy as np
 import pandas as pd
 
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.readers.util.prune_util import DataFilterWarning, prune_index
 
 
@@ -207,6 +208,8 @@ class EuroStatReader:
             - If country not found, returns mean value for the year
             - If year not found and return_last_value True, returns last available value
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         country_data = df.loc[df["geo"] == country]
 
         if country_data.empty:
@@ -234,6 +237,8 @@ class EuroStatReader:
         Note:
             Returns ratio of total non-financial firm debt to GDP
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["firm_debt_ratio"]
         return self.find_value(df, country, str(year)) / 100.0
 
@@ -249,6 +254,10 @@ class EuroStatReader:
         Returns:
             float: Total non-financial firm debt in millions of national currency
         """
+        ratio = 1.0
+        if isinstance(country, Region):
+            ratio = country.va_ratio
+            country = country.parent_country
         if isinstance(country, str):
             country = Country(country)
         df = self.data["financial_balance_sheets"]
@@ -261,9 +270,9 @@ class EuroStatReader:
             if len(res) <= 2:
                 return np.nan
             if " " in res:
-                return float(res[:-2]) * 1e6
+                return float(res[:-2]) * 1e6 * ratio
             else:
-                return float(res) * 1e6
+                return float(res) * 1e6 * ratio
         else:
             return np.nan
 
@@ -278,6 +287,8 @@ class EuroStatReader:
         Returns:
             float: Total financial firm debt in millions of national currency
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         if isinstance(country, str):
             country = Country(country)
         df = self.data["financial_balance_sheets"]
@@ -287,7 +298,9 @@ class EuroStatReader:
         ]
         return float(df[str(year)].values[0]) * 1e6
 
-    def get_total_household_deposits(self, country: str, year: int, proxy_country: str = "FRA") -> float:
+    def get_total_household_deposits(
+        self, country: str, year: int, proxy_country: str = "FRA", ratio: float = 1.0
+    ) -> float:
         """
         Get total household deposits for a specific country and year.
 
@@ -302,6 +315,9 @@ class EuroStatReader:
         Note:
             If data not available for specified country, uses proxy country scaled by total output ratio
         """
+        if isinstance(country, Region):
+            ratio = country.va_ratio
+            country = country.parent_country
         df = self.data["financial_balance_sheets"]
         country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[
@@ -316,10 +332,12 @@ class EuroStatReader:
                     * self.get_total_household_deposits(proxy_country, year)
                 )
             else:
-                return self.get_total_household_deposits(proxy_country, year)
+                return self.get_total_household_deposits(proxy_country, year) * ratio
         return float(val[0]) * 1e6
 
-    def get_total_household_fixed_assets(self, country: str, year: int, proxy_country: str = "GBR") -> float:
+    def get_total_household_fixed_assets(
+        self, country: str, year: int, proxy_country: str = "GBR", ratio: float = 1.0
+    ) -> float:
         """
         Get total household fixed assets for a specific country and year.
 
@@ -334,6 +352,9 @@ class EuroStatReader:
         Note:
             If data not available for specified country, uses proxy country scaled by total output ratio
         """
+        if isinstance(country, Region):
+            ratio = country.va_ratio
+            country = country.parent_country
         df = self.data["non_financial_balance_sheets"]
         country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[df[r"freq,unit,nace_r2,asset10,geo\TIME_PERIOD"] == "A,CRC_MNAC,TOTAL,N111N," + country_name_short]
@@ -343,6 +364,7 @@ class EuroStatReader:
                 self.total_output[country]
                 / self.total_output[proxy_country]
                 * self.get_total_household_fixed_assets(proxy_country, year)
+                * ratio
             )
         if " " in val[0]:
             return float(val[0][:-2]) * 1e6
@@ -362,10 +384,12 @@ class EuroStatReader:
         Note:
             Returns ratio of total non-financial firm deposits to GDP
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["firm_deposits_ratio"]
         return self.find_value(df, country, str(year)) / 100.0
 
-    def get_quarterly_gdp(self, country: Country, year: int, quarter: int) -> float:
+    def get_quarterly_gdp(self, country: Country, year: int, quarter: int, ratio: float = 1.0) -> float:
         """
         Get quarterly GDP for a specific country, year, and quarter.
 
@@ -377,12 +401,16 @@ class EuroStatReader:
         Returns:
             float: Quarterly GDP in millions of national currency
         """
+        if isinstance(country, Region):
+            ratio = country.va_ratio
+            country = country.parent_country
         df = self.data["gdp"]
         return (
             df.loc[
                 (df["geo"] == country) & (df["TIME_PERIOD"] == f"{year}-Q{quarter}"),
                 "OBS_VALUE",
             ].values[0]
+            * ratio
             * 1e6
         )
 
@@ -401,6 +429,8 @@ class EuroStatReader:
         Note:
             Interpolates quarterly GDP to monthly values using linear interpolation
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         start_quarter = (month - 1) // 3 + 1
         start = self.get_quarterly_gdp(country, year, start_quarter)
 
@@ -412,7 +442,7 @@ class EuroStatReader:
         return start + (end - start) * ((month - 1) % 3) / 3
 
     # historic domestic
-    def get_total_nonfin_firm_deposits(self, country: Country | str, year: int) -> float:
+    def get_total_nonfin_firm_deposits(self, country: Country | str, year: int, ratio: float = 1.0) -> float:
         """
         Get total non-financial firm deposits for a specific country and year.
 
@@ -423,6 +453,9 @@ class EuroStatReader:
         Returns:
             float: Total non-financial firm deposits in millions of national currency
         """
+        if isinstance(country, Region):
+            ratio = country.va_ratio
+            country = country.parent_country
         if isinstance(country, str):
             country = Country(country)
         df = self.data["financial_balance_sheets"]
@@ -433,14 +466,14 @@ class EuroStatReader:
             if len(res) <= 2:
                 return np.nan
             if " " in res:
-                return float(res[:-2]) * 1e6
+                return float(res[:-2]) * 1e6 * ratio
             else:
-                return float(res) * 1e6
+                return float(res) * 1e6 * ratio
         else:
             return np.nan
 
     # historic domestic
-    def get_total_bank_equity(self, country: str, year: int, proxy_country: str = "FRA") -> float:
+    def get_total_bank_equity(self, country: str, year: int, proxy_country: str = "FRA", ratio: float = 1.0) -> float:
         """
         Get total bank equity for a specific country and year.
 
@@ -455,6 +488,9 @@ class EuroStatReader:
         Note:
             If data not available for specified country, uses proxy country scaled by total output ratio
         """
+        if isinstance(country, Region):
+            ratio = country.va_ratio
+            country = country.parent_country
         df = self.data["financial_balance_sheets"]
         country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[
@@ -471,7 +507,7 @@ class EuroStatReader:
                 * self.get_total_bank_equity(proxy_country, year)
             )
         else:
-            return self.get_total_bank_equity(proxy_country, year)
+            return self.get_total_bank_equity(proxy_country, year) * ratio
 
     def cb_debt_ratios(self, country: Country, year: int) -> float:
         """
@@ -487,6 +523,8 @@ class EuroStatReader:
         Note:
             Returns ratio of central bank debt to GDP
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["central_bank_debt_ratio"]
         return self.find_value(df, country, str(year)) / 100.0
 
@@ -504,6 +542,8 @@ class EuroStatReader:
         Note:
             Returns ratio of central bank equity to GDP
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["central_bank_equity_ratio"]
         return self.find_value(df, country, str(year)) / 100.0
 
@@ -521,6 +561,8 @@ class EuroStatReader:
         Note:
             Returns ratio of general government debt to GDP
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["general_gov_debt_ratio"]
         return self.find_value(df, country, str(year)) / 100
 
@@ -538,6 +580,8 @@ class EuroStatReader:
         Note:
             Returns ratio of central government debt to GDP
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["central_gov_debt_ratio"]
         return self.find_value(df, country, str(year)) / 100
 
@@ -556,6 +600,8 @@ class EuroStatReader:
         Note:
             Returns money market interest rates for specified term length
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         assert months in [0, 1, 3, 6, 12]
         df = self.data["shortterm_interest_rates"]
 
@@ -586,6 +632,8 @@ class EuroStatReader:
         Note:
             Returns yield on long-term (typically 10-year) government bonds
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["longterm_central_gov_bond_rates"]
         return self.find_value(df, country, str(year)) / 100
 
@@ -610,6 +658,8 @@ class EuroStatReader:
             - Returns ratio of (household property income + household surplus) to firm surplus
             - Only 2010 and 2011 data available, defaults to 2011 for other years
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         if year not in [2010, 2011]:
             # print("Warning: Using the 2011 data for the dividend payout ratio.")
             year = 2011
@@ -646,6 +696,8 @@ class EuroStatReader:
             Returns spread between firm borrowing rate and Euribor rate,
             converted to monthly rate
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         euribor_rate = self.shortterm_interest_rates("EA", year, 3)
 
         df = self.data["nonfinancial_transactions"]
@@ -678,6 +730,8 @@ class EuroStatReader:
         Returns:
             float: Number of households (in thousands)
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["number_of_households"].set_index("geo")
         return int(df.loc[country, str(year)] * 1000)
 
@@ -695,6 +749,8 @@ class EuroStatReader:
         Note:
             Returns ratio of taxes on capital formation to total capital formation
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         capform_df = self.data["capital_formation"]
 
         df = self.data["iot_tables"]
@@ -721,6 +777,8 @@ class EuroStatReader:
             - Includes sectors B, C, D, F and services
             - Service sector growth rate is applied to sectors A, E, G-S
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         # Get growth rates
         data_b = get_perc_growth_series(country=country, growth_df=self.data["perc_growth_sector_B"], series_name="B")
         data_c = get_perc_growth_series(country=country, growth_df=self.data["perc_growth_sector_C"], series_name="C")
@@ -761,7 +819,7 @@ class EuroStatReader:
         return growth_df
 
     def get_total_industry_debt_and_deposits(
-        self, country: Country, proxy_country: Optional[Country] = None
+        self, country: Country, proxy_country: Optional[Country] = None, ratio: float = 1.0
     ) -> pd.DataFrame:
         """
         Get total industry debt and deposits time series for a specific country.
@@ -779,10 +837,13 @@ class EuroStatReader:
         Note:
             Returns monthly data from 1970 to 2024, using annual values repeated monthly
         """
+        if isinstance(country, Region):
+            ratio = country.va_ratio
+            country = country.parent_country
         try:
             dates, total_deposits, total_debt = [], [], []
             for year in range(1970, 2024):
-                dep = self.get_total_nonfin_firm_deposits(country, year)
+                dep = self.get_total_nonfin_firm_deposits(country, year, ratio)
                 debt = self.get_total_nonfin_firm_debt(country, year)
                 for month in range(1, 13):
                     dates.append(str(year) + "-" + str(month))
@@ -793,8 +854,8 @@ class EuroStatReader:
             return pd.DataFrame(
                 index=dates,
                 data={
-                    "Total Deposits": total_deposits,
-                    "Total Debt": total_debt,
+                    "Total Deposits": np.array(total_deposits, dtype=float) * ratio,
+                    "Total Debt": np.array(total_debt, dtype=float) * ratio,
                 },
             )
         except IndexError:
@@ -817,6 +878,8 @@ class EuroStatReader:
         Note:
             Returns ratio of imputed rent (CPA_L68A) to total real estate services (CPA_L68A + CPA_L68B)
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         df = self.data["real_estate_services"].set_index("freq,unit,stk_flow,induse,prod_na,geo\TIME_PERIOD")
         country_name_short = country.to_two_letter_code()
         return float(df.at["A,MIO_NAC,TOTAL,P3_S14,CPA_L68A," + country_name_short, str(year)]) / (
@@ -845,6 +908,8 @@ class EuroStatReader:
             - Falls back to proxy country if data not available
             - Uses previous year's data if year > 2011
         """
+        if isinstance(country_name, Region):
+            country_name = country_name.parent_country
         df = self.data["investment_percentage_of_gdp"].copy()
         df_country = df.loc[df["geo"] == country_name]
         if len(df_country) == 0:
@@ -880,6 +945,8 @@ class EuroStatReader:
         Note:
             Includes "ROW" (rest of world) entry with mean of all countries' fractions
         """
+        if isinstance(country_names, Region):
+            country_names = country_names.parent_country
         fractions = {c: self.get_imputed_rent_fraction_of_country(c, year) for c in country_names}
         fractions[Country("ROW")] = np.mean(list(fractions.values()))
         return fractions

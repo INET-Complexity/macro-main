@@ -4,7 +4,7 @@ This module matches and harmonizes employment data from different sources:
 1. Individual Data Source:
    - Actual wages from household surveys
    - Industry of employment
-   - Activity status
+   - Activity status (1: employed, 2: unemployed, 3: inactive)
    - Employment income
 
 2. Firm Data Source:
@@ -113,22 +113,26 @@ def preprocess(
         )
 
     # Create positions
-    wages_offered = np.concatenate(
-        [
+    if len(firm_ids) > 0:
+        wages_offered = np.concatenate(
             [
-                labour_taxrate
-                * synthetic_firms.firm_data.at[firm_id, "Total Wages"]
-                / synthetic_firms.firm_data.at[firm_id, "Number of Employees"]
+                [
+                    labour_taxrate
+                    * synthetic_firms.firm_data.at[firm_id, "Total Wages"]
+                    / synthetic_firms.firm_data.at[firm_id, "Number of Employees"]
+                ]
+                * synthetic_firms.firm_data.at[firm_id, "Number of Employees"]
+                for firm_id in firm_ids
             ]
-            * synthetic_firms.firm_data.at[firm_id, "Number of Employees"]
-            for firm_id in firm_ids
-        ]
-    )
-    pos_corr_firm = np.concatenate(
-        [[firm_id] * synthetic_firms.firm_data.at[firm_id, "Number of Employees"] for firm_id in firm_ids]
-    )
+        )
 
-    return wages_offered, pos_corr_firm
+        pos_corr_firm = np.concatenate(
+            [[firm_id] * synthetic_firms.firm_data.at[firm_id, "Number of Employees"] for firm_id in firm_ids]
+        )
+
+        return wages_offered, pos_corr_firm
+    else:
+        return np.array([]), np.array([])
 
 
 def find_optimal_matching(
