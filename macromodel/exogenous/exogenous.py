@@ -31,6 +31,7 @@ import numpy as np
 import pandas as pd
 
 from macro_data import SyntheticCountry
+from macro_data.configuration.region import Region
 from macromodel.exchange_rates.exchange_rates import ExchangeRates
 from macromodel.exogenous.exogenous_ts import create_exogenous_timeseries
 
@@ -134,7 +135,11 @@ class Exogenous:
 
         # Process exchange rates
         self.exchange_rates_data = self.exchange_rates_data.T
-        self.exchange_rates_data = self.exchange_rates_data.loc[:, country_name]
+        if isinstance(country_name, Region):
+            data_country = country_name.parent_country
+        else:
+            data_country = country_name
+        self.exchange_rates_data = self.exchange_rates_data.loc[:, data_country]
         self.exchange_rates_data.index = [ind for ind in self.exchange_rates_data.index]
         self.exchange_rates_data.index = pd.PeriodIndex(self.exchange_rates_data.index, freq="Q").to_timestamp()
         self.exchange_rates_data.columns = ["Exchange Rate"]
