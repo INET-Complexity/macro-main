@@ -102,6 +102,31 @@ def test_canadian_disagg(can_disagg_datawrapper):
     assert True
 
 
+def test_can_provincial(can_provincial_datawrapper):
+    n_industries = can_provincial_datawrapper.n_industries
+
+    all_provs = can_provincial_datawrapper.synthetic_countries.keys()
+
+    configuration = SimulationConfiguration(
+        country_configurations={
+            province: CountryConfiguration.n_industry_default(n_industries=n_industries) for province in all_provs
+        }
+    )
+
+    configuration.seed = 0
+
+    simulation = Simulation.from_datawrapper(
+        datawrapper=can_provincial_datawrapper, simulation_configuration=configuration
+    )
+
+    for _ in range(3):
+        simulation.iterate()
+
+    shallow_output = simulation.countries["CAN_AB"].shallow_output()
+
+    assert True
+
+
 def test_check_compatibility(datawrapper):
     """Test the compatibility check."""
     france = CountryName("FRA")

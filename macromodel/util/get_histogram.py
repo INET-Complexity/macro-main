@@ -47,6 +47,8 @@ def get_histogram(values: np.ndarray, scale: Optional[int], bins: int = 40, norm
         counts = hist[0, :-1]  # Normalized counts
         edges = hist[1, :]     # Bin edges
     """
+
+    values = fillna(values)
     if len(values) == 0:
         return np.full((2, bins + 1), np.nan)
     if normalise:
@@ -62,3 +64,16 @@ def get_histogram(values: np.ndarray, scale: Optional[int], bins: int = 40, norm
     hist = hist.astype(float)
     hist /= hist.sum()
     return np.array([np.concatenate((hist, [np.nan])), bin_edges])
+
+
+def fillna(array: np.ndarray, value: float = 0):
+    """Fill NaN values in an array with a specified value.
+
+    Args:
+        array (np.ndarray): Input array with potential NaN values.
+        value (float, optional): Value to replace NaN. Defaults to 0.
+
+    Returns:
+        np.ndarray: Array with NaN values replaced.
+    """
+    return np.where(np.isnan(array), value, array)
