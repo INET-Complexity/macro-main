@@ -41,6 +41,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from macro_data.configuration.region import Region
 from macro_data.readers.util.prune_util import prune_index
 
 
@@ -128,6 +129,8 @@ class ExchangeRatesReader:
         Note:
             ROW (Rest of World) is treated as USA.
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         if country == "ROW":
             country = "USA"
         return 1 / self.df.loc[country, str(year)]
@@ -146,6 +149,8 @@ class ExchangeRatesReader:
         Note:
             ROW (Rest of World) is treated as USA. The default currency is USD.
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         if country == "ROW":
             country = "USA"
         return self.df.loc[country, str(year)]
@@ -169,6 +174,8 @@ class ExchangeRatesReader:
             Uses Germany (DEU) as proxy for EUR.
             ROW (Rest of World) is treated as USA.
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         if country == "ROW":
             country = "USA"
         return self.to_usd("DEU", year) * self.from_usd(country, year)
@@ -189,6 +196,8 @@ class ExchangeRatesReader:
         Note:
             ROW (Rest of World) is treated as USA.
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         if country == "ROW":
             country = "USA"
         return self.from_usd(country, year)
