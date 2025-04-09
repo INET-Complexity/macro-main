@@ -5,6 +5,7 @@ import yaml
 
 from macro_data.configuration import DataConfiguration
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.readers import AGGREGATED_INDUSTRIES, ALL_INDUSTRIES
 from macro_data.readers.default_readers import DataReaders
 from macro_data.readers.exogenous_data import (
@@ -77,6 +78,45 @@ def readers_disagg_can(data_path):
         aggregate_industries=False,
         proxy_country_dict={canada: france},
         use_disagg_can_2014_reader=True,
+    )
+
+    return reader
+
+
+@pytest.fixture(scope="module", name="readers_provincial_can")
+def readers_provincial_can(data_path):
+    canada = Country("CAN")
+    france = Country("FRA")
+
+    regions_list = [
+        "CAN_AB",
+        "CAN_BC",
+        "CAN_MB",
+        "CAN_NB",
+        "CAN_NL",
+        "CAN_NS",
+        "CAN_ON",
+        "CAN_PE",
+        "CAN_QC",
+        "CAN_SK",
+    ]
+
+    regions = [Region.from_code(region) for region in regions_list]
+
+    regions_dict = {canada: regions}
+
+    reader = DataReaders.from_raw_data(
+        raw_data_path=data_path,
+        country_names=[Country("CAN")],
+        simulation_year=2014,
+        scale_dict={canada: 100000},
+        industries=ALL_INDUSTRIES,
+        force_single_hfcs_survey=True,
+        single_icio_survey=True,
+        aggregate_industries=False,
+        proxy_country_dict={canada: france},
+        use_provincial_can_reader=True,
+        regions_dict=regions_dict,
     )
 
     return reader
@@ -190,3 +230,60 @@ def all_exogenous_data(readers):
     country_names = [Country("FRA")]
     all_exogenous_data = create_all_exogenous_data(readers, country_names)
     return all_exogenous_data
+
+
+@pytest.fixture
+def canada_disagg_config(data_config_path):
+    """Fixture for Canadian provincial disaggregation configuration."""
+    with open(data_config_path, "r") as f:
+        config_dict = yaml.safe_load(f)
+
+    configuration = DataConfiguration(**config_dict)
+    configuration.can_disaggregation = False
+    configuration.aggregate_industries = False
+    configuration.prune_date = None
+    configuration.seed = 0
+
+    # Get the base configuration (France's config) to copy for all regions
+    france = Country("FRA")
+    base_config = configuration.country_configs[france]
+
+    base_config.single_firm_per_industry = True
+    base_config.single_bank = True
+    base_config.single_government_entity = True
+
+    base_config.firms_configuration.constructor = "Default"
+
+    base_config.scale = 1000
+
+    # Define Canadian provinces
+    provinces = [
+        Region.from_code("CAN_AB", "Alberta"),
+        Region.from_code("CAN_BC", "British Columbia"),
+        Region.from_code("CAN_MB", "Manitoba"),
+        Region.from_code("CAN_NB", "New Brunswick"),
+        Region.from_code("CAN_NL", "Newfoundland and Labrador"),
+        Region.from_code("CAN_NS", "Nova Scotia"),
+        Region.from_code("CAN_ON", "Ontario"),
+        Region.from_code("CAN_PE", "Prince Edward Island"),
+        Region.from_code("CAN_QC", "Quebec"),
+        Region.from_code("CAN_SK", "Saskatchewan"),
+    ]
+
+    # Add Canada as the parent country
+    canada = Country("CAN")
+    configuration.country_configs[canada] = base_config
+    configuration.country_configs[canada].eu_proxy_country = france
+
+    # Add configurations for all provinces
+    for province in provinces:
+        configuration.country_configs[province] = base_config
+        configuration.country_configs[province].eu_proxy_country = france
+
+    # Set up the aggregation structure
+    configuration.aggregation_structure = {canada: provinces}
+
+    # Remove France's config since we don't need it for this test
+    del configuration.country_configs[france]
+
+    return configuration
