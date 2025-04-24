@@ -193,6 +193,7 @@ class DataConfiguration(BaseModel):
     Attributes:
         year (int): Initial year for the simulation
         quarter (int): Initial quarter (1-4) for the simulation
+        time_unit (int): Time unit for the simulation (1-12), in months
         prune_date (date, optional): Date to prune data before
         country_configs (dict[Country, CountryDataConfiguration]): Per-country configurations
         row_data_config (ROWDataConfiguration): Rest of world configuration
@@ -221,6 +222,7 @@ class DataConfiguration(BaseModel):
 
     year: int
     quarter: int = 1
+    time_unit: int = Field(4, ge=1, le=12)
     prune_date: Optional[date] = None
     country_configs: dict[Country, CountryDataConfiguration]
     row_data_config: ROWDataConfiguration = ROWDataConfiguration()
