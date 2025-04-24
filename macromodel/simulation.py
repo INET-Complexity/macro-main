@@ -172,7 +172,7 @@ class Simulation:
             row_index=row_index,
         )
 
-        timestep = Timestep(year=datawrapper.configuration.year, month=1)
+        timestep = Timestep(year=datawrapper.configuration.year, month=1, increment=datawrapper.time_unit)
 
         if simulation_configuration.seed is not None:
             np.random.seed(simulation_configuration.seed)
