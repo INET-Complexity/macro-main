@@ -106,6 +106,7 @@ class DataWrapper:
     emission_factors: dict[str, float]
     emissions_energy_factors: Optional[EmissionsEnergyFactors] = None
     aggregation_structure: Optional[dict[Country, list[Country | Region]]] = None
+    time_unit: int = 4.0
 
     @property
     def all_country_names(self) -> list[str]:
@@ -371,6 +372,7 @@ class DataWrapper:
                 EmissionsEnergyFactors.from_readers(readers.icio[year], country_names) if add_emissions else None
             ),
             aggregation_structure=configuration.aggregation_structure,
+            time_unit=configuration.time_unit,
         )
 
     @classmethod
