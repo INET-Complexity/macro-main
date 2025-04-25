@@ -431,14 +431,14 @@ class EuroStatReader:
         # Check if DataFrame is empty or year doesn't exist
         if df.empty or str(year) not in df.columns:
             return np.nan
-            
-        res = df[str(year)].values[0]
-        if len(res) <= 2:
-            return np.nan
-        if " " in res:
-            return float(res[:-2]) * 1e6
         else:
-            return float(res) * 1e6
+            res = df[str(year)].values[0]
+            if len(res) <= 2:
+                return np.nan
+            if " " in res:
+                return float(res[:-2]) * 1e6
+            else:
+                return float(res) * 1e6
 
     # historic domestic
     def get_total_bank_equity(self, country: str, year: int, proxy_country: str = "FRA") -> float:
@@ -735,7 +735,7 @@ class EuroStatReader:
         growth_df = pd.concat([data_b, data_c, data_d, data_f], axis=1)
 
         for serv_ind in [
-            "A",
+            "A", 
             "E",
             "G",
             "H",
