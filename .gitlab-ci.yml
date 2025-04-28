@@ -15,8 +15,8 @@ stages:
 before_script:
 - python -V
 - python -m pip install --upgrade pip
-- pip install -e ".[dev]"
 - apt-get update && apt-get install -y libhdf5-dev
+- pip install -e ".[dev]"
 
 style:
   stage: style
