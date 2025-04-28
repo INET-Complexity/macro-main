@@ -29,10 +29,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Install package
-        run: python setup.py install
+          pip install -e ".[dev]"
 
       - name: Test with pytest
         run: |
-          pytest --cov=model tests/test_macromodel --cov-report xml
+          pytest --cov=macromodel tests/test_macromodel --cov-report xml
