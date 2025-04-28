@@ -17,18 +17,20 @@ The framework supports multi-country simulations with:
 
 ## Installation
 
-Requires Python >=3.10. 
+Requires Python >=3.10.
 
 ### System Dependencies
 
 Before installing the Python package, you need to install some system dependencies:
 
 **Linux (Ubuntu/Debian):**
+
 ```bash
 sudo apt-get install libhdf5-dev
 ```
 
 **macOS:**
+
 ```bash
 brew install hdf5
 ```
@@ -38,13 +40,37 @@ brew install hdf5
 Clone the repository and install from the root directory:
 
 ```bash
+# Basic installation (includes only core dependencies)
 pip install .
+
+# Development installation with all development tools
+pip install -e ".[dev]"
+
+# Documentation installation with all documentation tools
+pip install -e ".[docs]"
+
+# Install everything (core + dev + docs)
+pip install -e ".[dev,docs]"
 ```
 
-For development installation:
+The installation options include:
+
+- `[dev]`: Development tools including:
+  - `pytest` and `pytest-cov` for testing and coverage reporting
+  - `black` for code formatting
+  - `isort` for import sorting
+  - `black[jupyter]` for Jupyter notebook support
+
+- `[docs]`: Documentation tools including:
+  - `mkdocs` and related plugins for documentation generation
+  - `notebook` and `nbconvert` for Jupyter notebook support
+  - `mike` for versioned documentation
+  - Various MkDocs plugins for Python documentation
+
+For development, we recommend using the `-e` flag (editable mode) along with the `[dev]` option:
 
 ```bash
-pip install -e ./ --config-settings editable_mode=strict
+pip install -e ".[dev]" --config-settings editable_mode=strict
 ```
 
 ## Data Preprocessing
