@@ -17,7 +17,25 @@ The framework supports multi-country simulations with:
 
 ## Installation
 
-Requires Python >=3.10. Clone the repository and install from the root directory:
+Requires Python >=3.10. 
+
+### System Dependencies
+
+Before installing the Python package, you need to install some system dependencies:
+
+**Linux (Ubuntu/Debian):**
+```bash
+sudo apt-get install libhdf5-dev
+```
+
+**macOS:**
+```bash
+brew install hdf5
+```
+
+### Python Package Installation
+
+Clone the repository and install from the root directory:
 
 ```bash
 pip install .
