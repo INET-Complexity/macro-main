@@ -1,0 +1,42 @@
+image: python:3.12
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.pip-cache"
+
+cache:
+  paths:
+  - .pip-cache/
+  - venv/
+
+stages:
+- style
+- test
+
+before_script:
+- python -V
+- python -m pip install --upgrade pip
+- pip install -e ".[dev]"
+- apt-get update && apt-get install -y libhdf5-dev
+
+style:
+  stage: style
+  script:
+  - black --check --config="pyproject.toml" .
+  - isort . --check-only --settings-path pyproject.toml
+  rules:
+  - if: $CI_COMMIT_BRANCH == "main"
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+test:
+  stage: test
+  script:
+  - pytest --cov=data tests/test_macro_data --cov-report xml
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    when: always
+  rules:
+  - if: $CI_COMMIT_BRANCH == "main"
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
