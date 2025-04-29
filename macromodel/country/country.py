@@ -642,7 +642,9 @@ class Country:
 
         # Firm demand for goods
         self.firms.ts.unconstrained_target_intermediate_inputs.append(
-            self.firms.compute_unconstrained_demand_for_intermediate_inputs()
+            self.firms.compute_unconstrained_demand_for_intermediate_inputs(
+                good_prices=self.economy.ts.current("good_prices")
+            )
         )
         self.firms.ts.unconstrained_target_intermediate_inputs_costs.append(
             self.firms.compute_unconstrained_demand_for_intermediate_inputs_value(
@@ -650,7 +652,9 @@ class Country:
             )
         )
         self.firms.ts.unconstrained_target_capital_inputs.append(
-            self.firms.compute_unconstrained_demand_for_capital_inputs()
+            self.firms.compute_unconstrained_demand_for_capital_inputs(
+                good_prices=self.economy.ts.current("good_prices")
+            )
         )
         self.firms.ts.unconstrained_target_capital_inputs_costs.append(
             self.firms.compute_unconstrained_demand_for_capital_inputs_value(

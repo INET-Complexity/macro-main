@@ -897,9 +897,7 @@ class Firms(Agent):
             current_time=len(self.ts.historic("price")),
         )
 
-    def compute_unconstrained_demand_for_intermediate_inputs(
-        self,
-    ) -> np.ndarray:
+    def compute_unconstrained_demand_for_intermediate_inputs(self, good_prices: np.ndarray) -> np.ndarray:
         """Calculate unconstrained demand for intermediate inputs.
 
         Determines optimal intermediate input requirements without
@@ -908,6 +906,9 @@ class Firms(Agent):
         - Input-output coefficients
         - Current stocks
         - Production history
+
+        Args:
+            good_prices (np.ndarray): Current prices for inputs
 
         Returns:
             np.ndarray: Unconstrained intermediate input demand for each firm
@@ -921,6 +922,8 @@ class Firms(Agent):
             initial_intermediate_inputs_stock=self.ts.initial("intermediate_inputs_stock"),
             prev_production=self.ts.current("production"),
             initial_production=self.ts.initial("production"),
+            previous_good_prices=good_prices,
+            substitution_bundle_matrix=self.substitution_bundles,
         )
 
     def compute_unconstrained_demand_for_intermediate_inputs_value(self, current_good_prices: np.ndarray) -> np.ndarray:
@@ -940,7 +943,7 @@ class Firms(Agent):
             current_good_prices,
         )
 
-    def compute_unconstrained_demand_for_capital_inputs(self) -> np.ndarray:
+    def compute_unconstrained_demand_for_capital_inputs(self, good_prices: np.ndarray) -> np.ndarray:
         """Calculate unconstrained demand for capital inputs.
 
         Determines optimal capital input requirements without
@@ -949,6 +952,9 @@ class Firms(Agent):
         - Capital productivity coefficients
         - Current capital stock
         - Production history
+
+        Args:
+            good_prices: np.ndarray
 
         Returns:
             np.ndarray: Unconstrained capital input demand for each firm
@@ -960,6 +966,8 @@ class Firms(Agent):
             initial_capital_inputs_stock=self.ts.initial("capital_inputs_stock"),
             prev_production=self.ts.current("production"),
             initial_production=self.ts.initial("production"),
+            substitution_bundle_matrix=self.substitution_bundles,
+            previous_good_prices=good_prices,
         )
 
     def compute_unconstrained_demand_for_capital_inputs_value(self, current_good_prices: np.ndarray) -> np.ndarray:
