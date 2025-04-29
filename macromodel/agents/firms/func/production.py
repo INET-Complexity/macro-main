@@ -12,12 +12,14 @@ class ProductionSetter(ABC):
     - Input availability and constraints
     - Input productivity and criticality
     - Utilization rates
+    - Input substitution bundles
 
     The production process considers:
     - Labor inputs and constraints
     - Intermediate inputs (materials, supplies)
     - Capital inputs (machinery, equipment)
     - Input criticality and substitutability
+    - Substitution between goods in the same bundle
     """
 
     def compute_production(
@@ -58,6 +60,7 @@ class ProductionSetter(ABC):
         intermediate_inputs_stock: np.ndarray,
         intermediate_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate production possible with available intermediate inputs.
 
@@ -66,6 +69,7 @@ class ProductionSetter(ABC):
         - Available input stocks
         - Utilization rates
         - Input criticality
+        - Substitution between goods in the same bundle
 
         Args:
             intermediate_inputs_productivity_matrix (np.ndarray): Input-output
@@ -76,6 +80,8 @@ class ProductionSetter(ABC):
                 inputs can be utilized (0 to 1)
             goods_criticality_matrix (np.ndarray): Criticality levels
                 for each input type
+            substitution_bundle_matrix (np.ndarray): Matrix defining substitution
+                bundles for goods, allowing substitution between goods in the same bundle
 
         Returns:
             np.ndarray: Maximum production possible with intermediate inputs
@@ -89,6 +95,7 @@ class ProductionSetter(ABC):
         capital_inputs_stock: np.ndarray,
         capital_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate production possible with available capital inputs.
 
@@ -97,6 +104,7 @@ class ProductionSetter(ABC):
         - Available capital stocks
         - Utilization rates
         - Capital good criticality
+        - Substitution between goods in the same bundle
 
         Args:
             capital_inputs_productivity_matrix (np.ndarray): Input-output
@@ -107,6 +115,8 @@ class ProductionSetter(ABC):
                 capital can be utilized (0 to 1)
             goods_criticality_matrix (np.ndarray): Criticality levels
                 for each capital good type
+            substitution_bundle_matrix (np.ndarray): Matrix defining substitution
+                bundles for goods, allowing substitution between goods in the same bundle
 
         Returns:
             np.ndarray: Maximum production possible with capital inputs
@@ -144,6 +154,7 @@ class ProductionSetter(ABC):
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate intermediate inputs consumed in production.
 
@@ -152,6 +163,7 @@ class ProductionSetter(ABC):
         - Input-output coefficients
         - Available stocks
         - Input criticality
+        - Substitution between goods in the same bundle
 
         Args:
             realised_production (np.ndarray): Actual production achieved
@@ -159,6 +171,8 @@ class ProductionSetter(ABC):
                 coefficients
             intermediate_inputs_stock (np.ndarray): Available input stocks
             goods_criticality_matrix (np.ndarray): Input criticality levels
+            substitution_bundle_matrix (np.ndarray): Matrix defining substitution
+                bundles for goods, allowing substitution between goods in the same bundle
 
         Returns:
             np.ndarray: Intermediate inputs used in production
@@ -172,6 +186,7 @@ class ProductionSetter(ABC):
         capital_inputs_depreciation_matrix: np.ndarray,
         capital_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate capital inputs consumed (depreciated) in production.
 
@@ -180,6 +195,7 @@ class ProductionSetter(ABC):
         - Depreciation rates
         - Available capital stocks
         - Capital good criticality
+        - Substitution between goods in the same bundle
 
         Args:
             realised_production (np.ndarray): Actual production achieved
@@ -187,6 +203,8 @@ class ProductionSetter(ABC):
                 rates for capital goods
             capital_inputs_stock (np.ndarray): Available capital stocks
             goods_criticality_matrix (np.ndarray): Capital good criticality
+            substitution_bundle_matrix (np.ndarray): Matrix defining substitution
+                bundles for goods, allowing substitution between goods in the same bundle
 
         Returns:
             np.ndarray: Capital inputs depreciated in production
@@ -202,6 +220,7 @@ class PureLeontief(ProductionSetter):
     - No substitution between inputs is possible
     - Production is limited by the scarcest input
     - All inputs are treated as essential
+    - Substitution bundles are not used (Leontief technology)
     """
 
     def compute_limiting_intermediate_inputs_stock(
@@ -210,6 +229,7 @@ class PureLeontief(ProductionSetter):
         intermediate_inputs_stock: np.ndarray,
         intermediate_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate intermediate input limits under Leontief technology.
 
@@ -217,7 +237,16 @@ class PureLeontief(ProductionSetter):
         with no possibility of substitution.
 
         Args:
-            [same as parent class]
+            intermediate_inputs_productivity_matrix (np.ndarray): Input-output
+                coefficients for intermediate inputs
+            intermediate_inputs_stock (np.ndarray): Available stocks of
+                intermediate inputs
+            intermediate_inputs_utilisation_rate (float): Rate at which
+                inputs can be utilized (0 to 1)
+            goods_criticality_matrix (np.ndarray): Criticality levels
+                for each input type
+            substitution_bundle_matrix (np.ndarray): Matrix defining substitution
+                bundles for goods (not used in Leontief technology)
 
         Returns:
             np.ndarray: Production possible with intermediate inputs
@@ -235,6 +264,7 @@ class PureLeontief(ProductionSetter):
         capital_inputs_stock: np.ndarray,
         capital_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate capital input limits under Leontief technology.
 
@@ -242,7 +272,16 @@ class PureLeontief(ProductionSetter):
         with no possibility of substitution.
 
         Args:
-            [same as parent class]
+            capital_inputs_productivity_matrix (np.ndarray): Input-output
+                coefficients for capital inputs
+            capital_inputs_stock (np.ndarray): Available stocks of
+                capital inputs
+            capital_inputs_utilisation_rate (float): Rate at which
+                capital can be utilized (0 to 1)
+            goods_criticality_matrix (np.ndarray): Criticality levels
+                for each capital good type
+            substitution_bundle_matrix (np.ndarray): Matrix defining substitution
+                bundles for goods (not used in Leontief technology)
 
         Returns:
             np.ndarray: Production possible with capital inputs
@@ -260,6 +299,7 @@ class PureLeontief(ProductionSetter):
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate intermediate inputs used under Leontief technology.
 
@@ -267,7 +307,13 @@ class PureLeontief(ProductionSetter):
         input-output coefficients.
 
         Args:
-            [same as parent class]
+            realised_production (np.ndarray): Actual production achieved
+            intermediate_inputs_productivity_matrix (np.ndarray): Input-output
+                coefficients
+            intermediate_inputs_stock (np.ndarray): Available input stocks
+            goods_criticality_matrix (np.ndarray): Input criticality levels
+            substitution_bundle_matrix (np.ndarray): Matrix defining substitution
+                bundles for goods (not used in Leontief technology)
 
         Returns:
             np.ndarray: Intermediate inputs used in production
@@ -285,6 +331,7 @@ class PureLeontief(ProductionSetter):
         capital_inputs_depreciation_matrix: np.ndarray,
         capital_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate capital depreciation under Leontief technology.
 
@@ -292,7 +339,13 @@ class PureLeontief(ProductionSetter):
         depreciation rates.
 
         Args:
-            [same as parent class]
+            realised_production (np.ndarray): Actual production achieved
+            capital_inputs_depreciation_matrix (np.ndarray): Depreciation
+                rates for capital goods
+            capital_inputs_stock (np.ndarray): Available capital stocks
+            goods_criticality_matrix (np.ndarray): Capital good criticality
+            substitution_bundle_matrix (np.ndarray): Matrix defining substitution
+                bundles for goods, allowing substitution between goods in the same bundle
 
         Returns:
             np.ndarray: Capital inputs depreciated in production
@@ -319,6 +372,7 @@ class CriticalAndImportantLeontief(ProductionSetter):
         intermediate_inputs_stock: np.ndarray,
         intermediate_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate intermediate input limits with criticality.
 
@@ -346,6 +400,7 @@ class CriticalAndImportantLeontief(ProductionSetter):
         capital_inputs_stock: np.ndarray,
         capital_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate capital input limits with criticality.
 
@@ -373,6 +428,7 @@ class CriticalAndImportantLeontief(ProductionSetter):
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate intermediate inputs used with criticality.
 
@@ -400,6 +456,7 @@ class CriticalAndImportantLeontief(ProductionSetter):
         capital_inputs_depreciation_matrix: np.ndarray,
         capital_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate capital depreciation with criticality.
 
@@ -435,6 +492,7 @@ class CriticalLeontief(ProductionSetter):
         intermediate_inputs_stock: np.ndarray,
         intermediate_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate intermediate input limits for critical inputs only.
 
@@ -462,6 +520,7 @@ class CriticalLeontief(ProductionSetter):
         capital_inputs_stock: np.ndarray,
         capital_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate capital input limits for critical inputs only.
 
@@ -489,6 +548,7 @@ class CriticalLeontief(ProductionSetter):
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate critical intermediate inputs used.
 
@@ -516,6 +576,7 @@ class CriticalLeontief(ProductionSetter):
         capital_inputs_depreciation_matrix: np.ndarray,
         capital_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate critical capital depreciation.
 
@@ -551,6 +612,7 @@ class Linear(ProductionSetter):
         intermediate_inputs_stock: np.ndarray,
         intermediate_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate intermediate input limits under linear technology.
 
@@ -576,6 +638,7 @@ class Linear(ProductionSetter):
         capital_inputs_stock: np.ndarray,
         capital_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate capital input limits under linear technology.
 
@@ -601,6 +664,7 @@ class Linear(ProductionSetter):
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         total_used_intermediate_inputs = np.divide(
             realised_production[:, None],
@@ -621,6 +685,7 @@ class Linear(ProductionSetter):
         capital_inputs_depreciation_matrix: np.ndarray,
         capital_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate capital depreciation under linear technology.
 
@@ -660,6 +725,7 @@ class UnconstrainedProduction(ProductionSetter):
         intermediate_inputs_stock: np.ndarray,
         intermediate_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate intermediate input limits (unconstrained).
 
@@ -682,6 +748,7 @@ class UnconstrainedProduction(ProductionSetter):
         capital_inputs_stock: np.ndarray,
         capital_inputs_utilisation_rate: float,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         return np.multiply(
             capital_inputs_productivity_matrix,
@@ -696,6 +763,7 @@ class UnconstrainedProduction(ProductionSetter):
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         return np.zeros(intermediate_inputs_stock.shape)
 
@@ -705,6 +773,7 @@ class UnconstrainedProduction(ProductionSetter):
         capital_inputs_depreciation_matrix: np.ndarray,
         capital_inputs_stock: np.ndarray,
         goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Calculate capital depreciation (unconstrained).
 
@@ -739,3 +808,177 @@ class UnconstrainedProduction(ProductionSetter):
             np.ndarray: Desired production levels (unconstrained)
         """
         return desired_production
+
+
+class BundledLeontief(ProductionSetter):
+    """Implementation of Leontief production technology with substitution bundles.
+
+    This class implements a Leontief production function where:
+    - Inputs are perfectly complementary within each bundle
+    - Substitution is possible between bundles
+    - Production is limited by the scarcest input bundle
+    - The substitution_bundle_matrix defines which inputs can be substituted for each other
+    """
+
+    def compute_limiting_intermediate_inputs_stock(
+        self,
+        intermediate_inputs_productivity_matrix: np.ndarray,
+        intermediate_inputs_stock: np.ndarray,
+        intermediate_inputs_utilisation_rate: float,
+        goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
+    ) -> np.ndarray:
+        """Calculate intermediate input limits under bundled Leontief technology.
+
+        Production is limited by the scarcest input bundle, with substitution
+        possible between bundles.
+
+        Args:
+            intermediate_inputs_productivity_matrix (np.ndarray): Input-output
+                coefficients for intermediate inputs
+            intermediate_inputs_stock (np.ndarray): Available stocks of
+                intermediate inputs
+            intermediate_inputs_utilisation_rate (float): Rate at which
+                inputs can be utilized (0 to 1)
+            goods_criticality_matrix (np.ndarray): Criticality levels
+                for each input type
+            substitution_bundle_matrix (np.ndarray): Matrix defining substitution
+                bundles for goods (shape: n_goods, n_bundles)
+
+        Returns:
+            np.ndarray: Production possible with intermediate inputs
+        """
+        # Calculate effective input availability
+        effective_inputs = np.multiply(
+            intermediate_inputs_productivity_matrix,
+            intermediate_inputs_stock,
+            out=np.full(intermediate_inputs_productivity_matrix.shape, np.inf),
+            where=intermediate_inputs_productivity_matrix != np.inf,
+        )
+
+        # Apply substitution bundles
+        # Multiply the effective inputs matrix with the substitution bundle matrix
+        # to get bundle-level productivity
+        # Note: substitution_bundle_matrix has shape (n_goods, n_bundles)
+        bundle_productivity = np.matmul(effective_inputs, substitution_bundle_matrix)
+
+        # Take the minimum over bundles to get the limiting constraint
+        return bundle_productivity.min(axis=1)
+
+    def compute_limiting_capital_inputs_stock(
+        self,
+        capital_inputs_productivity_matrix: np.ndarray,
+        capital_inputs_stock: np.ndarray,
+        capital_inputs_utilisation_rate: float,
+        goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
+    ) -> np.ndarray:
+        """Calculate capital input limits under bundled Leontief technology.
+
+        Production is limited by the scarcest capital bundle, with substitution
+        possible between bundles.
+
+        Args:
+            capital_inputs_productivity_matrix (np.ndarray): Input-output
+                coefficients for capital inputs
+            capital_inputs_stock (np.ndarray): Available stocks of
+                capital inputs
+            capital_inputs_utilisation_rate (float): Rate at which
+                capital can be utilized (0 to 1)
+            goods_criticality_matrix (np.ndarray): Criticality levels
+                for each capital good type
+            substitution_bundle_matrix (np.ndarray): Matrix defining substitution
+                bundles for goods (shape: n_goods, n_bundles)
+
+        Returns:
+            np.ndarray: Production possible with capital inputs
+        """
+        # Calculate effective capital availability
+        effective_capital = np.multiply(
+            capital_inputs_productivity_matrix,
+            capital_inputs_stock,
+            out=np.full(capital_inputs_productivity_matrix.shape, np.inf),
+            where=capital_inputs_productivity_matrix != np.inf,
+        )
+
+        # Apply substitution bundles
+        # Multiply the effective capital matrix with the substitution bundle matrix
+        # to get bundle-level productivity
+        # Note: substitution_bundle_matrix has shape (n_goods, n_bundles)
+        bundle_productivity = np.matmul(effective_capital, substitution_bundle_matrix)
+
+        # Take the minimum over bundles to get the limiting constraint
+        return bundle_productivity.min(axis=1)
+
+    def compute_intermediate_inputs_used(
+        self,
+        realised_production: np.ndarray,
+        intermediate_inputs_productivity_matrix: np.ndarray,
+        intermediate_inputs_stock: np.ndarray,
+        goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
+    ) -> np.ndarray:
+        """Calculate intermediate inputs used under bundled Leontief technology.
+
+        Input usage is proportional to production with fixed input-output coefficients,
+        adjusted by the substitution bundle matrix.
+
+        Args:
+            realised_production (np.ndarray): Actual production achieved
+            intermediate_inputs_productivity_matrix (np.ndarray): Input-output
+                coefficients
+            intermediate_inputs_stock (np.ndarray): Available input stocks
+            goods_criticality_matrix (np.ndarray): Input criticality levels
+            substitution_bundle_matrix (np.ndarray): Matrix defining substitution
+                bundles for goods (shape: n_goods, n_bundles)
+
+        Returns:
+            np.ndarray: Intermediate inputs used in production
+        """
+        # Calculate base input usage
+        used_inputs = np.divide(
+            realised_production[:, None],
+            intermediate_inputs_productivity_matrix,
+            out=np.zeros_like(intermediate_inputs_productivity_matrix),
+            where=intermediate_inputs_productivity_matrix != 0.0,
+        )
+
+        # Apply substitution bundles to determine actual input usage
+        # This is a simplified approach - in a full implementation,
+        # you might want to optimize input usage across bundles
+        return used_inputs
+
+    def compute_capital_inputs_used(
+        self,
+        realised_production: np.ndarray,
+        capital_inputs_depreciation_matrix: np.ndarray,
+        capital_inputs_stock: np.ndarray,
+        goods_criticality_matrix: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
+    ) -> np.ndarray:
+        """Calculate capital depreciation under bundled Leontief technology.
+
+        Capital depreciation is proportional to production with fixed
+        depreciation rates, adjusted by the substitution bundle matrix.
+
+        Args:
+            realised_production (np.ndarray): Actual production achieved
+            capital_inputs_depreciation_matrix (np.ndarray): Depreciation
+                rates for capital goods
+            capital_inputs_stock (np.ndarray): Available capital stocks
+            goods_criticality_matrix (np.ndarray): Capital good criticality
+            substitution_bundle_matrix (np.ndarray): Matrix defining substitution
+                bundles for goods (shape: n_goods, n_bundles)
+
+        Returns:
+            np.ndarray: Capital inputs depreciated in production
+        """
+        # Calculate base capital depreciation
+        used_capital_inputs = realised_production[:, None] * capital_inputs_depreciation_matrix
+        used_capital_inputs[used_capital_inputs == np.inf] = 0.0
+        used_capital_inputs[used_capital_inputs == -np.inf] = 0.0
+
+        # Apply substitution bundles to determine actual capital usage
+        # This is a simplified approach - in a full implementation,
+        # you might want to optimize capital usage across bundles
+        return used_capital_inputs
