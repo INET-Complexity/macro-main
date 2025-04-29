@@ -202,7 +202,9 @@ class Production(BaseModel):
     Options: PureLeontief, CriticalAndImportantLeontief, CriticalLeontief, Linear
     """
 
-    name: Literal["PureLeontief", "CriticalAndImportantLeontief", "CriticalLeontief", "Linear"] = "PureLeontief"
+    name: Literal["PureLeontief", "CriticalAndImportantLeontief", "CriticalLeontief", "Linear", "BundledLeontief"] = (
+        "PureLeontief"
+    )
     path_name: str = "production"
     parameters: dict[str, Any] = {}
 
