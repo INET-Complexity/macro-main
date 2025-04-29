@@ -694,7 +694,7 @@ class SyntheticCountry:
             policy_rate=policy_rate,
             tau_bank=tau_bank,
             risk_premium=risk_premium,
-            **country_configuration.banks_configuration.interest_rates.model_dump()
+            **country_configuration.banks_configuration.interest_rates.model_dump(),
         )
         credit_market = SyntheticCreditMarket.create_from_agents(
             firms=firms,

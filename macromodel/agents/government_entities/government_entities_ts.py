@@ -88,5 +88,5 @@ def create_government_entities_timeseries(
         desired_consumption_in_usd=data["Consumption in USD"].values,
         desired_consumption_in_lcu=data["Consumption in LCU"].values,
         emissions=emissions,
-        **emissions_dict
+        **emissions_dict,
     )
