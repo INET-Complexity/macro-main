@@ -1,11 +1,10 @@
 from copy import deepcopy
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 import h5py
 import numpy as np
 import pandas as pd
 
-import macromodel.util.get_histogram
 from macro_data import SyntheticFirms
 from macromodel.agents.agent import Agent
 from macromodel.agents.firms.firm_ts import FirmTimeSeries
@@ -312,7 +311,7 @@ class Firms(Agent):
             ).T
         )
 
-        self.ts.reset_values(
+        self.ts.reset_values(  # noqa
             inventory=current_inv,
             initial_good_prices=initial_good_prices,
             intermediate_inputs_stock=inter_inputs_stock,
