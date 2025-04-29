@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 from .bank_configuration import BanksConfiguration
@@ -12,8 +14,6 @@ from .households_configuration import HouseholdsConfiguration
 from .housing_market_configuration import HousingMarketConfiguration
 from .individuals_configuration import IndividualsConfiguration
 from .labour_market_configuration import LabourMarketConfiguration
-
-from typing import Optional
 
 
 class CountryConfiguration(BaseModel):
