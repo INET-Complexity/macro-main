@@ -347,7 +347,7 @@ class FirmsConfiguration(BaseModel):
     parameters: FirmsParameters = FirmsParameters()
     functions: FirmsFunctions = FirmsFunctions()
     calculate_hill_exponent: bool = True
-    good_bundles: list = DEFAULT_BUNDLE
+    substitution_bundles: list = DEFAULT_BUNDLE
 
     @property
     def reset_params(self):
@@ -368,5 +368,5 @@ class FirmsConfiguration(BaseModel):
             parameters=FirmsParameters.disaggregated_industries_default(n_industries),
             functions=FirmsFunctions(),
             calculate_hill_exponent=True,
-            good_bundles=bundles_grouped,
+            substitution_bundles=bundles_grouped,
         )
