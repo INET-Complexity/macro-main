@@ -293,6 +293,10 @@ class BundleWeightedTargetCapitalInputsSetter(FinancialTargetCapitalInputsSetter
         Returns:
             np.ndarray: Bundle-weighted unconstrained target capital inputs
         """
+
+        if extra_taxes is None:
+            extra_taxes = np.zeros_like(previous_good_prices)
+
         # Get base unconstrained targets from parent class
         base_targets = super().compute_unconstrained_target_capital_inputs(
             current_target_production,

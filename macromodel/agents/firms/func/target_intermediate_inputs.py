@@ -290,6 +290,10 @@ class BundleWeightedTargetIntermediateInputsSetter(FinancialTargetIntermediateIn
         Returns:
             np.ndarray: Bundle-weighted unconstrained target intermediate inputs
         """
+
+        if extra_taxes is None:
+            extra_taxes = np.zeros_like(previous_good_prices)
+
         # Get base unconstrained targets from parent class
         base_targets = super().compute_unconstrained_target_intermediate_inputs(
             current_target_production,
