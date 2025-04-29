@@ -72,6 +72,7 @@ class Firms(Agent):
         average_initial_price: np.ndarray,
         configuration: FirmsConfiguration,
         industries: list[str],
+        substitution_bundles: np.ndarray,
     ):
         """Initialize the firms sector.
 
@@ -93,6 +94,8 @@ class Firms(Agent):
             average_initial_price (np.ndarray): Initial price levels
             configuration (FirmsConfiguration): Model parameters
             industries (list[str]): Industry sector names
+            substitution_bundles (np.ndarray): Substitution bundles for goods (mapping each industry to an
+                                               identifier of similar goods for which it can be substituted)
         """
         n_transactors = ts.current("n_firms")
         super().__init__(
@@ -126,6 +129,8 @@ class Firms(Agent):
         self.configuration = configuration
 
         self.industries = industries
+
+        self.substitution_bundles = substitution_bundles
 
     @classmethod
     def from_pickled_agent(
@@ -242,6 +247,7 @@ class Firms(Agent):
             average_initial_price,
             configuration=configuration,
             industries=industries,
+            substitution_bundles=np.array(configuration.substitution_bundles),
         )
 
     @property
