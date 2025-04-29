@@ -370,7 +370,7 @@ class FirmsConfiguration(BaseModel):
         if bundles is None:
             bundles = []
 
-        if bundles is not None:
+        if len(bundles) > 0:
             functions = FirmsFunctions(
                 target_capital_inputs=TargetCapitalInputs(name="BundleWeightedTargetCapitalInputsSetter"),
                 target_intermediate_inputs=TargetIntermediateInputs(
