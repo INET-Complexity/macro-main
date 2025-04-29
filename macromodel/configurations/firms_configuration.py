@@ -215,7 +215,9 @@ class TargetCapitalInputs(BaseModel):
     Options: UnconstrainedTargetCapitalInputsSetter, FinancialTargetCapitalInputsSetter
     """
 
-    name: Literal["FinancialTargetCapitalInputsSetter"] = "FinancialTargetCapitalInputsSetter"
+    name: Literal["FinancialTargetCapitalInputsSetter", "BundleWeightedTargetCapitalInputsSetter"] = (
+        "FinancialTargetCapitalInputsSetter"
+    )
     path_name: str = "target_capital_inputs"
     parameters: dict[str, Any] = {"target_capital_inputs_fraction": 0.0, "credit_gap_fraction": 0.0}
 
@@ -237,7 +239,9 @@ class TargetIntermediateInputs(BaseModel):
     Options: UnconstrainedTargetIntermediateInputsSetter, FinancialTargetIntermediateInputsSetter
     """
 
-    name: Literal["FinancialTargetIntermediateInputsSetter"] = "FinancialTargetIntermediateInputsSetter"
+    name: Literal["FinancialTargetIntermediateInputsSetter", "BundleWeightedTargetIntermediateInputsSetter"] = (
+        "FinancialTargetIntermediateInputsSetter"
+    )
     path_name: str = "target_intermediate_inputs"
     parameters: dict[str, Any] = {"target_intermediate_inputs_fraction": 0.0, "credit_gap_fraction": 0.0}
 
@@ -365,10 +369,22 @@ class FirmsConfiguration(BaseModel):
     def n_industries_default(cls, n_industries: int, bundles: Optional[list[list[int]]] = None):
         if bundles is None:
             bundles = []
+
+        if bundles is not None:
+            functions = FirmsFunctions(
+                target_capital_inputs=TargetCapitalInputs(name="BundleWeightedTargetCapitalInputsSetter"),
+                target_intermediate_inputs=TargetIntermediateInputs(
+                    name="BundleWeightedTargetIntermediateInputsSetter"
+                ),
+                production=Production(name="BundledLeontief"),
+            )
+        else:
+            functions = FirmsFunctions()
+
         bundles_grouped = create_good_bundle(n_industries=n_industries, bundles=bundles)
         return cls(
             parameters=FirmsParameters.disaggregated_industries_default(n_industries),
-            functions=FirmsFunctions(),
+            functions=functions,
             calculate_hill_exponent=True,
             substitution_bundles=bundles_grouped,
         )
