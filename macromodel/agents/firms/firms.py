@@ -8,6 +8,7 @@ import pandas as pd
 from macro_data import SyntheticFirms
 from macromodel.agents.agent import Agent
 from macromodel.agents.firms.firm_ts import FirmTimeSeries
+from macromodel.agents.firms.utils.create_bundle_matrix import create_bundle_matrix
 from macromodel.configurations import FirmsConfiguration
 from macromodel.markets.credit_market.credit_market import CreditMarket
 from macromodel.markets.goods_market.value_type import ValueType
@@ -72,7 +73,7 @@ class Firms(Agent):
         average_initial_price: np.ndarray,
         configuration: FirmsConfiguration,
         industries: list[str],
-        substitution_bundles: np.ndarray,
+        bundle_matrix: np.ndarray,
     ):
         """Initialize the firms sector.
 
@@ -94,7 +95,7 @@ class Firms(Agent):
             average_initial_price (np.ndarray): Initial price levels
             configuration (FirmsConfiguration): Model parameters
             industries (list[str]): Industry sector names
-            substitution_bundles (np.ndarray): Substitution bundles for goods (mapping each industry to an
+            bundle_matrix (np.ndarray): Matrix to manage bundles for goods (mapping each industry to an
                                                identifier of similar goods for which it can be substituted)
         """
         n_transactors = ts.current("n_firms")
@@ -130,7 +131,7 @@ class Firms(Agent):
 
         self.industries = industries
 
-        self.substitution_bundles = substitution_bundles
+        self.substitution_bundles = bundle_matrix
 
     @classmethod
     def from_pickled_agent(
@@ -229,6 +230,8 @@ class Firms(Agent):
 
         states["Labour Productivity by Industry"] = synthetic_firms.labour_productivity_by_industry
 
+        bundle_matrix = create_bundle_matrix(np.array(configuration.substitution_bundles))
+
         return cls(
             country_name,
             all_country_names,
@@ -247,7 +250,7 @@ class Firms(Agent):
             average_initial_price,
             configuration=configuration,
             industries=industries,
-            substitution_bundles=np.array(configuration.substitution_bundles),
+            bundle_matrix=bundle_matrix,
         )
 
     @property
@@ -437,6 +440,7 @@ class Firms(Agent):
                 intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
                 intermediate_inputs_utilisation_rate=self.intermediate_inputs_utilisation_rate,
                 goods_criticality_matrix=self.goods_criticality_matrix,
+                substitution_bundle_matrix=self.substitution_bundles,
             )
         )
         self.ts.limiting_capital_inputs.append(
@@ -447,6 +451,7 @@ class Firms(Agent):
                 capital_inputs_stock=self.ts.current("capital_inputs_stock"),
                 capital_inputs_utilisation_rate=self.capital_inputs_utilisation_rate,
                 goods_criticality_matrix=self.goods_criticality_matrix,
+                substitution_bundle_matrix=self.substitution_bundles,
             )
         )
         self.ts.target_production.append(
@@ -664,7 +669,7 @@ class Firms(Agent):
             desired_production=self.ts.current("target_production"),
             current_labour_inputs=self.ts.current("labour_inputs"),
             current_limiting_intermediate_inputs=self.ts.current("limiting_intermediate_inputs"),
-            current_limiting_capital_inputs=self.ts.current("limiting_intermediate_inputs"),
+            current_limiting_capital_inputs=self.ts.current("limiting_capital_inputs"),
         )
 
     def compute_total_sales(self) -> np.ndarray:
@@ -1313,6 +1318,7 @@ class Firms(Agent):
             ].T,
             intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
             goods_criticality_matrix=self.goods_criticality_matrix,
+            substitution_bundle_matrix=self.substitution_bundles,
         )
 
     def compute_used_intermediate_inputs_costs(self, current_good_prices: np.ndarray) -> np.ndarray:
@@ -1372,6 +1378,7 @@ class Firms(Agent):
             capital_inputs_depreciation_matrix=self.capital_inputs_depreciation_matrix[:, self.states["Industry"]].T,
             capital_inputs_stock=self.ts.current("capital_inputs_stock"),
             goods_criticality_matrix=self.goods_criticality_matrix,
+            substitution_bundle_matrix=self.substitution_bundles,
         )
 
     def compute_used_capital_inputs_costs(self, current_good_prices: np.ndarray) -> np.ndarray:
