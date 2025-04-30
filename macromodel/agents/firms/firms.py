@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 import h5py
 import numpy as np
@@ -897,7 +897,9 @@ class Firms(Agent):
             current_time=len(self.ts.historic("price")),
         )
 
-    def compute_unconstrained_demand_for_intermediate_inputs(self, good_prices: np.ndarray) -> np.ndarray:
+    def compute_unconstrained_demand_for_intermediate_inputs(
+        self, good_prices: np.ndarray, extra_taxes: Optional[np.ndarray] = None
+    ) -> np.ndarray:
         """Calculate unconstrained demand for intermediate inputs.
 
         Determines optimal intermediate input requirements without
@@ -909,6 +911,7 @@ class Firms(Agent):
 
         Args:
             good_prices (np.ndarray): Current prices for inputs
+            extra_taxes (np.ndarray, optional): Additional taxes on inputs. Defaults to None.
 
         Returns:
             np.ndarray: Unconstrained intermediate input demand for each firm
@@ -924,6 +927,7 @@ class Firms(Agent):
             initial_production=self.ts.initial("production"),
             previous_good_prices=good_prices,
             substitution_bundle_matrix=self.substitution_bundles,
+            extra_taxes=extra_taxes,
         )
 
     def compute_unconstrained_demand_for_intermediate_inputs_value(self, current_good_prices: np.ndarray) -> np.ndarray:
@@ -943,7 +947,9 @@ class Firms(Agent):
             current_good_prices,
         )
 
-    def compute_unconstrained_demand_for_capital_inputs(self, good_prices: np.ndarray) -> np.ndarray:
+    def compute_unconstrained_demand_for_capital_inputs(
+        self, good_prices: np.ndarray, extra_taxes: Optional[np.ndarray] = None
+    ) -> np.ndarray:
         """Calculate unconstrained demand for capital inputs.
 
         Determines optimal capital input requirements without
@@ -955,6 +961,7 @@ class Firms(Agent):
 
         Args:
             good_prices: np.ndarray
+            extra_taxes (np.ndarray, optional): Additional taxes on inputs. Defaults to None.
 
         Returns:
             np.ndarray: Unconstrained capital input demand for each firm
@@ -968,6 +975,7 @@ class Firms(Agent):
             initial_production=self.ts.initial("production"),
             substitution_bundle_matrix=self.substitution_bundles,
             previous_good_prices=good_prices,
+            extra_taxes=extra_taxes,
         )
 
     def compute_unconstrained_demand_for_capital_inputs_value(self, current_good_prices: np.ndarray) -> np.ndarray:
