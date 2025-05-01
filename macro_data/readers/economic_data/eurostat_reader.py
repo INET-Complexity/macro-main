@@ -471,14 +471,6 @@ class EuroStatReader:
                 return float(res) * 1e6 * ratio
         else:
             return np.nan
-            
-        res = df[str(year)].values[0]
-        if len(res) <= 2:
-            return np.nan
-        if " " in res:
-            return float(res[:-2]) * 1e6
-        else:
-            return float(res) * 1e6
 
     # historic domestic
     def get_total_bank_equity(self, country: str, year: int, proxy_country: str = "FRA", ratio: float = 1.0) -> float:
