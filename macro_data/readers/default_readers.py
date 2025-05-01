@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.readers.criticality_data.goods_criticality_reader import (
     GoodsCriticalityReader,
 )
@@ -20,7 +21,13 @@ from macro_data.readers.economic_data.ons_reader import ONSReader
 from macro_data.readers.economic_data.policy_rates import PolicyRatesReader
 from macro_data.readers.economic_data.world_bank_reader import WorldBankReader
 from macro_data.readers.emissions.emissions_reader import EmissionsReader
-from macro_data.readers.io_tables.icio_reader import ICIOReader
+from macro_data.readers.icio_sea_matching import (
+    add_investment_matrix_to_icio,
+    get_investment_fractions,
+    match_iot_with_sea,
+    reconcile_value_added,
+)
+from macro_data.readers.io_tables.icio_reader import ICIOReader, split_gfcf_column
 from macro_data.readers.io_tables.industries import AGGREGATED_INDUSTRIES
 from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE, ICIO_ALL
 from macro_data.readers.population_data.compustat_banks_reader import (
@@ -109,12 +116,13 @@ class DataReaders:
     compustat_firms: CompustatFirmsReader
     compustat_banks: CompustatBanksReader
     emissions: EmissionsReader
+    regions_dict: Optional[dict[Country, list[Region]]] = None
 
     @classmethod
     def from_raw_data(
         cls,
         raw_data_path: Path | str,
-        country_names: list[Country],
+        country_names: list[Country | Region],
         simulation_year: int,
         scale_dict: dict[Country, int],
         industries: list[str],
@@ -126,7 +134,13 @@ class DataReaders:
         single_icio_survey: bool = False,
         proxy_country_dict: dict[Country, Country] = None,
         use_disagg_can_2014_reader: bool = False,
+        use_provincial_can_reader: bool = False,
+        regions_dict: dict[Country, list[Region]] = None,
     ):
+        if regions_dict:
+            all_regions = [region for regions in regions_dict.values() for region in regions]
+            country_names = list(set(country_names) - set(all_regions))
+
         if proxy_country_dict is None:
             proxy_country_dict = {country: country for country in country_names}
 
@@ -165,8 +179,10 @@ class DataReaders:
 
         eu_only = list(set(eu_only).union(set(proxy_eu)))
 
-        def get_investment_year(year: int):
-            return get_investment_fractions(country_names, eurostat, proxy_country_dict, year)
+        def get_investment_year(year: int, country_names_: Optional[list[Country | Region]] = None):
+            if country_names_ is None:
+                country_names_ = country_names
+            return get_investment_fractions(country_names_, eurostat, proxy_country_dict, year)
 
         icio = {
             year: ICIOReader.agg_from_csv(
@@ -188,6 +204,7 @@ class DataReaders:
             # check that only Canada is in the country names
             if country_names != [Country("CAN")]:
                 raise ValueError("Only Canada is supported for this reader.")
+
             if simulation_year != 2014:
                 raise ValueError("Only 2014 is supported for this reader.")
             disagg_path = raw_data_path / "icio" / "icio_can_2014_disagg.csv"
@@ -196,11 +213,68 @@ class DataReaders:
             industries = df.loc["ROW"].index.unique()
             icio[simulation_year].industries = industries
 
-        value_added_dict = {
-            country_name: icio[simulation_year].get_value_added_series(country_name)
-            * icio[simulation_year].yearly_factor
-            for country_name in country_names
-        }
+        if use_provincial_can_reader:
+            # check that Canada is in the country names
+            if Country("CAN") not in country_names:
+                raise ValueError("Canada must be in the country names for this reader.")
+            if not regions_dict:
+                raise ValueError("Must provide regional disaggregation dictionary.")
+            if simulation_year != 2014:
+                raise ValueError("Only 2014 is supported for this reader.")
+            disagg_path = raw_data_path / "icio" / "icio_2014_can_provinces.csv"
+            df = pd.read_csv(disagg_path, header=[0, 1], index_col=[0, 1])
+
+            all_provinces = []
+            for key, value in regions_dict.items():
+                all_provinces.extend(value)
+
+            countries_set = set(all_provinces).union(set(country_names)) - set(regions_dict.keys())
+            # countries_set = countries_set.union(Country("ROW"))
+
+            countries_and_regions = list(countries_set)
+
+            # df = normalise_iot(
+            #     iot=df,
+            #     industries=industries,
+            #     considered_countries=countries_and_regions,
+            #     investment_fractions=get_investment_year(simulation_year, countries_and_regions),
+            # )
+
+            industry_cols = df.columns.get_level_values(1).isin(industries)
+            non_total_rows = df.index.get_level_values(0) != "TOTAL"
+
+            df.loc[("TOTAL", "Intermediate Inputs"), industry_cols] = df.loc[non_total_rows, industry_cols].sum(axis=0)
+
+            df.rename(columns={"OUT": "TOTAL"}, level=0, inplace=True)
+
+            df = split_gfcf_column(
+                considered_countries=countries_and_regions,
+                industries=industries,
+                iot=df,
+                investment_fractions=get_investment_year(simulation_year, countries_and_regions),
+            )
+
+            icio[simulation_year].iot = df.sort_index()
+            icio[simulation_year].considered_countries = countries_and_regions
+
+            # country_names = all_countries
+        else:
+            countries_and_regions = None
+
+        if countries_and_regions is None:
+            value_added_dict = {
+                country_name: icio[simulation_year].get_value_added_series(country_name)
+                * icio[simulation_year].yearly_factor
+                for country_name in country_names
+            }
+        else:
+            value_added_dict = {
+                country_name: icio[simulation_year].get_value_added_series(country_name)
+                * icio[simulation_year].yearly_factor
+                for country_name in countries_and_regions
+            }
+            for key, value in regions_dict.items():
+                value_added_dict[key] = sum([value_added_dict[region] for region in value])
 
         wiod_sea = WIODSEAReader.agg_from_csv(
             path=datapaths.wiod_sea_path,
@@ -210,13 +284,29 @@ class DataReaders:
             country_names=country_names,
             value_added_dict=value_added_dict,
             aggregation_type="Aggregate" if aggregate_industries else "All",
+            regions_dict=regions_dict,
+        )
+
+        reconcile_value_added(
+            icio_reader=icio[simulation_year],
+            sea_reader=wiod_sea,
+            country_names=country_names,
+            regions_dict=regions_dict,
         )
 
         add_investment_matrix_to_icio(
-            icio_reader=icio[simulation_year], sea_reader=wiod_sea, country_names=country_names
+            icio_reader=icio[simulation_year],
+            sea_reader=wiod_sea,
+            country_names=country_names,
+            regions_dict=regions_dict,
         )
 
-        match_iot_with_sea(icio_reader=icio[simulation_year], sea_reader=wiod_sea, country_names=country_names)
+        match_iot_with_sea(
+            icio_reader=icio[simulation_year],
+            sea_reader=wiod_sea,
+            country_names=country_names,
+            regions_dict=regions_dict,
+        )
 
         oecd_econ = OECDEconData(
             path=datapaths.oecd_econ_path,
@@ -277,6 +367,7 @@ class DataReaders:
             compustat_firms=compustat_firms,
             compustat_banks=compustat_banks,
             emissions=emissions,
+            regions_dict=regions_dict,
         )
 
     @classmethod
@@ -376,6 +467,8 @@ class DataReaders:
         )
 
     def get_national_accounts_growth(self, country: Country) -> pd.DataFrame:
+        if isinstance(country, Region):
+            country = country.parent_country
         imf_growth = self.imf_reader.get_na_growth_rates(country)
         oecd_growth = self.oecd_econ.get_na_growth_rates(country)
 
@@ -428,87 +521,3 @@ def prune_icio_dict(icio_dict: dict[int, Any], prune_date: date):
             DataFilterWarning,
         )
     return icio_dict
-
-
-def add_investment_matrix_to_icio(
-    icio_reader: ICIOReader, sea_reader: WIODSEAReader, country_names: list[str], yearly_factor: float = 4.0
-) -> None:
-    for country_name in country_names:
-        gfcf = icio_reader.get_firm_capital_inputs(country_name)
-        cap = sea_reader.get_values_in_usd(country_name, "Capital Compensation") / yearly_factor
-        investment_matrix = np.array([gfcf for _ in range(len(cap))]).T
-        investment_matrix = investment_matrix * cap[None, :]  # proportionally fitting CAP
-        investment_matrix *= gfcf.sum() / investment_matrix.sum()  # match GFCF exactly
-        investment_matrix = (
-            pd.DataFrame(
-                data=investment_matrix,
-                index=pd.MultiIndex.from_product(
-                    [[country_name], icio_reader.industries],
-                    names=["Country", "Industry"],
-                ),
-                columns=pd.MultiIndex.from_product(
-                    [[country_name], icio_reader.industries],
-                    names=["Country", "Industry"],
-                ),
-            )
-            .sort_index(axis=0)
-            .sort_index(axis=1)
-        )
-        icio_reader.investment_matrices[country_name] = investment_matrix
-
-
-def get_sea(
-    country_name: str,
-    field: str,
-    sea_reader: WIODSEAReader,
-) -> np.ndarray:
-    return sea_reader.df.loc[
-        sea_reader.df.index.get_level_values(0) == country_name,
-        field,
-    ].values
-
-
-def match_iot_with_sea(
-    icio_reader: ICIOReader,
-    sea_reader: WIODSEAReader,
-    country_names: list[str],
-    yearly_factor: float = 4.0,
-) -> None:
-    for country_name in country_names:
-        sea_reader.df.loc[
-            sea_reader.df.index.get_level_values(0) == country_name,
-            "Capital Compensation",
-        ] = yearly_factor * icio_reader.investment_matrices[country_name].values.sum(axis=0)
-        new_va = yearly_factor * icio_reader.get_value_added(country_name)
-        va_factor = new_va / get_sea(country_name, "Value Added", sea_reader)
-        sea_reader.df.loc[
-            sea_reader.df.index.get_level_values(0) == country_name,
-            "Value Added",
-        ] = new_va
-        sea_reader.df.loc[
-            sea_reader.df.index.get_level_values(0) == country_name,
-            "Labour Compensation",
-        ] = get_sea(
-            country_name, "Value Added", sea_reader
-        ) - get_sea(country_name, "Capital Compensation", sea_reader)
-        sea_reader.df.loc[
-            sea_reader.df.index.get_level_values(0) == country_name,
-            "Capital Stock",
-        ] *= va_factor
-
-
-def get_investment_fractions(
-    country_names: list[Country],
-    eurostat: EuroStatReader,
-    proxy_country_dict: dict[Country, Country],
-    year: int,
-) -> dict[Country, dict[str, float]]:
-    investment_fractions = {}
-    for country_name in country_names:
-        if country_name.is_eu_country:
-            investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(country_name, year=year)
-        else:
-            investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(
-                proxy_country_dict[country_name], year=year
-            )
-    return investment_fractions

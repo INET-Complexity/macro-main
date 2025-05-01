@@ -1,0 +1,87 @@
+# mkdocs.yml
+site_name: Macrocosm's Macromodel
+use_directory_urls: false
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - toc.integrate
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/link
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      accent: teal
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch-off
+        name: Switch to system preference
+
+nav:
+  - Home: index.md
+  - API:
+      - "": api/index.md
+      - Agents:
+        - api/agent.md
+
+markdown_extensions:
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - footnotes
+  - toc:
+      permalink: true
+      toc_depth: 4
+  - attr_list
+  - def_list
+  - tables
+  - admonition
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js
+
+extra_css:
+  - _static/custom_css.css
+
+extra:
+  version:
+    provider: mike
+    default: latest
+
+plugins:
+  - search
+  - mkdocs-jupyter
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: false
+            show_if_no_docstring: true
+            show_signature_annotations: true
+            show_root_toc_entry: false
+            members_order: source
+            docstring_style: google
+            show_bases: false
+            heading_level: 4
+            show_module_name: false
+            hide_name: true

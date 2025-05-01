@@ -88,6 +88,15 @@ class TimeSeries:
         """
         return self.dicts[item][-1]
 
+    def override_current(self, item, value):
+        """Override the current value of a time series.
+
+        Args:
+            item (str): Name of the time series variable
+            value: New value to set as the current value
+        """
+        self.dicts[item][-1] = value
+
     def prev(self, item):
         """Get the previous value of a time series.
 

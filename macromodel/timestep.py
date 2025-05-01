@@ -18,15 +18,17 @@ class Timestep:
         month (int): Current month of the simulation (1-12)
     """
 
-    def __init__(self, year: int, month: int):
+    def __init__(self, year: int, month: int, increment: int = 1):
         """Initialize a new timestep.
 
         Args:
             year (int): Starting year
             month (int): Starting month (1-12)
+            increment (int): Number of months to increment (default is 1)
         """
         self.year = year
         self.month = month
+        self.increment = increment
 
     def __str__(self):
         """Convert timestep to string representation.
@@ -37,12 +39,14 @@ class Timestep:
         return str(self.year) + "-" + str(self.month)
 
     def step(self) -> None:
-        """Advance the timestep by one month.
+        """Advance the timestep by the increment.
 
         Increments the month counter and handles year rollover when
         transitioning from December to January.
         """
-        self.month += 1
-        if self.month == 13:
+        new_month = self.month + self.increment
+        if new_month > 12:
             self.year += 1
-            self.month = 1
+            self.month = new_month - 12
+        else:
+            self.month = new_month

@@ -23,6 +23,7 @@ from macro_data import DataWrapper
 from macro_data.configuration import CountryDataConfiguration
 from macromodel.configurations import CountryConfiguration, SimulationConfiguration
 from macromodel.country import Country
+from macromodel.country.regional_aggregator import RegionalAggregator
 from macromodel.exchange_rates import ExchangeRates
 from macromodel.markets.goods_market import GoodsMarket
 from macromodel.rest_of_the_world import RestOfTheWorld
@@ -61,6 +62,7 @@ class Simulation:
     configuration: SimulationConfiguration
     initial_year: int
     aggregate_country_price_index: float = 1.0
+    regional_aggregator: Optional[RegionalAggregator] = None
 
     @classmethod
     def from_datawrapper(
@@ -170,11 +172,19 @@ class Simulation:
             row_index=row_index,
         )
 
-        timestep = Timestep(year=datawrapper.configuration.year, month=1)
+        timestep = Timestep(year=datawrapper.configuration.year, month=1, increment=datawrapper.time_unit)
 
         if simulation_configuration.seed is not None:
             np.random.seed(simulation_configuration.seed)
             set_seed(simulation_configuration.seed)
+
+        aggregator = (
+            RegionalAggregator(
+                aggregation_structure=datawrapper.aggregation_structure,
+            )
+            if datawrapper.aggregation_structure
+            else None
+        )
 
         return cls(
             countries=countries,
@@ -184,6 +194,7 @@ class Simulation:
             timestep=timestep,
             configuration=deepcopy(simulation_configuration),
             initial_year=datawrapper.configuration.year,
+            regional_aggregator=aggregator,
         )
 
     def reset(self, configuration: Optional[SimulationConfiguration] = None) -> None:
@@ -252,6 +263,12 @@ class Simulation:
             country.target_setting_phase()
             country.clear_labour_market()
             country.update_planning_metrics()
+
+        if self.regional_aggregator:
+            logging.info("Synchronising central banks across regions")
+            self.regional_aggregator.sync_central_banks(self.countries)
+
+        for ind, country in enumerate(self.countries.values()):
 
             # Clearing the housing and the credit market
             logging.info("Clearing the housing and the credit market")

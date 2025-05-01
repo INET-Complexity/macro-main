@@ -56,6 +56,7 @@ from sklearn.experimental import enable_iterative_imputer  # noqa
 from sklearn.impute import IterativeImputer  # noqa
 
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
 
 # Mapping of Compustat variable codes to descriptive names
@@ -241,7 +242,7 @@ class CompustatFirmsReader:
         """
         return var_numerical
 
-    def get_firm_data(self, country: str | Country) -> pd.DataFrame:
+    def get_firm_data(self, country: str | Country | Region) -> pd.DataFrame:
         """
         Get firm-level data for a specific country.
 
@@ -255,6 +256,9 @@ class CompustatFirmsReader:
         pd.DataFrame
             Firm-level data for the specified country
         """
+        if isinstance(country, Region):
+            country = country.parent_country
+
         if isinstance(country, Country):
             country = country.value
         return self.data.loc[country]

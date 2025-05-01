@@ -48,6 +48,7 @@ from typing import Optional
 import pandas as pd
 
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.readers.util.prune_util import prune_index
 
 
@@ -280,6 +281,8 @@ class IMFReader:
         - Returns None for Argentina (uses central bank data instead)
         - Rates are returned as decimals
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         if isinstance(country, str):
             country = Country(country)
         if country.value == "ARG":  # using CB data instead
@@ -428,6 +431,10 @@ class IMFReader:
         - Returns quarterly data
         - Unemployment rate is converted to decimal
         """
+        ratio = 1.0
+        if isinstance(country, Region):
+            ratio = country.va_ratio
+            country = country.parent_country
         if isinstance(country, str):
             country = Country(country)
         country_english = str(country).lower()
@@ -458,6 +465,8 @@ class IMFReader:
         ]
         data.index = [pd.Timestamp(int(ind[0:4]), 3 * int(ind[5]) - 2, 1) for ind in data.index]  # noqa
         data = data.astype(float)
+        # multiply all columns except the rate by the va_ratio
+        data.loc[:, data.columns != "Unemployment Rate"] *= ratio
         data["Unemployment Rate"] /= 100.0
         return data
 

@@ -44,6 +44,7 @@ import pandas as pd
 
 from macro_data.configuration import DataConfiguration
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.processing.synthetic_country import SyntheticCountry
 from macro_data.processing.synthetic_rest_of_the_world.default_synthetic_rest_of_the_world import (
     DefaultSyntheticRestOfTheWorld,
@@ -104,6 +105,8 @@ class DataWrapper:
     industries: list[str]
     emission_factors: dict[str, float]
     emissions_energy_factors: Optional[EmissionsEnergyFactors] = None
+    aggregation_structure: Optional[dict[Country, list[Country | Region]]] = None
+    time_unit: int = 4.0
 
     @property
     def all_country_names(self) -> list[str]:
@@ -182,35 +185,37 @@ class DataWrapper:
         scale_dict = {country: configuration.country_configs[country].scale for country in country_names}
 
         prune_date = configuration.prune_date
-        if configuration.can_disaggregation:
-            if configuration.aggregate_industries:
-                raise ValueError("Cannot disaggregate industries when aggregate_industries is True")
-            readers = DataReaders.from_raw_data(
-                raw_data_path=raw_data_path,
-                country_names=country_names,
-                industries=industries,
-                simulation_year=year,
-                scale_dict=scale_dict,
-                prune_date=prune_date,
-                force_single_hfcs_survey=single_hfcs_survey,
-                single_icio_survey=single_icio_survey,
-                proxy_country_dict=proxy_country_dict,
-                aggregate_industries=configuration.aggregate_industries,
-                use_disagg_can_2014_reader=True,
-            )
-        else:
-            readers = DataReaders.from_raw_data(
-                raw_data_path=raw_data_path,
-                country_names=country_names,
-                industries=industries,
-                simulation_year=year,
-                scale_dict=scale_dict,
-                prune_date=prune_date,
-                force_single_hfcs_survey=single_hfcs_survey,
-                single_icio_survey=single_icio_survey,
-                proxy_country_dict=proxy_country_dict,
-                aggregate_industries=configuration.aggregate_industries,
-            )
+
+        # Check if we need to use provincial Canadian reader or handle aggregation structure
+        use_provincial_can_reader = False
+        regions_dict = None
+        if configuration.aggregation_structure:
+            regions_dict = configuration.aggregation_structure
+            # If Canada is in the configuration and has regions, use provincial reader
+            if Country("CAN") in configuration.countries and configuration.is_aggregated(Country("CAN")):
+                use_provincial_can_reader = True
+                if configuration.aggregate_industries:
+                    raise ValueError("Cannot disaggregate industries when using provincial Canadian data")
+
+        readers = DataReaders.from_raw_data(
+            raw_data_path=raw_data_path,
+            country_names=country_names,
+            industries=industries,
+            simulation_year=year,
+            scale_dict=scale_dict,
+            prune_date=prune_date,
+            force_single_hfcs_survey=single_hfcs_survey,
+            single_icio_survey=single_icio_survey,
+            proxy_country_dict=proxy_country_dict,
+            aggregate_industries=configuration.aggregate_industries,
+            use_disagg_can_2014_reader=configuration.can_disaggregation,
+            use_provincial_can_reader=use_provincial_can_reader,
+            regions_dict=regions_dict,
+        )
+
+        if regions_dict:
+            # remove each key country from the country names
+            country_names = [country for country in country_names if country not in regions_dict.keys()]
 
         # override industries
         industries = readers.icio[year].industries
@@ -232,7 +237,10 @@ class DataWrapper:
         }
 
         industry_data = compile_industry_data(
-            year=year, readers=readers, country_names=country_names, single_firm_per_industry=single_firm_dict
+            year=year,
+            readers=readers,
+            country_names=country_names,
+            single_firm_per_industry=single_firm_dict,
         )
 
         year_range = 1 if single_hfcs_survey else 10
@@ -363,6 +371,8 @@ class DataWrapper:
             emissions_energy_factors=(
                 EmissionsEnergyFactors.from_readers(readers.icio[year], country_names) if add_emissions else None
             ),
+            aggregation_structure=configuration.aggregation_structure,
+            time_unit=configuration.time_unit,
         )
 
     @classmethod

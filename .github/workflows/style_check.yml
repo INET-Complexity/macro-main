@@ -20,12 +20,14 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.12'
+    - name: Install h5py dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libhdf5-dev
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install black==24.10.0
-        pip install "black[jupyter]"
-        pip install isort
+        pip install -e ".[dev]"
     - name: Check code formatting with black
       run: |
         black --check --config="pyproject.toml" .

@@ -247,6 +247,7 @@ def compile_national_accounts_data(
         - industry_vectors["Intermediate Inputs Use in LCU"].sum()
         + initial_taxes_on_products
     )
+
     gdp_expenditure = (
         (1 + initial_vat) * industry_vectors["Household Consumption in LCU"].sum()
         + industry_vectors["Government Consumption in LCU"].sum()
@@ -256,6 +257,7 @@ def compile_national_accounts_data(
         + industry_vectors["Exports in LCU"].sum()
         - industry_vectors["Imports in LCU"].sum()
     )
+
     gdp_income = (
         initial_taxes_on_products + gross_operating_surplus + industry_vectors["Labour Compensation in LCU"].sum()
     )

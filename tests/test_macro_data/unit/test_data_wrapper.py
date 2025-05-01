@@ -1,12 +1,14 @@
 import tempfile
 from pathlib import Path
 
+import numpy as np
 import pytest
 import yaml
 
 from macro_data import DataWrapper, SyntheticCountry
 from macro_data.configuration import DataConfiguration
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.readers import ALL_INDUSTRIES
 
 TEST_PATH = Path(__file__).parent.parent.resolve()
@@ -383,6 +385,23 @@ class TestCreator:
         government_consumption_emissions = canada.government_entities.gov_entity_data["Consumption Emissions"].sum()
 
         assert government_consumption_emissions > 0
+
+    def test__create_can_provincial(self, canada_disagg_config):
+        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
+        creator = DataWrapper.from_config(
+            configuration=canada_disagg_config,
+            raw_data_path=raw_data_path,
+            single_hfcs_survey=True,
+        )
+
+        # check country gdp and credit
+        for country_name, country in creator.synthetic_countries.items():
+            check_country_gdp(country)
+            check_country_credit(country)
+
+            assert np.all(
+                country.population.individual_data["Employee Income"] >= 0
+            ), f"Negative employee income for {country_name}"
 
 
 def check_country_credit(country: SyntheticCountry):

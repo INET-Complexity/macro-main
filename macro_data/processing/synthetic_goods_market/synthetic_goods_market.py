@@ -35,6 +35,7 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.readers import DataReaders
 from macro_data.readers.exogenous_data import ExogenousCountryData
 from macro_data.util.regressions import fit_linear
@@ -94,7 +95,7 @@ class SyntheticGoodsMarket:
     @classmethod
     def from_readers(
         cls,
-        country_name: Country | str,
+        country_name: Country | str | Region,
         year: int,
         quarter: int,
         readers: DataReaders,
@@ -126,7 +127,10 @@ class SyntheticGoodsMarket:
         Returns:
             SyntheticGoodsMarket: Container with preprocessed market data
         """
-        rates = readers.exchange_rates.df.loc[country_name].copy()
+        rates_country = country_name
+        if isinstance(country_name, Region):
+            rates_country = country_name.parent_country
+        rates = readers.exchange_rates.df.loc[rates_country].copy()
         inflation = exogenous_data.inflation["PPI Inflation"]
         growth = exogenous_data.national_accounts["Gross Output (Growth)"]
 

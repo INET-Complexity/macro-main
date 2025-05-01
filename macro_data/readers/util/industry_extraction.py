@@ -1,7 +1,10 @@
+from typing import Optional
+
 import numpy as np
 import pandas as pd
 
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.readers.default_readers import DataReaders
 from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
 from macro_data.readers.economic_data.oecd_economic_data import OECDEconData
@@ -141,8 +144,12 @@ def get_industry_vectors(
     if single_firm_per_industry:
         industry_vectors["Number of Firms"] = np.ones(len(current_icio_reader.industries), dtype=int)
     else:
+        if isinstance(country_name, Region):
+            data_country = country_name.parent_country
+        else:
+            data_country = country_name
         n_firms_by_industry = econ_reader.read_business_demography(
-            country=country_name,
+            country=data_country,
             output=pd.Series(industry_vectors["Output in USD"].values),
             year=sea_reader.year,
         )

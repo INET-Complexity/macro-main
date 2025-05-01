@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.readers.util.prune_util import prune_index
 
 default_rates = {"BRN": 0.055, "KAZ": 0.15, "TUN": 0.06}
@@ -59,7 +60,7 @@ class PolicyRatesReader:
         ]
         self.df["code"] = self.country_code_switch(self.df["REF_AREA"].values)
 
-    def get_policy_rates(self, country: Country | str) -> pd.DataFrame:
+    def get_policy_rates(self, country: Country | str | Region) -> pd.DataFrame:
         """
         Get policy rates for a specific country.
 
@@ -77,6 +78,8 @@ class PolicyRatesReader:
             - Uses default rates for certain countries
             - Returns quarterly data
         """
+        if isinstance(country, Region):
+            country = country.parent_country
         if isinstance(country, Country):
             is_eu_country = country.is_eu_country
             country = country.value

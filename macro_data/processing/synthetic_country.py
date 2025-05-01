@@ -49,6 +49,7 @@ import pandas as pd
 
 from macro_data.configuration import CountryDataConfiguration
 from macro_data.configuration.countries import Country
+from macro_data.configuration.region import Region
 from macro_data.processing.country_data import TaxData
 from macro_data.processing.synthetic_banks.default_synthetic_banks import (
     DefaultSyntheticBanks,
@@ -350,7 +351,7 @@ class SyntheticCountry:
     @classmethod
     def proxied_synthetic_country(
         cls,
-        country: Country,
+        country: Country | Region,
         proxy_country: Country,
         year: int,
         quarter: int,
@@ -465,7 +466,8 @@ class SyntheticCountry:
 
         tax_data = TaxData.from_readers(readers, country, year)
 
-        total_imputed_rent = readers.icio[year].imputed_rents[country]
+        imputation_country = country.parent_country if isinstance(country, Region) else country
+        total_imputed_rent = readers.icio[year].imputed_rents[imputation_country]
 
         dividend_payout_ratio = readers.eurostat.dividend_payout_ratio(country=country, year=year)
         long_term_interest_rate = readers.oecd_econ.read_long_term_interest_rates(country=country, year=year)
@@ -692,7 +694,7 @@ class SyntheticCountry:
             policy_rate=policy_rate,
             tau_bank=tau_bank,
             risk_premium=risk_premium,
-            **country_configuration.banks_configuration.interest_rates.model_dump()
+            **country_configuration.banks_configuration.interest_rates.model_dump(),
         )
         credit_market = SyntheticCreditMarket.create_from_agents(
             firms=firms,
