@@ -1,0 +1,41 @@
+# Include all YAML files
+recursive-include macro_data *.yaml
+recursive-include macromodel *.yaml
+
+# Include all JSON files
+recursive-include macro_data *.json
+recursive-include macromodel *.json
+
+# Include all CSV files
+recursive-include macro_data *.csv
+recursive-include macromodel *.csv
+
+# Include all text files
+recursive-include macro_data *.txt
+recursive-include macromodel *.txt
+
+# Include all markdown files
+recursive-include macro_data *.md
+recursive-include macromodel *.md
+
+# Include all configuration files
+recursive-include macro_data *.ini
+recursive-include macromodel *.ini
+recursive-include macro_data *.conf
+recursive-include macromodel *.conf
+
+# Include all data files
+recursive-include macro_data *.dat
+recursive-include macromodel *.dat
+recursive-include macro_data *.h5
+recursive-include macromodel *.h5
+recursive-include macro_data *.parquet
+recursive-include macromodel *.parquet
+
+# Include all documentation files
+recursive-include docs *.md
+recursive-include docs *.rst
+recursive-include docs *.txt
+recursive-include docs *.yaml
+recursive-include docs *.yml
+recursive-include docs *.json 
