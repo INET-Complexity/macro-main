@@ -144,30 +144,22 @@ class DataReaders:
 
         goods_criticality = GoodsCriticalityReader.from_csv(path=datapaths.goods_criticality_path)
         exchange_rates = ExchangeRatesReader.from_csv(path=datapaths.exchange_rates_path)
-        eurostat = EuroStatReader(path=datapaths.eurostat_path, country_code_path=datapaths.country_codes_path)
 
-        proxified = [country if country.is_eu_country else proxy_country_dict[country] for country in country_names]
+        # Initialize EuroStatReader first without total_output to get imputed rent fraction
+        eurostat = EuroStatReader(
+            path=datapaths.eurostat_path, 
+            country_code_path=datapaths.country_codes_path
+        )
 
-        hfcs = {
-            proxy_country: HFCSReader.from_csv(
-                country_name=proxy_country,
-                country_name_short=proxy_country.to_two_letter_code(),
-                hfcs_data_path=datapaths.hfcs_path,
-                year=simulation_year,
-                exchange_rates=exchange_rates,
-                num_surveys=1 if force_single_hfcs_survey else 5,
-            )
-            for country_name, proxy_country in zip(country_names, proxified)
-        }
-
+        # Define eu_only before ICIO initialization
         eu_only = [country for country in country_names if country.is_eu_country]
         proxy_eu = list(proxy_country_dict.values())
-
         eu_only = list(set(eu_only).union(set(proxy_eu)))
 
         def get_investment_year(year: int):
             return get_investment_fractions(country_names, eurostat, proxy_country_dict, year)
 
+        # Initialize ICIO reader with imputed rent fraction
         icio = {
             year: ICIOReader.agg_from_csv(
                 path=datapaths.icio_paths[year],
@@ -184,17 +176,31 @@ class DataReaders:
             for year in all_years
         }
 
-        if use_disagg_can_2014_reader:
-            # check that only Canada is in the country names
-            if country_names != [Country("CAN")]:
-                raise ValueError("Only Canada is supported for this reader.")
-            if simulation_year != 2014:
-                raise ValueError("Only 2014 is supported for this reader.")
-            disagg_path = raw_data_path / "icio" / "icio_can_2014_disagg.csv"
-            df = pd.read_csv(disagg_path, header=[0, 1], index_col=[0, 1])
-            icio[simulation_year].iot = df
-            industries = df.loc["ROW"].index.unique()
-            icio[simulation_year].industries = industries
+        # Get total output data for all countries
+        total_output = {}
+        for country in country_names:
+            total_output[country] = icio[simulation_year].get_total_output(country).sum()
+
+        # Reinitialize EuroStatReader with total output data
+        eurostat = EuroStatReader(
+            path=datapaths.eurostat_path, 
+            country_code_path=datapaths.country_codes_path,
+            total_output=total_output
+        )
+
+        proxified = [country if country.is_eu_country else proxy_country_dict[country] for country in country_names]
+
+        hfcs = {
+            proxy_country: HFCSReader.from_csv(
+                country_name=proxy_country,
+                country_name_short=proxy_country.to_two_letter_code(),
+                hfcs_data_path=datapaths.hfcs_path,
+                year=simulation_year,
+                exchange_rates=exchange_rates,
+                num_surveys=1 if force_single_hfcs_survey else 5,
+            )
+            for country_name, proxy_country in zip(country_names, proxified)
+        }
 
         value_added_dict = {
             country_name: icio[simulation_year].get_value_added_series(country_name)
