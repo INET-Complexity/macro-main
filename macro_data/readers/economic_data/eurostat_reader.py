@@ -465,14 +465,15 @@ class EuroStatReader:
             val = df[str(year)].values
             if len(val) > 0 and val[0] != ": d" and val[0] != ": de" and val[0] != ": ":
                 return float(val[0]) * 1e6
-        if proxy_country in self.total_output:
-            return (
-                self.total_output[country]
-                / self.total_output[proxy_country]
-                * self.get_total_bank_equity(proxy_country, year)
-            )
-        else:
-            return self.get_total_bank_equity(proxy_country, year)
+            else:
+                if proxy_country in self.total_output:
+                    return (
+                        self.total_output[country]
+                        / self.total_output[proxy_country]
+                    * self.get_total_bank_equity(proxy_country, year)
+                    )
+                else:
+                    return self.get_total_bank_equity(proxy_country, year)
 
     def cb_debt_ratios(self, country: Country, year: int) -> float:
         """

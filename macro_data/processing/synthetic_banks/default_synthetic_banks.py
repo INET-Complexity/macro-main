@@ -79,6 +79,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
         hh_mortgage_passthrough (float): Estimated mortgage rate parameter
         hh_mortgage_ect (float): Estimated mortgage ECT parameter
         hh_mortgage_rate (float): Initial mortgage rate
+        proxy_country (Optional[Country]): Country to use as proxy for missing data
     """
 
     def __init__(
@@ -97,6 +98,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
         hh_mortgage_passthrough: float,
         hh_mortgage_ect: float,
         hh_mortgage_rate: float,
+        proxy_country: Optional[Country] = None,
     ):
         """Initialize the banking system data container.
 
@@ -115,6 +117,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
             hh_mortgage_passthrough (float): Estimated mortgage rate parameter
             hh_mortgage_ect (float): Estimated mortgage ECT parameter
             hh_mortgage_rate (float): Initial mortgage rate
+            proxy_country (Optional[Country]): Country to use as proxy for missing data
         """
         super().__init__(
             country_name,
@@ -132,6 +135,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
             hh_mortgage_ect=hh_mortgage_ect,
             hh_mortgage_rate=hh_mortgage_rate,
         )
+        self.proxy_country = proxy_country
 
     @classmethod
     def from_readers(
@@ -193,7 +197,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
             bank_branches = readers.oecd_econ.read_number_of_banks(country=country_name, year=year)
             number_of_banks = max(1, int(bank_branches / scale))
 
-        bank_equity = readers.eurostat.get_total_bank_equity(country=country_name, year=year) * exchange_rate_from_eur
+        bank_equity = readers.eurostat.get_total_bank_equity(country=country_name, year=year, proxy_country=proxy_eu_country) * exchange_rate_from_eur
         bank_data = pd.DataFrame({"Equity": np.ones(number_of_banks) * bank_equity / number_of_banks})
         bank_data["Deposits from Firms"] = np.ones(number_of_banks)
         bank_data["Deposits from Households"] = np.ones(number_of_banks)
@@ -238,6 +242,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
             hh_mortgage_ect=hh_mortgage_ect,
             hh_mortgage_rate=hh_mortgage_rate,
             quarter=quarter,
+            proxy_country=proxy_eu_country,
         )
 
     @classmethod
@@ -297,7 +302,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
 
         compustat_selection = compustat_data.iloc[banks_inds]
 
-        total_bank_equity = readers.eurostat.get_total_bank_equity(country=country_name, year=year)
+        total_bank_equity = readers.eurostat.get_total_bank_equity(country=country_name, year=year, proxy_country=proxy_eu_country)
 
         bank_data = pd.DataFrame(
             {
@@ -346,6 +351,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
             hh_mortgage_ect=hh_mortgage_ect,
             hh_mortgage_rate=hh_mortgage_rate,
             quarter=quarter,
+            proxy_country=proxy_eu_country,
         )
 
     @classmethod
