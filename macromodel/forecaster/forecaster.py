@@ -19,17 +19,25 @@ several forecasting strategies:
    - Both manual and statsmodels-based
    - Handles stochastic components
 
+4. Vector Autoregressive (VAR) Forecasting:
+   - Multivariate time series modeling
+   - Joint variable dynamics
+   - Multiple simulation paths
+
 The module supports both deterministic and stochastic forecasts, with options
 to suppress noise terms for scenario analysis. Each forecaster implements a
 common interface while providing specific prediction mechanics.
 """
 
 from abc import ABC, abstractmethod
-from typing import Literal
+from typing import Literal, Dict, List, Optional, Tuple
 
 import numpy as np
+import pandas as pd
 import statsmodels.api as sm
+from statsmodels.tsa.api import VAR
 from statsmodels.tsa.ar_model import AutoReg
+from statsmodels.tsa.stattools import adfuller
 
 
 def check_len(data: np.ndarray) -> None:
@@ -291,3 +299,194 @@ class ManualAutoregForecaster(Forecaster):
             "xxi": xxi,
             "singularity": singularity,
         }
+
+
+class VARForecaster(Forecaster):
+    """Vector Autoregressive (VAR) forecaster.
+
+    Implements multivariate time series forecasting using VAR models,
+    supporting multiple variables and simulation paths.
+
+    Attributes:
+        var_lags (int): Number of lags in the VAR model
+        country (str): Country code for the forecast
+        model (VAR): Fitted VAR model
+    """
+
+    def __init__(self, var_lags: int = 2, country: str = None):
+        """Initialize VAR forecaster.
+
+        Args:
+            var_lags (int, optional): Number of lags in the VAR model. Defaults to 2.
+            country (str, optional): Country code. Defaults to None.
+        """
+        self.var_lags = var_lags
+        self.country = country
+        self.model = None
+        self.data = None
+
+    def fit(self, data: pd.DataFrame) -> 'VARForecaster':
+        """Fit the VAR model to the data.
+
+        Args:
+            data (pd.DataFrame): Time series data with variables as columns
+
+        Returns:
+            VARForecaster: Self for method chaining
+        """
+        self.data = data
+        self.model = VAR(data)
+        self.model = self.model.fit(self.var_lags)
+        return self
+
+    def forecast(self, data: np.ndarray, t: int = 1, assume_zero_noise: bool = False) -> np.ndarray:
+        """Generate VAR forecasts.
+
+        Args:
+            data (np.ndarray): Historical time series (unused if model is fitted)
+            t (int, optional): Forecast horizon. Defaults to 1.
+            assume_zero_noise (bool, optional): Whether to suppress stochastic
+                components. Defaults to False.
+
+        Returns:
+            np.ndarray: Forecasted values
+        """
+        if self.model is None:
+            raise ValueError("Model must be fitted before forecasting")
+            
+        if assume_zero_noise:
+            # Use deterministic forecast
+            forecast = self.model.forecast(self.data.values[-self.var_lags:], steps=t)
+        else:
+            # Use stochastic simulation
+            forecast = self.model.simulate_var(steps=t, nsimulations=1)[0]
+            
+        return forecast
+
+    def simulate(self, horizon: int = 20, num_paths: int = 500) -> pd.DataFrame:
+        """Generate multiple simulation paths.
+
+        Args:
+            horizon (int, optional): Number of periods to simulate. Defaults to 20.
+            num_paths (int, optional): Number of simulation paths. Defaults to 500.
+
+        Returns:
+            pd.DataFrame: Simulated values with columns for variable, period, and value
+        """
+        if self.model is None:
+            raise ValueError("Model must be fitted before simulation")
+            
+        sims = self.model.simulate_var(steps=horizon, nsimulations=num_paths)
+        
+        results = []
+        for path in range(num_paths):
+            for period in range(horizon):
+                for var_idx, var_name in enumerate(self.data.columns):
+                    results.append({
+                        'country': self.country,
+                        'variable': var_name,
+                        'period': period,
+                        'value': sims[path, period, var_idx]
+                    })
+                    
+        return pd.DataFrame(results)
+
+    @staticmethod
+    def check_stationarity(series: pd.Series, alpha: float = 0.05) -> bool:
+        """Check if a time series is stationary using Augmented Dickey-Fuller test.
+
+        Args:
+            series (pd.Series): Time series to test
+            alpha (float, optional): Significance level. Defaults to 0.05.
+
+        Returns:
+            bool: True if series is stationary, False otherwise
+        """
+        result = adfuller(series.dropna())
+        return result[1] < alpha
+
+    @staticmethod
+    def prepare_data(data_wrapper, country: str) -> pd.DataFrame:
+        """Prepare time series data for VAR modeling.
+
+        Args:
+            data_wrapper: DataWrapper instance containing country data
+            country (str): Country code
+
+        Returns:
+            pd.DataFrame: Prepared time series data
+        """
+        country_data = data_wrapper.synthetic_countries[country]
+        
+        data = pd.DataFrame({
+            'real_gdp_growth': country_data.exogenous_data.national_accounts['Real GDP (Growth)'],
+            'inflation': country_data.exogenous_data.inflation['PPI Inflation'],
+            'real_consumption': country_data.exogenous_data.national_accounts['Real Household Consumption (Growth)'],
+            'real_investment': country_data.exogenous_data.national_accounts['Gross Fixed Capital Formation (Growth)']
+        })
+        
+        # Take first differences of real consumption and real investment
+        data['real_consumption'] = data['real_consumption'].diff()
+        data['real_investment'] = data['real_investment'].diff()
+        
+        # Handle missing values
+        data = data.ffill().bfill()
+        data = data.replace([np.inf, -np.inf], np.nan).ffill().bfill()
+        
+        # Ensure sufficient data points
+        if len(data) < 10:
+            raise ValueError(f"Insufficient data points for country {country}. Need at least 10 observations.")
+        
+        # Check stationarity and difference if necessary
+        for col in data.columns:
+            if not VARForecaster.check_stationarity(data[col]):
+                print(f"Warning: {col} is not stationary for {country}, differencing...")
+                data[col] = data[col].diff().dropna()
+                if not VARForecaster.check_stationarity(data[col]):
+                    print(f"Warning: Differenced {col} is still not stationary for {country}")
+        
+        # Drop NaN values and check multicollinearity
+        data = data.dropna()
+        corr_matrix = data.corr()
+        if (corr_matrix.abs() > 0.95).any().any():
+            print(f"Warning: High correlation detected in data for country {country}")
+            print("Correlation matrix:")
+            print(corr_matrix)
+            
+        # Standardize data
+        data = (data - data.mean()) / data.std()
+        
+        return data
+
+    @staticmethod
+    def run_multiple_countries(data_wrapper, countries: list[str], horizon: int = 20, num_paths: int = 500, var_lags: int = 2) -> pd.DataFrame:
+        """Run VAR model for multiple countries and combine results.
+
+        Args:
+            data_wrapper: DataWrapper instance containing country data
+            countries (list[str]): List of country codes to analyze
+            horizon (int, optional): Number of periods to simulate. Defaults to 20.
+            num_paths (int, optional): Number of simulation paths. Defaults to 500.
+            var_lags (int, optional): Number of lags in the VAR model. Defaults to 2.
+
+        Returns:
+            pd.DataFrame: Combined simulation results for all countries
+        """
+        all_results = []
+        
+        for country in countries:
+            try:
+                data = VARForecaster.prepare_data(data_wrapper, country)
+                forecaster = VARForecaster(var_lags=var_lags, country=country)
+                forecaster.fit(data)
+                results = forecaster.simulate(horizon=horizon, num_paths=num_paths)
+                all_results.append(results)
+                
+            except Exception as e:
+                print(f"Error processing country {country}: {str(e)}")
+                continue
+            
+        if not all_results:
+            raise ValueError("No countries were successfully processed")
+            
+        return pd.concat(all_results, ignore_index=True)

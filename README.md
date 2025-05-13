@@ -169,3 +169,19 @@ Please refer to the module docstrings and inline documentation.
 This will save the run data into an `output` directory, writing into `./output/can_usa_fra_run.h5`. If you want to have less verbose logs, you can use a logger to change the logging level to `logging.INFO` or `logging.WARNING`.
 
 This simulation runs the model using default country configurations. You can modify them directly from the `CountryConfiguration`  object.
+
+## VAR comparison
+
+The model is packed with a Vector Autoregressive Model based on that used by Poledna et al (2023). To run this VAR model alongside the main model, add the following to your simulation script.
+
+```python
+# Run VAR model for all countries in the configuration
+var_results = VARForecaster.run_multiple_countries(
+    data_wrapper=data,
+    countries=list(country_configurations.keys()),  # Use countries from configuration
+    horizon=configuration.t_max,
+    num_paths=500,
+    var_lags=2  # Specify number of lags directly here
+)
+var_results.to_csv("./output/var_output.csv")
+```
