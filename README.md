@@ -172,7 +172,7 @@ This simulation runs the model using default country configurations. You can mod
 
 ## VAR comparison
 
-The model is packed with a Vector Autoregressive Model based on that used by Poledna et al (2023). To run this VAR model alongside the main model, add the following to your simulation script.
+We have included a Vector Autoregressive Model based on that used by Poledna et al (2023). To run this VAR model alongside the main model, add the following to your simulation script.
 
 ```python
 # Run VAR model for all countries in the configuration
