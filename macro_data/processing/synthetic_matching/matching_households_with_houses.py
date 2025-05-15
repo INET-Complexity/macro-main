@@ -150,7 +150,7 @@ def set_housing_df(
     rescale_factor = total_imputed_rent / housing_df.loc[owned_houses, "Rent"].sum()
     housing_df.loc[owned_houses, "Rent"] *= rescale_factor
 
-    owner_indices = synthetic_population.household_data["Tenure Status of the Main Residence"] == 1
+    owner_indices = np.isin(synthetic_population.household_data["Tenure Status of the Main Residence"], [1, 2, 4])
     synthetic_population.household_data.loc[owner_indices, "Rent Imputed"] = housing_df.loc[owned_houses, "Rent"].values
 
     match_renters_to_properties(
@@ -189,7 +189,7 @@ def create_owners_df(synthetic_population: SyntheticPopulation) -> pd.DataFrame:
             - Rent: NaN (filled later with imputed rent)
     """
     # Handle households owning their house
-    households_owning = synthetic_population.household_data["Tenure Status of the Main Residence"] == 1
+    households_owning = np.isin(synthetic_population.household_data["Tenure Status of the Main Residence"], [1, 2, 4])
     owners_df = pd.DataFrame(index=range(households_owning.sum()))
     owners_df["House ID"] = owners_df.index
 
