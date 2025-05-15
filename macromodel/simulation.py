@@ -417,6 +417,7 @@ class Simulation:
     
     def get_country_gdp_debug_output(self, country: str):
         """Get detailed GDP breakdown for a specific country.
+        There is a Streamlit dashboard for this data at macromodel/util/dash_gdp.py
 
         Args:
             country (str): Country code to get data for
