@@ -213,3 +213,27 @@ Please refer to the module docstrings and inline documentation.
 This will save the run data into an `output` directory, writing into `./output/can_usa_fra_run.h5`. If you want to have less verbose logs, you can use a logger to change the logging level to `logging.INFO` or `logging.WARNING`.
 
 This simulation runs the model using default country configurations. You can modify them directly from the `CountryConfiguration`  object.
+
+## Calibration Package
+
+The repository also includes a calibration package (`macrocalib`) that provides tools for calibrating the macromodel using simulation-based inference (SBI). This package is installed as an optional dependency.
+
+### Installing the Calibration Package
+
+To install the calibration package along with its dependencies, use:
+
+```bash
+pip install -e ".[calibration]"
+```
+
+**Note:** If you encounter issues installing the `sbi` package, you may need to pass the `--use-pep517` flag:
+
+```bash
+pip install -e ".[calibration]" --use-pep517
+```
+
+This flag helps resolve build issues with some of the dependencies, particularly `nflows`.
+
+### Using the Calibration Package
+
+The calibration package provides tools for sampling from the macromodel and running simulations in parallel. For more details, refer to the `macrocalib` module documentation.
