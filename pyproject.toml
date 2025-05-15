@@ -59,6 +59,7 @@ docs = [
 [tool.setuptools]
 packages = ["macro_data", "macromodel"]
 include-package-data = true
+package-data = {"" = ["*.yaml"]}
 
 [tool.black]
 line-length = 120
