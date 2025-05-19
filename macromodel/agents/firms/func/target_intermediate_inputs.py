@@ -338,6 +338,8 @@ class BundleWeightedTargetIntermediateInputsSetter(FinancialTargetIntermediateIn
             where=normalization_factors != 0,
         )
 
+        normalized_weights *= bundle_matrix.sum(axis=0)
+
         # Apply weights to base targets
         weighted_targets = base_targets * normalized_weights
 
