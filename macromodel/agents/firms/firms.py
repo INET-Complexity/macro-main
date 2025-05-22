@@ -1885,6 +1885,12 @@ class Firms(Agent):
         """
         return self.ts.get_aggregate("taxes_paid_on_production")
 
+    def increase_industry_input_productivity(self, producing_industry: str, input_industry: str, increase_pct: float):
+        producing_index = self.industries.index(producing_industry)
+        input_index = self.industries.index(input_industry)
+
+        self.intermediate_inputs_productivity_matrix[input_index, producing_index] *= 1 + increase_pct
+
 
 def fillna(array: np.ndarray, value: float = 0):
     """Fill NaN values in an array with a specified value.
