@@ -32,4 +32,4 @@ jobs:
           path: .
           destination: ${{ env.GCS_BUCKET }}
           parent: false
-          glob: '**/*[!.git]/**' 
+          rsync_args: --exclude=.git
