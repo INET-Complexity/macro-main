@@ -33,6 +33,7 @@ The matching modules handle:
 ## Key Components
 
 ### Individual-Firm Matching
+
 - `matching_individuals_with_firms.py`: Handles employment data harmonization
   - Validates employment counts
   - Reconciles wage totals
@@ -40,6 +41,7 @@ The matching modules handle:
   - Adjusts for tax effects
 
 ### Firm-Bank Matching
+
 - `matching_firms_with_banks.py`: Manages corporate banking relationships
   - Reconciles financial data
   - Allocates accounts
@@ -47,6 +49,7 @@ The matching modules handle:
   - Records relationships
 
 ### Household-Bank Matching
+
 - `matching_households_with_banks.py`: Processes retail banking relationships
   - Harmonizes deposit data
   - Reconciles loan balances
@@ -54,6 +57,7 @@ The matching modules handle:
   - Records assignments
 
 ### Household-Housing Matching
+
 - `matching_households_with_houses.py`: Handles property relationships
   - Processes ownership data
   - Manages rental market
@@ -80,4 +84,4 @@ The matching modules handle:
 ::: macro_data.processing.synthetic_matching.matching_households_with_houses
     options:
         members:
-            - set_housing_df 
+            - set_housing_df

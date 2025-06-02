@@ -5,6 +5,7 @@ The `SyntheticBanks` class is an abstract base class that defines the interface 
 ## Core Functionality
 
 The class handles:
+
 - Bank balance sheet data organization
 - Customer relationship mapping
 - Initial state calculations
@@ -46,6 +47,7 @@ The class handles:
 ## Data Source Integration
 
 The class integrates data from multiple sources:
+
 - OECD economic indicators
 - Eurostat banking statistics
 - Compustat bank-level data
@@ -54,6 +56,7 @@ The class integrates data from multiple sources:
 ## Initial State Processing
 
 The class processes:
+
 - Bank balance sheet data
 - Historical rate parameters
 - Customer relationship mappings
@@ -62,6 +65,7 @@ The class processes:
 ## Parameter Estimation
 
 Key parameters estimated include:
+
 - Interest rate parameters
 - Balance sheet ratios
 - Market share calculations
@@ -70,6 +74,7 @@ Key parameters estimated include:
 ## Factory Methods
 
 The class provides two factory methods:
+
 1. `from_readers`: Creates a `DefaultSyntheticBanks` instance using standard data sources
 2. `from_readers_compustat`: Creates a `DefaultSyntheticBanks` instance using detailed Compustat data
 
@@ -80,4 +85,4 @@ The class provides two factory methods:
         members:
             - DefaultSyntheticBanks
             - from_readers
-            - from_readers_compustat 
+            - from_readers_compustat

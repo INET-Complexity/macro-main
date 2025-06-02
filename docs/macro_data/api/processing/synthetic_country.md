@@ -37,7 +37,9 @@ The `SyntheticCountry` class is responsible for creating and managing synthetic 
 ### Economic Agents
 
 #### Firms
+
 The `SyntheticFirms` component manages firm-level data and behavior:
+
 - Firm creation and initialization
 - Industry classification
 - Financial data
@@ -46,7 +48,9 @@ The `SyntheticFirms` component manages firm-level data and behavior:
 [View SyntheticFirms documentation →](synthetic_firms/index.md)
 
 #### Banks
+
 The `SyntheticBanks` component handles banking sector data and operations:
+
 - Bank creation and initialization
 - Balance sheet data
 - Lending operations
@@ -55,7 +59,9 @@ The `SyntheticBanks` component handles banking sector data and operations:
 [View SyntheticBanks documentation →](synthetic_banks/index.md)
 
 #### Population
+
 The `SyntheticPopulation` component manages household and individual data:
+
 - Household creation
 - Income distribution
 - Wealth distribution
@@ -64,7 +70,9 @@ The `SyntheticPopulation` component manages household and individual data:
 [View SyntheticPopulation documentation →](synthetic_population/index.md)
 
 #### Central Bank
+
 The `SyntheticCentralBank` component handles monetary policy and operations:
+
 - Policy rate setting
 - Money supply
 - Banking supervision
@@ -73,7 +81,9 @@ The `SyntheticCentralBank` component handles monetary policy and operations:
 [View SyntheticCentralBank documentation →](synthetic_central_bank/index.md)
 
 #### Central Government
+
 The `SyntheticCentralGovernment` component manages fiscal policy and operations:
+
 - Tax collection
 - Government spending
 - Public debt
@@ -82,7 +92,9 @@ The `SyntheticCentralGovernment` component manages fiscal policy and operations:
 [View SyntheticCentralGovernment documentation →](synthetic_central_government/index.md)
 
 #### Government Entities
+
 The `SyntheticGovernmentEntities` component handles government agencies and institutions:
+
 - Agency creation
 - Budget allocation
 - Service provision
@@ -91,7 +103,9 @@ The `SyntheticGovernmentEntities` component handles government agencies and inst
 [View SyntheticGovernmentEntities documentation →](synthetic_government_entities/index.md)
 
 #### Rest of the World
+
 The `SyntheticRestOfTheWorld` component manages external economic relationships:
+
 - Trade flows
 - Capital flows
 - Exchange rates
@@ -102,7 +116,9 @@ The `SyntheticRestOfTheWorld` component manages external economic relationships:
 ### Markets
 
 #### Credit Market
+
 The `SyntheticCreditMarket` component manages credit and lending operations:
+
 - Loan creation
 - Interest rates
 - Credit allocation
@@ -111,7 +127,9 @@ The `SyntheticCreditMarket` component manages credit and lending operations:
 [View SyntheticCreditMarket documentation →](synthetic_credit_market/index.md)
 
 #### Housing Market
+
 The `SyntheticHousingMarket` component handles housing market operations:
+
 - Housing stock
 - House prices
 - Rental market
@@ -120,7 +138,9 @@ The `SyntheticHousingMarket` component handles housing market operations:
 [View SyntheticHousingMarket documentation →](synthetic_housing_market/index.md)
 
 #### Goods Market
+
 The `SyntheticGoodsMarket` component manages goods and services market:
+
 - Price setting
 - Supply and demand
 - Market clearing
@@ -129,7 +149,9 @@ The `SyntheticGoodsMarket` component manages goods and services market:
 [View SyntheticGoodsMarket documentation →](synthetic_goods_market/index.md)
 
 #### Matching
+
 The `SyntheticMatching` component handles agent matching and relationships:
+
 - Household-firm matching
 - Bank-firm matching
 - Labor market matching
@@ -180,4 +202,4 @@ central_bank = country.central_bank
 4. **Data Quality**
    - Validate input data
    - Handle missing values appropriately
-   - Document data transformations 
+   - Document data transformations

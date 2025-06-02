@@ -4,4 +4,4 @@
     options:
         members:
             - EmissionsReader
-            - read_price_data 
+            - read_price_data

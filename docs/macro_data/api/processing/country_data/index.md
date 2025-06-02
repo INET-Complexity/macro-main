@@ -37,16 +37,19 @@ def from_readers(cls, readers: DataReaders, country: Country, year: int) -> TaxD
 Creates a TaxData instance by fetching data from various data readers.
 
 **Parameters:**
+
 - `readers` (DataReaders): Collection of data readers for accessing different data sources
 - `country` (Country): Country for which to fetch tax data
 - `year` (int): Year for which to fetch tax data
 
 **Returns:**
+
 - `TaxData`: Instance containing tax rates and financial metrics for the specified country and year
 
 ### Data Sources
 
 The class integrates data from multiple sources:
+
 - World Bank: VAT rates and export taxes
 - OECD: Social insurance and corporate tax rates
 - Eurostat: Risk premiums and capital formation taxes
@@ -76,4 +79,4 @@ corporate_tax = france_tax_data.profit_tax
 ::: macro_data.processing.country_data
     options:
         members:
-            - TaxData 
+            - TaxData

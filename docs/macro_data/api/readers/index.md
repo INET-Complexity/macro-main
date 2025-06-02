@@ -5,7 +5,9 @@ The data reading system is centered around the `DefaultReaders` class, which pro
 ## Main Component
 
 ### DefaultReaders
+
 The central coordinator for all data reading operations. It provides:
+
 - Unified interface for accessing all economic data
 - Automatic reader initialization and configuration
 - Data path management
@@ -21,6 +23,7 @@ The central coordinator for all data reading operations. It provides:
 The following specialized readers are used internally by DefaultReaders:
 
 ### Core Economic Data
+
 - ICIOReader: Inter-Country Input-Output tables
 - EuroStatReader: EU economic statistics
 - WorldBankReader: Global economic indicators
@@ -30,11 +33,13 @@ The following specialized readers are used internally by DefaultReaders:
 - ExchangeRatesReader: Currency exchange rates
 
 ### Population and Financial Data
+
 - HFCSReader: Household Finance and Consumption Survey
 - CompustatFirmsReader: Firm-level financial data
 - CompustatBanksReader: Bank-level financial data
 
 ### Environmental Data
+
 - EmissionsReader: Environmental and emissions data
 
 ## Usage Example
@@ -79,4 +84,4 @@ us_emissions = readers.emissions.get_emissions_data("USA")
 4. **Data Quality**
    - Validate input data
    - Handle missing values appropriately
-   - Document data transformations 
+   - Document data transformations
