@@ -5,6 +5,7 @@ The `SyntheticHousingMarket` class is a container for preprocessed housing marke
 ## Core Functionality
 
 The class handles:
+
 1. Housing Unit Data:
    - Property identification and valuation
    - Rental status and rates
@@ -50,6 +51,7 @@ The `DefaultSyntheticHousingMarket` class provides a standard implementation for
 ## Data Processing
 
 The default implementation handles:
+
 1. Data Collection:
    - Household survey data
    - Property registration records
@@ -71,6 +73,7 @@ The default implementation handles:
 ## Factory Methods
 
 The class provides a factory method `init_from_datadict` that creates a `DefaultSyntheticHousingMarket` instance by:
+
 1. Converting dictionary data to DataFrame format
 2. Setting initial rental market availability
 3. Establishing property-household relationships
@@ -80,4 +83,4 @@ The class provides a factory method `init_from_datadict` that creates a `Default
 ::: macro_data.processing.synthetic_housing_market.default_synthetic_housing_market
     options:
         members:
-            - DefaultSyntheticHousingMarket 
+            - DefaultSyntheticHousingMarket

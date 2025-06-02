@@ -7,4 +7,4 @@
             - from_csv
             - from_usd_to_lcu
             - from_lcu_to_usd
-            - prune 
+            - prune

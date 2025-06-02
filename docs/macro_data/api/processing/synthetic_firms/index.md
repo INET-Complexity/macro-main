@@ -5,6 +5,7 @@ The `SyntheticFirms` class is an abstract base class that serves as a container 
 ## Core Functionality
 
 The class stores firm data in a pandas DataFrame with the following key columns:
+
 - Industry: The industry classification of the firm
 - Number of Employees: Employee count
 - Total Wages: Total wage bill
@@ -65,6 +66,7 @@ The class stores firm data in a pandas DataFrame with the following key columns:
 ## Data Source Integration
 
 The class integrates data from multiple sources:
+
 - OECD economic indicators
 - Eurostat business statistics
 - Compustat firm-level data
@@ -73,6 +75,7 @@ The class integrates data from multiple sources:
 ## Initial State Processing
 
 The class processes:
+
 - Industry-level aggregates
 - Firm size distributions
 - Financial positions
@@ -81,6 +84,7 @@ The class processes:
 ## Parameter Estimation
 
 Key parameters estimated include:
+
 - Productivity metrics
 - Input-output relationships
 - Tax rates
@@ -89,6 +93,7 @@ Key parameters estimated include:
 ## Factory Methods
 
 The class provides a factory method `from_readers` that creates a `DefaultSyntheticFirms` instance by:
+
 1. Reading and processing data from various sources
 2. Initializing firm-level data based on industry statistics
 3. Setting up financial relationships and parameters
@@ -117,4 +122,4 @@ The class provides a factory method `from_readers` that creates a `DefaultSynthe
             - set_unit_costs
             - set_corporate_taxes_paid
             - set_firm_debt_installments
-            - set_additional_initial_conditions 
+            - set_additional_initial_conditions

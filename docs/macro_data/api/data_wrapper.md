@@ -5,7 +5,9 @@ The `DataWrapper` class is the main container for managing synthetic economic da
 ## Core Components
 
 ### Synthetic Countries
+
 The `SyntheticCountry` class manages individual country data and coordinates all economic agents and markets. It provides:
+
 - Unified interface for creating synthetic economic data
 - Agent initialization and configuration
 - Market setup and coordination
@@ -15,6 +17,7 @@ The `SyntheticCountry` class manages individual country data and coordinates all
 [View SyntheticCountry documentation →](processing/synthetic_country.md)
 
 ### Economic Agents
+
 - [SyntheticFirms](processing/synthetic_firms/index.md): Firm-level data and behavior
 - [SyntheticBanks](processing/synthetic_banks/index.md): Banking sector data and operations
 - [SyntheticPopulation](processing/synthetic_population/index.md): Household and individual data
@@ -24,6 +27,7 @@ The `SyntheticCountry` class manages individual country data and coordinates all
 - [SyntheticRestOfTheWorld](processing/synthetic_rest_of_the_world/index.md): External economic relationships
 
 ### Markets and Data Harmonization
+
 - [SyntheticCreditMarket](processing/synthetic_credit_market/index.md): Credit and lending operations
 - [SyntheticHousingMarket](processing/synthetic_housing_market/index.md): Housing market operations
 - [SyntheticGoodsMarket](processing/synthetic_goods_market/index.md): Goods and services market

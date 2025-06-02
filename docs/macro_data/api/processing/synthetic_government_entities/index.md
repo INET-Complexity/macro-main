@@ -5,6 +5,7 @@ The `SyntheticGovernmentEntities` class is an abstract base class that serves as
 ## Core Functionality
 
 The class organizes data about:
+
 1. Government Consumption:
    - Sectoral consumption patterns
    - Consumption in local currency and USD
@@ -49,6 +50,7 @@ The class organizes data about:
 ## Data Source Integration
 
 The class integrates data from multiple sources:
+
 - OECD business demography statistics
 - National accounts government consumption data
 - Industry-level consumption patterns
@@ -57,6 +59,7 @@ The class integrates data from multiple sources:
 ## Initial State Processing
 
 The class processes:
+
 - Entity count calculation based on economic size
 - Consumption allocation by industry
 - Size-based distribution
@@ -65,6 +68,7 @@ The class processes:
 ## Parameter Estimation
 
 Key parameters estimated include:
+
 - Government consumption growth model
 - Entity size distribution
 - Industry-specific consumption patterns
@@ -73,6 +77,7 @@ Key parameters estimated include:
 ## Factory Methods
 
 The class provides a factory method `from_readers` that creates a `DefaultSyntheticGovernmentEntities` instance by:
+
 1. Reading and processing data from various sources
 2. Calculating entity counts and distributions
 3. Setting up initial state data
@@ -85,4 +90,4 @@ The class provides a factory method `from_readers` that creates a `DefaultSynthe
     options:
         members:
             - DefaultSyntheticGovernmentEntities
-            - from_readers 
+            - from_readers

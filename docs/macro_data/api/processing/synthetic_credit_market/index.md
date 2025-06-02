@@ -5,6 +5,7 @@ The `SyntheticCreditMarket` class is a container for preprocessed credit market 
 ## Core Functionality
 
 The class handles:
+
 1. Credit Relationship Data:
    - Bank-firm loan relationships
    - Bank-household loan relationships
@@ -36,6 +37,7 @@ The class handles:
 ## Factory Methods
 
 The class provides a factory method `create_from_agents` that creates a `SyntheticCreditMarket` instance by:
+
 1. Processing credit relationship data from various economic agents
 2. Matching borrowers with corresponding banks
 3. Calculating initial loan parameters
@@ -56,6 +58,7 @@ The credit market module includes several specialized classes for different type
 ## LoanData
 
 Base class for preprocessing loan-specific credit data. It provides:
+
 - Principal amounts by bank-borrower pair
 - Interest amounts by bank-borrower pair
 - Installment amounts by bank-borrower pair
@@ -63,6 +66,7 @@ Base class for preprocessing loan-specific credit data. It provides:
 ## LongtermLoans
 
 Container for preprocessed long-term firm loan data:
+
 - Principal amounts from firm debt data
 - Interest amounts using bank long-term rates
 - Installment amounts based on maturity
@@ -70,6 +74,7 @@ Container for preprocessed long-term firm loan data:
 ## ShorttermLoans
 
 Container for preprocessed short-term firm loan data:
+
 - Principal amounts from firm debt data
 - Interest amounts using bank short-term rates
 - Installment amounts based on maturity
@@ -77,6 +82,7 @@ Container for preprocessed short-term firm loan data:
 ## ConsumptionExpansionLoans
 
 Container for preprocessed consumer loan data:
+
 - Principal amounts from household debt data
 - Interest amounts using bank consumer rates
 - Installment amounts based on maturity
@@ -84,6 +90,7 @@ Container for preprocessed consumer loan data:
 ## PaydayLoans
 
 Container for preprocessed payday loan data:
+
 - Principal amounts from household data
 - Interest amounts using bank payday rates
 - Installment amounts based on maturity
@@ -91,6 +98,7 @@ Container for preprocessed payday loan data:
 ## MortgageLoans
 
 Container for preprocessed mortgage loan data:
+
 - Principal amounts from household mortgage data
 - Interest amounts using bank mortgage rates
 - Installment amounts based on maturity
@@ -105,4 +113,4 @@ Container for preprocessed mortgage loan data:
             - ShorttermLoans
             - ConsumptionExpansionLoans
             - PaydayLoans
-            - MortgageLoans 
+            - MortgageLoans
