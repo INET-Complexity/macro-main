@@ -48,6 +48,7 @@ def compute_household_income(
 ```
 
 Computes household income from all sources:
+
 - Employee income
 - Social transfers
 - Rental income
@@ -64,6 +65,7 @@ def compute_household_wealth(
 ```
 
 Computes household wealth components:
+
 - Real assets (property, vehicles, businesses)
 - Financial assets (deposits, investments)
 - Debt obligations
@@ -82,6 +84,7 @@ def set_debt_installments(
 ```
 
 Sets household debt payment schedules:
+
 - Consumption loan payments
 - Consumer electronics installments
 - Mortgage payments
@@ -97,6 +100,7 @@ def set_household_saving_rates(
 ```
 
 Computes household saving rates based on:
+
 - Income levels
 - Wealth position
 - Household characteristics
@@ -143,6 +147,7 @@ def from_readers(
 Creates a synthetic population using HFCS data and additional sources.
 
 **Parameters:**
+
 - `readers` (DataReaders): Data source readers
 - `country_name` (Country): Target country
 - `country_name_short` (str): Country code
@@ -161,6 +166,7 @@ Creates a synthetic population using HFCS data and additional sources.
 - `yearly_factor` (float): Annual to sub-annual conversion factor
 
 **Returns:**
+
 - `SyntheticHFCSPopulation`: Configured population instance
 
 ### Usage Example
@@ -210,4 +216,4 @@ france_population.compute_household_income(total_social_transfers=5e8)
             - compute_household_wealth
             - set_income
             - set_household_investment_rates
-            - normalise_household_investment 
+            - normalise_household_investment

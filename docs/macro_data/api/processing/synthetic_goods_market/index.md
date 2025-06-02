@@ -5,6 +5,7 @@ The `SyntheticGoodsMarket` class is a container for preprocessed goods market da
 ## Core Functionality
 
 The class handles:
+
 1. Exchange Rate Processing:
    - Historical exchange rate data
    - Inflation rate relationships
@@ -31,12 +32,14 @@ The class handles:
 ## Factory Methods
 
 The class provides a factory method `from_readers` that creates a `SyntheticGoodsMarket` instance by:
+
 1. Collecting historical exchange rates
 2. Matching with inflation and growth data
 3. Cleaning and aligning time series
 4. Estimating exchange rate model parameters
 
 The method takes:
+
 - `country_name`: Country to process data for
 - `year`: Base year for preprocessing
 - `quarter`: Base quarter for preprocessing
@@ -49,4 +52,4 @@ The method takes:
 ::: macro_data.processing.synthetic_goods_market.synthetic_goods_market
     options:
         members:
-            - SyntheticGoodsMarket 
+            - SyntheticGoodsMarket

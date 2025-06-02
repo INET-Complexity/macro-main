@@ -4,4 +4,4 @@
     options:
         members:
             - CompustatBanksReader
-            - from_raw_data 
+            - from_raw_data

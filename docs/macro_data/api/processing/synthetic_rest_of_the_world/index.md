@@ -5,6 +5,7 @@ The `SyntheticRestOfTheWorld` class is an abstract base class that manages data 
 ## Core Functionality
 
 The class handles:
+
 1. Trade Relationships:
    - Aggregating exports to non-simulated countries
    - Tracking imports from non-simulated countries
@@ -42,6 +43,7 @@ The class handles:
 ## Data Structure
 
 The ROW data is organized in a DataFrame with columns:
+
 - Exports: Value of exports to simulated countries
 - Imports in USD: Value of imports from simulated countries in USD
 - Imports in LCU: Value of imports in local currency units
@@ -62,6 +64,7 @@ The ROW data is organized in a DataFrame with columns:
 ## Data Source Integration
 
 The class integrates data from multiple sources:
+
 - Trade flow data
 - Exchange rate information
 - Industry-level statistics
@@ -70,6 +73,7 @@ The class integrates data from multiple sources:
 ## Initial State Processing
 
 The class processes:
+
 - Trade data aggregation
 - Currency conversion
 - Market structure initialization
@@ -78,6 +82,7 @@ The class processes:
 ## Parameter Estimation
 
 Key parameters estimated include:
+
 - Export growth models
 - Import growth models
 - Exporter counts by industry
@@ -86,6 +91,7 @@ Key parameters estimated include:
 ## Factory Methods
 
 The class provides a factory method `from_readers` that creates a `DefaultSyntheticRestOfTheWorld` instance by:
+
 1. Reading and processing data from various sources
 2. Converting currencies using exchange rates
 3. Fitting growth models if configured
@@ -98,4 +104,4 @@ The class provides a factory method `from_readers` that creates a `DefaultSynthe
     options:
         members:
             - DefaultSyntheticRestOfTheWorld
-            - from_readers 
+            - from_readers
