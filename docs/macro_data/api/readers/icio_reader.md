@@ -40,4 +40,4 @@
             - get_capital_inputs_matrix
             - get_capital_inputs_depreciation
             - get_updated_dictionary
-            - get_inverse_updated_dictionary 
+            - get_inverse_updated_dictionary

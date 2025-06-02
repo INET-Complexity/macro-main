@@ -4,4 +4,4 @@
     options:
         members:
             - HFCSReader
-            - from_csv 
+            - from_csv

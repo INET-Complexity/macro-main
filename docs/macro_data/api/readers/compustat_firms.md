@@ -4,4 +4,4 @@
     options:
         members:
             - CompustatFirmsReader
-            - from_raw_data 
+            - from_raw_data

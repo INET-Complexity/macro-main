@@ -5,7 +5,9 @@ Welcome to the documentation for Macrocosm's Macromodel, a comprehensive economi
 ## Core Packages
 
 ### 1. macro_data
+
 The data preprocessing and management package that handles:
+
 - Creation of synthetic economic data
 - Data preprocessing and validation
 - Input-output table processing
@@ -16,7 +18,9 @@ The data preprocessing and management package that handles:
 [View macro_data documentation →](macro_data/index.md)
 
 ### 2. macromodel
+
 The core modeling package that implements:
+
 - Economic agent behaviors
 - Market mechanisms
 - Policy implementations
@@ -26,7 +30,9 @@ The core modeling package that implements:
 [View macromodel documentation →](macromodel/index.md)
 
 ### 3. macrocalib
+
 The calibration package that provides:
+
 - Model calibration tools
 - Parameter estimation
 - Validation methods
