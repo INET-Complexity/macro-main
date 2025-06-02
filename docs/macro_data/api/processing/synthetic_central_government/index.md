@@ -5,6 +5,7 @@ The `SyntheticCentralGovernment` class is an abstract base class that serves as 
 ## Core Functionality
 
 The class stores government data in a pandas DataFrame with the following key columns:
+
 - Total Unemployment Benefits: Initial unemployment benefit levels
 - Other Social Benefits: Initial levels of other social transfers
 - Debt: Initial central government debt level
@@ -51,6 +52,7 @@ The class stores government data in a pandas DataFrame with the following key co
 ## Data Source Integration
 
 The class integrates data from multiple sources:
+
 - Historical benefits data
 - Tax revenue data
 - Government debt data
@@ -59,6 +61,7 @@ The class integrates data from multiple sources:
 ## Initial State Processing
 
 The class processes:
+
 - Benefits data organization
 - Tax revenue parameter estimation
 - Initial state calculations
@@ -67,6 +70,7 @@ The class processes:
 ## Parameter Estimation
 
 Key parameters estimated include:
+
 - Benefits models (unemployment and other benefits)
 - Tax revenue parameters
 - Initial debt levels
@@ -75,6 +79,7 @@ Key parameters estimated include:
 ## Factory Methods
 
 The class provides a factory method `from_readers` that creates a `DefaultSyntheticCentralGovernment` instance by:
+
 1. Reading and processing data from various sources
 2. Estimating benefits models using historical data
 3. Setting up initial state data
@@ -93,4 +98,4 @@ The class provides a factory method `from_readers` that creates a `DefaultSynthe
             - DefaultSyntheticCGovernment
             - from_readers
             - build_unemployment_model
-            - build_other_benefits_model 
+            - build_other_benefits_model

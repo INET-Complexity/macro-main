@@ -1,7 +1,5 @@
 # DefaultReaders
 
-
-
 ## Overview
 
 The `DefaultReaders` class serves as the central coordinator for all data reading operations in the macro_data package. It manages the initialization, configuration, and coordination of various specialized readers for different types of economic data.
@@ -13,7 +11,9 @@ The following specialized readers are used internally by DefaultReaders:
 ### Core Economic Data Readers
 
 #### ICIOReader
+
 Handles Inter-Country Input-Output tables, providing methods for:
+
 - Reading and processing ICIO data
 - Calculating trade flows and proportions
 - Managing industry-level data
@@ -22,7 +22,9 @@ Handles Inter-Country Input-Output tables, providing methods for:
 [View ICIOReader documentation →](icio_reader.md)
 
 #### EuroStatReader
+
 Processes Eurostat data for EU countries, including:
+
 - Economic indicators
 - Industry statistics
 - Social and demographic data
@@ -31,7 +33,9 @@ Processes Eurostat data for EU countries, including:
 [View EuroStatReader documentation →](eurostat.md)
 
 #### WorldBankReader
+
 Manages World Bank data for global economic indicators:
+
 - GDP and growth rates
 - Population statistics
 - Trade data
@@ -40,7 +44,9 @@ Manages World Bank data for global economic indicators:
 [View WorldBankReader documentation →](world_bank.md)
 
 #### OECDEconData
+
 Handles OECD economic data:
+
 - Economic indicators
 - Industry statistics
 - Policy data
@@ -49,7 +55,9 @@ Handles OECD economic data:
 [View OECDEconData documentation →](oecd.md)
 
 #### IMFReader
+
 Processes IMF data:
+
 - Economic forecasts
 - Financial statistics
 - Balance of payments
@@ -60,7 +68,9 @@ Processes IMF data:
 ### Financial and Population Data Readers
 
 #### ExchangeRatesReader
+
 Handles currency exchange rate data:
+
 - Bilateral exchange rates
 - Currency conversions
 - Rate time series
@@ -68,7 +78,9 @@ Handles currency exchange rate data:
 [View ExchangeRatesReader documentation →](exchange_rates.md)
 
 #### PolicyRatesReader
+
 Processes central bank policy rates:
+
 - Interest rates
 - Monetary policy data
 - Rate time series
@@ -76,7 +88,9 @@ Processes central bank policy rates:
 [View PolicyRatesReader documentation →](policy_rates.md)
 
 #### HFCSReader
+
 Manages Household Finance and Consumption Survey data:
+
 - Household wealth
 - Income distribution
 - Financial assets
@@ -85,7 +99,9 @@ Manages Household Finance and Consumption Survey data:
 [View HFCSReader documentation →](hfcs.md)
 
 #### CompustatFirmsReader
+
 Processes firm-level financial data:
+
 - Balance sheets
 - Income statements
 - Financial ratios
@@ -94,7 +110,9 @@ Processes firm-level financial data:
 [View CompustatFirmsReader documentation →](compustat_firms.md)
 
 #### CompustatBanksReader
+
 Handles bank-level financial data:
+
 - Bank balance sheets
 - Financial statements
 - Banking indicators
@@ -105,7 +123,9 @@ Handles bank-level financial data:
 ### Environmental Data Readers
 
 #### EmissionsReader
+
 Manages environmental data:
+
 - Emission factors
 - Energy consumption
 - Environmental indicators
@@ -155,8 +175,7 @@ us_emissions = readers.emissions.get_emissions_data("USA")
 4. **Data Quality**
    - Validate input data
    - Handle missing values appropriately
-   - Document data transformations 
-
+   - Document data transformations
 
 ::: macro_data.readers.default_readers
     options:

@@ -37,6 +37,7 @@ The `DefaultSyntheticCentralBank` class is a concrete implementation that prepro
 ### Attributes
 
 The preprocessed data DataFrame contains:
+
 - `policy_rate` (float): Historical/initial policy rate
 - `targeted_inflation_rate` (float): Reference inflation target
 - `rho` (float): Estimated interest rate smoothing parameter
@@ -64,6 +65,7 @@ def from_readers(
 Creates a preprocessed central bank data container using historical data.
 
 **Parameters:**
+
 - `country_name` (str): Country to preprocess data for
 - `year` (int): Reference year for preprocessing
 - `quarter` (int): Reference quarter (1-4)
@@ -72,15 +74,19 @@ Creates a preprocessed central bank data container using historical data.
 - `central_bank_configuration` (CentralBankDataConfiguration): Configuration settings
 
 **Returns:**
+
 - `DefaultSyntheticCentralBank`: Container with preprocessed parameters
 
 ### Parameter Estimation
 
 The class estimates Taylor rule parameters using the form:
+
 ```
 r_t = ρr_{t-1} + (1-ρ)[r* + π* + ξ_π(π_t - π*) + ξ_γγ_t]
 ```
+
 where:
+
 - r_t: historical policy rate
 - ρ: smoothing parameter
 - r*: natural rate
@@ -119,4 +125,4 @@ inflation_response = france_central_bank.central_bank_data["xi_pi"]
     options:
         members:
             - SyntheticCentralBank
-            - DefaultSyntheticCentralBank 
+            - DefaultSyntheticCentralBank

@@ -5,6 +5,7 @@ The macro_data package is responsible for creating and managing synthetic econom
 ## Overview
 
 The package provides tools to:
+
 - Create synthetic country-level economic data
 - Process and validate input-output tables
 - Handle trade flows and exchange rates
@@ -14,11 +15,13 @@ The package provides tools to:
 ## Core Components
 
 ### DataWrapper
+
 The main container class that manages synthetic economic data for multiple countries. It serves as the primary interface for data preprocessing and management, coordinating all economic agents, markets, and their relationships.
 
 [View DataWrapper documentation →](api/data_wrapper.md)
 
 ### Data Readers
+
 A collection of specialized readers for different types of economic data, handling data ingestion, preprocessing, and validation.
 
 [View Data Readers documentation →](api/readers/index.md)
@@ -87,4 +90,4 @@ creator.save("path/to/save/data.pkl")
 3. **Performance Optimization**
    - Use appropriate data structures
    - Implement efficient data processing
-   - Cache intermediate results when possible 
+   - Cache intermediate results when possible

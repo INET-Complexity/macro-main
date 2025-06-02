@@ -26,4 +26,4 @@
             - get_export_market_share
             - get_import_market_share
             - get_foreign_direct_investment
-            - get_foreign_portfolio_investment 
+            - get_foreign_portfolio_investment
