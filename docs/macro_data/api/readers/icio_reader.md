@@ -1,0 +1,43 @@
+# ICIOReader
+
+::: macro_data.readers.io_tables.icio_reader
+    options:
+        members:
+            - ICIOReader
+            - agg_from_csv
+            - read_df
+            - aggregate_io
+            - column_allc
+            - get_total_output
+            - get_total_output_series
+            - get_output_shares_dict
+            - get_consumption_shares_series
+            - get_intermediate_inputs_use
+            - get_intermediate_inputs_supply
+            - get_intermediate_inputs_domestic
+            - get_capital_inputs
+            - get_firm_capital_inputs
+            - get_household_capital_inputs
+            - get_gfcf_column
+            - get_capital_inputs_domestic
+            - get_value_added
+            - get_value_added_series
+            - get_taxes_less_subsidies
+            - get_taxes_less_subsidies_rates
+            - get_hh_consumption
+            - get_hh_consumption_series
+            - get_hh_consumption_domestic
+            - get_hh_consumption_weights
+            - get_govt_consumption
+            - get_govt_consumption_domestic
+            - govt_consumption_weights
+            - get_imports
+            - get_exports
+            - get_trade
+            - get_origin_trade_proportions
+            - get_destination_trade_proportions
+            - get_intermediate_inputs_matrix
+            - get_capital_inputs_matrix
+            - get_capital_inputs_depreciation
+            - get_updated_dictionary
+            - get_inverse_updated_dictionary 
