@@ -18,20 +18,20 @@ The `SyntheticCountry` class manages individual country data and coordinates all
 
 ### Economic Agents
 
-- [SyntheticFirms](processing/synthetic_firms/index.md): Firm-level data and behavior
-- [SyntheticBanks](processing/synthetic_banks/index.md): Banking sector data and operations
-- [SyntheticPopulation](processing/synthetic_population/index.md): Household and individual data
-- [SyntheticCentralBank](processing/synthetic_central_bank/index.md): Monetary policy and operations
-- [SyntheticCentralGovernment](processing/synthetic_central_government/index.md): Fiscal policy and operations
-- [SyntheticGovernmentEntities](processing/synthetic_government_entities/index.md): Government agencies and institutions
-- [SyntheticRestOfTheWorld](processing/synthetic_rest_of_the_world/index.md): External economic relationships
+- [SyntheticFirms](processing/synthetic_firms.md): Firm-level data and behavior
+- [SyntheticBanks](processing/synthetic_banks.md): Banking sector data and operations
+- [SyntheticPopulation](processing/synthetic_population.md): Household and individual data
+- [SyntheticCentralBank](processing/synthetic_central_bank.md): Monetary policy and operations
+- [SyntheticCentralGovernment](processing/synthetic_central_government.md): Fiscal policy and operations
+- [SyntheticGovernmentEntities](processing/synthetic_government_entities.md): Government agencies and institutions
+- [SyntheticRestOfTheWorld](processing/synthetic_rest_of_the_world.md): External economic relationships
 
 ### Markets and Data Harmonization
 
-- [SyntheticCreditMarket](processing/synthetic_credit_market/index.md): Credit and lending operations
-- [SyntheticHousingMarket](processing/synthetic_housing_market/index.md): Housing market operations
-- [SyntheticGoodsMarket](processing/synthetic_goods_market/index.md): Goods and services market
-- [SyntheticMatching](processing/synthetic_matching/index.md): Data harmonization between agents
+- [SyntheticCreditMarket](processing/synthetic_credit_market.md): Credit and lending operations
+- [SyntheticHousingMarket](processing/synthetic_housing_market.md): Housing market operations
+- [SyntheticGoodsMarket](processing/synthetic_goods_market.md): Goods and services market
+- [SyntheticMatching](processing/synthetic_matching.md): Data harmonization between agents
 
 ## Usage Example
 
@@ -59,24 +59,24 @@ central_bank = country.central_bank
 ## Best Practices
 
 1. **Data Consistency**
-   - Ensure all economic relationships are properly initialized
-   - Validate agent-level data against aggregate statistics
-   - Maintain accounting identities
+    - Ensure all economic relationships are properly initialized
+    - Validate agent-level data against aggregate statistics
+    - Maintain accounting identities
 
 2. **Configuration Management**
-   - Use appropriate country-specific settings
-   - Configure proxy relationships for missing data
-   - Document all configuration parameters
+    - Use appropriate country-specific settings
+    - Configure proxy relationships for missing data
+    - Document all configuration parameters
 
 3. **Performance Optimization**
-   - Use efficient data structures
-   - Implement parallel processing where possible
-   - Cache intermediate results
+    - Use efficient data structures
+    - Implement parallel processing where possible
+    - Cache intermediate results
 
 4. **Data Quality**
-   - Validate input data
-   - Handle missing values appropriately
-   - Document data transformations
+    - Validate input data
+    - Handle missing values appropriately
+    - Document data transformations
 
 ::: macro_data.data_wrapper.DataWrapper
     options:
