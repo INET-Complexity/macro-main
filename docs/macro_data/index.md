@@ -26,31 +26,36 @@ A collection of specialized readers for different types of economic data, handli
 
 [View Data Readers documentation →](api/readers/index.md)
 
+### Country and Region Objects
+
+- [Country](country.md): Enum and utilities for country codes, EU membership, and code conversion.
+- [Region](region.md): Class for regional codes and metadata, including parent country and value-added ratios.
+
 ## Data Structure
 
 The package organizes data in a hierarchical structure:
 
 1. **DataWrapper**
-   - Manages all synthetic economic data
-   - Handles data preprocessing and validation
-   - Coordinates between different data sources
+    - Manages all synthetic economic data
+    - Handles data preprocessing and validation
+    - Coordinates between different data sources
 
 2. **Synthetic Countries**
-   - Individual country data containers
-   - Contains all economic agents and markets
-   - Manages country-specific data and relationships
+    - Individual country data containers
+    - Contains all economic agents and markets
+    - Manages country-specific data and relationships
 
 3. **Economic Agents**
-   - Households
-   - Firms
-   - Banks
-   - Government institutions
+    - Households
+    - Firms
+    - Banks
+    - Government institutions
 
 4. **Markets**
-   - Credit market
-   - Housing market
-   - Goods market
-   - Labor market
+    - Credit market
+    - Housing market
+    - Goods market
+    - Labor market
 
 ## Usage Example
 
@@ -78,16 +83,16 @@ creator.save("path/to/save/data.pkl")
 ## Best Practices
 
 1. **Data Validation**
-   - Always validate input data before processing
-   - Check for missing or inconsistent values
-   - Verify economic relationships
+    - Always validate input data before processing
+    - Check for missing or inconsistent values
+    - Verify economic relationships
 
 2. **Configuration Management**
-   - Use configuration files for reproducible results
-   - Document all configuration parameters
-   - Version control configuration files
+    - Use configuration files for reproducible results
+    - Document all configuration parameters
+    - Version control configuration files
 
 3. **Performance Optimization**
-   - Use appropriate data structures
-   - Implement efficient data processing
-   - Cache intermediate results when possible
+    - Use appropriate data structures
+    - Implement efficient data processing
+    - Cache intermediate results when possible

@@ -1,5 +1,5 @@
 # mkdocs.yml
-site_name: Macrocosm's Macromodel
+site_name: INET/Macrocosm's Macromodel
 use_directory_urls: false
 
 theme:
@@ -52,19 +52,38 @@ nav:
     - Compustat Banks: macro_data/api/readers/compustat_banks.md
   - Processing:
     - Synthetic Country: macro_data/api/processing/synthetic_country.md
-    - Synthetic Firms: macro_data/api/processing/synthetic_firms/index.md
-    - Synthetic Banks: macro_data/api/processing/synthetic_banks/index.md
-    - Synthetic Population: macro_data/api/processing/synthetic_population/index.md
-    - Synthetic Central Bank: macro_data/api/processing/synthetic_central_bank/index.md
-    - Synthetic Central Government: macro_data/api/processing/synthetic_central_government/index.md
-    - Synthetic Government Entities: macro_data/api/processing/synthetic_government_entities/index.md
-    - Synthetic Rest of the World: macro_data/api/processing/synthetic_rest_of_the_world/index.md
-    - Synthetic Credit Market: macro_data/api/processing/synthetic_credit_market/index.md
-    - Synthetic Housing Market: macro_data/api/processing/synthetic_housing_market/index.md
-    - Synthetic Goods Market: macro_data/api/processing/synthetic_goods_market/index.md
-    - Synthetic Matching: macro_data/api/processing/synthetic_matching/index.md
-    - Country Data: macro_data/api/processing/country_data/index.md
-- macromodel: macromodel/index.md
+    - Synthetic Firms: macro_data/api/processing/synthetic_firms.md
+    - Synthetic Banks: macro_data/api/processing/synthetic_banks.md
+    - Synthetic Population: macro_data/api/processing/synthetic_population.md
+    - Synthetic Central Bank: macro_data/api/processing/synthetic_central_bank.md
+    - Synthetic Central Government: macro_data/api/processing/synthetic_central_government.md
+    - Synthetic Government Entities: macro_data/api/processing/synthetic_government_entities.md
+    - Synthetic Rest of the World: macro_data/api/processing/synthetic_rest_of_the_world.md
+    - Synthetic Credit Market: macro_data/api/processing/synthetic_credit_market.md
+    - Synthetic Housing Market: macro_data/api/processing/synthetic_housing_market.md
+    - Synthetic Goods Market: macro_data/api/processing/synthetic_goods_market.md
+    - Synthetic Matching: macro_data/api/processing/synthetic_matching.md
+    - Country Data: macro_data/api/processing/country_data.md
+- macromodel:
+  - Overview: macromodel/index.md
+  - API:
+    - Overview: macromodel/api/index.md
+    - Country: macromodel/api/country.md
+    - Economy: macromodel/api/economy.md
+    - Rest of World: macromodel/api/rest_of_world.md
+    - Agents:
+      - Overview: macromodel/api/agents/index.md
+      - Banks: macromodel/api/agents/banks.md
+      - Firms: macromodel/api/agents/firms.md
+      - Households: macromodel/api/agents/households.md
+      - Central Bank: macromodel/api/agents/central_bank.md
+      - Central Government: macromodel/api/agents/central_government.md
+      - Government Entities: macromodel/api/agents/government_entities.md
+    - Markets:
+      - Goods Market: macromodel/api/markets/goods_market.md
+      - Credit Market: macromodel/api/markets/credit_market.md
+      - Housing Market: macromodel/api/markets/housing_market.md
+      - Labour Market: macromodel/api/markets/labour_market.md
 - macrocalib: macrocalib/index.md
 
 markdown_extensions:
