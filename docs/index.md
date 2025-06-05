@@ -66,6 +66,4 @@ Each package's documentation is organized into the following sections:
 
 ## Support
 
-- [FAQ](support/faq.md)
-- [Troubleshooting](support/troubleshooting.md)
-- [Contact](support/contact.md)
+- Open an issue on the [INET](https://github.com/inet-complexity/macro-main), [macrocosm](https://github.com/macro-cosm/macro-main/) or [SESIT](https://gitlab.com/sesit/macrocosm/macromodel) repositories when you run into something, or ping José Moran.
