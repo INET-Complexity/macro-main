@@ -67,21 +67,21 @@ us_emissions = readers.emissions.get_emissions_data("USA")
 ## Best Practices
 
 1. **Data Source Management**
-   - Keep raw data in a consistent location
-   - Document data source versions
-   - Maintain data update schedules
+    - Keep raw data in a consistent location
+    - Document data source versions
+    - Maintain data update schedules
 
 2. **Reader Configuration**
-   - Use appropriate aggregation levels
-   - Configure proxy relationships
-   - Set up proper error handling
+    - Use appropriate aggregation levels
+    - Configure proxy relationships
+    - Set up proper error handling
 
 3. **Performance Optimization**
-   - Cache processed data
-   - Use efficient data structures
-   - Implement parallel processing when possible
+    - Cache processed data
+    - Use efficient data structures
+    - Implement parallel processing when possible
 
 4. **Data Quality**
-   - Validate input data
-   - Handle missing values appropriately
-   - Document data transformations
+    - Validate input data
+    - Handle missing values appropriately
+    - Document data transformations
