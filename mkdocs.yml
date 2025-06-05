@@ -1,67 +1,115 @@
 # mkdocs.yml
-site_name: Macrocosm's Macromodel
+site_name: INET/Macrocosm's Macromodel
 use_directory_urls: false
 
 theme:
   name: material
   features:
-    - navigation.tabs
-    - navigation.sections
-    - navigation.top
-    - search.suggest
-    - search.highlight
-    - toc.integrate
+  - navigation.tabs
+  - navigation.sections
+  - navigation.top
+  - search.suggest
+  - search.highlight
+  - toc.integrate
   palette:
-    - media: "(prefers-color-scheme)"
-      toggle:
-        icon: material/link
-        name: Switch to light mode
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: green
-      accent: teal
-      toggle:
-        icon: material/toggle-switch
-        name: Switch to dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: black
-      accent: indigo
-      toggle:
-        icon: material/toggle-switch-off
-        name: Switch to system preference
+  - media: "(prefers-color-scheme)"
+    toggle:
+      icon: material/link
+      name: Switch to light mode
+  - media: "(prefers-color-scheme: light)"
+    scheme: default
+    primary: green
+    accent: teal
+    toggle:
+      icon: material/toggle-switch
+      name: Switch to dark mode
+  - media: "(prefers-color-scheme: dark)"
+    scheme: slate
+    primary: black
+    accent: indigo
+    toggle:
+      icon: material/toggle-switch-off
+      name: Switch to system preference
 
 nav:
-  - Home: index.md
+- Home: index.md
+- macro_data:
+  - Overview: macro_data/index.md
+  - Data Wrapper: macro_data/api/data_wrapper.md
+  - Readers:
+    - Overview: macro_data/api/readers/index.md
+    - Default Readers: macro_data/api/readers/default_readers.md
+    - ICIO Reader: macro_data/api/readers/icio_reader.md
+    - Eurostat: macro_data/api/readers/eurostat.md
+    - World Bank: macro_data/api/readers/world_bank.md
+    - OECD: macro_data/api/readers/oecd.md
+    - IMF: macro_data/api/readers/imf.md
+    - Emissions: macro_data/api/readers/emissions.md
+    - Exchange Rates: macro_data/api/readers/exchange_rates.md
+    - Policy Rates: macro_data/api/readers/policy_rates.md
+    - HFCS: macro_data/api/readers/hfcs.md
+    - Compustat Firms: macro_data/api/readers/compustat_firms.md
+    - Compustat Banks: macro_data/api/readers/compustat_banks.md
+  - Processing:
+    - Synthetic Country: macro_data/api/processing/synthetic_country.md
+    - Synthetic Firms: macro_data/api/processing/synthetic_firms.md
+    - Synthetic Banks: macro_data/api/processing/synthetic_banks.md
+    - Synthetic Population: macro_data/api/processing/synthetic_population.md
+    - Synthetic Central Bank: macro_data/api/processing/synthetic_central_bank.md
+    - Synthetic Central Government: macro_data/api/processing/synthetic_central_government.md
+    - Synthetic Government Entities: macro_data/api/processing/synthetic_government_entities.md
+    - Synthetic Rest of the World: macro_data/api/processing/synthetic_rest_of_the_world.md
+    - Synthetic Credit Market: macro_data/api/processing/synthetic_credit_market.md
+    - Synthetic Housing Market: macro_data/api/processing/synthetic_housing_market.md
+    - Synthetic Goods Market: macro_data/api/processing/synthetic_goods_market.md
+    - Synthetic Matching: macro_data/api/processing/synthetic_matching.md
+    - Country Data: macro_data/api/processing/country_data.md
+- macromodel:
+  - Overview: macromodel/index.md
   - API:
-      - "": api/index.md
-      - Agents:
-        - api/agent.md
+    - Overview: macromodel/api/index.md
+    - Country: macromodel/api/country.md
+    - Economy: macromodel/api/economy.md
+    - Rest of World: macromodel/api/rest_of_world.md
+    - Agents:
+      - Overview: macromodel/api/agents/index.md
+      - Banks: macromodel/api/agents/banks.md
+      - Firms: macromodel/api/agents/firms.md
+      - Households: macromodel/api/agents/households.md
+      - Central Bank: macromodel/api/agents/central_bank.md
+      - Central Government: macromodel/api/agents/central_government.md
+      - Government Entities: macromodel/api/agents/government_entities.md
+    - Markets:
+      - Goods Market: macromodel/api/markets/goods_market.md
+      - Credit Market: macromodel/api/markets/credit_market.md
+      - Housing Market: macromodel/api/markets/housing_market.md
+      - Labour Market: macromodel/api/markets/labour_market.md
+- macrocalib: macrocalib/index.md
 
 markdown_extensions:
-  - pymdownx.arithmatex:
-      generic: true
-  - pymdownx.highlight:
-      anchor_linenums: true
-  - pymdownx.superfences
-  - pymdownx.details
-  - pymdownx.tasklist:
-      custom_checkbox: true
-  - footnotes
-  - toc:
-      permalink: true
-      toc_depth: 4
-  - attr_list
-  - def_list
-  - tables
-  - admonition
+- pymdownx.arithmatex:
+    generic: true
+- pymdownx.highlight:
+    anchor_linenums: true
+- pymdownx.superfences
+- pymdownx.details
+- pymdownx.tasklist:
+    custom_checkbox: true
+- footnotes
+- toc:
+    permalink: true
+    toc_depth: 4
+- attr_list
+- def_list
+- tables
+- admonition
 
 extra_javascript:
-  - javascripts/mathjax.js
-  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js
+- javascripts/mathjax.js
+- https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js
 
 extra_css:
-  - _static/custom_css.css
+- _static/custom_css.css
 
 extra:
   version:
@@ -69,19 +117,19 @@ extra:
     default: latest
 
 plugins:
-  - search
-  - mkdocs-jupyter
-  - mkdocstrings:
-      handlers:
-        python:
-          options:
-            show_source: false
-            show_if_no_docstring: true
-            show_signature_annotations: true
-            show_root_toc_entry: false
-            members_order: source
-            docstring_style: google
-            show_bases: false
-            heading_level: 4
-            show_module_name: false
-            hide_name: true
+- search
+- mkdocs-jupyter
+- mkdocstrings:
+    handlers:
+      python:
+        options:
+          show_source: false
+          show_if_no_docstring: true
+          show_signature_annotations: true
+          show_root_toc_entry: false
+          members_order: source
+          docstring_style: google
+          show_bases: false
+          heading_level: 4
+          show_module_name: false
+          hide_name: true
