@@ -4,6 +4,10 @@ from itertools import product
 import numpy as np
 import pytest
 
+from macro_data.readers import DataReaders
+from macro_data.readers.io_tables.icio_reader import ICIOReader
+from test_macro_data.unit.conftest import readers_provincial_can
+
 
 class TestICIOAggReader:
     def test__countries_agg(self, readers):
@@ -50,6 +54,32 @@ class TestICIOAggReader:
         )
 
         assert total_imports.sum() - total_exports.sum() == pytest.approx(0)
+
+    # @pytest.mark.parametrize("datareader", [readers_provincial_can, readers, readers_disagg_can])
+    def test__ii_use(self, all_readers):
+        icio_reader = all_readers.icio[2014]
+        countries = icio_reader.considered_countries
+        countries_row = list(countries) + ["ROW"]
+
+        index = icio_reader.iot.index
+        ind_index = index[index.get_level_values(0).isin(countries_row)]
+
+        use_table = icio_reader.iot.loc[ind_index, ind_index]
+
+        supplied_ii = use_table.sum(axis=1)
+
+        assert use_table.loc[(countries[0], "A01")].sum() == pytest.approx(supplied_ii.loc[(countries[0], "A01")])
+
+        used_ii = use_table.sum(axis=0)
+
+        assert np.allclose(icio_reader.iot.loc[("TOTAL", "Intermediate Inputs"), use_table.columns], used_ii, rtol=1e-2)
+
+        supplied_ii /= icio_reader.yearly_factor
+
+        for country in countries:
+            assert np.allclose(
+                icio_reader.get_intermediate_inputs_supply(country).sum(axis=1), supplied_ii.loc[country], rtol=1e-2
+            )
 
 
 class TestICIODisagg:
