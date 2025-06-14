@@ -917,7 +917,7 @@ class SyntheticCountry:
             + total_taxes_on_products
             - total_taxes_on_production
             + rent
-            + imputed_rent
+            # + imputed_rent
         )
 
     @property
@@ -961,7 +961,8 @@ class SyntheticCountry:
         rent = self.population.household_data["Rent Paid"].sum()
         imputed_rent = self.population.household_data["Rent Imputed"].sum()
 
-        return capital_formation + hh_consumption + gov_consumption + exports - imports + rent + imputed_rent
+        # return capital_formation + hh_consumption + gov_consumption + exports - imports + rent + imputed_rent
+        return capital_formation + hh_consumption + gov_consumption + exports - imports + rent
 
     @property
     def gdp_income(self) -> 0:
@@ -1010,6 +1011,6 @@ class SyntheticCountry:
             + taxes_on_products_gov
             + cg_taxes_rental_income
             + cg_rent_received
-            + rent_imputed
+            # + rent_imputed
             + hh_rental_income
         )
