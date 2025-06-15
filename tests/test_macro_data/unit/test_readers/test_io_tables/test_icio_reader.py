@@ -4,10 +4,6 @@ from itertools import product
 import numpy as np
 import pytest
 
-from macro_data.readers import DataReaders
-from macro_data.readers.io_tables.icio_reader import ICIOReader
-from test_macro_data.unit.conftest import readers_provincial_can
-
 
 class TestICIOAggReader:
     def test__countries_agg(self, readers):
