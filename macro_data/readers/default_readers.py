@@ -301,6 +301,8 @@ class DataReaders:
             disagg_path = raw_data_path / "icio" / "icio_2014_can_provinces.csv"
             df = pd.read_csv(disagg_path, header=[0, 1], index_col=[0, 1])
 
+            df *= 1e6  # Scale to millions
+
             all_provinces = []
             for key, value in regions_dict.items():
                 all_provinces.extend(value)
@@ -322,6 +324,12 @@ class DataReaders:
 
             df.loc[("TOTAL", "Intermediate Inputs"), industry_cols] = df.loc[non_total_rows, industry_cols].sum(axis=0)
 
+            outputs = df.loc[("TOTAL", "Output"), industry_cols].groupby(level=0).sum()
+
+            for large_country, regions in regions_dict.items():
+                renorm_output = outputs.loc[regions] / outputs.loc[regions].sum()
+                renorm_output = renorm_output.to_dict()
+
             df.rename(columns={"OUT": "TOTAL"}, level=0, inplace=True)
 
             df = split_gfcf_column(
@@ -333,6 +341,13 @@ class DataReaders:
 
             icio[simulation_year].iot = df.sort_index()
             icio[simulation_year].considered_countries = countries_and_regions
+
+            for large_country, regions in regions_dict.items():
+                for region in regions:
+                    icio[simulation_year].imputed_rents[region] = (
+                        icio[simulation_year].imputed_rents[large_country] * renorm_output[region]
+                    )
+                del icio[simulation_year].imputed_rents[large_country]
 
             # country_names = all_countries
         else:
