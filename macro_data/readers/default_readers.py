@@ -211,6 +211,14 @@ class DataReaders:
             df = pd.read_csv(disagg_path, header=[0, 1], index_col=[0, 1])
             icio[simulation_year].iot = df
             industries = df.loc["ROW"].index.unique()
+            if "Household Fixed Capital Formation" not in df["CAN"].columns:
+                df = split_gfcf_column(
+                    considered_countries=[Country("CAN")],
+                    industries=industries,
+                    iot=df,
+                    investment_fractions=get_investment_year(simulation_year, [Country("CAN")]),
+                )
+            icio[simulation_year].iot = df
             icio[simulation_year].industries = industries
 
         if use_provincial_can_reader:
