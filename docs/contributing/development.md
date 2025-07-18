@@ -2,6 +2,53 @@
 
 This guide outlines the main workflow and best practices for contributing to this project.
 
+## Development Environment Setup
+
+### 1. Install Development Dependencies
+
+Install the project with development dependencies to get all necessary tools:
+
+```bash
+# Development installation with all tools
+pip install -e ".[dev]" --config-settings editable_mode=strict
+
+# This includes formatting tools (black, isort), testing tools (pytest), 
+# and other development utilities
+```
+
+### 2. Editor Configuration
+
+Use an editor with built-in linting capabilities for the best development experience:
+
+- **VS Code**: Install the Python extension for automatic linting, formatting, and type checking
+- **PyCharm**: Has built-in Python support with linting and type checking
+- **Vim/Neovim**: Use plugins like ALE or CoC for Python linting
+- **Sublime Text**: Install SublimeLinter-flake8 and other Python packages
+
+Your editor should be configured to:
+- Show type hints and errors in real-time
+- Auto-format with `black` on save
+- Sort imports with `isort`
+- Highlight linting issues
+
+### 3. Verify Installation
+
+Test your setup:
+
+```bash
+# Check that development tools are available
+black --version
+isort --version
+pytest --version
+
+# Run style checks
+black --config="pyproject.toml" .
+isort . --settings-path pyproject.toml
+
+# Run tests
+pytest
+```
+
 ## Workflow Overview
 
 1. **Open an Issue**
