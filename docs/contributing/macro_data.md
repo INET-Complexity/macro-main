@@ -468,7 +468,95 @@ class DataConfiguration(BaseModel):
 
 ## Testing Your Reader
 
-Create comprehensive tests for your reader. See the [Testing Guidelines](testing.md) for detailed information on writing tests.
+### Sample Test Data Requirements
+
+**MANDATORY**: When adding a new data source, you MUST provide sample test data.
+
+#### Adding Sample Test Data
+
+1. **Create data directory** in `tests/test_macro_data/unit/sample_raw_data/[your_data_source]/`
+
+2. **Include representative data** with the same format as the full dataset:
+   ```
+   sample_raw_data/
+   └── my_new_data_source/
+       ├── main_data.csv              # Primary data file
+       ├── metadata.json             # Supporting metadata if needed
+       └── [year_folders]/           # Year-specific data if applicable
+   ```
+
+3. **Follow the subset pattern**:
+   - **Primary country**: Include France (FRA) data
+   - **Additional countries**: At least one other country (CAN, GBR, or USA)
+   - **Time period**: Focus on 2014 with relevant historical data
+   - **Real values**: Use actual data values, not synthetic or dummy data
+
+#### Example Sample Data Structure
+
+```python
+# Example: tests/test_macro_data/unit/sample_raw_data/methane/methane_emissions.csv
+country,year,sector,methane_emissions
+FRA,2014,agriculture,1500.5
+FRA,2014,energy,800.2
+CAN,2014,agriculture,2100.8
+CAN,2014,energy,1200.3
+```
+
+#### Test Integration
+
+Your reader tests must work with the sample data:
+
+```python
+# File: tests/test_macro_data/readers/test_methane_reader.py
+import pytest
+from macro_data.readers.emissions.methane_reader import MethaneReader
+
+def test_methane_reader_with_sample_data(readers):
+    """Test methane reader using sample data."""
+    
+    # Test specific values from sample data
+    fra_agriculture = readers.methane.get_methane_emissions("FRA", 2014, "agriculture")
+    assert fra_agriculture == pytest.approx(1500.5, abs=0.1)
+    
+    # Test data availability
+    assert readers.methane.has_data_for_country("FRA")
+    assert readers.methane.has_data_for_country("CAN")
+    
+    # Test total emissions
+    total_fra = readers.methane.get_total_methane_emissions("FRA", 2014)
+    assert total_fra == pytest.approx(2300.7, abs=0.1)  # sum of sectors
+```
+
+#### Sample Data Validation
+
+**Required test patterns:**
+
+1. **Value validation**: Test against specific known values from sample data
+2. **Data availability**: Verify data exists for test countries
+3. **Format consistency**: Ensure data structure matches expectations
+4. **Error handling**: Test behavior with missing data
+
+```python
+def test_sample_data_coverage(readers):
+    """Ensure sample data covers required test cases."""
+    
+    # Required countries
+    required_countries = ["FRA"]  # Minimum requirement
+    for country in required_countries:
+        assert readers.my_reader.has_data_for_country(country)
+    
+    # Required years  
+    assert readers.my_reader.has_data_for_year(2014)
+    
+    # Data consistency
+    data = readers.my_reader.get_data_for_country("FRA", 2014)
+    assert len(data) > 0
+    assert not data.isna().all()
+```
+
+### Comprehensive Testing
+
+Create comprehensive tests for your reader following these patterns. See the [Testing Guidelines](testing.md) for detailed information on testing requirements and the sample data structure.
 
 ## Common Architecture Pitfalls to Avoid
 
