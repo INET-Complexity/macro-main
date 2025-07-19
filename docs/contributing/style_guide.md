@@ -8,22 +8,26 @@ This guide summarizes the main code style rules for this project. Following thes
 - `black` automatically formats your Python code to a consistent style. `isort` sorts your imports into standard sections and order.
 - The CI will check formatting and imports automatically. Code that does not pass will be rejected.
 - **Default settings:** Both tools use the configuration in `pyproject.toml` (see the CI workflow in `.github/workflows/style_check.yml`).
-- **How to use locally:**
 
-  ```bash
-  # Format all code with black (using pyproject.toml)
-  black .
+### How to Use Locally
 
-  # Sort imports with isort (using pyproject.toml)
-  isort .
-  ```
+Always run these commands before committing:
 
-- To check formatting without making changes:
+```bash
+# Format code with black and sort imports with isort
+black --config="pyproject.toml" .
+isort . --settings-path pyproject.toml
 
-  ```bash
-  black --check --config="pyproject.toml" .
-  isort . --check-only --settings-path pyproject.toml
-  ```
+# Or use the convenience script
+./run_style.sh
+```
+
+### Check Formatting Without Making Changes
+
+```bash
+black --check --config="pyproject.toml" .
+isort . --check-only --settings-path pyproject.toml
+```
 
 ## Typing
 
@@ -60,8 +64,37 @@ def add(a: int, b: int) -> int:
 ## Docstrings
 
 - All public classes and functions must have clear, informative docstrings.
-- Use Google or NumPy style docstrings for consistency.
+- Use Google-style docstrings for consistency.
 - Include example usage in docstrings for main classes when possible.
+
+### Example: Complete Function with Docstring
+
+```python
+def calculate_emissions(fuel_consumption: float, emission_factor: float) -> float:
+    """
+    Calculate CO2 emissions from fuel consumption.
+    
+    Args:
+        fuel_consumption: Amount of fuel consumed in liters
+        emission_factor: CO2 emission factor in kg CO2 per liter
+        
+    Returns:
+        float: Total CO2 emissions in kg
+        
+    Raises:
+        ValueError: If fuel_consumption or emission_factor is negative
+    """
+    if fuel_consumption < 0 or emission_factor < 0:
+        raise ValueError("Fuel consumption and emission factor must be non-negative")
+    
+    return fuel_consumption * emission_factor
+```
+
+## Variable Naming
+
+- **Use snake_case**: `my_variable`, `data_frame`, `emission_factor`
+- **No UPPERCASE**: Avoid `GDP_DATA`, use `gdp_data` instead
+- **Descriptive names**: `unemployment_rate` not `ur`
 
 ## Simplicity and Readability
 
