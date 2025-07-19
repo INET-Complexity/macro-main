@@ -60,9 +60,19 @@ Each package's documentation is organized into the following sections:
 
 ## Contributing
 
-- [Development Guide](contributing/development.md)
-- [Code Style Guide](contributing/style_guide.md)
-- [Testing Guidelines](contributing/testing.md)
+New to the project? Start with our comprehensive contribution guides:
+
+### Getting Started with Contributing
+- [Project Structure Guide](contributing/project_structure.md) - **Start here** to understand where to contribute
+- [Development Guide](contributing/development.md) - Development workflow and repository guidelines
+- [Code Style Guide](contributing/style_guide.md) - Formatting, naming, and documentation standards
+- [Testing Guidelines](contributing/testing.md) - Testing requirements and sample data
+
+### Package-Specific Guides
+- [Contributing to macro_data](contributing/macro_data.md) - Adding new data sources and readers
+- [Contributing to macromodel](contributing/macromodel.md) - Adding agents, functions, and simulation features
+
+The project is designed for use by multiple teams. Please read our [repository guidelines](contributing/development.md#repository-guidelines) to keep the codebase generic and maintainable.
 
 ## Support
 
