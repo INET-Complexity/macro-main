@@ -338,3 +338,23 @@ def test_alternative_labour(datawrapper):
     simulation.run()
 
     assert True
+
+
+def test_large_firing_rate(allind_datawrapper):
+    country_sim_configuration = CountryConfiguration.n_industry_default(n_industries=allind_datawrapper.n_industries)
+
+    country_sim_configuration.labour_market.functions.clearing.parameters["firing_speed"] = 0.8
+    country_sim_configuration.labour_market.functions.clearing.parameters["hiring_speed"] = 0.8
+    country_sim_configuration.labour_market.functions.clearing.parameters["individuals_quitting"] = True
+    # random_firing_probability
+    country_sim_configuration.labour_market.functions.clearing.parameters["random_firing_probability"] = 0.99
+
+    sim_configuration = SimulationConfiguration(
+        country_configurations={"FRA": country_sim_configuration}, seed=0, t_max=5
+    )
+
+    simulation = Simulation.from_datawrapper(datawrapper=allind_datawrapper, simulation_configuration=sim_configuration)
+
+    simulation.run()
+
+    assert True
