@@ -705,18 +705,27 @@ def random_firing(
 
     for ind_id in individual_indices[employed][is_fired]:
         # Account for costs
-        firing_costs[individuals_corresponding_firm[ind_id]] += firing_cost_fraction * current_individual_wages[ind_id]
 
-        # Fire the individual
-        fire_individual(
-            individual_id=ind_id,
-            current_individuals_activity=current_individuals_activity,
-            individuals_corresponding_firm=individuals_corresponding_firm,
-            firm_employments=firm_employments,
-        )
+        firm_id = individuals_corresponding_firm[ind_id]
 
-        # Count
-        num_newly_randomly_fired += 1
+        # don't fire if the firm has only one employee
+
+        if len(firm_employments[firm_id]) > 1:
+
+            firing_costs[individuals_corresponding_firm[ind_id]] += (
+                firing_cost_fraction * current_individual_wages[ind_id]
+            )
+
+            # Fire the individual
+            fire_individual(
+                individual_id=ind_id,
+                current_individuals_activity=current_individuals_activity,
+                individuals_corresponding_firm=individuals_corresponding_firm,
+                firm_employments=firm_employments,
+            )
+
+            # Count
+            num_newly_randomly_fired += 1
 
     return firing_costs, num_newly_randomly_fired
 
@@ -782,13 +791,17 @@ def fire_individual(
         individuals_corresponding_firm: Firm assignments
         firm_employments: List of employee arrays by firm
     """
-    current_individuals_activity[individual_id] = ActivityStatus.UNEMPLOYED
+
     corresponding_firm = individuals_corresponding_firm[individual_id]
-    try:
-        firm_employments[corresponding_firm].remove(individual_id)
-    except ValueError:
-        pass
-    individuals_corresponding_firm[individual_id] = -1
+    # only fire if the firm has more than one employee
+    if len(firm_employments[corresponding_firm]) > 1:
+        current_individuals_activity[individual_id] = ActivityStatus.UNEMPLOYED
+
+        try:
+            firm_employments[corresponding_firm].remove(individual_id)
+        except ValueError:
+            pass
+        individuals_corresponding_firm[individual_id] = -1
 
 
 def hire_individual(
