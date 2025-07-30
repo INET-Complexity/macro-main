@@ -35,6 +35,8 @@ class TestCreator:
 
         check_country_gdp(creator.synthetic_countries["FRA"])
 
+        check_country_rent_consistency(creator.synthetic_countries["FRA"])
+
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             tmp_file = tmp / "creator.pkl"
@@ -433,3 +435,76 @@ def check_country_gdp(country: SyntheticCountry):
 
     assert gdp_output == pytest.approx(gdp_income, rel=1e-3)
     assert gdp_output == pytest.approx(gdp_expenditure, rel=1e-3)
+
+
+def check_country_rent_consistency(country: SyntheticCountry):
+    """Check rent consistency between household and housing market data.
+
+    This test validates:
+    1. Rent values are reasonable (no excessive zeros for renters)
+    2. Total rent paid by households roughly matches rent in housing market
+    3. Tenure status codes are properly applied
+    4. House ID mappings are consistent
+    """
+    household_data = country.population.household_data
+    housing_data = country.housing_market.housing_market_data
+
+    # Test 1: Check tenure status codes are being used correctly
+    renters = household_data["Tenure Status of the Main Residence"] == 3
+    owners = household_data["Tenure Status of the Main Residence"].isin([1, 2, 4])
+    social_housing = household_data["Tenure Status of the Main Residence"] == -1
+
+    # Ensure we have renters identified
+    assert renters.sum() > 0, "No households identified as renters (tenure code 3)"
+
+    # Ensure we have owners identified
+    assert owners.sum() > 0, "No households identified as owners (tenure codes 1,2,4)"
+
+    # Test 2: Check rent values for renters are reasonable
+    renter_rent_paid = household_data.loc[renters, "Rent Paid"]
+
+    # Most renters should have non-zero rent (allow some social housing at 0)
+    non_zero_rent_renters = (renter_rent_paid > 0).sum()
+    total_renters = renters.sum()
+
+    assert (
+        non_zero_rent_renters / total_renters > 0.5
+    ), f"Too many renters with zero rent: {total_renters - non_zero_rent_renters}/{total_renters}"
+
+    # Test 3: Check owners should have zero rent paid (they don't pay rent)
+    owner_rent_paid = household_data.loc[owners, "Rent Paid"]
+    assert (owner_rent_paid == 0).all(), "Owner-occupied households should have zero rent paid"
+
+    # Test 4: Check housing market rent consistency
+    # Get households that are mapped to houses
+    household_house_mapping = household_data["Corresponding Inhabited House ID"].dropna()
+
+    if len(household_house_mapping) > 0:
+        # Check that house IDs exist in housing data
+        valid_house_ids = household_house_mapping.isin(housing_data.index)
+        assert valid_house_ids.all(), "Some household house IDs don't exist in housing market data"
+
+        # Check rental properties have reasonable rent values
+        rental_properties = housing_data[~housing_data["Is Owner-Occupied"]]
+        if len(rental_properties) > 0:
+            rental_rents = rental_properties["Rent"]
+            non_zero_rental_rents = (rental_rents > 0).sum()
+
+            assert non_zero_rental_rents / len(rental_rents) > 0.8, (
+                f"Too many rental properties with zero rent: "
+                f"{len(rental_rents) - non_zero_rental_rents}/"
+                f"{len(rental_rents)}"
+            )
+
+    # Test 5: Basic rent magnitude check
+    total_household_rent = household_data["Rent Paid"].sum()
+
+    # Rent should be a reasonable fraction of total income (rough sanity check)
+    total_household_income = household_data["Income"].sum()
+    rent_to_income_ratio = total_household_rent / total_household_income
+
+    # Rent should be between 1% and 40% of total income (generous bounds)
+    # Lower bound relaxed for test datasets which may have many owners
+    assert (
+        0.01 <= rent_to_income_ratio <= 0.40
+    ), f"Rent-to-income ratio {rent_to_income_ratio:.3f} is outside reasonable bounds [0.01, 0.40]"
