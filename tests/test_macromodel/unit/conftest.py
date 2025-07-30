@@ -417,7 +417,7 @@ def test_country(
     )
 
 
-@pytest.fixture(scope="modulex", name="datawrapper")
+@pytest.fixture(scope="module", name="datawrapper")
 def instantiate_datawrapper() -> DataWrapper:
     data_config = default_data_configuration(countries=["FRA"])
     raw_data_path = Path(__file__).parent.parent.parent / "test_macro_data" / "unit" / "sample_raw_data"
