@@ -309,7 +309,7 @@ def housing_info_from_population(rental_income_taxes: float, synthetic_populatio
             - landlord_ids (np.ndarray): Unique landlord identifiers
             - num_additional_properties (np.ndarray): Properties per landlord
     """
-    num_renters = int(np.sum(synthetic_population.household_data["Tenure Status of the Main Residence"] == 0))
+    num_renters = int(np.sum(synthetic_population.household_data["Tenure Status of the Main Residence"] == 3))
     num_other_properties_owned = int(
         np.sum(synthetic_population.household_data["Number of Properties other than Household Main Residence"])
     )
@@ -357,7 +357,7 @@ def set_social_housing_renters(
         num_renters (int): Total number of renters
         synthetic_population (SyntheticPopulation): Household survey data
     """
-    ind_curr_renting = np.flatnonzero(synthetic_population.household_data["Tenure Status of the Main Residence"] == 0)
+    ind_curr_renting = np.flatnonzero(synthetic_population.household_data["Tenure Status of the Main Residence"] == 3)
     renters_now_in_sh_rel = np.argsort(synthetic_population.household_data["Income"].values[ind_curr_renting])[
         0 : num_renters - num_other_properties_owned
     ]
@@ -396,9 +396,9 @@ def match_renters_to_properties(
     rented = ~housing_market_df["Is Owner-Occupied"]
     rent_rec = housing_market_df.loc[rented, "Rent"].values
 
-    renters_ind = np.flatnonzero(synthetic_population.household_data["Tenure Status of the Main Residence"] == 0)
+    renters_ind = np.flatnonzero(synthetic_population.household_data["Tenure Status of the Main Residence"] == 3)
 
-    renters = synthetic_population.household_data["Tenure Status of the Main Residence"] == 0
+    renters = synthetic_population.household_data["Tenure Status of the Main Residence"] == 3
     rent_paid = synthetic_population.household_data.loc[renters, "Rent Paid"].values
 
     n_split = int(len(rent_rec) / max_matching_size) if len(rent_rec) > max_matching_size else 1
@@ -459,9 +459,17 @@ def match_renters_to_properties(
 
     synthetic_population.household_data["Corresponding Inhabited House ID"] = mapped_df["House ID"]
 
-    synthetic_population.household_data["Rent Paid"] = 0
+    # Only reset rent for owner-occupied households (they shouldn't pay rent)
+    # Preserve the processed HFCS rent data for renters
+    owners = synthetic_population.household_data["Tenure Status of the Main Residence"].isin([1, 2, 4])
+    synthetic_population.household_data.loc[owners, "Rent Paid"] = 0
 
-    synthetic_population.household_data["Rent Paid"] = mapped_df.loc[~mapped_df["Is Owner-Occupied"], "Rent"]
+    # Update rent for renting households using housing market data where available
+    # This preserves HFCS-processed rent for households not mapped to specific houses
+    renter_mapping = mapped_df.loc[~mapped_df["Is Owner-Occupied"]].dropna()
+    if len(renter_mapping) > 0:
+        renter_house_ids = renter_mapping.index
+        synthetic_population.household_data.loc[renter_house_ids, "Rent Paid"] = renter_mapping["Rent"]
 
     rental_income = rented & ~housing_market_df["Up for Rent"]
 
