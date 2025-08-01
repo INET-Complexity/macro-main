@@ -607,6 +607,10 @@ class Households(Agent):
         per_capita_unemployment_benefits: float,
         tau_vat: float,
         assume_zero_growth: bool,
+        prices: Optional[np.ndarray] = None,
+        initial_prices: Optional[np.ndarray] = None,
+        taxes: Optional[np.ndarray] = None,
+        initial_taxes: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Calculate target consumption levels.
 
@@ -616,6 +620,7 @@ class Households(Agent):
         - Benefit levels
         - Growth assumptions
         - Tax rates
+        - CES substitution within bundles (if enabled)
 
         Args:
             expected_inflation (float): Expected inflation rate
@@ -625,6 +630,10 @@ class Households(Agent):
             per_capita_unemployment_benefits (float): Per person benefits
             tau_vat (float): Value added tax rate
             assume_zero_growth (bool): Whether to assume no growth
+            prices (Optional[np.ndarray]): Current prices by industry for CES substitution
+            initial_prices (Optional[np.ndarray]): Initial prices by industry for CES substitution
+            taxes (Optional[np.ndarray]): Current tax rates by industry for CES substitution
+            initial_taxes (Optional[np.ndarray]): Initial tax rates by industry for CES substitution
 
         Returns:
             np.ndarray: Target consumption by household
@@ -654,6 +663,11 @@ class Households(Agent):
                 current_time=len(self.ts.historic("total_consumption")),
                 take_consumption_weights_by_income_quantile=self.use_consumption_weights_by_income,
                 tau_vat=tau_vat,
+                prices=prices,
+                initial_prices=initial_prices,
+                taxes=taxes,
+                initial_taxes=initial_taxes,
+                bundle_matrix=self.bundle_matrix,
             )
 
     def compute_target_investment(
