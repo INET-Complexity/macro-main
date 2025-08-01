@@ -1,0 +1,33 @@
+name: Build and test calibration package
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ "3.12" ]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install h5py dependencies
+        run: sudo apt-get install libhdf5-dev
+
+      - name: Install calibration dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,calibration]"
+
+      - name: Test calibration pipeline
+        run: |
+          pytest --cov=macrocalib tests/test_macrocalib --cov-report xml
