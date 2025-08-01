@@ -29,6 +29,7 @@ from macromodel.agents.agent import Agent
 from macromodel.agents.banks.banks import Banks
 from macromodel.agents.households.household_properties import HouseholdType
 from macromodel.agents.households.households_ts import create_households_timeseries
+from macromodel.agents.households.utils.create_bundle_matrix import create_bundle_matrix
 from macromodel.configurations import HouseholdsConfiguration
 from macromodel.markets.credit_market.credit_market import CreditMarket
 from macromodel.markets.goods_market.value_type import ValueType
@@ -80,6 +81,7 @@ class Households(Agent):
         investment_weights: np.ndarray,
         use_consumption_weights_by_income: bool,
         independents: list[str],
+        substitution_bundles: Optional[list] = None,
     ):
         """Initialize household economic agent.
 
@@ -95,6 +97,7 @@ class Households(Agent):
             investment_weights (np.ndarray): Industry-specific investment shares
             use_consumption_weights_by_income (bool): Whether to use income-based weights
             independents (list[str]): Independent variables for calculations
+            substitution_bundles (Optional[list]): Substitution bundle configuration for CES consumption
         """
         n_entities = ts.current("n_households")
         super().__init__(
@@ -126,6 +129,13 @@ class Households(Agent):
         self.investment_weights = investment_weights
 
         self.use_consumption_weights_by_income = use_consumption_weights_by_income
+
+        # Initialize substitution bundles and bundle matrix
+        self.substitution_bundles = substitution_bundles if substitution_bundles is not None else []
+        if len(self.substitution_bundles) > 0:
+            self.bundle_matrix = create_bundle_matrix(np.array(self.substitution_bundles))
+        else:
+            self.bundle_matrix = None
 
     @classmethod
     def from_pickled_agent(
@@ -325,6 +335,7 @@ class Households(Agent):
             investment_weights,
             use_consumption_weights_by_income,
             independents,
+            configuration.substitution_bundles,
         )
 
     def reset(self, configuration: HouseholdsConfiguration) -> None:
