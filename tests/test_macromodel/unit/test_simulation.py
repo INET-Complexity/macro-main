@@ -76,8 +76,30 @@ def test_all_industries(allind_datawrapper, seed):
 
 def test_canadian_disagg(can_disagg_datawrapper):
     n_industries = can_disagg_datawrapper.n_industries
+    firms_bundled_industries = ["B05a", "B05b", "B05c", "C19"]
+    industries = can_disagg_datawrapper.industries
+    firms_energy_bundle = [list(industries).index(ind) for ind in firms_bundled_industries]
+
+    firms_substitution_bundles = [firms_energy_bundle]
+
+    # Household energy bundle with only B05a and C19 for testing
+    household_bundled_industries = ["B05a", "C19"]
+    household_energy_bundle = [list(industries).index(ind) for ind in household_bundled_industries]
+    household_substitution_bundles = [household_energy_bundle]
+
     configuration = SimulationConfiguration(
-        country_configurations={"CAN": CountryConfiguration.n_industry_default(n_industries=n_industries)}
+        country_configurations={
+            "CAN": CountryConfiguration.n_industry_default(
+                n_industries=n_industries,
+                firms_bundles=firms_substitution_bundles,
+                household_bundles=household_substitution_bundles,
+            )
+        }
+    )
+
+    assert configuration.country_configurations["CAN"].firms.functions.production.name == "BundledLeontief"
+    assert (
+        configuration.country_configurations["CAN"].households.functions.consumption.name == "CESHouseholdConsumption"
     )
 
     configuration.seed = 0
