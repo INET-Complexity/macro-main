@@ -115,6 +115,11 @@ class DefaultHouseholdConsumption(HouseholdConsumption):
         current_time: int,
         take_consumption_weights_by_income_quantile: bool,
         tau_vat: float,
+        prices: np.ndarray = None,  # Ignored in default consumption
+        initial_prices: np.ndarray = None,  # Ignored in default consumption
+        taxes: np.ndarray = None,  # Ignored in default consumption
+        initial_taxes: np.ndarray = None,  # Ignored in default consumption
+        bundle_matrix: np.ndarray = None,  # Ignored in default consumption
     ) -> np.ndarray:
         """Calculate target consumption using default behavior.
 
@@ -459,6 +464,11 @@ class ExogenousHouseholdConsumption(HouseholdConsumption):
         current_time: int,
         take_consumption_weights_by_income_quantile: bool,
         tau_vat: float,
+        prices: np.ndarray = None,  # Ignored in exogenous consumption
+        initial_prices: np.ndarray = None,  # Ignored in exogenous consumption
+        taxes: np.ndarray = None,  # Ignored in exogenous consumption
+        initial_taxes: np.ndarray = None,  # Ignored in exogenous consumption
+        bundle_matrix: np.ndarray = None,  # Ignored in exogenous consumption
     ) -> np.ndarray:
         """Calculate target consumption using exogenous targets.
 
