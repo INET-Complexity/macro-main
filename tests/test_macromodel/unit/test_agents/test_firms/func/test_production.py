@@ -2,6 +2,8 @@ import numpy as np
 
 from macromodel.agents.firms.func.production import PureLeontief, BundledLeontief
 from macromodel.agents.firms.func.target_intermediate_inputs import BundleWeightedTargetIntermediateInputsSetter
+from macromodel.agents.firms.utils.create_bundle_matrix import create_bundle_matrix
+from macromodel.configurations.firms_configuration import create_good_bundle
 
 
 class TestProductionSetter:
@@ -42,7 +44,7 @@ class TestProductionSetter:
 
     def test_target_intermediate_inputs_bundle_empty(self):
         n_industries = 5
-        bundles = np.array([])
+        default_bundle = create_good_bundle(5)
         current_target_production = np.full(n_industries, 1)
         intermediate_inputs_productivity_matrix = np.full((n_industries, n_industries), 1)
         prev_intermediate_inputs_stock = np.full((n_industries, n_industries), 1)
@@ -50,7 +52,7 @@ class TestProductionSetter:
         prev_production = np.full(n_industries, 1)
         initial_production = np.full(n_industries, 1)
         previous_good_prices = np.full(n_industries, 1)
-        substitution_bundle_matrix = bundles
+        substitution_bundle_matrix = create_bundle_matrix(np.array(default_bundle))
         extra_taxes = None
 
         setter = BundleWeightedTargetIntermediateInputsSetter(
