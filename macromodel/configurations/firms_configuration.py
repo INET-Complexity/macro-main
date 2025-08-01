@@ -1,6 +1,58 @@
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
+
+
+def create_good_bundle(n_industries: int, bundles: Optional[list[list[int]]] = None) -> list:
+    """Assign bundle indices to industries based on substitution groups.
+
+    For a given number of industries, assign each industry to a bundle index.
+    Industries listed together in a bundle share the same index. Industries not
+    listed in any bundle are assigned unique bundle indices individually.
+
+    After assignment, bundle indices are relabeled to ensure dense, increasing
+    numbering based on first appearance.
+
+    Args:
+        n_industries (int): Total number of industries.
+        bundles (List[List[int]]): List of substitution bundles, where each
+            bundle is a list of industry indices.
+
+    Returns:
+        np.ndarray: Array of shape (n_industries,) mapping each industry to its bundle index.
+    """
+    if bundles is None:
+        bundles = []
+
+    good_bundle = [-1] * n_industries
+    bundle_idx = 0
+
+    # Assign bundle indices to industries included in bundles
+    for bundle in bundles:
+        for industry in bundle:
+            good_bundle[industry] = bundle_idx
+        bundle_idx += 1
+
+    # Assign remaining industries that are not in any bundle
+    for i in range(n_industries):
+        if good_bundle[i] == -1:
+            good_bundle[i] = bundle_idx
+            bundle_idx += 1
+
+    # Relabel to ensure increasing order
+    seen = {}
+    new_labels = []
+    for x in good_bundle:
+        if x not in seen:
+            seen[x] = len(seen)
+        new_labels.append(seen[x])
+
+    good_bundle = new_labels
+
+    return good_bundle
+
+
+DEFAULT_BUNDLE = create_good_bundle(n_industries=18)
 
 
 class BoughtGoodsDistributor(BaseModel):
@@ -150,7 +202,9 @@ class Production(BaseModel):
     Options: PureLeontief, CriticalAndImportantLeontief, CriticalLeontief, Linear
     """
 
-    name: Literal["PureLeontief", "CriticalAndImportantLeontief", "CriticalLeontief", "Linear"] = "PureLeontief"
+    name: Literal["PureLeontief", "CriticalAndImportantLeontief", "CriticalLeontief", "Linear", "BundledLeontief"] = (
+        "PureLeontief"
+    )
     path_name: str = "production"
     parameters: dict[str, Any] = {}
 
@@ -161,7 +215,9 @@ class TargetCapitalInputs(BaseModel):
     Options: UnconstrainedTargetCapitalInputsSetter, FinancialTargetCapitalInputsSetter
     """
 
-    name: Literal["FinancialTargetCapitalInputsSetter"] = "FinancialTargetCapitalInputsSetter"
+    name: Literal["FinancialTargetCapitalInputsSetter", "BundleWeightedTargetCapitalInputsSetter"] = (
+        "FinancialTargetCapitalInputsSetter"
+    )
     path_name: str = "target_capital_inputs"
     parameters: dict[str, Any] = {"target_capital_inputs_fraction": 0.0, "credit_gap_fraction": 0.0}
 
@@ -183,7 +239,9 @@ class TargetIntermediateInputs(BaseModel):
     Options: UnconstrainedTargetIntermediateInputsSetter, FinancialTargetIntermediateInputsSetter
     """
 
-    name: Literal["FinancialTargetIntermediateInputsSetter"] = "FinancialTargetIntermediateInputsSetter"
+    name: Literal["FinancialTargetIntermediateInputsSetter", "BundleWeightedTargetIntermediateInputsSetter"] = (
+        "FinancialTargetIntermediateInputsSetter"
+    )
     path_name: str = "target_intermediate_inputs"
     parameters: dict[str, Any] = {"target_intermediate_inputs_fraction": 0.0, "credit_gap_fraction": 0.0}
 
@@ -267,13 +325,15 @@ class FirmsParameters(BaseModel):
     intermediate_inputs_utilisation_rate: float = Field(1.0, ge=0.0, le=1.0)
 
     @classmethod
-    def disaggregated_industries_default(cls, n_industries: int):
-        return {
-            "capital_inputs_delay": [0 for _ in range(n_industries)],
-            "depreciation_rates": [0.0 for _ in range(n_industries)],
-            "capital_inputs_utilisation_rate": 1.0,
-            "intermediate_inputs_utilisation_rate": 1.0,
-        }
+    def disaggregated_industries_default(cls, n_industries: int) -> "FirmsParameters":
+        return cls(
+            **{
+                "capital_inputs_delay": [0 for _ in range(n_industries)],
+                "depreciation_rates": [0.0 for _ in range(n_industries)],
+                "capital_inputs_utilisation_rate": 1.0,
+                "intermediate_inputs_utilisation_rate": 1.0,
+            }
+        )
 
 
 class FirmsConfiguration(BaseModel):
@@ -293,6 +353,7 @@ class FirmsConfiguration(BaseModel):
     parameters: FirmsParameters = FirmsParameters()
     functions: FirmsFunctions = FirmsFunctions()
     calculate_hill_exponent: bool = True
+    substitution_bundles: list = DEFAULT_BUNDLE
 
     @property
     def reset_params(self):
@@ -305,9 +366,25 @@ class FirmsConfiguration(BaseModel):
         return values
 
     @classmethod
-    def n_industries_default(cls, n_industries: int):
+    def n_industries_default(cls, n_industries: int, bundles: Optional[list[list[int]]] = None):
+        if bundles is None:
+            bundles = []
+
+        if len(bundles) > 0:
+            functions = FirmsFunctions(
+                target_capital_inputs=TargetCapitalInputs(name="BundleWeightedTargetCapitalInputsSetter"),
+                target_intermediate_inputs=TargetIntermediateInputs(
+                    name="BundleWeightedTargetIntermediateInputsSetter"
+                ),
+                production=Production(name="BundledLeontief"),
+            )
+        else:
+            functions = FirmsFunctions()
+
+        bundles_grouped = create_good_bundle(n_industries=n_industries, bundles=bundles)
         return cls(
             parameters=FirmsParameters.disaggregated_industries_default(n_industries),
-            functions=FirmsFunctions(),
+            functions=functions,
             calculate_hill_exponent=True,
+            substitution_bundles=bundles_grouped,
         )
