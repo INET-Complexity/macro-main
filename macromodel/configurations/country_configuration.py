@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 from .bank_configuration import BanksConfiguration
@@ -37,7 +39,7 @@ class CountryConfiguration(BaseModel):
     assume_zero_noise: bool = False
 
     @classmethod
-    def n_industry_default(cls, n_industries: int):
-        firms_configuration = FirmsConfiguration.n_industries_default(n_industries=n_industries)
+    def n_industry_default(cls, n_industries: int, bundles: Optional[list[list[int]]] = None):
+        firms_configuration = FirmsConfiguration.n_industries_default(n_industries=n_industries, bundles=bundles)
         # all other variables are default
         return cls(firms=firms_configuration)
