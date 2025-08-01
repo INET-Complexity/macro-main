@@ -5,10 +5,10 @@ import h5py
 import numpy as np
 import pandas as pd
 
-import macromodel.util.get_histogram
 from macro_data import SyntheticFirms
 from macromodel.agents.agent import Agent
 from macromodel.agents.firms.firm_ts import FirmTimeSeries
+from macromodel.agents.firms.utils.create_bundle_matrix import create_bundle_matrix
 from macromodel.configurations import FirmsConfiguration
 from macromodel.markets.credit_market.credit_market import CreditMarket
 from macromodel.markets.goods_market.value_type import ValueType
@@ -73,6 +73,7 @@ class Firms(Agent):
         average_initial_price: np.ndarray,
         configuration: FirmsConfiguration,
         industries: list[str],
+        bundle_matrix: np.ndarray,
     ):
         """Initialize the firms sector.
 
@@ -94,6 +95,8 @@ class Firms(Agent):
             average_initial_price (np.ndarray): Initial price levels
             configuration (FirmsConfiguration): Model parameters
             industries (list[str]): Industry sector names
+            bundle_matrix (np.ndarray): Matrix to manage bundles for goods (mapping each industry to an
+                                               identifier of similar goods for which it can be substituted)
         """
         n_transactors = ts.current("n_firms")
         super().__init__(
@@ -127,6 +130,8 @@ class Firms(Agent):
         self.configuration = configuration
 
         self.industries = industries
+
+        self.substitution_bundles = bundle_matrix
 
     @classmethod
     def from_pickled_agent(
@@ -225,6 +230,8 @@ class Firms(Agent):
 
         states["Labour Productivity by Industry"] = synthetic_firms.labour_productivity_by_industry
 
+        bundle_matrix = create_bundle_matrix(np.array(configuration.substitution_bundles))
+
         return cls(
             country_name,
             all_country_names,
@@ -243,6 +250,7 @@ class Firms(Agent):
             average_initial_price,
             configuration=configuration,
             industries=industries,
+            bundle_matrix=bundle_matrix,
         )
 
     @property
@@ -312,7 +320,7 @@ class Firms(Agent):
             ).T
         )
 
-        self.ts.reset_values(
+        self.ts.reset_values(  # noqa
             inventory=current_inv,
             initial_good_prices=initial_good_prices,
             intermediate_inputs_stock=inter_inputs_stock,
@@ -432,6 +440,7 @@ class Firms(Agent):
                 intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
                 intermediate_inputs_utilisation_rate=self.intermediate_inputs_utilisation_rate,
                 goods_criticality_matrix=self.goods_criticality_matrix,
+                substitution_bundle_matrix=self.substitution_bundles,
             )
         )
         self.ts.limiting_capital_inputs.append(
@@ -442,6 +451,7 @@ class Firms(Agent):
                 capital_inputs_stock=self.ts.current("capital_inputs_stock"),
                 capital_inputs_utilisation_rate=self.capital_inputs_utilisation_rate,
                 goods_criticality_matrix=self.goods_criticality_matrix,
+                substitution_bundle_matrix=self.substitution_bundles,
             )
         )
         self.ts.target_production.append(
@@ -659,7 +669,7 @@ class Firms(Agent):
             desired_production=self.ts.current("target_production"),
             current_labour_inputs=self.ts.current("labour_inputs"),
             current_limiting_intermediate_inputs=self.ts.current("limiting_intermediate_inputs"),
-            current_limiting_capital_inputs=self.ts.current("limiting_intermediate_inputs"),
+            current_limiting_capital_inputs=self.ts.current("limiting_capital_inputs"),
         )
 
     def compute_total_sales(self) -> np.ndarray:
@@ -888,7 +898,7 @@ class Firms(Agent):
         )
 
     def compute_unconstrained_demand_for_intermediate_inputs(
-        self,
+        self, good_prices: np.ndarray, extra_taxes: Optional[np.ndarray] = None
     ) -> np.ndarray:
         """Calculate unconstrained demand for intermediate inputs.
 
@@ -898,6 +908,10 @@ class Firms(Agent):
         - Input-output coefficients
         - Current stocks
         - Production history
+
+        Args:
+            good_prices (np.ndarray): Current prices for inputs
+            extra_taxes (np.ndarray, optional): Additional taxes on inputs. Defaults to None.
 
         Returns:
             np.ndarray: Unconstrained intermediate input demand for each firm
@@ -911,6 +925,9 @@ class Firms(Agent):
             initial_intermediate_inputs_stock=self.ts.initial("intermediate_inputs_stock"),
             prev_production=self.ts.current("production"),
             initial_production=self.ts.initial("production"),
+            previous_good_prices=good_prices,
+            substitution_bundle_matrix=self.substitution_bundles,
+            extra_taxes=extra_taxes,
         )
 
     def compute_unconstrained_demand_for_intermediate_inputs_value(self, current_good_prices: np.ndarray) -> np.ndarray:
@@ -930,7 +947,9 @@ class Firms(Agent):
             current_good_prices,
         )
 
-    def compute_unconstrained_demand_for_capital_inputs(self) -> np.ndarray:
+    def compute_unconstrained_demand_for_capital_inputs(
+        self, good_prices: np.ndarray, extra_taxes: Optional[np.ndarray] = None
+    ) -> np.ndarray:
         """Calculate unconstrained demand for capital inputs.
 
         Determines optimal capital input requirements without
@@ -939,6 +958,10 @@ class Firms(Agent):
         - Capital productivity coefficients
         - Current capital stock
         - Production history
+
+        Args:
+            good_prices: np.ndarray
+            extra_taxes (np.ndarray, optional): Additional taxes on inputs. Defaults to None.
 
         Returns:
             np.ndarray: Unconstrained capital input demand for each firm
@@ -950,6 +973,9 @@ class Firms(Agent):
             initial_capital_inputs_stock=self.ts.initial("capital_inputs_stock"),
             prev_production=self.ts.current("production"),
             initial_production=self.ts.initial("production"),
+            substitution_bundle_matrix=self.substitution_bundles,
+            previous_good_prices=good_prices,
+            extra_taxes=extra_taxes,
         )
 
     def compute_unconstrained_demand_for_capital_inputs_value(self, current_good_prices: np.ndarray) -> np.ndarray:
@@ -1308,6 +1334,7 @@ class Firms(Agent):
             ].T,
             intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
             goods_criticality_matrix=self.goods_criticality_matrix,
+            substitution_bundle_matrix=self.substitution_bundles,
         )
 
     def compute_used_intermediate_inputs_costs(self, current_good_prices: np.ndarray) -> np.ndarray:
@@ -1367,6 +1394,7 @@ class Firms(Agent):
             capital_inputs_depreciation_matrix=self.capital_inputs_depreciation_matrix[:, self.states["Industry"]].T,
             capital_inputs_stock=self.ts.current("capital_inputs_stock"),
             goods_criticality_matrix=self.goods_criticality_matrix,
+            substitution_bundle_matrix=self.substitution_bundles,
         )
 
     def compute_used_capital_inputs_costs(self, current_good_prices: np.ndarray) -> np.ndarray:
@@ -1856,6 +1884,12 @@ class Firms(Agent):
             float: Total production taxes
         """
         return self.ts.get_aggregate("taxes_paid_on_production")
+
+    def increase_industry_input_productivity(self, producing_industry: str, input_industry: str, increase_pct: float):
+        producing_index = self.industries.index(producing_industry)
+        input_index = self.industries.index(input_industry)
+
+        self.intermediate_inputs_productivity_matrix[input_index, producing_index] *= 1 + increase_pct
 
 
 def fillna(array: np.ndarray, value: float = 0):
