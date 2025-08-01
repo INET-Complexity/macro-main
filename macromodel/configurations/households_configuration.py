@@ -87,7 +87,9 @@ class ConsumptionFunction(BaseModel):
     """
 
     path_name: str = "consumption"
-    name: Literal["DefaultHouseholdConsumption", "ExogenousHouseholdConsumption", "CESHouseholdConsumption"] = "DefaultHouseholdConsumption"
+    name: Literal["DefaultHouseholdConsumption", "ExogenousHouseholdConsumption", "CESHouseholdConsumption"] = (
+        "DefaultHouseholdConsumption"
+    )
     parameters: dict[str, Any] = {
         "consumption_smoothing_fraction": 0.0,
         "consumption_smoothing_window": 12,
@@ -253,12 +255,12 @@ class HouseholdsConfiguration(BaseModel):
     @classmethod
     def n_industries_default(cls, n_industries: int, bundles: Optional[list[list[int]]] = None):
         """Create households configuration with specified number of industries and substitution bundles.
-        
+
         Args:
             n_industries (int): Number of industries in the economy
             bundles (Optional[list[list[int]]]): Substitution bundles for consumption.
                 If provided, automatically configures CES consumption function.
-                
+
         Returns:
             HouseholdsConfiguration: Configured instance with appropriate substitution settings
         """
@@ -266,9 +268,7 @@ class HouseholdsConfiguration(BaseModel):
             bundles = []
 
         if len(bundles) > 0:
-            functions = HouseholdsFunctions(
-                consumption=ConsumptionFunction(name="CESHouseholdConsumption")
-            )
+            functions = HouseholdsFunctions(consumption=ConsumptionFunction(name="CESHouseholdConsumption"))
         else:
             functions = HouseholdsFunctions()
 

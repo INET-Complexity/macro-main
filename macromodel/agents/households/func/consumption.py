@@ -296,9 +296,14 @@ class CESHouseholdConsumption(HouseholdConsumption):
         # If no substitution data provided, fall back to default behavior
         if any(x is None for x in [prices, initial_prices, taxes, initial_taxes, bundle_matrix]):
             return self._compute_target_consumption_default(
-                historic_consumption_sum, saving_rates, income, household_benefits,
-                consumption_weights, consumption_weights_by_income,
-                take_consumption_weights_by_income_quantile, tau_vat
+                historic_consumption_sum,
+                saving_rates,
+                income,
+                household_benefits,
+                consumption_weights,
+                consumption_weights_by_income,
+                take_consumption_weights_by_income_quantile,
+                tau_vat,
             )
 
         # Compute CES consumption shares with substitution
@@ -307,9 +312,14 @@ class CESHouseholdConsumption(HouseholdConsumption):
         )
 
         return self._compute_target_consumption_ces(
-            historic_consumption_sum, saving_rates, income, household_benefits,
-            ces_weights, consumption_weights_by_income,
-            take_consumption_weights_by_income_quantile, tau_vat
+            historic_consumption_sum,
+            saving_rates,
+            income,
+            household_benefits,
+            ces_weights,
+            consumption_weights_by_income,
+            take_consumption_weights_by_income_quantile,
+            tau_vat,
         )
 
     def _compute_target_consumption_default(
@@ -325,11 +335,17 @@ class CESHouseholdConsumption(HouseholdConsumption):
     ) -> np.ndarray:
         """Default consumption calculation when substitution data is unavailable."""
         return DefaultHouseholdConsumption._compute_target_consumption(
-            historic_consumption_sum, saving_rates, income, household_benefits,
-            consumption_weights, consumption_weights_by_income,
-            take_consumption_weights_by_income_quantile, tau_vat,
-            self.consumption_smoothing_window, self.consumption_smoothing_fraction,
-            self.minimum_consumption_fraction
+            historic_consumption_sum,
+            saving_rates,
+            income,
+            household_benefits,
+            consumption_weights,
+            consumption_weights_by_income,
+            take_consumption_weights_by_income_quantile,
+            tau_vat,
+            self.consumption_smoothing_window,
+            self.consumption_smoothing_fraction,
+            self.minimum_consumption_fraction,
         )
 
     def _compute_ces_weights(
@@ -342,47 +358,47 @@ class CESHouseholdConsumption(HouseholdConsumption):
         bundle_matrix: np.ndarray,
     ) -> np.ndarray:
         """Compute CES consumption weights with substitution within bundles.
-        
+
         Implements the formula:
         c_i(t) = c_i(0) * ((1+τ_i(0))/(1+τ_i(t)))^σ * p_i(t)^(-σ) * bundle_normalization
         """
         sigma = self.elasticity_of_substitution
-        
+
         # Compute price and tax ratios
         price_ratio = prices / initial_prices
         tax_ratio = (1 + initial_taxes) / (1 + taxes)
-        
+
         # Compute individual substitution effects
-        substitution_factor = (tax_ratio ** sigma) * (price_ratio ** (-sigma))
-        
+        substitution_factor = (tax_ratio**sigma) * (price_ratio ** (-sigma))
+
         # Apply substitution within bundles
         ces_weights = np.zeros_like(initial_weights)
         n_bundles = bundle_matrix.shape[1]
-        
+
         for bundle_idx in range(n_bundles):
-            # Industries in this bundle
+            # Industries in this bundle (bundle_matrix is n_industries x n_bundles)
             bundle_mask = bundle_matrix[:, bundle_idx] > 0
-            
+
             if not np.any(bundle_mask):
                 continue
-                
+
             # Initial bundle allocation
             bundle_initial_weights = initial_weights[bundle_mask]
             bundle_total = np.sum(bundle_initial_weights)
-            
+
             if bundle_total == 0:
                 continue
-                
+
             # Apply CES substitution within bundle
             bundle_substitution = substitution_factor[bundle_mask] * bundle_initial_weights
             bundle_substitution_total = np.sum(bundle_substitution)
-            
+
             # Normalize to maintain bundle total
             if bundle_substitution_total > 0:
                 ces_weights[bundle_mask] = bundle_substitution * (bundle_total / bundle_substitution_total)
             else:
                 ces_weights[bundle_mask] = bundle_initial_weights
-                
+
         return ces_weights
 
     def _compute_target_consumption_ces(
