@@ -701,6 +701,12 @@ class Country:
         self.households.ts.expected_income.append(self.households.compute_expected_income())
 
         # Household target consumption
+        # Note: For CES substitution, we track additional taxes (like carbon tax) similar to firms
+        # Currently no additional taxes are implemented, so both initial and current are zero
+        # This will be updated when carbon tax or other additional taxes are added
+        current_additional_taxes = np.zeros(len(self.firms.ts.current("price")))
+        initial_additional_taxes = np.zeros(len(self.firms.ts.current("price")))
+        
         self.households.ts.target_consumption.append(
             self.households.compute_target_consumption(
                 expected_inflation=self.economy.ts.current("estimated_cpi_inflation")[0],
@@ -714,6 +720,10 @@ class Country:
                 )[0],
                 tau_vat=self.central_government.states["Value-added Tax"],
                 assume_zero_growth=self.assume_zero_growth,
+                prices=self.firms.ts.current("price"),
+                initial_prices=self.firms.ts.initial("price"),
+                taxes=current_additional_taxes,
+                initial_taxes=initial_additional_taxes,
             )
         )
 
