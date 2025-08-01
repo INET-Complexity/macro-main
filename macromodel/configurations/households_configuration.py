@@ -1,6 +1,58 @@
-from typing import Any, Literal
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel
+
+
+def create_household_bundle(n_industries: int, bundles: Optional[list[list[int]]] = None) -> list:
+    """Assign bundle indices to industries based on substitution groups for households.
+
+    For a given number of industries, assign each industry to a bundle index.
+    Industries listed together in a bundle share the same index. Industries not
+    listed in any bundle are assigned unique bundle indices individually.
+
+    After assignment, bundle indices are relabeled to ensure dense, increasing
+    numbering based on first appearance.
+
+    Args:
+        n_industries (int): Total number of industries.
+        bundles (List[List[int]]): List of substitution bundles, where each
+            bundle is a list of industry indices.
+
+    Returns:
+        list: Array of length n_industries mapping each industry to its bundle index.
+    """
+    if bundles is None:
+        bundles = []
+
+    good_bundle = [-1] * n_industries
+    bundle_idx = 0
+
+    # Assign bundle indices to industries included in bundles
+    for bundle in bundles:
+        for industry in bundle:
+            good_bundle[industry] = bundle_idx
+        bundle_idx += 1
+
+    # Assign remaining industries that are not in any bundle
+    for i in range(n_industries):
+        if good_bundle[i] == -1:
+            good_bundle[i] = bundle_idx
+            bundle_idx += 1
+
+    # Relabel to ensure increasing order
+    seen = {}
+    new_labels = []
+    for x in good_bundle:
+        if x not in seen:
+            seen[x] = len(seen)
+        new_labels.append(seen[x])
+
+    good_bundle = new_labels
+
+    return good_bundle
+
+
+DEFAULT_HOUSEHOLD_BUNDLE = create_household_bundle(n_industries=18)
 
 
 class HouseholdsParameters(BaseModel):
@@ -35,11 +87,12 @@ class ConsumptionFunction(BaseModel):
     """
 
     path_name: str = "consumption"
-    name: Literal["DefaultHouseholdConsumption", "ExogenousHouseholdConsumption"] = "DefaultHouseholdConsumption"
+    name: Literal["DefaultHouseholdConsumption", "ExogenousHouseholdConsumption", "CESHouseholdConsumption"] = "DefaultHouseholdConsumption"
     parameters: dict[str, Any] = {
         "consumption_smoothing_fraction": 0.0,
         "consumption_smoothing_window": 12,
         "minimum_consumption_fraction": 1.0,
+        "elasticity_of_substitution": 1.0,
     }
 
 
@@ -195,3 +248,34 @@ class HouseholdsConfiguration(BaseModel):
     functions: HouseholdsFunctions = HouseholdsFunctions()
     parameters: HouseholdsParameters = HouseholdsParameters()
     take_consumption_weights_by_income_quantile: bool = False
+    substitution_bundles: list = DEFAULT_HOUSEHOLD_BUNDLE
+
+    @classmethod
+    def n_industries_default(cls, n_industries: int, bundles: Optional[list[list[int]]] = None):
+        """Create households configuration with specified number of industries and substitution bundles.
+        
+        Args:
+            n_industries (int): Number of industries in the economy
+            bundles (Optional[list[list[int]]]): Substitution bundles for consumption.
+                If provided, automatically configures CES consumption function.
+                
+        Returns:
+            HouseholdsConfiguration: Configured instance with appropriate substitution settings
+        """
+        if bundles is None:
+            bundles = []
+
+        if len(bundles) > 0:
+            functions = HouseholdsFunctions(
+                consumption=ConsumptionFunction(name="CESHouseholdConsumption")
+            )
+        else:
+            functions = HouseholdsFunctions()
+
+        bundles_grouped = create_household_bundle(n_industries=n_industries, bundles=bundles)
+        return cls(
+            functions=functions,
+            parameters=HouseholdsParameters(),
+            take_consumption_weights_by_income_quantile=False,
+            substitution_bundles=bundles_grouped,
+        )
