@@ -1,0 +1,19 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+[index.md](mdc:docs/index.md)
+
+We are generating documentation with mike. You need to reference code directly, as in e.g. 
+
+```
+::: macromodel.agents.agent
+    options:
+        members:
+            - Agent
+```
+
+this will directly take the docstrings from the code.
+
+Every time you do this, you MUST CHECK the source.py file first to make sure everything is coherent. 
