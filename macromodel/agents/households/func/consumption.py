@@ -42,10 +42,12 @@ class HouseholdConsumption(ABC):
         consumption_smoothing_fraction: float,
         consumption_smoothing_window: int,
         minimum_consumption_fraction: float,
+        elasticity_of_substitution: float = 1.0,  # Ignored by default consumption
     ):
         self.consumption_smoothing_fraction = consumption_smoothing_fraction
         self.consumption_smoothing_window = consumption_smoothing_window
         self.minimum_consumption_fraction = minimum_consumption_fraction
+        # Note: elasticity_of_substitution is ignored in default consumption
 
     @abstractmethod
     def compute_target_consumption(
