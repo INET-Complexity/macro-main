@@ -1,7 +1,9 @@
 import numpy as np
 
-from macromodel.agents.firms.func.production import PureLeontief, BundledLeontief
-from macromodel.agents.firms.func.target_intermediate_inputs import BundleWeightedTargetIntermediateInputsSetter
+from macromodel.agents.firms.func.production import BundledLeontief, PureLeontief
+from macromodel.agents.firms.func.target_intermediate_inputs import (
+    BundleWeightedTargetIntermediateInputsSetter,
+)
 from macromodel.agents.firms.utils.create_bundle_matrix import create_bundle_matrix
 from macromodel.configurations.firms_configuration import create_good_bundle
 
