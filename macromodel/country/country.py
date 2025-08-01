@@ -706,7 +706,7 @@ class Country:
         # This will be updated when carbon tax or other additional taxes are added
         current_additional_taxes = np.zeros(len(self.firms.ts.current("price")))
         initial_additional_taxes = np.zeros(len(self.firms.ts.current("price")))
-        
+
         self.households.ts.target_consumption.append(
             self.households.compute_target_consumption(
                 expected_inflation=self.economy.ts.current("estimated_cpi_inflation")[0],
