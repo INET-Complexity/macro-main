@@ -93,7 +93,7 @@ def test_industry_vectors():
     )
 
 
-@pytest.fixture(scope="module", name="test_individuals")
+@pytest.fixture(scope="function", name="test_individuals")
 def test_individuals(datawrapper):
     synthetic_population = datawrapper.synthetic_countries["FRA"].population
 
@@ -108,7 +108,7 @@ def test_individuals(datawrapper):
     return test_individuals
 
 
-@pytest.fixture(scope="module", name="test_households")
+@pytest.fixture(scope="function", name="test_households")
 def test_households(datawrapper):
     data_config = datawrapper.configuration
     industries = datawrapper.industries
@@ -132,7 +132,7 @@ def test_households(datawrapper):
     return households
 
 
-@pytest.fixture(scope="module", name="test_firms")
+@pytest.fixture(scope="function", name="test_firms")
 def test_firms(datawrapper):
     country = datawrapper.synthetic_countries["FRA"]
 
@@ -151,7 +151,7 @@ def test_firms(datawrapper):
     return firms
 
 
-@pytest.fixture(scope="module", name="test_central_government")
+@pytest.fixture(scope="function", name="test_central_government")
 def test_central_government(datawrapper, test_individuals):
     country = datawrapper.synthetic_countries["FRA"]
     synthetic_central_government = country.central_government
@@ -178,7 +178,7 @@ def test_central_government(datawrapper, test_individuals):
     return central_government
 
 
-@pytest.fixture(scope="module", name="test_government_entities")
+@pytest.fixture(scope="function", name="test_government_entities")
 def test_government_entities(datawrapper):
     country = datawrapper.synthetic_countries["FRA"]
 
@@ -196,7 +196,7 @@ def test_government_entities(datawrapper):
     return government_entities
 
 
-@pytest.fixture(scope="module", name="test_central_bank")
+@pytest.fixture(scope="function", name="test_central_bank")
 def test_central_bank(datawrapper):
     synthetic_central_bank = datawrapper.synthetic_countries["FRA"].central_bank
 
@@ -210,7 +210,7 @@ def test_central_bank(datawrapper):
     return central_bank
 
 
-@pytest.fixture(scope="module", name="test_economy")
+@pytest.fixture(scope="function", name="test_economy")
 def test_economy(
     test_firms,
     test_households,
@@ -236,7 +236,7 @@ def test_economy(
     )
 
 
-@pytest.fixture(scope="module", name="test_row")
+@pytest.fixture(scope="function", name="test_row")
 def test_row(datawrapper):
     countries_with_row = datawrapper.all_country_names
 
@@ -295,7 +295,7 @@ def test_housing_market(test_industries, test_config):
     )
 
 
-@pytest.fixture(scope="module", name="test_banks")
+@pytest.fixture(scope="function", name="test_banks")
 def test_banks(datawrapper):
     synthetic_banks = datawrapper.synthetic_countries["FRA"].banks
 
@@ -332,7 +332,7 @@ def test_banks(datawrapper):
 #     return goods_market
 
 
-@pytest.fixture(scope="module", name="test_goods_market")
+@pytest.fixture(scope="function", name="test_goods_market")
 def test_goods_market(
     test_firms,
     test_households,
@@ -354,7 +354,7 @@ def test_goods_market(
     return goods_market
 
 
-@pytest.fixture(scope="module", name="test_exogenous")
+@pytest.fixture(scope="function", name="test_exogenous")
 def test_exogenous(datawrapper):
     exchange_rates_config = ExchangeRatesConfiguration()
     exchange_rates_df = datawrapper.exchange_rates
@@ -383,7 +383,7 @@ def test_exogenous(datawrapper):
     return exogenous
 
 
-@pytest.fixture(scope="module", name="test_country")
+@pytest.fixture(scope="function", name="test_country")
 def test_country(
     test_firms,
     test_individuals,
