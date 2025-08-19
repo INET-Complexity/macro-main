@@ -1,3 +1,22 @@
+"""
+This module provides centralized data reader management for the macro_data package.
+It handles the initialization and coordination of various data readers for different
+types of economic data, including ICIO tables, Eurostat data, World Bank indicators,
+and more.
+
+The module centers around two main classes:
+1. DataPaths: Manages file paths for all data sources
+2. DataReaders: Coordinates multiple data readers and provides unified access
+
+Key features:
+- Centralized data source management
+- Automatic reader initialization
+- Data validation and preprocessing
+- Exchange rate handling
+- Industry aggregation
+- Country-specific data processing
+"""
+
 import warnings
 from dataclasses import dataclass
 from datetime import date
@@ -43,6 +62,34 @@ from macro_data.readers.util.prune_util import DataFilterWarning
 
 @dataclass
 class DataPaths:
+    """Manages file paths for all data sources used in the model.
+
+    This class provides a centralized way to manage and access file paths for
+    various data sources, including ICIO tables, Eurostat data, World Bank
+    indicators, and more.
+
+    Attributes:
+        goods_criticality_path (Path): Path to goods criticality data
+        exchange_rates_path (Path): Path to exchange rates data
+        eurostat_path (Path): Path to Eurostat data directory
+        hfcs_path (Path): Path to Household Finance and Consumption Survey data
+        icio_paths (dict[int, Path]): Paths to ICIO tables by year
+        icio_pivot_paths (dict[int, Path]): Paths to pivoted ICIO data by year
+        wiod_sea_path (Path): Path to WIOD SEA data
+        oecd_econ_path (Path): Path to OECD economic data
+        oecd_econ_mapping_path (Path): Path to OECD economic data mappings
+        policy_rates_path (Path): Path to policy rates data
+        country_codes_path (Path): Path to country codes mapping
+        imf_path (Path): Path to IMF data
+        ons_path (Path): Path to ONS data
+        world_bank_path (Path): Path to World Bank data
+        ecb_path (Path): Path to ECB data
+        compustat_firms_annual_path (Path): Path to annual Compustat firms data
+        compustat_firms_quarterly_path (Path): Path to quarterly Compustat firms data
+        compustat_banks_path (Path): Path to Compustat banks data
+        emissions_path (Path): Path to emissions data
+    """
+
     goods_criticality_path: Path
     exchange_rates_path: Path
     eurostat_path: Path
@@ -65,16 +112,21 @@ class DataPaths:
 
     @classmethod
     def default_paths(cls, raw_data_path: Path, icio_years: Iterable[int]):
+        """Create default paths for all data sources.
+
+        Args:
+            raw_data_path (Path): Base path for raw data
+            icio_years (Iterable[int]): Years to include for ICIO data
+
+        Returns:
+            DataPaths: Configured paths for all data sources
+        """
         return cls(
             goods_criticality_path=raw_data_path / "ihs_markit_goods_criticality" / "UK_2020.csv",
             exchange_rates_path=raw_data_path / "exchange_rates" / "exchange_rates.csv",
             eurostat_path=raw_data_path / "eurostat",
             hfcs_path=raw_data_path / "hfcs",
-            # icio_paths={year: raw_data_path / "icio" / str(year) / f"ICIO2021_{year}.csv" for year in icio_years},
             icio_paths={year: raw_data_path / "icio" / f"{year}_SML.csv" for year in icio_years},
-            # icio_pivot_paths={
-            #     year: raw_data_path / "icio" / str(year) / f"ICIO2021_{year}_pivot.csv" for year in icio_years
-            # },
             icio_pivot_paths={year: raw_data_path / "icio" / f"{year}_SML_P.csv" for year in icio_years},
             wiod_sea_path=raw_data_path / "wiod_sea" / "wiod_sea.csv",
             oecd_econ_path=raw_data_path / "oecd_econ",
@@ -101,6 +153,31 @@ class DataPaths:
 
 @dataclass
 class DataReaders:
+    """Centralized management of all data readers for the model.
+
+    This class coordinates multiple data readers and provides unified access to
+    various types of economic data. It handles initialization, data validation,
+    and preprocessing for all data sources.
+
+    Attributes:
+        icio (dict[int, ICIOReader]): ICIO table readers by year
+        wiod_sea (WIODSEAReader): WIOD SEA data reader
+        oecd_econ (OECDEconData): OECD economic data reader
+        world_bank (WorldBankReader): World Bank data reader
+        hfcs (dict[str, HFCSReader]): Household Finance and Consumption Survey readers
+        eurostat (EuroStatReader): Eurostat data reader
+        ons (ONSReader): ONS data reader
+        policy_rates (PolicyRatesReader): Policy rates reader
+        imf_reader (IMFReader): IMF data reader
+        exchange_rates (ExchangeRatesReader): Exchange rates reader
+        goods_criticality (GoodsCriticalityReader): Goods criticality reader
+        ecb_reader (ECBReader): ECB data reader
+        compustat_firms (CompustatFirmsReader): Compustat firms data reader
+        compustat_banks (CompustatBanksReader): Compustat banks data reader
+        emissions (EmissionsReader): Emissions data reader
+        regions_dict (Optional[dict[Country, list[Region]]]): Regional disaggregation mapping
+    """
+
     icio: dict[int, ICIOReader]
     wiod_sea: WIODSEAReader
     oecd_econ: OECDEconData
@@ -224,6 +301,8 @@ class DataReaders:
             disagg_path = raw_data_path / "icio" / "icio_2014_can_provinces.csv"
             df = pd.read_csv(disagg_path, header=[0, 1], index_col=[0, 1])
 
+            df *= 1e6  # Scale to millions
+
             all_provinces = []
             for key, value in regions_dict.items():
                 all_provinces.extend(value)
@@ -245,6 +324,12 @@ class DataReaders:
 
             df.loc[("TOTAL", "Intermediate Inputs"), industry_cols] = df.loc[non_total_rows, industry_cols].sum(axis=0)
 
+            outputs = df.loc[("TOTAL", "Output"), industry_cols].groupby(level=0).sum()
+
+            for large_country, regions in regions_dict.items():
+                renorm_output = outputs.loc[regions] / outputs.loc[regions].sum()
+                renorm_output = renorm_output.to_dict()
+
             df.rename(columns={"OUT": "TOTAL"}, level=0, inplace=True)
 
             df = split_gfcf_column(
@@ -256,6 +341,13 @@ class DataReaders:
 
             icio[simulation_year].iot = df.sort_index()
             icio[simulation_year].considered_countries = countries_and_regions
+
+            for large_country, regions in regions_dict.items():
+                for region in regions:
+                    icio[simulation_year].imputed_rents[region] = (
+                        icio[simulation_year].imputed_rents[large_country] * renorm_output[region]
+                    )
+                del icio[simulation_year].imputed_rents[large_country]
 
             # country_names = all_countries
         else:
@@ -378,6 +470,21 @@ class DataReaders:
         proxy_country_dict: dict[Country, Country],
         year: int,
     ) -> dict[Country, dict[str, float]]:
+        """Calculate investment fractions for each country.
+
+        This method computes the distribution of investment across different sectors
+        (firms, households, government) for each country, using either direct data
+        for EU countries or proxy data for non-EU countries.
+
+        Args:
+            country_names (list[Country]): List of countries to process
+            eurostat (EuroStatReader): Eurostat data reader instance
+            proxy_country_dict (dict[Country, Country]): Mapping of countries to their proxy countries
+            year (int): Reference year for the data
+
+        Returns:
+            dict[Country, dict[str, float]]: Investment fractions by country and sector
+        """
         investment_fractions = {}
         for country_name in country_names:
             if country_name.is_eu_country:
@@ -391,6 +498,18 @@ class DataReaders:
         return investment_fractions
 
     def get_exogenous_data(self, country_name: Country) -> Optional[dict[str, Any]]:
+        """Retrieve exogenous economic data for a country.
+
+        This method collects various exogenous economic indicators for a country,
+        including inflation, sectoral growth, unemployment rates, and other key
+        economic metrics.
+
+        Args:
+            country_name (Country): Country to get data for
+
+        Returns:
+            Optional[dict[str, Any]]: Dictionary of economic indicators, or None if data is unavailable
+        """
         try:
             return {
                 "log_inflation": self.world_bank.get_log_inflation(country_name),
@@ -406,8 +525,22 @@ class DataReaders:
     def get_benefits_inflation_data(
         self, country_name: Country, year_min: int, year_max: int, exogenous_data: dict[str, Any]
     ) -> pd.DataFrame:
+        """Calculate benefits and inflation data for a country.
+
+        This method processes unemployment benefits, other benefits, and inflation
+        data for a country over a specified time period. It interpolates quarterly
+        values and merges with inflation and unemployment rate data.
+
+        Args:
+            country_name (Country): Country to analyze
+            year_min (int): Start year for the analysis
+            year_max (int): End year for the analysis
+            exogenous_data (dict[str, Any]): Dictionary containing exogenous economic data
+
+        Returns:
+            pd.DataFrame: DataFrame containing benefits and inflation data with quarterly frequency
+        """
         years = range(year_min, year_max)
-        # unemp = [self.get_total_unemployment_benefits_lcu(country_name, year) for year in years]
         unemp = [
             self.oecd_econ.unemployment_benefits_gdp_pct(country_name, year)
             * self.world_bank.get_current_scaled_gdp(country_name, year)
@@ -419,11 +552,6 @@ class DataReaders:
             - unemp[i]
             for i, year in enumerate(years)
         ]
-        # other = [
-        #     self.get_total_benefits_lcu(country_name, year)
-        #     - self.get_total_unemployment_benefits_lcu(country_name, year)
-        #     for year in years
-        # ]
 
         benefits_data = pd.DataFrame(
             data={"Unemployment Benefits": unemp, "Other Total Benefits": other},
@@ -447,19 +575,67 @@ class DataReaders:
         return data
 
     def get_total_benefits_lcu(self, country_name: Country, year: int) -> float:
+        """Calculate total benefits in local currency units.
+
+        This method computes the total benefits (including unemployment and other benefits)
+        for a country in its local currency units.
+
+        Args:
+            country_name (Country): Country to analyze
+            year (int): Reference year
+
+        Returns:
+            float: Total benefits in local currency units
+        """
         return self.oecd_econ.all_benefits_gdp_pct(country_name, year) * self.world_bank.get_current_scaled_gdp(
             country_name, year
         )
 
     def get_total_unemployment_benefits_lcu(self, country_name: Country, year: int) -> float:
+        """Calculate total unemployment benefits in local currency units.
+
+        This method computes the total unemployment benefits for a country
+        in its local currency units.
+
+        Args:
+            country_name (Country): Country to analyze
+            year (int): Reference year
+
+        Returns:
+            float: Total unemployment benefits in local currency units
+        """
         return self.oecd_econ.unemployment_benefits_gdp_pct(
             country_name, year
         ) * self.world_bank.get_current_scaled_gdp(country_name, year)
 
     def get_govt_debt_lcu(self, country: Country, year: int) -> float:
+        """Calculate government debt in local currency units.
+
+        This method computes the total government debt for a country
+        in its local currency units.
+
+        Args:
+            country (Country): Country to analyze
+            year (int): Reference year
+
+        Returns:
+            float: Government debt in local currency units
+        """
         return self.oecd_econ.general_gov_debt(country, year) * self.exchange_rates.from_usd_to_lcu(country, year)
 
     def get_export_taxes(self, country: Country, year: int) -> float:
+        """Calculate export taxes for a country.
+
+        This method computes the total export taxes for a country based on
+        its exports and exchange rates.
+
+        Args:
+            country (Country): Country to analyze
+            year (int): Reference year
+
+        Returns:
+            float: Total export taxes
+        """
         return (
             self.world_bank.get_lcu_exports(country, year)
             * self.exchange_rates.from_usd_to_lcu(country, year)
@@ -467,6 +643,17 @@ class DataReaders:
         )
 
     def get_national_accounts_growth(self, country: Country) -> pd.DataFrame:
+        """Calculate national accounts growth rates.
+
+        This method combines growth rate data from both IMF and OECD sources,
+        with IMF data taking precedence for overlapping indicators.
+
+        Args:
+            country (Country): Country to analyze
+
+        Returns:
+            pd.DataFrame: Combined growth rate data from IMF and OECD sources
+        """
         if isinstance(country, Region):
             country = country.parent_country
         imf_growth = self.imf_reader.get_na_growth_rates(country)
@@ -481,7 +668,19 @@ class DataReaders:
         return merged
 
     def expand_weights_by_income(self, year: int, country: str | Country):
+        """Expand consumption weights by income quantile.
 
+        This method calculates consumption weights for each industry and income
+        quantile, using OECD data for income distribution and ICIO data for
+        consumption shares.
+
+        Args:
+            year (int): Reference year
+            country (str | Country): Country to analyze
+
+        Returns:
+            pd.DataFrame: Consumption weights by industry and income quantile
+        """
         weights_by_income = self.oecd_econ.get_household_consumption_by_income_quantile(country=country, year=year)
         weights_by_income.index = AGGREGATED_INDUSTRIES
         consumption_shares = self.icio[year].get_consumption_shares_series(country)
@@ -511,6 +710,18 @@ class DataReaders:
 
 
 def prune_icio_dict(icio_dict: dict[int, Any], prune_date: date):
+    """Prune ICIO dictionary to remove data before a specific date.
+
+    This function filters the ICIO dictionary to keep only data from years
+    after the specified prune date.
+
+    Args:
+        icio_dict (dict[int, Any]): Dictionary of ICIO data by year
+        prune_date (date): Date to prune from
+
+    Returns:
+        dict[int, Any]: Filtered ICIO dictionary
+    """
     # make sure prune date is the year in int format
 
     icio_dict = {year: icio for year, icio in icio_dict.items() if year >= prune_date.year}
