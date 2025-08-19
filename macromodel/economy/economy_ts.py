@@ -300,7 +300,16 @@ def create_economy_timeseries(
         ts["imports_from_" + c] = initial_imports_by_country[c]
 
     # GDP sanity check
-    assert np.isclose(ts.current("gdp_output")[0], ts.current("gdp_expenditure")[0])
-    assert np.isclose(ts.current("gdp_output")[0], ts.current("gdp_income")[0])
+
+    current_output = ts.current("gdp_output")[0]
+    current_expenditure = ts.current("gdp_expenditure")[0]
+    current_income = ts.current("gdp_income")[0]
+
+    assert np.isclose(
+        current_output, current_expenditure
+    ), f"mismatch, output/expenditure GDP: {current_output/current_expenditure}"
+    assert np.isclose(
+        current_output, current_expenditure
+    ), f"mismatch, output/income GDP: {current_output/current_income}"
 
     return ts
