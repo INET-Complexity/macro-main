@@ -30,7 +30,7 @@ jobs:
 
       - name: Install calibration dependencies
         run: |
-          uv sync --python ${{ matrix.python-version }} --extra dev --extra calibration
+          uv sync --python ${{ matrix.python-version }} --extra dev
 
       - name: Test calibration pipeline
         run: |
