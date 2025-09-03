@@ -8,6 +8,7 @@ from macromodel.agents.firms.utils.create_bundle_matrix import create_bundle_mat
 from macromodel.configurations.firms_configuration import create_good_bundle
 
 
+
 class TestProductionSetter:
     def test__compute_production(self):
         assert np.allclose(
@@ -19,7 +20,7 @@ class TestProductionSetter:
             ),
             np.array([6.0, 8.0]),
         )
-
+        
     def test__compute_limiting_intermediate_inputs_stock(self):
         intermediate_inputs_productivity_matrix = np.array(
             [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [np.inf, np.inf, np.inf, np.inf], [1.0, 1.0, 1.0, 1.0]]
