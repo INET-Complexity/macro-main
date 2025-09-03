@@ -102,6 +102,8 @@ def test_canadian_disagg(can_disagg_datawrapper):
         configuration.country_configurations["CAN"].households.functions.consumption.name == "CESHouseholdConsumption"
     )
 
+    assert configuration.country_configurations["CAN"].firms.functions.production.name == "BundledLeontief"
+
     configuration.seed = 0
     simulation = Simulation.from_datawrapper(datawrapper=can_disagg_datawrapper, simulation_configuration=configuration)
 
