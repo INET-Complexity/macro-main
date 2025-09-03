@@ -1,0 +1,3854 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="synthetic_banks.html">
+      
+      
+        <link rel="next" href="synthetic_central_bank.html">
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.46">
+    
+    
+      
+        <title>Synthetic Population - INET/Macrocosm's Macromodel</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.6f8fc17f.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../_static/custom_css.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#syntheticpopulation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../index.html" title="INET/Macrocosm&#39;s Macromodel" class="md-header__button md-logo" aria-label="INET/Macrocosm's Macromodel" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            INET/Macrocosm's Macromodel
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Synthetic Population
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1M8 13h8v-2H8zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4a5 5 0 0 0 5-5 5 5 0 0 0-5-5"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5M7 15a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../index.html" class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../index.html" class="md-tabs__link">
+          
+  
+  macro_data
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../macromodel/index.html" class="md-tabs__link">
+          
+  
+  macromodel
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../macrocalib/index.html" class="md-tabs__link">
+        
+  
+    
+  
+  macrocalib
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../index.html" title="INET/Macrocosm&#39;s Macromodel" class="md-nav__button md-logo" aria-label="INET/Macrocosm's Macromodel" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    INET/Macrocosm's Macromodel
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    macro_data
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            macro_data
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data_wrapper.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data Wrapper
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Readers
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            Readers
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/default_readers.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Default Readers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/icio_reader.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ICIO Reader
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/eurostat.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Eurostat
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/world_bank.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    World Bank
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/oecd.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    OECD
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/imf.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    IMF
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/emissions.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Emissions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/exchange_rates.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Exchange Rates
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/policy_rates.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Policy Rates
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/hfcs.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    HFCS
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/compustat_firms.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Compustat Firms
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/compustat_banks.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Compustat Banks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Processing
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            Processing
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_country.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Country
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_firms.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Firms
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_banks.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Banks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Synthetic Population
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="synthetic_population.html" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Population
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#syntheticpopulation_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      SyntheticPopulation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SyntheticPopulation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attributes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#abstract-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Abstract Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Abstract Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#compute_household_income" class="md-nav__link">
+    <span class="md-ellipsis">
+      compute_household_income
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compute_household_wealth" class="md-nav__link">
+    <span class="md-ellipsis">
+      compute_household_wealth
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set_debt_installments" class="md-nav__link">
+    <span class="md-ellipsis">
+      set_debt_installments
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set_household_saving_rates" class="md-nav__link">
+    <span class="md-ellipsis">
+      set_household_saving_rates
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#synthetichfcspopulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      SyntheticHFCSPopulation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SyntheticHFCSPopulation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-features_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#factory-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Factory Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Factory Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from_readers" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_readers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage Example
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage Example">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      SyntheticPopulation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_central_bank.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Central Bank
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_central_government.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Central Government
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_government_entities.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Government Entities
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_rest_of_the_world.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Rest of the World
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_credit_market.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Credit Market
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_housing_market.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Housing Market
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_goods_market.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Goods Market
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_matching.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Matching
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="country_data.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Country Data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    macromodel
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            macromodel
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    API
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            API
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/country.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Country
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/economy.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Economy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/rest_of_world.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Rest of World
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_2_5" id="__nav_3_2_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Agents
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            Agents
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/agents/index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/agents/banks.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Banks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/agents/firms.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Firms
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/agents/households.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Households
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/agents/central_bank.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Central Bank
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/agents/central_government.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Central Government
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/agents/government_entities.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Government Entities
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_2_6" id="__nav_3_2_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Markets
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2_6">
+            <span class="md-nav__icon md-icon"></span>
+            Markets
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/markets/goods_market.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Goods Market
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/markets/credit_market.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Credit Market
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/markets/housing_market.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Housing Market
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/markets/labour_market.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Labour Market
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macrocalib/index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    macrocalib
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="syntheticpopulation">SyntheticPopulation<a class="headerlink" href="#syntheticpopulation" title="Permanent link">&para;</a></h1>
+<p>The SyntheticPopulation module provides data structures and utilities for preprocessing and organizing population data that will be used to initialize behavioral models in the simulation package.</p>
+<h2 id="syntheticpopulation_1">SyntheticPopulation<a class="headerlink" href="#syntheticpopulation_1" title="Permanent link">&para;</a></h2>
+<p>The <code>SyntheticPopulation</code> class is an abstract base class that provides a framework for collecting and organizing population data. It is not used for simulating population behavior - it only handles data preprocessing.</p>
+<h3 id="key-features">Key Features<a class="headerlink" href="#key-features" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Household and individual data management</li>
+<li>Income and wealth computation</li>
+<li>Consumption and investment patterns</li>
+<li>Labor market integration</li>
+<li>Social transfer processing</li>
+<li>Data validation and cleaning</li>
+</ul>
+<h3 id="attributes">Attributes<a class="headerlink" href="#attributes" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>country_name</code> (str): Country identifier</li>
+<li><code>country_name_short</code> (str): Short country code</li>
+<li><code>scale</code> (int): Population scaling factor</li>
+<li><code>year</code> (int): Reference year</li>
+<li><code>industries</code> (list[str]): List of industries</li>
+<li><code>individual_data</code> (pd.DataFrame): Individual-level data containing:</li>
+<li>Demographics (age, gender, education)</li>
+<li>Employment status and industry</li>
+<li>Income sources</li>
+<li>Household and firm associations</li>
+<li><code>household_data</code> (pd.DataFrame): Household-level data containing:</li>
+<li>Household composition</li>
+<li>Income and wealth components</li>
+<li>Housing tenure and property</li>
+<li>Financial assets and debt</li>
+<li>Consumption patterns</li>
+</ul>
+<h3 id="abstract-methods">Abstract Methods<a class="headerlink" href="#abstract-methods" title="Permanent link">&para;</a></h3>
+<h4 id="compute_household_income">compute_household_income<a class="headerlink" href="#compute_household_income" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@abstractmethod</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">compute_household_income</span><span class="p">(</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">total_social_transfers</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">independents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Computes household income from all sources:</p>
+<ul>
+<li>Employee income</li>
+<li>Social transfers</li>
+<li>Rental income</li>
+<li>Financial asset returns</li>
+</ul>
+<h4 id="compute_household_wealth">compute_household_wealth<a class="headerlink" href="#compute_household_wealth" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nd">@abstractmethod</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">compute_household_wealth</span><span class="p">(</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">independents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Computes household wealth components:</p>
+<ul>
+<li>Real assets (property, vehicles, businesses)</li>
+<li>Financial assets (deposits, investments)</li>
+<li>Debt obligations</li>
+<li>Net wealth position</li>
+</ul>
+<h4 id="set_debt_installments">set_debt_installments<a class="headerlink" href="#set_debt_installments" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nd">@abstractmethod</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">set_debt_installments</span><span class="p">(</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">consumption_installments</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">ce_installments</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">mortgage_installments</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Sets household debt payment schedules:</p>
+<ul>
+<li>Consumption loan payments</li>
+<li>Consumer electronics installments</li>
+<li>Mortgage payments</li>
+</ul>
+<h4 id="set_household_saving_rates">set_household_saving_rates<a class="headerlink" href="#set_household_saving_rates" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nd">@abstractmethod</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">set_household_saving_rates</span><span class="p">(</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">independents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Computes household saving rates based on:</p>
+<ul>
+<li>Income levels</li>
+<li>Wealth position</li>
+<li>Household characteristics</li>
+</ul>
+<h2 id="synthetichfcspopulation">SyntheticHFCSPopulation<a class="headerlink" href="#synthetichfcspopulation" title="Permanent link">&para;</a></h2>
+<p>The <code>SyntheticHFCSPopulation</code> class is a concrete implementation that preprocesses population data using the Household Finance and Consumption Survey (HFCS) as its primary data source.</p>
+<h3 id="key-features_1">Key Features<a class="headerlink" href="#key-features_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>HFCS data integration</li>
+<li>Household sampling and scaling</li>
+<li>Industry employment allocation</li>
+<li>Wealth and income modeling</li>
+<li>Consumption pattern estimation</li>
+</ul>
+<h3 id="factory-methods">Factory Methods<a class="headerlink" href="#factory-methods" title="Permanent link">&para;</a></h3>
+<h4 id="from_readers">from_readers<a class="headerlink" href="#from_readers" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nd">@classmethod</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_readers</span><span class="p">(</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="bp">cls</span><span class="p">,</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">readers</span><span class="p">:</span> <span class="n">DataReaders</span><span class="p">,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">country_name</span><span class="p">:</span> <span class="n">Country</span><span class="p">,</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">country_name_short</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">scale</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="n">quarter</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="n">industry_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="n">industries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="n">total_unemployment_benefits</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>    <span class="n">exogenous_data</span><span class="p">:</span> <span class="n">ExogenousCountryData</span><span class="p">,</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>    <span class="n">rent_as_fraction_of_unemployment_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">,</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>    <span class="n">n_quantiles</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>    <span class="n">population_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>    <span class="n">exch_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>    <span class="n">proxied_country</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Country</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>    <span class="n">yearly_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">4.0</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SyntheticHFCSPopulation&quot;</span>
+</code></pre></div>
+<p>Creates a synthetic population using HFCS data and additional sources.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>readers</code> (DataReaders): Data source readers</li>
+<li><code>country_name</code> (Country): Target country</li>
+<li><code>country_name_short</code> (str): Country code</li>
+<li><code>scale</code> (int): Population scaling factor</li>
+<li><code>year</code> (int): Reference year</li>
+<li><code>quarter</code> (int): Reference quarter</li>
+<li><code>industry_data</code> (dict): Industry-level data</li>
+<li><code>industries</code> (list[str]): Target industries</li>
+<li><code>total_unemployment_benefits</code> (float): Total benefits to distribute</li>
+<li><code>exogenous_data</code> (ExogenousCountryData): External economic data</li>
+<li><code>rent_as_fraction_of_unemployment_rate</code> (float): Rent parameter</li>
+<li><code>n_quantiles</code> (int): Income quantiles for analysis</li>
+<li><code>population_ratio</code> (float): Population scaling ratio</li>
+<li><code>exch_rate</code> (float): Exchange rate for currency conversion</li>
+<li><code>proxied_country</code> (str|Country): Proxy country for missing data</li>
+<li><code>yearly_factor</code> (float): Annual to sub-annual conversion factor</li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>SyntheticHFCSPopulation</code>: Configured population instance</li>
+</ul>
+<h3 id="usage-example">Usage Example<a class="headerlink" href="#usage-example" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">macro_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataReaders</span><span class="p">,</span> <span class="n">ExogenousCountryData</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">macro_data.processing.synthetic_population</span><span class="w"> </span><span class="kn">import</span> <span class="n">SyntheticHFCSPopulation</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Initialize data readers and configuration</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">readers</span> <span class="o">=</span> <span class="n">DataReaders</span><span class="o">.</span><span class="n">from_raw_data</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="n">exogenous_data</span> <span class="o">=</span> <span class="n">ExogenousCountryData</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="n">industry_data</span> <span class="o">=</span> <span class="p">{</span><span class="o">...</span><span class="p">}</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="c1"># Create synthetic population for France in 2023 Q1</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="n">france_population</span> <span class="o">=</span> <span class="n">SyntheticHFCSPopulation</span><span class="o">.</span><span class="n">from_readers</span><span class="p">(</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    <span class="n">country_name</span><span class="o">=</span><span class="s2">&quot;FRA&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>    <span class="n">country_name_short</span><span class="o">=</span><span class="s2">&quot;FR&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>    <span class="n">scale</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>    <span class="n">year</span><span class="o">=</span><span class="mi">2023</span><span class="p">,</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>    <span class="n">quarter</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>    <span class="n">readers</span><span class="o">=</span><span class="n">readers</span><span class="p">,</span>
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>    <span class="n">industry_data</span><span class="o">=</span><span class="n">industry_data</span><span class="p">,</span>
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>    <span class="n">industries</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;C10T12&quot;</span><span class="p">,</span> <span class="s2">&quot;C13T15&quot;</span><span class="p">],</span>
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>    <span class="n">total_unemployment_benefits</span><span class="o">=</span><span class="mf">1e9</span><span class="p">,</span>
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>    <span class="n">exogenous_data</span><span class="o">=</span><span class="n">exogenous_data</span>
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="p">)</span>
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="c1"># Compute household wealth and income</span>
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a><span class="n">france_population</span><span class="o">.</span><span class="n">compute_household_wealth</span><span class="p">()</span>
+<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a><span class="n">france_population</span><span class="o">.</span><span class="n">compute_household_income</span><span class="p">(</span><span class="n">total_social_transfers</span><span class="o">=</span><span class="mf">5e8</span><span class="p">)</span>
+</code></pre></div>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+
+    <div class="doc doc-contents first">
+
+        <p>Module for managing synthetic population data in macroeconomic simulations.</p>
+<p>This module provides the abstract base class for synthetic population generation and management.
+It defines the core data structures and interfaces for representing households and individuals
+in a macroeconomic simulation, with a focus on:</p>
+<ol>
+<li>Population Structure:</li>
+<li>Household composition and relationships</li>
+<li>Individual demographics and employment</li>
+<li>Financial status and wealth distribution</li>
+<li>
+<p>Housing tenure and property ownership</p>
+</li>
+<li>
+<p>Economic Attributes:</p>
+</li>
+<li>Income sources (employment, transfers, assets)</li>
+<li>Wealth composition (real assets, financial assets)</li>
+<li>Debt obligations and credit relationships</li>
+<li>
+<p>Consumption and saving patterns</p>
+</li>
+<li>
+<p>Data Management:</p>
+</li>
+<li>Data validation and cleaning</li>
+<li>Missing value imputation</li>
+<li>Statistical modeling of relationships</li>
+<li>
+<p>Scale factor adjustments</p>
+</li>
+<li>
+<p>Market Relationships:</p>
+</li>
+<li>Employment connections with firms</li>
+<li>Banking relationships</li>
+<li>Housing market participation</li>
+<li>Investment behavior</li>
+</ol>
+<p>The module supports both EU and non-EU country data, with capabilities for:
+- Data harmonization across sources
+- Consistent initialization of economic relationships
+- Preservation of aggregate economic constraints
+- Environmental impact tracking</p>
+
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>This module focuses on preprocessing and organizing population data for
+initialization. The actual behavioral dynamics are implemented in the
+simulation package.</p>
+</details>
+
+<details class="example" open>
+  <summary>Example</summary>
+  <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">macro_data.processing.synthetic_population</span><span class="w"> </span><span class="kn">import</span> <span class="n">SyntheticPopulation</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">CustomPopulation</span><span class="p">(</span><span class="n">SyntheticPopulation</span><span class="p">):</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country_name</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="o">...</span><span class="p">):</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">compute_household_income</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">total_social_transfers</span><span class="p">):</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        <span class="c1"># Custom income computation logic</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="k">pass</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">compute_household_wealth</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        <span class="c1"># Custom wealth computation logic</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        <span class="k">pass</span>
+</code></pre></div>
+</details>
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation" class="doc doc-heading">
+            <code>SyntheticPopulation</code>
+
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+
+        <p>Represents a synthetic population for a specific country and year.</p>
+
+
+<details class="the-household-data-is-a-pandas-data-frame-with-the-following-columns" open>
+  <summary>The household data is a pandas data frame with the following columns</summary>
+  <ul>
+<li>Type: The type of the household (1: single, 2: couple, 3: single parent, 4: couple with children).</li>
+<li>Corresponding Individuals ID: The IDs of the individuals in the household.</li>
+<li>Corresponding Bank ID: The ID of the bank the household is associated with.</li>
+<li>Corresponding Inhabited House ID: The ID of the house the household inhabits.</li>
+<li>Corresponding Renters: The IDs of the individuals in the household who rent.</li>
+<li>Corresponding Property Owner: The IDs of the individuals in the household who own property.</li>
+<li>Corresponding Additionally Owned Houses ID: The IDs of the houses the household owns.</li>
+<li>Income: The total income of the household.</li>
+<li>Employee Income: The income of the household from employment.</li>
+<li>Regular Social Transfers: The income of the household from social transfers.</li>
+<li>Rental Income from Real Estate: The income of the household from rental of real estate.</li>
+<li>Income from Financial Assets: The income of the household from financial assets.</li>
+<li>Saving Rate: The saving rate of the household.</li>
+<li>Rent Paid: The rent paid by the household.</li>
+<li>Rent Imputed: The imputed rent of the household.</li>
+<li>Wealth: The total wealth of the household.</li>
+<li>Net Wealth: The net wealth of the household.</li>
+<li>Wealth in Real Assets: The wealth of the household in real assets.</li>
+<li>Value of the Main Residence: The value of the main residence of the household.</li>
+<li>Value of other Properties: The value of other properties of the household.</li>
+<li>Wealth Other Real Assets: The wealth of the household in other real assets.</li>
+<li>Wealth in Deposits: The wealth of the household in deposits.</li>
+<li>Wealth in Other Financial Assets: The wealth of the household in other financial assets.</li>
+<li>Wealth in Financial Assets: The wealth of the household in financial assets.</li>
+<li>Outstanding Balance of HMR Mortgages: The outstanding balance of the household's HMR mortgages.</li>
+<li>Outstanding Balance of Mortgages on other Properties: The outstanding balance of the household's mortgages on other properties.</li>
+<li>Outstanding Balance of other Non-Mortgage Loans: The outstanding balance of the household's other non-mortgage loans.</li>
+<li>Debt: The total debt of the household.</li>
+<li>Debt Installments: The debt installments of the household (monthly payments of debt).</li>
+<li>Tenure Status of the Main Residence: The tenure status of the main residence of the household.</li>
+<li>Number of Properties other than Household Main Residence: The number of properties other than the household's main residence.</li>
+</ul>
+</details>
+
+<details class="the-individual-data-is-a-pandas-data-frame-with-the-following-columns" open>
+  <summary>The individual data is a pandas data frame with the following columns</summary>
+  <ul>
+<li>Gender: The gender of the individual (1: male, 2: female)</li>
+<li>Age: The age of the individual.</li>
+<li>Education: The education level of the individual (ISCED classification).</li>
+<li>Activity Status: The activity status of the individual (1: employed, 2: unemployed, 3: not economically active).</li>
+<li>Employment Industry: The industry of the individual's employment.</li>
+<li>Employee Income: The income of the individual from employment.</li>
+<li>Income from Unemployment Benefits: The income of the individual from unemployment benefits.</li>
+<li>Income: The total income of the individual.</li>
+<li>Corresponding Household ID: The ID of the household the individual belongs to.</li>
+<li>Corresponding Firm ID: The ID of the firm the individual works for.</li>
+</ul>
+</details>
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.country_name" href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.country_name">country_name</a></code></td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The name of the country.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.country_name_short" href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.country_name_short">country_name_short</a></code></td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The short name or code of the country.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.scale" href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.scale">scale</a></code></td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The scale of the synthetic population.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.year" href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.year">year</a></code></td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The year of the synthetic population.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.industries" href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.industries">industries</a></code></td>
+            <td>
+                  <code>list[str]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The list of industries in the country.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.individual_data" href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.individual_data">individual_data</a></code></td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The data frame containing individual-level data.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.household_data" href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.household_data">household_data</a></code></td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The data frame containing household-level data.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.social_housing_rent" href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.social_housing_rent">social_housing_rent</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The rent for social housing.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.coefficient_fa_income" href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.coefficient_fa_income">coefficient_fa_income</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The coefficient for family allowance income.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.consumption_weights" href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.consumption_weights">consumption_weights</a></code></td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The weights for household consumption.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.consumption_weights_by_income" href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.consumption_weights_by_income">consumption_weights_by_income</a></code></td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The weights for household consumption based on income.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.saving_rates_model" href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.saving_rates_model">saving_rates_model</a></code></td>
+            <td>
+                  <code><span title="sklearn.linear_model.LinearRegression">LinearRegression</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The model for household saving rates.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.social_transfers_model" href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.social_transfers_model">social_transfers_model</a></code></td>
+            <td>
+                  <code><span title="sklearn.linear_model.LinearRegression">LinearRegression</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The model for social transfers.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.wealth_distribution_model" href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.wealth_distribution_model">wealth_distribution_model</a></code></td>
+            <td>
+                  <code><span title="sklearn.linear_model.LinearRegression">LinearRegression</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The model for wealth distribution.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.country_name" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">country_name</span> <span class="o">=</span> <span class="n">country_name</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.country_name" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.country_name_short" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">country_name_short</span> <span class="o">=</span> <span class="n">country_name_short</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.country_name_short" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.scale" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.scale" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.year" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">year</span> <span class="o">=</span> <span class="n">year</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.year" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.industries" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">industries</span> <span class="o">=</span> <span class="n">industries</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.industries" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.individual_data" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">individual_data</span> <span class="o">=</span> <span class="n">individual_data</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.individual_data" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.household_data" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">household_data</span> <span class="o">=</span> <span class="n">household_data</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.household_data" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.social_housing_rent" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">social_housing_rent</span> <span class="o">=</span> <span class="n">social_housing_rent</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.social_housing_rent" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.coefficient_fa_income" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">coefficient_fa_income</span> <span class="o">=</span> <span class="n">coefficient_fa_income</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.coefficient_fa_income" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.consumption_weights" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">consumption_weights</span> <span class="o">=</span> <span class="n">consumption_weights</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.consumption_weights" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.consumption_weights_by_income" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">consumption_weights_by_income</span> <span class="o">=</span> <span class="n">consumption_weights_by_income</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.consumption_weights_by_income" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.investment" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">investment</span> <span class="o">=</span> <span class="n">investment</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.investment" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.saving_rates_model" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">saving_rates_model</span> <span class="o">=</span> <span class="n">saving_rates_model</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.saving_rates_model" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.social_transfers_model" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">social_transfers_model</span> <span class="o">=</span> <span class="n">social_transfers_model</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.social_transfers_model" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.wealth_distribution_model" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">wealth_distribution_model</span> <span class="o">=</span> <span class="n">wealth_distribution_model</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.wealth_distribution_model" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.yearly_factor" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">yearly_factor</span> <span class="o">=</span> <span class="n">yearly_factor</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.yearly_factor" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.industry_consumption_before_vat" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">industry_consumption_before_vat</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.industry_consumption_before_vat" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate household consumption by industry before VAT.</p>
+<p>This property computes the pre-tax consumption allocation across industries
+based on household income and consumption weights.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>np.ndarray: Matrix of household consumption by industry before VAT</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.investment_weights" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">investment_weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.investment_weights" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate normalized investment weights by industry.</p>
+<p>This property computes the share of investment allocated to each industry,
+ensuring the weights sum to 1.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>np.ndarray: Normalized investment weights by industry</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.number_of_households" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">number_of_households</span><span class="p">:</span> <span class="nb">int</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.number_of_households" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the total number of households.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>int</code></td>            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of rows in household_data</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.number_employees_by_industry" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">number_employees_by_industry</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.number_employees_by_industry" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate the number of employed individuals by industry.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>np.ndarray: Array of employee counts for each industry</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.total_emissions" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">total_emissions</span><span class="p">:</span> <span class="nb">float</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.total_emissions" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate total household emissions.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>float</code></td>            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Sum of consumption and investment emissions</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.__init__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">country_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">country_name_short</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">scale</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">industries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">individual_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">household_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">social_housing_rent</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">coefficient_fa_income</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">consumption_weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">consumption_weights_by_income</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">investment</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">saving_rates_model</span><span class="p">:</span> <span class="n">LinearRegression</span><span class="p">,</span> <span class="n">social_transfers_model</span><span class="p">:</span> <span class="n">LinearRegression</span><span class="p">,</span> <span class="n">wealth_distribution_model</span><span class="p">:</span> <span class="n">LinearRegression</span><span class="p">,</span> <span class="n">yearly_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">4.0</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.__init__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.set_individual_labour_inputs" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_individual_labour_inputs</span><span class="p">(</span><span class="n">firm_production</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">firm_employees</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">unemployment_labour_inputs_fraction</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">override</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.set_individual_labour_inputs" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set individual labor input values based on employment status and firm production.</p>
+<p>This method assigns labor input values to individuals based on their employment status:
+1. Employed: Inputs proportional to income within their firm
+2. Unemployed: Fraction of industry mean inputs
+3. Inactive: Zero inputs</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_production</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Production values for each firm</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_employees</code>
+            </td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Mapping of employees to firms</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>unemployment_labour_inputs_fraction</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Fraction of mean
+industry inputs for unemployed. Defaults to 0.3.</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.3</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>override</code>
+            </td>
+            <td>
+                  <code>bool</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to override existing values with
+uniform inputs. Defaults to True.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.compute_household_income" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">compute_household_income</span><span class="p">(</span><span class="n">total_social_transfers</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">independents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.compute_household_income" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Compute and update household income from all sources.</p>
+<p>This method should:
+1. Calculate employee income from individual data
+2. Process social transfers based on household characteristics
+3. Include rental income from real estate
+4. Add income from financial assets
+5. Update the household_data DataFrame with results</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>total_social_transfers</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Total social transfers to be distributed
+across households based on their characteristics.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>independents</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[list[str]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of independent variables
+to use in social transfer allocation models. Defaults to None.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.set_consumption_weights" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_consumption_weights</span><span class="p">(</span><span class="n">consumption_weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.set_consumption_weights" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the consumption weights for household expenditure allocation.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>consumption_weights</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>New consumption weights by industry</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.set_debt_installments" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_debt_installments</span><span class="p">(</span><span class="n">consumption_installments</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">ce_installments</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mortgage_installments</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.set_debt_installments" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set household debt installment payments.</p>
+<p>This method should:
+1. Process consumption loan payments
+2. Handle consumer electronics installments
+3. Account for mortgage payments
+4. Update total debt service in household_data
+5. Ensure payment consistency with loan balances</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>consumption_installments</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Monthly payments for consumption loans</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>ce_installments</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Monthly payments for consumer electronics</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>mortgage_installments</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Monthly payments for mortgages</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.set_household_saving_rates" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_household_saving_rates</span><span class="p">(</span><span class="n">independents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.set_household_saving_rates" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Compute and set household saving rates.</p>
+<p>This method should:
+1. Process consumption share data
+2. Handle missing values through imputation
+3. Fit saving rate models using household characteristics
+4. Ensure rates are economically reasonable
+5. Update the household_data DataFrame</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>independents</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[list[str]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of independent variables
+to use in saving rate models. Defaults to None.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.compute_household_wealth" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">compute_household_wealth</span><span class="p">(</span><span class="n">independents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.compute_household_wealth" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Compute and update household wealth components.</p>
+<p>This method should:
+1. Calculate real asset wealth (property, vehicles, businesses)
+2. Process financial asset wealth (deposits, investments)
+3. Account for all debt types (mortgages, loans)
+4. Compute net wealth positions
+5. Update wealth distribution models</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>independents</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[list[str]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of independent variables
+to use in wealth distribution models. Defaults to None.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.set_income" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_income</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.set_income" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set total individual income by combining employment and unemployment benefits.</p>
+<p>This method:
+1. Fills missing values with zeros
+2. Combines employee income and unemployment benefits
+3. Updates the Income column in individual_data</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.restrict" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">restrict</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.restrict" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Restrict household data to essential columns.</p>
+<p>This method should:
+1. Filter household_data to RESTRICT_COLS
+2. Ensure data consistency after restriction
+3. Preserve key relationships
+4. Handle any missing required columns</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.normalise_household_consumption" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">normalise_household_consumption</span><span class="p">(</span><span class="n">iot_hh_consumption</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">vat</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">positive_saving_rates_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">independents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.normalise_household_consumption" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Normalize household consumption to match aggregate targets.</p>
+<p>This method should:
+1. Scale consumption to match IOT totals
+2. Account for VAT in consumption values
+3. Maintain reasonable saving rates
+4. Preserve consumption patterns by income group
+5. Update household consumption shares</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>iot_hh_consumption</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span> | <span title="pandas.Series">Series</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Target household consumption from IOT</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>vat</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Value-added tax rate</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>positive_saving_rates_only</code>
+            </td>
+            <td>
+                  <code>bool</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to enforce positive
+saving rates. Defaults to True.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>independents</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[list[str]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Independent variables for
+consumption models. Defaults to None.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.set_household_investment_rates" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_household_investment_rates</span><span class="p">(</span><span class="n">capital_formation_taxrate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">default_investment_rates</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.set_household_investment_rates" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Initialize household investment rates.</p>
+<p>This method sets initial investment rates for households, which can be
+later adjusted through normalization to match aggregate targets.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>capital_formation_taxrate</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Tax rate on capital formation</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>default_investment_rates</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span> | float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Initial
+investment rates. Defaults to 0.2.</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.2</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.normalise_household_investment" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">normalise_household_investment</span><span class="p">(</span><span class="n">tau_cf</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">iot_hh_investment</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">positive_investment_rates</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.normalise_household_investment" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.get_current_hh_investment_by_industry" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_current_hh_investment_by_industry</span><span class="p">(</span><span class="n">tau_cf</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span></code>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.get_current_hh_investment_by_industry" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate current household investment by industry.</p>
+<p>This method computes the current investment allocation across industries
+based on household income, investment rates, and industry weights.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>tau_cf</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Capital formation tax rate</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>np.ndarray: Current investment values by industry</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.match_consumption_weights_by_income" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">match_consumption_weights_by_income</span><span class="p">(</span><span class="n">weights_by_income</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">iot_hh_consumption</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">vat</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">consumption_variance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.match_consumption_weights_by_income" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.set_wealth_distribution_function" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_wealth_distribution_function</span><span class="p">(</span><span class="n">independents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.set_wealth_distribution_function" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.add_emissions" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add_emissions</span><span class="p">(</span><span class="n">emission_factors_array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">emitting_indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">tau_cf</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation.add_emissions" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate and add emissions data to household records.</p>
+<p>This method computes emissions from:
+1. Household consumption
+2. Investment activities
+3. Specific fuel types (coal, gas, oil, refined products)</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>emission_factors_array</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Emission factors by source</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>emitting_indices</code>
+            </td>
+            <td>
+                  <code>list[int] | <span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Indices of emitting sectors</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>tau_cf</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Capital formation tax rate</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "toc.integrate"], "search": "../../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.83f73b43.min.js"></script>
+      
+        <script src="../../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

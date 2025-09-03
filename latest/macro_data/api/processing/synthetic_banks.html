@@ -1,0 +1,5135 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="synthetic_firms.html">
+      
+      
+        <link rel="next" href="synthetic_population.html">
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.46">
+    
+    
+      
+        <title>Synthetic Banks - INET/Macrocosm's Macromodel</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.6f8fc17f.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../_static/custom_css.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#syntheticbanks" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../index.html" title="INET/Macrocosm&#39;s Macromodel" class="md-header__button md-logo" aria-label="INET/Macrocosm's Macromodel" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            INET/Macrocosm's Macromodel
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Synthetic Banks
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1M8 13h8v-2H8zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4a5 5 0 0 0 5-5 5 5 0 0 0-5-5"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5M7 15a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../index.html" class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../index.html" class="md-tabs__link">
+          
+  
+  macro_data
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../macromodel/index.html" class="md-tabs__link">
+          
+  
+  macromodel
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../macrocalib/index.html" class="md-tabs__link">
+        
+  
+    
+  
+  macrocalib
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../index.html" title="INET/Macrocosm&#39;s Macromodel" class="md-nav__button md-logo" aria-label="INET/Macrocosm's Macromodel" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    INET/Macrocosm's Macromodel
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    macro_data
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            macro_data
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data_wrapper.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data Wrapper
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Readers
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            Readers
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/default_readers.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Default Readers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/icio_reader.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ICIO Reader
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/eurostat.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Eurostat
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/world_bank.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    World Bank
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/oecd.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    OECD
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/imf.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    IMF
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/emissions.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Emissions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/exchange_rates.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Exchange Rates
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/policy_rates.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Policy Rates
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/hfcs.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    HFCS
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/compustat_firms.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Compustat Firms
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/compustat_banks.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Compustat Banks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Processing
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            Processing
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_country.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Country
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_firms.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Firms
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Synthetic Banks
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="synthetic_banks.html" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Banks
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#core-functionality" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Functionality
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Methods
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_population.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Population
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_central_bank.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Central Bank
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_central_government.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Central Government
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_government_entities.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Government Entities
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_rest_of_the_world.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Rest of the World
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_credit_market.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Credit Market
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_housing_market.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Housing Market
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_goods_market.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Goods Market
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synthetic_matching.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Matching
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="country_data.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Country Data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    macromodel
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            macromodel
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    API
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            API
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/country.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Country
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/economy.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Economy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/rest_of_world.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Rest of World
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_2_5" id="__nav_3_2_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Agents
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            Agents
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/agents/index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/agents/banks.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Banks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/agents/firms.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Firms
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/agents/households.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Households
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/agents/central_bank.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Central Bank
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/agents/central_government.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Central Government
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/agents/government_entities.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Government Entities
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_2_6" id="__nav_3_2_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Markets
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2_6">
+            <span class="md-nav__icon md-icon"></span>
+            Markets
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/markets/goods_market.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Goods Market
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/markets/credit_market.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Credit Market
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/markets/housing_market.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Housing Market
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macromodel/api/markets/labour_market.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Labour Market
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../macrocalib/index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    macrocalib
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="syntheticbanks">SyntheticBanks<a class="headerlink" href="#syntheticbanks" title="Permanent link">&para;</a></h1>
+<p>The <code>SyntheticBanks</code> class is an abstract base class that defines the interface for preprocessing and organizing banking system data. It provides the core functionality for managing bank-level data and relationships.</p>
+<h2 id="core-functionality">Core Functionality<a class="headerlink" href="#core-functionality" title="Permanent link">&para;</a></h2>
+<p>The class handles:</p>
+<ul>
+<li>Bank balance sheet data organization</li>
+<li>Customer relationship mapping</li>
+<li>Initial state calculations</li>
+<li>Interest rate management</li>
+<li>Market share calculations</li>
+</ul>
+<h2 id="key-methods">Key Methods<a class="headerlink" href="#key-methods" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>initialise_deposits_and_loans</code>: Sets up initial deposits and loans for all banks</li>
+<li><code>set_bank_equity</code>: Sets equity level for each bank</li>
+<li><code>set_deposits_from_firms</code>: Sets initial deposits from firms</li>
+<li><code>set_deposits_from_households</code>: Sets initial deposits from households</li>
+<li><code>set_loans_to_firms</code>: Sets initial loans to firms</li>
+<li><code>set_loans_to_households</code>: Sets initial loans to households</li>
+<li><code>set_bank_deposits</code>: Sets total deposits for each bank</li>
+<li><code>set_market_share</code>: Calculates and sets market share for each bank</li>
+<li><code>set_liability</code>: Calculates and sets total liabilities for each bank</li>
+</ul>
+<h1 id="implementation">Implementation<a class="headerlink" href="#implementation" title="Permanent link">&para;</a></h1>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+
+    <div class="doc doc-contents first">
+
+        <p>Module for preprocessing synthetic banking system data.</p>
+<p>This module provides an abstract base class for preprocessing and organizing banking system data
+that will be used to initialize behavioral models in the simulation package. Key preprocessing includes:</p>
+<ol>
+<li>Data Collection and Organization:</li>
+<li>Bank balance sheet data preparation</li>
+<li>Initial deposit and loan allocation</li>
+<li>
+<p>Interest rate parameter estimation</p>
+</li>
+<li>
+<p>Relationship Data:</p>
+</li>
+<li>Bank-firm connections</li>
+<li>Bank-household connections</li>
+<li>
+<p>Market share calculations</p>
+</li>
+<li>
+<p>Financial Data Processing:</p>
+</li>
+<li>Interest rate parameter estimation</li>
+<li>Balance sheet validation</li>
+<li>Data consistency checks</li>
+</ol>
+
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>This module is NOT used for simulating bank behavior. It only handles
+the preprocessing and organization of data that will later be used to initialize
+behavioral models in the simulation package.</p>
+</details>
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks" class="doc doc-heading">
+            <code>SyntheticBanks</code>
+
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+
+        <p>Abstract base class for preprocessing and organizing banking system data.</p>
+<p>This class provides a framework for collecting and organizing banking system data
+that will be used to initialize behavioral models. It is NOT used for simulating
+bank behavior - it only handles data preprocessing.</p>
+
+
+<details class="the-preprocessed-data-is-stored-in-a-pandas-dataframe-with-the-following-columns" open>
+  <summary>The preprocessed data is stored in a pandas DataFrame with the following columns</summary>
+  <ul>
+<li>Equity: Initial bank equity</li>
+<li>Corresponding Firms ID: Firm-bank relationship mapping</li>
+<li>Corresponding Households ID: Household-bank relationship mapping</li>
+<li>Deposits from Households: Initial household deposits</li>
+<li>Mortgages to Households: Initial mortgage values</li>
+<li>Consumption Loans to Households: Initial consumer loan values</li>
+<li>Deposits from Firms: Initial firm deposits</li>
+<li>Loans to Firms: Initial firm loans</li>
+<li>Deposits: Total initial deposits</li>
+<li>Short-Term Interest Rates on Firm Loans: Initial rate parameters</li>
+<li>Long-Term Interest Rates on Firm Loans: Initial rate parameters</li>
+<li>Interest Rates on Household Payday Loans: Initial rate parameters</li>
+<li>Interest Rates on Household Consumption Loans: Initial rate parameters</li>
+<li>Interest Rates on Mortgages: Initial rate parameters</li>
+<li>Interest Rates on Firm Deposits: Initial rate parameters</li>
+<li>Overdraft Rate on Firm Deposits: Initial rate parameters</li>
+<li>Interest Rates on Household Deposits: Initial rate parameters</li>
+<li>Overdraft Rate on Household Deposits: Initial rate parameters</li>
+<li>Interest received from Loans: Initial interest calculations</li>
+<li>Interest received from Deposits: Initial interest calculations</li>
+<li>Profits: Initial profit calculations</li>
+<li>Corporate Taxes Paid: Initial tax calculations</li>
+<li>Liability: Initial liability calculations</li>
+<li>Market Share: Initial market share calculations</li>
+</ul>
+</details>
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>This is a data container class. The actual banking behavior (lending decisions,
+rate setting, etc.) is implemented in the simulation package, which uses this
+preprocessed data for initialization.</p>
+</details>
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.country_name" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.country_name">country_name</a></code></td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Country identifier for data collection</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.year" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.year">year</a></code></td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reference year for preprocessing</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.quarter" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.quarter">quarter</a></code></td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reference quarter for preprocessing</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.number_of_banks" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.number_of_banks">number_of_banks</a></code></td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of banks to preprocess data for</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.bank_data" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.bank_data">bank_data</a></code></td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Preprocessed bank-level data</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.firm_passthrough" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.firm_passthrough">firm_passthrough</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated rate adjustment parameter</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.firm_ect" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.firm_ect">firm_ect</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated error correction parameter</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.firm_rate" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.firm_rate">firm_rate</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Initial firm loan rate</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_consumption_passthrough" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_consumption_passthrough">hh_consumption_passthrough</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated consumer rate parameter</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_consumption_ect" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_consumption_ect">hh_consumption_ect</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated consumer ECT parameter</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_consumption_rate" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_consumption_rate">hh_consumption_rate</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Initial consumer loan rate</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_mortgage_passthrough" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_mortgage_passthrough">hh_mortgage_passthrough</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated mortgage rate parameter</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_mortgage_ect" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_mortgage_ect">hh_mortgage_ect</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated mortgage ECT parameter</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_mortgage_rate" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_mortgage_rate">hh_mortgage_rate</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Initial mortgage rate</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.country_name" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">country_name</span> <span class="o">=</span> <span class="n">country_name</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.country_name" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.year" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">year</span> <span class="o">=</span> <span class="n">year</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.year" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.quarter" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">quarter</span> <span class="o">=</span> <span class="n">quarter</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.quarter" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.number_of_banks" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">number_of_banks</span> <span class="o">=</span> <span class="n">number_of_banks</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.number_of_banks" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.bank_data" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">bank_data</span> <span class="o">=</span> <span class="n">bank_data</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.bank_data" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.firm_passthrough" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">firm_passthrough</span> <span class="o">=</span> <span class="n">firm_passthrough</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.firm_passthrough" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.firm_ect" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">firm_ect</span> <span class="o">=</span> <span class="n">firm_ect</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.firm_ect" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.firm_rate" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">firm_rate</span> <span class="o">=</span> <span class="n">firm_rate</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.firm_rate" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_consumption_passthrough" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">hh_consumption_passthrough</span> <span class="o">=</span> <span class="n">hh_consumption_passthrough</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_consumption_passthrough" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_consumption_ect" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">hh_consumption_ect</span> <span class="o">=</span> <span class="n">hh_consumption_ect</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_consumption_ect" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_consumption_rate" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">hh_consumption_rate</span> <span class="o">=</span> <span class="n">hh_consumption_rate</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_consumption_rate" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_mortgage_passthrough" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">hh_mortgage_passthrough</span> <span class="o">=</span> <span class="n">hh_mortgage_passthrough</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_mortgage_passthrough" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_mortgage_ect" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">hh_mortgage_ect</span> <span class="o">=</span> <span class="n">hh_mortgage_ect</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_mortgage_ect" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_mortgage_rate" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">hh_mortgage_rate</span> <span class="o">=</span> <span class="n">hh_mortgage_rate</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_mortgage_rate" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.__init__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">country_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">number_of_banks</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">bank_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">quarter</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">firm_passthrough</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">firm_ect</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">firm_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_consumption_passthrough</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_consumption_ect</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_consumption_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_mortgage_passthrough</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_mortgage_ect</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_mortgage_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.__init__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Initialize a synthetic banking system.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>country_name</code>
+            </td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Country identifier</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>year</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reference year for data</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>number_of_banks</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of banks to create</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>bank_data</code>
+            </td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Initial bank-level data</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>quarter</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reference quarter (1-4)</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_passthrough</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Rate adjustment factor for firm loans</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_ect</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Error correction term for firm rates</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_rate</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Base rate for firm loans</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>hh_consumption_passthrough</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Rate adjustment for consumer loans</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>hh_consumption_ect</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Error correction for consumer rates</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>hh_consumption_rate</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Base rate for consumer loans</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>hh_mortgage_passthrough</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Rate adjustment for mortgages</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>hh_mortgage_ect</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Error correction for mortgage rates</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>hh_mortgage_rate</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Base mortgage rate</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.initialise_deposits_and_loans" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">initialise_deposits_and_loans</span><span class="p">(</span><span class="n">synthetic_population</span><span class="p">:</span> <span class="n">SyntheticPopulation</span><span class="p">,</span> <span class="n">firm_deposits</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">firm_debt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.initialise_deposits_and_loans" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Initialize the deposits and loans for all banks in the system.</p>
+<p>This method sets up the initial state of bank balance sheets by:
+1. Setting household deposits based on their wealth allocation
+2. Setting household loans (mortgages and other debt)
+3. Setting firm deposits and loans
+4. Calculating total bank deposits</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>synthetic_population</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation" href="synthetic_population.html#macro_data.processing.synthetic_population.synthetic_population.SyntheticPopulation">SyntheticPopulation</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Population data including household wealth</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_deposits</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of firm deposit amounts</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_debt</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of firm debt amounts</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_deposits_from_firms" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_deposits_from_firms</span><span class="p">(</span><span class="n">firm_deposits</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_deposits_from_firms" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the initial deposits from firms for each bank.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_deposits</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of deposit amounts by firm</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_deposits_from_households" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_deposits_from_households</span><span class="p">(</span><span class="n">household_deposits</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_deposits_from_households" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the initial deposits from households for each bank.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>household_deposits</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of deposit amounts by household</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_loans_to_firms" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_loans_to_firms</span><span class="p">(</span><span class="n">firm_debt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_loans_to_firms" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the initial loans to firms for each bank.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_debt</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of debt amounts by firm</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_loans_to_households" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_loans_to_households</span><span class="p">(</span><span class="n">household_mortgage_debt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">household_other_debt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_loans_to_households" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the initial loans to households for each bank.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>household_mortgage_debt</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of mortgage debt by household</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>household_other_debt</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of non-mortgage debt by household</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_bank_equity" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_bank_equity</span><span class="p">(</span><span class="n">bank_equity</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_bank_equity" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the equity level for each bank.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>bank_equity</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Equity amount to set for each bank</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_bank_deposits" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_bank_deposits</span><span class="p">(</span><span class="n">firm_deposits</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">household_deposits</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">firm_debt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">household_debt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_bank_deposits" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the total deposits for each bank.</p>
+<p>Calculates and sets total deposits by combining:
+- Firm deposits
+- Household deposits
+- Firm debt
+- Household debt</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_deposits</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of firm deposit amounts</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>household_deposits</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of household deposit amounts</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_debt</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of firm debt amounts</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>household_debt</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of household debt amounts</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.initialise_rates_profits_liabilities" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">initialise_rates_profits_liabilities</span><span class="p">(</span><span class="n">policy_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">tau_bank</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">risk_premium</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">consumption_loans_markup</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">mortgage_markup</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">household_overdraft_markup</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span></code>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.initialise_rates_profits_liabilities" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Initialize bank rates, profits, and liabilities.</p>
+<p>This method sets up the complete financial structure of banks by:
+1. Setting interest rates for all products
+2. Calculating interest income from loans and deposits
+3. Computing profits and taxes
+4. Setting liabilities and market shares</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>policy_rate</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Central bank policy rate</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>tau_bank</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Bank tax rate</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>risk_premium</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Risk premium for loans</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>consumption_loans_markup</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Markup for consumer loans</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>mortgage_markup</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Markup for mortgages</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>household_overdraft_markup</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Markup for household overdrafts</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_initial_interest_rates" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_initial_interest_rates</span><span class="p">(</span><span class="n">central_bank_policy_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">bank_markup_interest_rate_short_term_firm_loans</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">bank_markup_interest_rate_long_term_firm_loans</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">bank_markup_interest_rate_household_payday_loans</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">bank_markup_interest_rate_household_consumption_loans</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">bank_markup_interest_rate_mortgages</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">bank_markup_interest_rate_overdraft_firm</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">bank_markup_interest_rate_overdraft_household</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_initial_interest_rates" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set initial interest rates for all bank products.</p>
+<p>This method initializes rates for:
+- Firm loans (short and long term)
+- Household loans (payday, consumption, mortgages)
+- Deposits (firm and household)
+- Overdrafts</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>central_bank_policy_rate</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Base rate from central bank</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>bank_markup_interest_rate_short_term_firm_loans</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Markup for short-term firm loans</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>bank_markup_interest_rate_long_term_firm_loans</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Markup for long-term firm loans</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>bank_markup_interest_rate_household_payday_loans</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Markup for payday loans</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>bank_markup_interest_rate_household_consumption_loans</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Markup for consumer loans</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>bank_markup_interest_rate_mortgages</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Markup for mortgages</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>bank_markup_interest_rate_overdraft_firm</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Markup for firm overdrafts</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>bank_markup_interest_rate_overdraft_household</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Markup for household overdrafts</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_interest_received_from_loans" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_interest_received_from_loans</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_interest_received_from_loans" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate and set the interest income received from all loans.</p>
+<p>This method computes the total interest income from:
+- Firm loans (short and long term)
+- Household loans (mortgages, consumption, payday)
+- Overdraft facilities</p>
+<p>The calculated interest income is stored in the bank_data DataFrame.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_interest_received_from_deposits" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_interest_received_from_deposits</span><span class="p">(</span><span class="n">central_bank_policy_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_interest_received_from_deposits" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate and set the interest income received from deposits.</p>
+<p>This method computes interest income from:
+- Household deposits
+- Firm deposits
+- Interbank deposits</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>central_bank_policy_rate</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Base rate from central bank used
+for deposit rate calculations</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_profits" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_profits</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_profits" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate and set bank profits.</p>
+<p>Computes profits by:
+1. Adding all interest income (from loans and deposits)
+2. Subtracting interest expenses
+3. Subtracting operational costs
+4. Adjusting for any extraordinary items</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_corporate_taxes_paid" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_corporate_taxes_paid</span><span class="p">(</span><span class="n">tau_bank</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_corporate_taxes_paid" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate and set corporate taxes paid by banks.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>tau_bank</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Corporate tax rate applicable to banks</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_market_share" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_market_share</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_market_share" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate and set market share for each bank.</p>
+<p>Market share is computed based on:
+- Total assets
+- Total deposits
+- Number of customers (firms and households)</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_liability" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_liability</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.set_liability" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate and set total liabilities for each bank.</p>
+<p>Liabilities include:
+- Customer deposits (firm and household)
+- Interbank borrowing
+- Other funding sources</p>
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div><h1 id="defaultsyntheticbanks">DefaultSyntheticBanks<a class="headerlink" href="#defaultsyntheticbanks" title="Permanent link">&para;</a></h1>
+<p><code>DefaultSyntheticBanks</code> is a concrete implementation of <code>SyntheticBanks</code> that provides preprocessing of banking system data using standard data sources (OECD, Eurostat, Compustat). This class handles the initialization and organization of data that will be used to initialize behavioral models in the simulation package.</p>
+<h2 id="data-source-integration">Data Source Integration<a class="headerlink" href="#data-source-integration" title="Permanent link">&para;</a></h2>
+<p>The class integrates data from multiple sources:</p>
+<ul>
+<li>OECD economic indicators</li>
+<li>Eurostat banking statistics</li>
+<li>Compustat bank-level data</li>
+<li>National accounts data</li>
+</ul>
+<h2 id="initial-state-processing">Initial State Processing<a class="headerlink" href="#initial-state-processing" title="Permanent link">&para;</a></h2>
+<p>The class processes:</p>
+<ul>
+<li>Bank balance sheet data</li>
+<li>Historical rate parameters</li>
+<li>Customer relationship mappings</li>
+<li>Initial state calculations</li>
+</ul>
+<h2 id="parameter-estimation">Parameter Estimation<a class="headerlink" href="#parameter-estimation" title="Permanent link">&para;</a></h2>
+<p>Key parameters estimated include:</p>
+<ul>
+<li>Interest rate parameters</li>
+<li>Balance sheet ratios</li>
+<li>Market share calculations</li>
+<li>Risk premiums</li>
+</ul>
+<h2 id="factory-methods">Factory Methods<a class="headerlink" href="#factory-methods" title="Permanent link">&para;</a></h2>
+<p>The class provides two factory methods:</p>
+<ol>
+<li><code>from_readers</code>: Creates a <code>DefaultSyntheticBanks</code> instance using standard data sources</li>
+<li><code>from_readers_compustat</code>: Creates a <code>DefaultSyntheticBanks</code> instance using detailed Compustat data</li>
+</ol>
+<h1 id="implementation_1">Implementation<a class="headerlink" href="#implementation_1" title="Permanent link">&para;</a></h1>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+
+    <div class="doc doc-contents first">
+
+        <p>Module for preprocessing synthetic banking system data.</p>
+<p>This module provides a concrete implementation for preprocessing banking system data
+that will be used to initialize behavioral models. Key preprocessing includes:</p>
+<ol>
+<li>Data Collection and Processing:</li>
+<li>Bank balance sheet data preparation</li>
+<li>Historical rate parameter estimation</li>
+<li>
+<p>Initial state calculations</p>
+</li>
+<li>
+<p>Bank Data Organization:</p>
+</li>
+<li>Standard bank data preprocessing</li>
+<li>Compustat-based data preprocessing</li>
+<li>
+<p>Data validation and consistency checks</p>
+</li>
+<li>
+<p>Parameter Estimation:</p>
+</li>
+<li>Interest rate parameters</li>
+<li>Balance sheet ratios</li>
+<li>Market share calculations</li>
+</ol>
+
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>This module is NOT used for simulating bank behavior. It preprocesses
+data that will be used to initialize behavioral models in the simulation package.
+The actual banking decisions and operations are implemented elsewhere.</p>
+</details>
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks" class="doc doc-heading">
+            <code>DefaultSyntheticBanks</code>
+
+
+<a href="#macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+
+        <p>Default implementation for preprocessing banking system data.</p>
+<p>This class preprocesses and organizes banking system data by collecting historical
+data and estimating parameters. These will be used to initialize behavioral models,
+but this class does NOT implement any behavioral logic.</p>
+<p>The class provides two preprocessing paths:
+1. Standard preprocessing using OECD/Eurostat data
+2. Compustat-based preprocessing for detailed bank profiles</p>
+<p>The preprocessing includes:
+- Bank balance sheet data organization
+- Interest rate parameter estimation
+- Relationship mapping (bank-firm, bank-household)
+- Initial state calculations</p>
+
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>This is a data container class. The actual banking behavior (lending,
+rate setting, etc.) is implemented in the simulation package, which uses
+these preprocessed parameters.</p>
+</details>
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.country_name" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.country_name">country_name</a></code></td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Country identifier for data collection</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.year" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.year">year</a></code></td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reference year for preprocessing</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.number_of_banks" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.number_of_banks">number_of_banks</a></code></td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of banks to preprocess data for</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.bank_data" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.bank_data">bank_data</a></code></td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Preprocessed bank-level data</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.quarter" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.quarter">quarter</a></code></td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reference quarter for preprocessing</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.firm_passthrough" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.firm_passthrough">firm_passthrough</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated rate adjustment parameter</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.firm_ect" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.firm_ect">firm_ect</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated error correction parameter</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.firm_rate" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.firm_rate">firm_rate</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Initial firm loan rate</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.hh_consumption_passthrough" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_consumption_passthrough">hh_consumption_passthrough</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated consumer rate parameter</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.hh_consumption_ect" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_consumption_ect">hh_consumption_ect</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated consumer ECT parameter</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.hh_consumption_rate" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_consumption_rate">hh_consumption_rate</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Initial consumer loan rate</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.hh_mortgage_passthrough" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_mortgage_passthrough">hh_mortgage_passthrough</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated mortgage rate parameter</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.hh_mortgage_ect" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_mortgage_ect">hh_mortgage_ect</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated mortgage ECT parameter</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.hh_mortgage_rate" href="#macro_data.processing.synthetic_banks.synthetic_banks.SyntheticBanks.hh_mortgage_rate">hh_mortgage_rate</a></code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Initial mortgage rate</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.__init__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">country_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">number_of_banks</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">bank_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">quarter</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">firm_passthrough</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">firm_ect</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">firm_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_consumption_passthrough</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_consumption_ect</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_consumption_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_mortgage_passthrough</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_mortgage_ect</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_mortgage_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span></code>
+
+<a href="#macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.__init__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Initialize the banking system data container.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>country_name</code>
+            </td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Country identifier for data collection</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>year</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reference year for preprocessing</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>number_of_banks</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of banks to preprocess data for</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>bank_data</code>
+            </td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Initial data to preprocess</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>quarter</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reference quarter for preprocessing</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_passthrough</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated rate adjustment parameter</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_ect</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated error correction parameter</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_rate</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Initial firm loan rate</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>hh_consumption_passthrough</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated consumer rate parameter</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>hh_consumption_ect</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated consumer ECT parameter</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>hh_consumption_rate</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Initial consumer loan rate</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>hh_mortgage_passthrough</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated mortgage rate parameter</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>hh_mortgage_ect</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated mortgage ECT parameter</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>hh_mortgage_rate</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Initial mortgage rate</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.from_readers" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_readers</span><span class="p">(</span><span class="n">single_bank</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">country_name</span><span class="p">:</span> <span class="n">Country</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">readers</span><span class="p">:</span> <span class="n">DataReaders</span><span class="p">,</span> <span class="n">scale</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">banks_data_configuration</span><span class="p">:</span> <span class="n">BanksDataConfiguration</span><span class="p">,</span> <span class="n">quarter</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">inflation_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">exchange_rate_from_eur</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">proxy_eu_country</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Country</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DefaultSyntheticBanks</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.from_readers" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Create a preprocessed banking system data container using standard data sources.</p>
+<p>This method preprocesses data using OECD/Eurostat sources to prepare:
+1. Bank balance sheet data (scaled appropriately)
+2. Initial rate parameters
+3. Bank relationship mappings</p>
+<p>For standard preprocessing:
+- Number of banks is derived from actual bank branches (scaled)
+- Bank equity is distributed based on historical data
+- Rate parameters are estimated from historical rates</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>single_bank</code>
+            </td>
+            <td>
+                  <code>bool</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to preprocess data for a single bank</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>country_name</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="macro_data.configuration.countries.Country" href="../../country.html#macro_data.configuration.countries.Country">Country</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Country to preprocess data for</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>year</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reference year for preprocessing</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>readers</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="macro_data.readers.default_readers.DataReaders" href="../readers/default_readers.html#macro_data.readers.default_readers.DataReaders">DataReaders</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Data source readers</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>scale</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Scaling factor for bank numbers</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>banks_data_configuration</code>
+            </td>
+            <td>
+                  <code><span title="macro_data.configuration.dataconfiguration.BanksDataConfiguration">BanksDataConfiguration</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Preprocessing configuration</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>quarter</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reference quarter for preprocessing</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>inflation_data</code>
+            </td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Historical inflation data</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>exchange_rate_from_eur</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Exchange rate for conversion. Defaults to 1.0.</p>
+              </div>
+            </td>
+            <td>
+                  <code>1.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>proxy_eu_country</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="macro_data.configuration.countries.Country" href="../../country.html#macro_data.configuration.countries.Country">Country</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>EU country for proxy data. Defaults to None.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>DefaultSyntheticBanks</code></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks" href="#macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks">DefaultSyntheticBanks</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Container with preprocessed banking system data</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.from_readers_compustat" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_readers_compustat</span><span class="p">(</span><span class="n">country_name</span><span class="p">:</span> <span class="n">Country</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">readers</span><span class="p">:</span> <span class="n">DataReaders</span><span class="p">,</span> <span class="n">single_bank</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">scale</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quarter</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">inflation_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">exchange_rate_from_eur</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">proxy_eu_country</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Country</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DefaultSyntheticBanks</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.from_readers_compustat" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Create a preprocessed banking system data container using Compustat data.</p>
+<p>This method preprocesses detailed Compustat data to prepare:
+1. Historical balance sheet information
+2. Actual deposit and loan distributions
+3. Historical equity levels and ratios</p>
+<p>The preprocessing steps:
+1. Fetch and filter relevant Compustat bank data
+2. Sample and scale data appropriately
+3. Align with country-level totals
+4. Estimate initial parameters</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>country_name</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="macro_data.configuration.countries.Country" href="../../country.html#macro_data.configuration.countries.Country">Country</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Country to preprocess data for</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>year</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reference year for preprocessing</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>readers</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="macro_data.readers.default_readers.DataReaders" href="../readers/default_readers.html#macro_data.readers.default_readers.DataReaders">DataReaders</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Data source readers</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>single_bank</code>
+            </td>
+            <td>
+                  <code>bool</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to preprocess data for a single bank</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>scale</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Scaling factor for bank numbers</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>quarter</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reference quarter for preprocessing</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>inflation_data</code>
+            </td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Historical inflation data</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>exchange_rate_from_eur</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Exchange rate for conversion. Defaults to 1.0.</p>
+              </div>
+            </td>
+            <td>
+                  <code>1.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>proxy_eu_country</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="macro_data.configuration.countries.Country" href="../../country.html#macro_data.configuration.countries.Country">Country</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>EU country for proxy data. Defaults to None.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>DefaultSyntheticBanks</code></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks" href="#macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks">DefaultSyntheticBanks</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Container with preprocessed banking system data</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.initialise_rates" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">initialise_rates</span><span class="p">(</span><span class="n">country_name</span><span class="p">,</span> <span class="n">inflation_data</span><span class="p">,</span> <span class="n">proxy_eu_country</span><span class="p">,</span> <span class="n">quarter</span><span class="p">,</span> <span class="n">readers</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.initialise_rates" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Preprocess and estimate initial interest rate parameters.</p>
+<p>This method:
+1. Collects historical rate data
+2. Estimates rate adjustment parameters
+3. Calculates initial rates for different products</p>
+<p>The preprocessing includes parameter estimation for:
+- Firm loan rates
+- Consumer loan rates
+- Mortgage rates
+- Default parameters when data is insufficient</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>country_name</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="macro_data.configuration.countries.Country" href="../../country.html#macro_data.configuration.countries.Country">Country</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Country to process data for</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>inflation_data</code>
+            </td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Historical inflation data</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>proxy_eu_country</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="macro_data.configuration.countries.Country" href="../../country.html#macro_data.configuration.countries.Country">Country</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>EU country for proxy data</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>quarter</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reference quarter</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>readers</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="macro_data.readers.default_readers.DataReaders" href="../readers/default_readers.html#macro_data.readers.default_readers.DataReaders">DataReaders</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Data source readers</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>year</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reference year</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>tuple</code></td>            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Nine estimated parameters:
+- firm_ect: Estimated error correction for firm rates
+- firm_passthrough: Estimated adjustment for firm rates
+- firm_rate: Initial firm rate
+- hh_consumption_ect: Estimated consumer rate ECT
+- hh_consumption_passthrough: Estimated consumer rate adjustment
+- hh_consumption_rate: Initial consumer rate
+- hh_mortgage_ect: Estimated mortgage ECT
+- hh_mortgage_passthrough: Estimated mortgage adjustment
+- hh_mortgage_rate: Initial mortgage rate</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.set_bank_equity" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_bank_equity</span><span class="p">(</span><span class="n">bank_equity</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.set_bank_equity" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the equity level for each bank.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>bank_equity</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Equity amount to set for each bank</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.set_deposits_from_firms" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_deposits_from_firms</span><span class="p">(</span><span class="n">firm_deposits</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.set_deposits_from_firms" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the initial deposits from firms for each bank.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_deposits</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of deposit amounts by firm</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.set_deposits_from_households" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_deposits_from_households</span><span class="p">(</span><span class="n">household_deposits</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.set_deposits_from_households" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the initial deposits from households for each bank.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>household_deposits</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of deposit amounts by household</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.set_loans_to_firms" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_loans_to_firms</span><span class="p">(</span><span class="n">firm_debt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.set_loans_to_firms" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the initial loans to firms for each bank.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_debt</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of debt amounts by firm</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.set_loans_to_households" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_loans_to_households</span><span class="p">(</span><span class="n">household_mortgage_debt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">household_other_debt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.set_loans_to_households" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the initial loans to households for each bank.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>household_mortgage_debt</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of mortgage debt by household</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>household_other_debt</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of non-mortgage debt by household</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.set_bank_deposits" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_bank_deposits</span><span class="p">(</span><span class="n">firm_deposits</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">firm_debt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">household_deposits</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">household_debt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+<a href="#macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.set_bank_deposits" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the total deposits for each bank.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_deposits</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of firm deposit amounts</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>firm_debt</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of firm debt amounts</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>household_deposits</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of household deposit amounts</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>household_debt</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of household debt amounts</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "toc.integrate"], "search": "../../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.83f73b43.min.js"></script>
+      
+        <script src="../../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
