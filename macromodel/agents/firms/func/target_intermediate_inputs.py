@@ -312,9 +312,9 @@ class BundleWeightedTargetIntermediateInputsSetter(FinancialTargetIntermediateIn
 
         # Calculate unnormalized weights
         # exp(-beta / avg_price * price[j] / productivity_matrix[i,j])
-        unnormalized_weights = np.exp(
-            -self.beta / avg_price * (previous_good_prices + extra_taxes) / intermediate_inputs_productivity_matrix
-        )
+        unnormalized_weights = np.exp(-self.beta / avg_price * (previous_good_prices + extra_taxes))
+
+        unnormalized_weights = np.outer(np.ones_like(unnormalized_weights), unnormalized_weights)
 
         # Create bundle matrix C = M*M.transpose() and replace non-zero coefficients with 1
         n_industries = substitution_bundle_matrix.shape[0]
