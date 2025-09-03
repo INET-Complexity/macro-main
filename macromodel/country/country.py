@@ -1182,9 +1182,17 @@ class Country:
         self.individuals.ts.income_histogram.append(get_histogram(self.individuals.ts.current("income"), self.scale))
 
         # E2. HOUSEHOLD INCOME COMPONENTS
+        # Recalculate rental income with final housing market data and overwrite the planned value
+        final_income_rental = self.households.compute_rental_income(
+            housing_data=self.housing_market.states["properties"],
+            income_taxes=self.central_government.states["Income Tax"],
+        )
+        self.households.ts.dicts["income_rental"][-1] = final_income_rental
+        self.households.ts.dicts["total_income_rental"][-1] = [final_income_rental.sum()]
+
         self.households.ts.income_employee.append(
             self.households.compute_employee_income(
-                individual_income=self.individuals.ts.current("income"),
+                individual_income=self.individuals.ts.current("employee_income"),
                 corr_households=self.individuals.states["Corresponding Household ID"],
             )
         )
@@ -1295,6 +1303,7 @@ class Country:
         self.economy.ts.bank_insolvency_rate.append([self.banks.compute_insolvency_rate()])
 
         # G5. GOVERNMENT REVENUE
+        # General government fields
         self.central_government.compute_taxes(
             current_ind_employee_income=self.individuals.ts.current("employee_income"),
             current_total_rent_paid=self.households.ts.current("rent")[
