@@ -39,7 +39,15 @@ class CountryConfiguration(BaseModel):
     assume_zero_noise: bool = False
 
     @classmethod
-    def n_industry_default(cls, n_industries: int, bundles: Optional[list[list[int]]] = None):
-        firms_configuration = FirmsConfiguration.n_industries_default(n_industries=n_industries, bundles=bundles)
+    def n_industry_default(
+        cls,
+        n_industries: int,
+        firms_bundles: Optional[list[list[int]]] = None,
+        household_bundles: Optional[list[list[int]]] = None,
+    ):
+        firms_configuration = FirmsConfiguration.n_industries_default(n_industries=n_industries, bundles=firms_bundles)
+        households_configuration = HouseholdsConfiguration.n_industries_default(
+            n_industries=n_industries, bundles=household_bundles
+        )
         # all other variables are default
-        return cls(firms=firms_configuration)
+        return cls(firms=firms_configuration, households=households_configuration)
