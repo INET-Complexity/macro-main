@@ -58,7 +58,7 @@ class ProductionSetter(ABC):
         self,
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
-        intermediate_inputs_utilisation_rate: float,
+        intermediate_inputs_utilisation_rate: float | np.ndarray,
         goods_criticality_matrix: np.ndarray,
         substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
@@ -93,7 +93,7 @@ class ProductionSetter(ABC):
         self,
         capital_inputs_productivity_matrix: np.ndarray,
         capital_inputs_stock: np.ndarray,
-        capital_inputs_utilisation_rate: float,
+        capital_inputs_utilisation_rate: float | np.ndarray,
         goods_criticality_matrix: np.ndarray,
         substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
@@ -227,7 +227,7 @@ class PureLeontief(ProductionSetter):
         self,
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
-        intermediate_inputs_utilisation_rate: float,
+        intermediate_inputs_utilisation_rate: float | np.ndarray,
         goods_criticality_matrix: np.ndarray,
         substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
@@ -251,18 +251,25 @@ class PureLeontief(ProductionSetter):
         Returns:
             np.ndarray: Production possible with intermediate inputs
         """
-        return np.multiply(
+
+        output_mask = np.all((intermediate_inputs_productivity_matrix == np.inf), axis=1)
+
+        limiting = np.multiply(
             intermediate_inputs_productivity_matrix,
             intermediate_inputs_stock,
             out=np.full(intermediate_inputs_productivity_matrix.shape, np.inf),
             where=intermediate_inputs_productivity_matrix != np.inf,
         ).min(axis=1)
 
+        limiting[output_mask] = 0
+
+        return limiting
+
     def compute_limiting_capital_inputs_stock(
         self,
         capital_inputs_productivity_matrix: np.ndarray,
         capital_inputs_stock: np.ndarray,
-        capital_inputs_utilisation_rate: float,
+        capital_inputs_utilisation_rate: float | np.ndarray,
         goods_criticality_matrix: np.ndarray,
         substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
@@ -370,7 +377,7 @@ class CriticalAndImportantLeontief(ProductionSetter):
         self,
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
-        intermediate_inputs_utilisation_rate: float,
+        intermediate_inputs_utilisation_rate: float | np.ndarray,
         goods_criticality_matrix: np.ndarray,
         substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
@@ -398,7 +405,7 @@ class CriticalAndImportantLeontief(ProductionSetter):
         self,
         capital_inputs_productivity_matrix: np.ndarray,
         capital_inputs_stock: np.ndarray,
-        capital_inputs_utilisation_rate: float,
+        capital_inputs_utilisation_rate: float | np.ndarray,
         goods_criticality_matrix: np.ndarray,
         substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
@@ -490,7 +497,7 @@ class CriticalLeontief(ProductionSetter):
         self,
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
-        intermediate_inputs_utilisation_rate: float,
+        intermediate_inputs_utilisation_rate: float | np.ndarray,
         goods_criticality_matrix: np.ndarray,
         substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
@@ -518,7 +525,7 @@ class CriticalLeontief(ProductionSetter):
         self,
         capital_inputs_productivity_matrix: np.ndarray,
         capital_inputs_stock: np.ndarray,
-        capital_inputs_utilisation_rate: float,
+        capital_inputs_utilisation_rate: float | np.ndarray,
         goods_criticality_matrix: np.ndarray,
         substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
@@ -610,7 +617,7 @@ class Linear(ProductionSetter):
         self,
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
-        intermediate_inputs_utilisation_rate: float,
+        intermediate_inputs_utilisation_rate: float | np.ndarray,
         goods_criticality_matrix: np.ndarray,
         substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
@@ -636,7 +643,7 @@ class Linear(ProductionSetter):
         self,
         capital_inputs_productivity_matrix: np.ndarray,
         capital_inputs_stock: np.ndarray,
-        capital_inputs_utilisation_rate: float,
+        capital_inputs_utilisation_rate: float | np.ndarray,
         goods_criticality_matrix: np.ndarray,
         substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
@@ -723,7 +730,7 @@ class UnconstrainedProduction(ProductionSetter):
         self,
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
-        intermediate_inputs_utilisation_rate: float,
+        intermediate_inputs_utilisation_rate: float | np.ndarray,
         goods_criticality_matrix: np.ndarray,
         substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
@@ -746,7 +753,7 @@ class UnconstrainedProduction(ProductionSetter):
         self,
         capital_inputs_productivity_matrix: np.ndarray,
         capital_inputs_stock: np.ndarray,
-        capital_inputs_utilisation_rate: float,
+        capital_inputs_utilisation_rate: float | np.ndarray,
         goods_criticality_matrix: np.ndarray,
         substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
@@ -824,7 +831,7 @@ class BundledLeontief(ProductionSetter):
         self,
         intermediate_inputs_productivity_matrix: np.ndarray,
         intermediate_inputs_stock: np.ndarray,
-        intermediate_inputs_utilisation_rate: float,
+        intermediate_inputs_utilisation_rate: float | np.ndarray,
         goods_criticality_matrix: np.ndarray,
         substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
@@ -862,14 +869,19 @@ class BundledLeontief(ProductionSetter):
         # Note: substitution_bundle_matrix has shape (n_goods, n_bundles)
         bundle_productivity = np.matmul(effective_inputs, substitution_bundle_matrix)
 
+        # industries with rows at infty are non-existent
+        output_mask = np.all((intermediate_inputs_productivity_matrix == np.inf), axis=1)
+        limiting = bundle_productivity.min(axis=1)
+        limiting[output_mask] = 0
+
         # Take the minimum over bundles to get the limiting constraint
-        return bundle_productivity.min(axis=1)
+        return limiting
 
     def compute_limiting_capital_inputs_stock(
         self,
         capital_inputs_productivity_matrix: np.ndarray,
         capital_inputs_stock: np.ndarray,
-        capital_inputs_utilisation_rate: float,
+        capital_inputs_utilisation_rate: float | np.ndarray,
         goods_criticality_matrix: np.ndarray,
         substitution_bundle_matrix: np.ndarray,
     ) -> np.ndarray:
