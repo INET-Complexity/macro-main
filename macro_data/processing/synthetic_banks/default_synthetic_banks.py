@@ -135,7 +135,6 @@ class DefaultSyntheticBanks(SyntheticBanks):
             hh_mortgage_ect=hh_mortgage_ect,
             hh_mortgage_rate=hh_mortgage_rate,
         )
-        self.proxy_country = proxy_country
 
     @classmethod
     def from_readers(
@@ -356,7 +355,6 @@ class DefaultSyntheticBanks(SyntheticBanks):
             hh_mortgage_ect=hh_mortgage_ect,
             hh_mortgage_rate=hh_mortgage_rate,
             quarter=quarter,
-            proxy_country=proxy_eu_country,
         )
 
     @classmethod
