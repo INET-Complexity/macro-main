@@ -235,11 +235,8 @@ class DataReaders:
 
         goods_criticality = GoodsCriticalityReader.from_csv(path=datapaths.goods_criticality_path)
         exchange_rates = ExchangeRatesReader.from_csv(path=datapaths.exchange_rates_path)
-       
-        eurostat = EuroStatReader(
-            path=datapaths.eurostat_path, 
-            country_code_path=datapaths.country_codes_path
-        )
+
+        eurostat = EuroStatReader(path=datapaths.eurostat_path, country_code_path=datapaths.country_codes_path)
 
         eu_only = [country for country in country_names if country.is_eu_country]
         proxy_eu = list(proxy_country_dict.values())
@@ -250,7 +247,7 @@ class DataReaders:
             if country_names_ is None:
                 country_names_ = country_names
             return get_investment_fractions(country_names_, eurostat, proxy_country_dict, year)
-            
+
         icio = {
             year: ICIOReader.agg_from_csv(
                 path=datapaths.icio_paths[year],
@@ -270,8 +267,10 @@ class DataReaders:
         total_output = {}
         for country in country_names:
             total_output[country] = icio[simulation_year].get_total_output(country).sum()
-      
-        eurostat = EuroStatReader(path=datapaths.eurostat_path, country_code_path=datapaths.country_codes_path, total_output=total_output)
+
+        eurostat = EuroStatReader(
+            path=datapaths.eurostat_path, country_code_path=datapaths.country_codes_path, total_output=total_output
+        )
 
         proxified = [country if country.is_eu_country else proxy_country_dict[country] for country in country_names]
 
