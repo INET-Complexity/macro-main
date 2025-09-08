@@ -134,7 +134,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
             hh_mortgage_passthrough=hh_mortgage_passthrough,
             hh_mortgage_ect=hh_mortgage_ect,
             hh_mortgage_rate=hh_mortgage_rate,
-            )
+        )
         self.proxy_country = proxy_country
 
     @classmethod
@@ -197,7 +197,10 @@ class DefaultSyntheticBanks(SyntheticBanks):
             bank_branches = readers.oecd_econ.read_number_of_banks(country=country_name, year=year)
             number_of_banks = max(1, int(bank_branches / scale))
 
-        bank_equity = readers.eurostat.get_total_bank_equity(country=country_name, year=year, proxy_country=proxy_eu_country) * exchange_rate_from_eur
+        bank_equity = (
+            readers.eurostat.get_total_bank_equity(country=country_name, year=year, proxy_country=proxy_eu_country)
+            * exchange_rate_from_eur
+        )
         bank_data = pd.DataFrame({"Equity": np.ones(number_of_banks) * bank_equity / number_of_banks})
         bank_data["Deposits from Firms"] = np.ones(number_of_banks)
         bank_data["Deposits from Households"] = np.ones(number_of_banks)
@@ -302,7 +305,9 @@ class DefaultSyntheticBanks(SyntheticBanks):
 
         compustat_selection = compustat_data.iloc[banks_inds]
 
-        total_bank_equity = readers.eurostat.get_total_bank_equity(country=country_name, year=year, proxy_country=proxy_eu_country)
+        total_bank_equity = readers.eurostat.get_total_bank_equity(
+            country=country_name, year=year, proxy_country=proxy_eu_country
+        )
 
         bank_data = pd.DataFrame(
             {
