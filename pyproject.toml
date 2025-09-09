@@ -60,9 +60,12 @@ docs = [
 ]
 
 [tool.setuptools]
-packages = ["macro_data", "macromodel", "macrocalib"]
 include-package-data = true
 package-data = {"*" = ["*.yaml"]}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["macro_data*", "macromodel*", "macrocalib*"]
 
 [tool.black]
 line-length = 120
