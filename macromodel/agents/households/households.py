@@ -909,7 +909,10 @@ class Households(Agent):
         self.states["Rent paid to Government"] = social_housing_rent.sum()
 
         # Households renting
-        ind_renting = self.states["Tenure Status of the Main Residence"] == 3
+        ind_renting = np.all([
+            self.states["Tenure Status of the Main Residence"] == 3, 
+            self.states["Corresponding Inhabited House ID"] != -1
+        ], axis=0)
         rent = housing_data.loc[
             self.states["Corresponding Inhabited House ID"][ind_renting],
             "Rent",
@@ -917,7 +920,10 @@ class Households(Agent):
         rent_by_household[ind_renting] = rent
 
         # Households owning
-        ind_owning = np.isin(self.states["Tenure Status of the Main Residence"], [1, 2, 4])
+        ind_owning = np.all([
+            np.isin(self.states["Tenure Status of the Main Residence"], [1, 2, 4]), 
+            self.states["Corresponding Inhabited House ID"] != -1
+        ], axis=0)
         rent = housing_data.loc[
             self.states["Corresponding Inhabited House ID"][ind_owning],
             "Rent",
@@ -1222,7 +1228,10 @@ class Households(Agent):
             np.ndarray: Main residence value by household
         """
         wealth_of_the_main_residence = np.zeros(self.ts.current("n_households"))
-        ind_owning_mhr = np.isin(self.states["Tenure Status of the Main Residence"], [1, 2, 4])
+        ind_owning_mhr = np.all([
+            np.isin(self.states["Tenure Status of the Main Residence"], [1, 2, 4]), 
+            self.states["Corresponding Inhabited House ID"] != -1
+        ], axis=0)
         wealth_of_the_main_residence[ind_owning_mhr] = housing_data.loc[
             self.states["Corresponding Inhabited House ID"][ind_owning_mhr],
             "Value",
