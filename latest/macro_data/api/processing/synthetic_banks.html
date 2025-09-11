@@ -4091,6 +4091,17 @@ these preprocessed parameters.</p>
               </div>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.proxy_country">proxy_country</span></code></td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="macro_data.configuration.countries.Country" href="../../country.html#macro_data.configuration.countries.Country">Country</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Country to use as proxy when missing data</p>
+              </div>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -4119,7 +4130,7 @@ these preprocessed parameters.</p>
 
 
 <h5 id="macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.__init__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">country_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">number_of_banks</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">bank_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">quarter</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">firm_passthrough</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">firm_ect</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">firm_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_consumption_passthrough</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_consumption_ect</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_consumption_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_mortgage_passthrough</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_mortgage_ect</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_mortgage_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">country_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">number_of_banks</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">bank_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">quarter</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">firm_passthrough</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">firm_ect</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">firm_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_consumption_passthrough</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_consumption_ect</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_consumption_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_mortgage_passthrough</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_mortgage_ect</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_mortgage_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">proxy_country</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Country</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span></code>
 
 <a href="#macro_data.processing.synthetic_banks.default_synthetic_banks.DefaultSyntheticBanks.__init__" class="headerlink" title="Permanent link">&para;</a></h5>
 
@@ -4362,6 +4373,22 @@ these preprocessed parameters.</p>
             </td>
             <td>
                 <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>proxy_country</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="macro_data.configuration.countries.Country" href="../../country.html#macro_data.configuration.countries.Country">Country</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Country to use as proxy when missing data</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>
