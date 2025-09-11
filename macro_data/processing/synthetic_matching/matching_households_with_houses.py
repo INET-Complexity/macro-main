@@ -150,7 +150,7 @@ def set_housing_df(
     rescale_factor = total_imputed_rent / housing_df.loc[owned_houses, "Rent"].sum()
     housing_df.loc[owned_houses, "Rent"] *= rescale_factor
 
-    owner_indices = synthetic_population.household_data["Tenure Status of the Main Residence"] == 1
+    owner_indices = np.isin(synthetic_population.household_data["Tenure Status of the Main Residence"], [1, 2, 4])
     synthetic_population.household_data.loc[owner_indices, "Rent Imputed"] = housing_df.loc[owned_houses, "Rent"].values
 
     match_renters_to_properties(
@@ -161,20 +161,17 @@ def set_housing_df(
 
 
 def create_owners_df(synthetic_population: SyntheticPopulation) -> pd.DataFrame:
-    """Create harmonized dataset of owner-occupied properties.
+    """Create dataframe of owner-occupied properties.
 
-    This function reconciles ownership data by:
-    1. Matching survey responses with property records
-    2. Harmonizing property identifiers
-    3. Reconciling property values
-    4. Validating ownership relationships
-
-    The process ensures:
-    - Ownership records match across sources
-    - Property values are consistent
-    - Relationships are properly recorded
-    - Data is properly validated
-
+    This function creates a dataframe of owner-occupied properties and their households by:
+    1. Fetching a list of all households in HFCS that own, part own or have free use of their home
+    2. Creates unique IDs for each of their houses
+    3. Creates separate columns for owner ID and occupant ID
+    4. Uses corresponding household ID from HFCS to fill owner and occupant ID columns
+    
+    The simplifying assumption is that households that part own or have free use of their property
+    will one day own their property outright (e.g. through rent-to-buy or inheritance).
+    
     Args:
         synthetic_population (SyntheticPopulation): Household survey data
             with tenure information
@@ -188,8 +185,8 @@ def create_owners_df(synthetic_population: SyntheticPopulation) -> pd.DataFrame:
             - Value: Harmonized property value
             - Rent: NaN (filled later with imputed rent)
     """
-    # Handle households owning their house
-    households_owning = synthetic_population.household_data["Tenure Status of the Main Residence"] == 1
+    # List of households that own, part own or have free use of their home
+    households_owning = np.isin(synthetic_population.household_data["Tenure Status of the Main Residence"], [1, 2, 4])
     owners_df = pd.DataFrame(index=range(households_owning.sum()))
     owners_df["House ID"] = owners_df.index
 
@@ -220,13 +217,14 @@ def create_rental_df(
     rental_income: np.ndarray,
     rental_income_taxes: float,
 ) -> pd.DataFrame:
-    """Create harmonized dataset of rental properties.
+    """Create dataframe of rented properties.
 
-    This function reconciles rental property data by:
-    1. Harmonizing property records with landlord data
-    2. Reconciling property values across sources
-    3. Adjusting rental income for consistency
-    4. Validating ownership relationships
+    This function created a dataframe of rented properties, their owners and their occupants by:
+    1. Creating a dataframe with one row per rented property
+    2. Assigning unique IDs to each property
+    3. Assigning landlord IDs to each property
+    4. Assigning rental income to each property
+    5. Assigning property values to each property
 
     The process ensures:
     - Property holdings match across sources
@@ -286,19 +284,18 @@ def create_rental_df(
 
 
 def housing_info_from_population(rental_income_taxes: float, synthetic_population: SyntheticPopulation):
-    """Extract and harmonize housing market information from population data.
+    """Create landlord IDs and number of properties per landlord.
 
-    This function reconciles housing data by:
-    1. Validating rental supply and demand
-    2. Harmonizing property holdings
-    3. Adjusting rental income for consistency
-    4. Processing social housing allocation
+    This function estimates the number of properties per landlord and their IDs by:
+    1. Counting up all the renters using HFCS data on tenure status
+    2. Counting up all the non-primary residence properties owned by HFCS respondents
+    3. If more renters than properties, the additional renters are assumed to be social renters (using function set_social_housing_renters)
+    4. Rescale rent paid to match rent received minus taxes
+    5. Fetch owner IDs from HFCS and assign to houses as landlord IDs
 
-    The process ensures:
-    - Supply and demand are reconciled
-    - Social housing data is consistent
-    - Tax effects are properly handled
-    - Property allocations match
+    The assumes that all non-primary residence properties are rented out rather than used as holiday homes, short-term lets, etc.
+    
+    In future this should be revised to first fetch number of social tenants in each country from another data source, allocate remaining renters to houses, then assume remaining properties are second homes etc.
 
     Args:
         rental_income_taxes (float): Tax rate on rental income
@@ -338,20 +335,18 @@ def set_social_housing_renters(
     num_renters: int,
     synthetic_population: SyntheticPopulation,
 ):
-    """Harmonize social housing data with rental market information.
+    """Social housing allocation.
 
-    This function reconciles social housing data by:
-    1. Identifying eligible households from survey data
-    2. Matching with social housing records
-    3. Adjusting rental rates for consistency
-    4. Updating tenure status records
+    If there are more renters than surplus properties owned by owner-occupying households,
+    this function defines them as social renters:
+    1. Count how many renters there are
+    2. Count whether there are more renters than surplus properties
+    3. Assign those excess renters to social housing
+    4. Update those households' tenure status records
+    5. Update the rent they pay to the social housing rent level
 
-    The process ensures:
-    - Social housing allocations are consistent
-    - Rental rates match policy
-    - Tenure status is properly recorded
-    - Data is properly validated
-
+    This is a placeholder simplification pending further work to incorporate social housing data.
+    
     Args:
         num_other_properties_owned (int): Total private rental properties
         num_renters (int): Total number of renters
