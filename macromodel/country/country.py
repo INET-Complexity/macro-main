@@ -1373,8 +1373,8 @@ class Country:
             operating_surplus=self.firms.ts.current("gross_operating_surplus_mixed_income").sum(),
             wages=self.firms.ts.current("total_wage").sum(),
             rent_received=self.economy.ts.current("total_real_rent_rec")[0]
-            + self.central_government.ts.current("total_rent_received")[0]
             + self.central_government.ts.current("taxes_rental_income")[0],
+            central_government_rent_received=self.central_government.ts.current("total_rent_received")[0],
             running_multiple_countries=self.running_multiple_countries,
         )
 
@@ -1510,6 +1510,8 @@ class Country:
             "+Gross_Fixed_Capital_Formation": self.economy.ts.get_aggregate("total_gross_fixed_capital_formation"),
             "+Exports": self.economy.ts.get_aggregate("total_exports"),
             "-Imports": self.economy.ts.get_aggregate("total_imports"),
+            "+Rent_Paid": self.economy.ts.get_aggregate("total_real_rent_paid"),
+            "+Rent_Imputed": self.economy.ts.get_aggregate("total_imp_rent_paid"),
             
             # GDP Income Approach Components
             "GDP_Income": self.economy.ts.get_aggregate("gdp_income"),
