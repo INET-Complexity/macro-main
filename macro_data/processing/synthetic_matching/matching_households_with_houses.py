@@ -168,10 +168,10 @@ def create_owners_df(synthetic_population: SyntheticPopulation) -> pd.DataFrame:
     2. Creates unique IDs for each of their houses
     3. Creates separate columns for owner ID and occupant ID
     4. Uses corresponding household ID from HFCS to fill owner and occupant ID columns
-    
+
     The simplifying assumption is that households that part own or have free use of their property
     will one day own their property outright (e.g. through rent-to-buy or inheritance).
-    
+
     Args:
         synthetic_population (SyntheticPopulation): Household survey data
             with tenure information
@@ -294,7 +294,7 @@ def housing_info_from_population(rental_income_taxes: float, synthetic_populatio
     5. Fetch owner IDs from HFCS and assign to houses as landlord IDs
 
     The assumes that all non-primary residence properties are rented out rather than used as holiday homes, short-term lets, etc.
-    
+
     In future this should be revised to first fetch number of social tenants in each country from another data source, allocate remaining renters to houses, then assume remaining properties are second homes etc.
 
     Args:
@@ -346,7 +346,7 @@ def set_social_housing_renters(
     5. Update the rent they pay to the social housing rent level
 
     This is a placeholder simplification pending further work to incorporate social housing data.
-    
+
     Args:
         num_other_properties_owned (int): Total private rental properties
         num_renters (int): Total number of renters
