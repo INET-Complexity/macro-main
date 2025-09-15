@@ -2852,7 +2852,7 @@ to generate estimates within specified bounds.</p>
 
 
 <h5 id="macromodel.economy.economy.Economy.compute_gdp" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">compute_gdp</span><span class="p">(</span><span class="n">total_output</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sectoral_sales</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sectoral_intermediate_consumption</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">taxes_on_products</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">taxes_on_production</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">rent_paid</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">rent_imputed</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_consumption</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">gov_consumption</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">change_in_inventories</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">gross_fixed_capital_formation</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">exports</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">imports</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">operating_surplus</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">wages</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">rent_received</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">running_multiple_countries</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">always_adjust</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+            <code class="highlight language-python"><span class="n">compute_gdp</span><span class="p">(</span><span class="n">total_output</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sectoral_sales</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sectoral_intermediate_consumption</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">taxes_on_products</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">taxes_on_production</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">rent_paid</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">rent_imputed</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hh_consumption</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">gov_consumption</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">change_in_inventories</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">gross_fixed_capital_formation</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">exports</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">imports</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">operating_surplus</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">wages</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">rent_received</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">central_government_rent_received</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">running_multiple_countries</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">always_adjust</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
 
 <a href="#macromodel.economy.economy.Economy.compute_gdp" class="headerlink" title="Permanent link">&para;</a></h5>
 
@@ -3134,6 +3134,22 @@ adjustments for multi-country scenarios.</p>
             <td>
               <div class="doc-md-description">
                 <p>Rental income received</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>central_government_rent_received</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Central government rental income received</p>
               </div>
             </td>
             <td>
