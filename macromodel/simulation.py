@@ -432,6 +432,17 @@ class Simulation:
         """
         return self.countries[country].shallow_output()
 
+    def get_country_gdp_components_df(self, country: str):
+        """Get detailed GDP breakdown for a specific country.
+
+        Args:
+            country (str): Country code to get data for
+
+        Returns:
+            pd.DataFrame: DataFrame containing detailed GDP breakdown for the country
+        """
+        return self.countries[country].gdp_components_df
+
 
 def check_compatibility(
     country_data_configuration: CountryDataConfiguration, country_sim_configuration: CountryConfiguration
