@@ -431,7 +431,7 @@ class Simulation:
             pd.DataFrame: DataFrame containing summary statistics for the country
         """
         return self.countries[country].shallow_output()
-    
+
     def get_country_gdp_debug_output(self, country: str):
         """Get detailed GDP breakdown for a specific country.
 

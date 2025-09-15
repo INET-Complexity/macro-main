@@ -178,10 +178,10 @@ def create_owners_df(synthetic_population: SyntheticPopulation) -> pd.DataFrame:
     2. Creates unique IDs for each of their houses
     3. Creates separate columns for owner ID and occupant ID
     4. Uses corresponding household ID from HFCS to fill owner and occupant ID columns
-   
+
     The simplifying assumption is that households that part own or have free use of their property
     will one day own their property outright (e.g. through rent-to-buy or inheritance).
-    
+
     Args:
         synthetic_population (SyntheticPopulation): Household survey data
             with tenure information

@@ -1501,7 +1501,6 @@ class Country:
             "-Taxes_on_Production": self.central_government.ts.get_aggregate("taxes_production"),
             "+Total_Real_Rent_Paid": self.economy.ts.get_aggregate("total_real_rent_paid"),
             "+Total_Imputed_Rent_Paid": self.economy.ts.get_aggregate("total_imp_rent_paid"),
-            
             # GDP Expenditure Approach Components
             "GDP_Expenditure": self.economy.ts.get_aggregate("gdp_expenditure"),
             "+Household_Consumption": self.households.ts.get_aggregate("total_consumption"),
@@ -1512,7 +1511,6 @@ class Country:
             "-Imports": self.economy.ts.get_aggregate("total_imports"),
             "+Rent_Paid": self.economy.ts.get_aggregate("total_real_rent_paid"),
             "+Rent_Imputed": self.economy.ts.get_aggregate("total_imp_rent_paid"),
-            
             # GDP Income Approach Components
             "GDP_Income": self.economy.ts.get_aggregate("gdp_income"),
             "+Operating_Surplus": self.firms.ts.get_aggregate("gross_operating_surplus_mixed_income"),
@@ -1521,14 +1519,15 @@ class Country:
             "+Central_Government_Rent_Received": self.central_government.ts.get_aggregate("total_rent_received"),
             "+Central_Government_Rental_Taxes": self.central_government.ts.get_aggregate("taxes_rental_income"),
             "+Central_Government_Product_Taxes": self.central_government.ts.get_aggregate("taxes_on_products"),
-
             # Additional Value Added Components
             "Total_Gross_Value_Added": self.economy.ts.get_aggregate("total_gross_value_added"),
             "Total_Gross_Value_Added_A": self.economy.ts.get_aggregate("total_gross_value_added_a"),
             "Total_Gross_Value_Added_BCDE": self.economy.ts.get_aggregate("total_gross_value_added_bcde"),
             "Total_Gross_Value_Added_C": self.economy.ts.get_aggregate("total_gross_value_added_c"),
             "Total_Gross_Value_Added_F": self.economy.ts.get_aggregate("total_gross_value_added_f"),
-            "Total_Gross_Value_Added_GHIJKLMNOPQRSTU": self.economy.ts.get_aggregate("total_gross_value_added_ghijklmnopqrstu"),
+            "Total_Gross_Value_Added_GHIJKLMNOPQRSTU": self.economy.ts.get_aggregate(
+                "total_gross_value_added_ghijklmnopqrstu"
+            ),
             "Total_Gross_Value_Added_GHI": self.economy.ts.get_aggregate("total_gross_value_added_ghi"),
             "Total_Gross_Value_Added_J": self.economy.ts.get_aggregate("total_gross_value_added_j"),
             "Total_Gross_Value_Added_K": self.economy.ts.get_aggregate("total_gross_value_added_k"),
