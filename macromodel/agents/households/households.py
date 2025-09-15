@@ -913,6 +913,7 @@ class Households(Agent):
             self.states["Tenure Status of the Main Residence"] == 3, 
             self.states["Corresponding Inhabited House ID"] != -1
         ], axis=0)
+
         rent = housing_data.loc[
             self.states["Corresponding Inhabited House ID"][ind_renting],
             "Rent",
@@ -924,6 +925,7 @@ class Households(Agent):
             np.isin(self.states["Tenure Status of the Main Residence"], [1, 2, 4]), 
             self.states["Corresponding Inhabited House ID"] != -1
         ], axis=0)
+
         rent = housing_data.loc[
             self.states["Corresponding Inhabited House ID"][ind_owning],
             "Rent",

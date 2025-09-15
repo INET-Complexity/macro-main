@@ -34,9 +34,9 @@ class TestSyntheticHousingMarket:
     def test__create(
         self,
         readers,
-    ):
-        ...
-        
+    ): ...
+
+      
     def test_household_matching(
         self,
         readers,
