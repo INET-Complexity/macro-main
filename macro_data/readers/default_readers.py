@@ -235,21 +235,8 @@ class DataReaders:
 
         goods_criticality = GoodsCriticalityReader.from_csv(path=datapaths.goods_criticality_path)
         exchange_rates = ExchangeRatesReader.from_csv(path=datapaths.exchange_rates_path)
+
         eurostat = EuroStatReader(path=datapaths.eurostat_path, country_code_path=datapaths.country_codes_path)
-
-        proxified = [country if country.is_eu_country else proxy_country_dict[country] for country in country_names]
-
-        hfcs = {
-            proxy_country: HFCSReader.from_csv(
-                country_name=proxy_country,
-                country_name_short=proxy_country.to_two_letter_code(),
-                hfcs_data_path=datapaths.hfcs_path,
-                year=simulation_year,
-                exchange_rates=exchange_rates,
-                num_surveys=1 if force_single_hfcs_survey else 5,
-            )
-            for country_name, proxy_country in zip(country_names, proxified)
-        }
 
         eu_only = [country for country in country_names if country.is_eu_country]
         proxy_eu = list(proxy_country_dict.values())
@@ -275,6 +262,28 @@ class DataReaders:
                 aggregation_type="Aggregate" if aggregate_industries else "All",
             )
             for year in all_years
+        }
+
+        total_output = {}
+        for country in country_names:
+            total_output[country] = icio[simulation_year].get_total_output(country).sum()
+
+        eurostat = EuroStatReader(
+            path=datapaths.eurostat_path, country_code_path=datapaths.country_codes_path, total_output=total_output
+        )
+
+        proxified = [country if country.is_eu_country else proxy_country_dict[country] for country in country_names]
+
+        hfcs = {
+            proxy_country: HFCSReader.from_csv(
+                country_name=proxy_country,
+                country_name_short=proxy_country.to_two_letter_code(),
+                hfcs_data_path=datapaths.hfcs_path,
+                year=simulation_year,
+                exchange_rates=exchange_rates,
+                num_surveys=1 if force_single_hfcs_survey else 5,
+            )
+            for country_name, proxy_country in zip(country_names, proxified)
         }
 
         if use_disagg_can_2014_reader:
