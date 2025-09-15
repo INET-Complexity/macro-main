@@ -1482,10 +1482,11 @@ class Country:
 
         return pd.DataFrame(data_dict)
 
-    def gdp_debug_output(self) -> pd.DataFrame:
+    @property
+    def gdp_components_df(self) -> pd.DataFrame:
         """Create detailed DataFrame of GDP components for debugging.
 
-        This method creates a comprehensive DataFrame containing all three GDP measures
+        This property creates a comprehensive DataFrame containing all three GDP measures
         (output, expenditure, and income approaches) along with their constituent components.
         This is useful for debugging when the three measures don't match.
 
