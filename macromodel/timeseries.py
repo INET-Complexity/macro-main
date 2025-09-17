@@ -14,6 +14,8 @@ import h5py
 import numpy as np
 import pandas as pd
 
+from macromodel.util.inequality import NinetyRatios, compute_gini
+
 
 class TimeSeries:
     """A flexible container for managing multiple time series variables.
@@ -264,3 +266,15 @@ class TimeSeries:
             np.ndarray: Array of sums for each time point
         """
         return np.array(self.historic(name)).sum(axis=1)
+
+    def get_gini(self, name: str):
+        return compute_gini(np.array(self.historic(name)))
+
+    def get_ninetyten(self, name: str):
+        return NinetyRatios(np.array(self.historic(name))).compute_ninetyten()
+
+    def get_ninetyfifty(self, name: str) -> np.ndarray:
+        return NinetyRatios(np.array(self.historic(name))).compute_ninetyfifty()
+
+    def get_palma(self, name: str) -> np.ndarray:
+        return NinetyRatios(np.array(self.historic(name))).compute_palma()

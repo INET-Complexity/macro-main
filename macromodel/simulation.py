@@ -443,6 +443,17 @@ class Simulation:
         """
         return self.countries[country].gdp_components_df
 
+    def get_country_inequality_df(self, country: str):
+        """Get aggregate inequality indicators for a specific country.
+
+        Args:
+            country (str): Country code to get data for
+
+        Returns:
+            pd.DataFrame: DataFrame containing inequality indicators for the country
+        """
+        return self.countries[country].inequality_df
+
 
 def check_compatibility(
     country_data_configuration: CountryDataConfiguration, country_sim_configuration: CountryConfiguration

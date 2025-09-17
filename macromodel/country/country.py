@@ -1541,6 +1541,22 @@ class Country:
         return pd.DataFrame(data_dict)
 
     @property
+    def inequality_df(self) -> pd.DataFrame:
+        """Create DataFrame of aggregate inequality indicators.
+
+        Returns:
+            pd.DataFrame: DataFrame containing aggregate inequality indicators
+        """
+        data_dict = {
+            "Gini_Coefficient (gross income)": self.households.ts.get_gini("income"),
+            "Ninety_Ten_Ratio (gross income)": self.households.ts.get_ninetyten("income"),
+            "Ninety_Fifty_Ratio (gross income)": self.households.ts.get_ninetyfifty("income"),
+            "Palma_Ratio (gross income)": self.households.ts.get_palma("income"),
+        }
+
+        return pd.DataFrame(data_dict)
+
+    @property
     def n_individuals(self) -> int:
         """int: Total number of individual agents in the economy."""
         return self.individuals.n_individuals

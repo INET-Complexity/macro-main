@@ -36,6 +36,7 @@ from macromodel.markets.goods_market.value_type import ValueType
 from macromodel.timeseries import TimeSeries
 from macromodel.util.function_mapping import functions_from_model, update_functions
 from macromodel.util.get_histogram import get_histogram
+from macromodel.util.inequality import NinetyRatios, compute_gini
 from macromodel.util.property_mapping import map_to_enum
 
 
