@@ -1482,63 +1482,6 @@ class Country:
 
         return pd.DataFrame(data_dict)
 
-    def gdp_debug_output(self) -> pd.DataFrame:
-        """Create detailed DataFrame of GDP components for debugging.
-
-        This method creates a comprehensive DataFrame containing all three GDP measures
-        (output, expenditure, and income approaches) along with their constituent components.
-        This is useful for debugging when the three measures don't match.
-
-        Returns:
-            pd.DataFrame: DataFrame containing GDP measures and their components
-        """
-        data_dict = {
-            # GDP Output Approach Components
-            "GDP_Output": self.economy.ts.get_aggregate("gdp_output"),
-            "+Total_Output": self.economy.ts.get_aggregate("total_output"),
-            "-Total_Intermediate_Consumption": self.economy.ts.get_aggregate("total_intermediate_consumption"),
-            "+Taxes_on_Products": self.central_government.ts.get_aggregate("taxes_on_products"),
-            "-Taxes_on_Production": self.central_government.ts.get_aggregate("taxes_production"),
-            "+Total_Real_Rent_Paid": self.economy.ts.get_aggregate("total_real_rent_paid"),
-            "+Total_Imputed_Rent_Paid": self.economy.ts.get_aggregate("total_imp_rent_paid"),
-            # GDP Expenditure Approach Components
-            "GDP_Expenditure": self.economy.ts.get_aggregate("gdp_expenditure"),
-            "+Household_Consumption": self.households.ts.get_aggregate("total_consumption"),
-            "+Government_Consumption": self.government_entities.ts.get_aggregate("total_consumption"),
-            "+Changes_in_Inventories": self.firms.ts.get_aggregate("total_inventory_change"),
-            "+Gross_Fixed_Capital_Formation": self.economy.ts.get_aggregate("total_gross_fixed_capital_formation"),
-            "+Exports": self.economy.ts.get_aggregate("total_exports"),
-            "-Imports": self.economy.ts.get_aggregate("total_imports"),
-            "+Rent_Paid": self.economy.ts.get_aggregate("total_real_rent_paid"),
-            "+Rent_Imputed": self.economy.ts.get_aggregate("total_imp_rent_paid"),
-            # GDP Income Approach Components
-            "GDP_Income": self.economy.ts.get_aggregate("gdp_income"),
-            "+Operating_Surplus": self.firms.ts.get_aggregate("gross_operating_surplus_mixed_income"),
-            "+Wages": self.firms.ts.get_aggregate("total_wage"),
-            "+Rent_Received": self.economy.ts.get_aggregate("total_real_rent_rec"),
-            "+Central_Government_Rent_Received": self.central_government.ts.get_aggregate("total_rent_received"),
-            "+Central_Government_Rental_Taxes": self.central_government.ts.get_aggregate("taxes_rental_income"),
-            "+Central_Government_Product_Taxes": self.central_government.ts.get_aggregate("taxes_on_products"),
-            # Additional Value Added Components
-            "Total_Gross_Value_Added": self.economy.ts.get_aggregate("total_gross_value_added"),
-            "Total_Gross_Value_Added_A": self.economy.ts.get_aggregate("total_gross_value_added_a"),
-            "Total_Gross_Value_Added_BCDE": self.economy.ts.get_aggregate("total_gross_value_added_bcde"),
-            "Total_Gross_Value_Added_C": self.economy.ts.get_aggregate("total_gross_value_added_c"),
-            "Total_Gross_Value_Added_F": self.economy.ts.get_aggregate("total_gross_value_added_f"),
-            "Total_Gross_Value_Added_GHIJKLMNOPQRSTU": self.economy.ts.get_aggregate(
-                "total_gross_value_added_ghijklmnopqrstu"
-            ),
-            "Total_Gross_Value_Added_GHI": self.economy.ts.get_aggregate("total_gross_value_added_ghi"),
-            "Total_Gross_Value_Added_J": self.economy.ts.get_aggregate("total_gross_value_added_j"),
-            "Total_Gross_Value_Added_K": self.economy.ts.get_aggregate("total_gross_value_added_k"),
-            "Total_Gross_Value_Added_L": self.economy.ts.get_aggregate("total_gross_value_added_l"),
-            "Total_Gross_Value_Added_MN": self.economy.ts.get_aggregate("total_gross_value_added_mn"),
-            "Total_Gross_Value_Added_OPQ": self.economy.ts.get_aggregate("total_gross_value_added_opq"),
-            "Total_Gross_Value_Added_RSTU": self.economy.ts.get_aggregate("total_gross_value_added_rstu"),
-        }
-
-        return pd.DataFrame(data_dict)
-
     @property
     def gdp_components_df(self) -> pd.DataFrame:
         """Create detailed DataFrame of GDP components for debugging.
