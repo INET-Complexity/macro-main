@@ -63,6 +63,11 @@ class NoOpTFPGrowth(ProductivityGrowth):
     interface needs to be satisfied.
     """
 
+    def __init__(self, **kwargs):
+        """Initialize NoOpTFPGrowth (ignores all parameters)."""
+        # NoOp doesn't need any parameters, but accept them for compatibility
+        pass
+
     def compute_tfp_growth(
         self,
         current_tfp: np.ndarray,
@@ -96,6 +101,15 @@ class SimpleTFPGrowth(ProductivityGrowth):
     g_TFP = base_growth + φ * (Investment/Production)^α
     """
 
+    def __init__(self, investment_effectiveness: float = 0.1, **kwargs):
+        """Initialize SimpleTFPGrowth with investment effectiveness parameter.
+
+        Args:
+            investment_effectiveness (float): How effectively investment translates to TFP growth
+            **kwargs: Additional parameters (for future extensions)
+        """
+        self.investment_effectiveness = investment_effectiveness
+
     def compute_tfp_growth(
         self,
         current_tfp: np.ndarray,
@@ -123,8 +137,8 @@ class SimpleTFPGrowth(ProductivityGrowth):
         # Add investment-driven growth where production > 0
         positive_production = production > 0
         if np.any(positive_production):
-            # Investment effectiveness parameter (φ) - could be configurable
-            investment_effectiveness = kwargs.get("investment_effectiveness", 0.1)
+            # Use stored investment effectiveness parameter
+            investment_effectiveness = self.investment_effectiveness
 
             # Calculate investment intensity (Investment/Production)
             # Only consider positive investments for productivity growth
@@ -152,6 +166,17 @@ class StochasticTFPGrowth(ProductivityGrowth):
     g_TFP = base_growth + φ * (Investment/Production)^α + ε
     where ε ~ N(0, σ²)
     """
+
+    def __init__(self, investment_effectiveness: float = 0.1, shock_std: float = 0.01, **kwargs):
+        """Initialize StochasticTFPGrowth with parameters.
+
+        Args:
+            investment_effectiveness (float): How effectively investment translates to TFP growth
+            shock_std (float): Standard deviation of productivity shocks
+            **kwargs: Additional parameters (for future extensions)
+        """
+        self.investment_effectiveness = investment_effectiveness
+        self.shock_std = shock_std
 
     def compute_tfp_growth(
         self,
@@ -183,7 +208,7 @@ class StochasticTFPGrowth(ProductivityGrowth):
         # Add investment-driven growth
         positive_production = production > 0
         if np.any(positive_production):
-            investment_effectiveness = kwargs.get("investment_effectiveness", 0.1)
+            investment_effectiveness = self.investment_effectiveness
 
             # Only consider positive investments for productivity growth
             investment_intensity = np.zeros_like(production)
@@ -200,7 +225,7 @@ class StochasticTFPGrowth(ProductivityGrowth):
                 tfp_growth += investment_contribution
 
         # Add stochastic shocks
-        shock_std = kwargs.get("shock_std", 0.01)  # Default 1% standard deviation
+        shock_std = self.shock_std
         if shock_std > 0:
             shocks = np.random.normal(0, shock_std, size=current_tfp.shape)
             tfp_growth += shocks
@@ -214,6 +239,25 @@ class SectoralTFPGrowth(ProductivityGrowth):
     Different sectors can have different base growth rates and investment
     effectiveness parameters.
     """
+
+    def __init__(
+        self,
+        investment_effectiveness: float = 0.1,
+        sector_base_growth: dict = None,
+        sector_effectiveness: dict = None,
+        **kwargs,
+    ):
+        """Initialize SectoralTFPGrowth with parameters.
+
+        Args:
+            investment_effectiveness (float): Default investment effectiveness
+            sector_base_growth (dict): Base growth rate by sector
+            sector_effectiveness (dict): Investment effectiveness by sector
+            **kwargs: Additional parameters (for future extensions)
+        """
+        self.investment_effectiveness = investment_effectiveness
+        self.sector_base_growth = sector_base_growth or {}
+        self.sector_effectiveness = sector_effectiveness or {}
 
     def compute_tfp_growth(
         self,
@@ -242,8 +286,8 @@ class SectoralTFPGrowth(ProductivityGrowth):
         """
         # Get sector-specific parameters
         sector_ids = kwargs.get("sector_ids")
-        sector_base_growth = kwargs.get("sector_base_growth", {})
-        sector_effectiveness = kwargs.get("sector_effectiveness", {})
+        sector_base_growth = self.sector_base_growth
+        sector_effectiveness = self.sector_effectiveness
 
         # Initialize growth rates
         tfp_growth = np.zeros_like(current_tfp)
@@ -280,7 +324,7 @@ class SectoralTFPGrowth(ProductivityGrowth):
                             )
                             tfp_growth[sector_mask] += sector_contribution
                 else:
-                    effectiveness = kwargs.get("investment_effectiveness", 0.1)
+                    effectiveness = self.investment_effectiveness
                     investment_contribution = effectiveness * np.power(investment_intensity, investment_elasticity)
                     tfp_growth += investment_contribution
 
