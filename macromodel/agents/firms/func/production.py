@@ -28,13 +28,14 @@ class ProductionSetter(ABC):
         current_labour_inputs: np.ndarray,
         current_limiting_intermediate_inputs: np.ndarray,
         current_limiting_capital_inputs: np.ndarray,
+        tfp_multiplier: np.ndarray = None,
     ) -> np.ndarray:
         """Calculate actual production levels based on constraints.
 
         Determines feasible production by taking the minimum of:
         - Desired production targets
-        - Available labor inputs
-        - Available intermediate and capital inputs
+        - Available labor inputs (scaled by TFP)
+        - Available intermediate and capital inputs (scaled by TFP)
 
         Args:
             desired_production (np.ndarray): Target production levels
@@ -43,6 +44,8 @@ class ProductionSetter(ABC):
                 possible with available intermediate inputs
             current_limiting_capital_inputs (np.ndarray): Production
                 possible with available capital inputs
+            tfp_multiplier (np.ndarray, optional): Total Factor Productivity
+                multiplier for each firm. Defaults to 1.0 (no TFP effect)
 
         Returns:
             np.ndarray: Feasible production levels by firm
@@ -51,7 +54,17 @@ class ProductionSetter(ABC):
             current_limiting_intermediate_inputs,
             current_limiting_capital_inputs,
         )
-        return np.amin([desired_production, current_labour_inputs, limiting_stock], axis=0)
+
+        # Apply TFP multiplier if provided
+        if tfp_multiplier is not None:
+            # TFP scales effective capacity from inputs
+            effective_labour = current_labour_inputs * tfp_multiplier
+            effective_limiting_stock = limiting_stock * tfp_multiplier
+        else:
+            effective_labour = current_labour_inputs
+            effective_limiting_stock = limiting_stock
+
+        return np.amin([desired_production, effective_labour, effective_limiting_stock], axis=0)
 
     @abstractmethod
     def compute_limiting_intermediate_inputs_stock(
@@ -800,6 +813,7 @@ class UnconstrainedProduction(ProductionSetter):
         current_labour_inputs: np.ndarray,
         current_limiting_intermediate_inputs: np.ndarray,
         current_limiting_capital_inputs: np.ndarray,
+        tfp_multiplier: np.ndarray = None,
     ) -> np.ndarray:
         """Calculate production levels (unconstrained).
 
@@ -810,6 +824,7 @@ class UnconstrainedProduction(ProductionSetter):
             current_labour_inputs (np.ndarray): Unused
             current_limiting_intermediate_inputs (np.ndarray): Unused
             current_limiting_capital_inputs (np.ndarray): Unused
+            tfp_multiplier (np.ndarray, optional): Unused in unconstrained production
 
         Returns:
             np.ndarray: Desired production levels (unconstrained)
