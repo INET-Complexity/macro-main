@@ -623,6 +623,10 @@ class Country:
             get_histogram(self.individuals.ts.current("employee_income"), self.scale)
         )
 
+        # Update TFP before production (only if TFP growth is configured)
+        if not self.assume_zero_growth and hasattr(self.firms.configuration.parameters, "tfp_base_growth_rate"):
+            self.firms.update_tfp()
+
         # Firm production
         if self.assume_zero_growth:
             self.firms.ts.production.append(self.firms.ts.initial("production"))
