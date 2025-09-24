@@ -283,6 +283,17 @@ class TargetProduction(BaseModel):
     }
 
 
+class ProductivityGrowth(BaseModel):
+    """
+    The function for computing TFP growth.
+    Options: NoOpTFPGrowth, SimpleTFPGrowth, StochasticTFPGrowth, SectoralTFPGrowth
+    """
+
+    name: Literal["NoOpTFPGrowth", "SimpleTFPGrowth", "StochasticTFPGrowth", "SectoralTFPGrowth"] = "NoOpTFPGrowth"
+    path_name: str = "productivity_growth"
+    parameters: dict[str, Any] = {}
+
+
 class FirmsFunctions(BaseModel):
     bought_goods_distributor: BoughtGoodsDistributor = BoughtGoodsDistributor()
     demand_estimator: DemandEstimator = DemandEstimator()
@@ -293,6 +304,7 @@ class FirmsFunctions(BaseModel):
     offered_wage_setter: OfferedWageSetter = OfferedWageSetter()
     prices: Prices = Prices()
     production: Production = Production()
+    productivity_growth: ProductivityGrowth = ProductivityGrowth()  # Defaults to NoOpTFPGrowth
     target_capital_inputs: TargetCapitalInputs = TargetCapitalInputs()
     target_credit: TargetCredit = TargetCredit()
     target_intermediate_inputs: TargetIntermediateInputs = TargetIntermediateInputs()
@@ -323,6 +335,8 @@ class FirmsParameters(BaseModel):
     depreciation_rates: list[float] = [0.0 for _ in range(18)]
     capital_inputs_utilisation_rate: float = Field(1.0, ge=0.0, le=1.0)
     intermediate_inputs_utilisation_rate: float = Field(1.0, ge=0.0, le=1.0)
+    tfp_base_growth_rate: float = Field(0.0025, ge=0.0, le=0.1, description="Base TFP growth rate (quarterly)")
+    tfp_investment_elasticity: float = Field(0.3, ge=0.0, le=1.0, description="Returns to scale for TFP investment")
 
     @classmethod
     def disaggregated_industries_default(cls, n_industries: int) -> "FirmsParameters":
@@ -332,6 +346,8 @@ class FirmsParameters(BaseModel):
                 "depreciation_rates": [0.0 for _ in range(n_industries)],
                 "capital_inputs_utilisation_rate": 1.0,
                 "intermediate_inputs_utilisation_rate": 1.0,
+                "tfp_base_growth_rate": 0.0025,
+                "tfp_investment_elasticity": 0.3,
             }
         )
 

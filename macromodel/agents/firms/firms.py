@@ -230,6 +230,9 @@ class Firms(Agent):
 
         states["Labour Productivity by Industry"] = synthetic_firms.labour_productivity_by_industry
 
+        # Initialize TFP multiplier to 1.0 (no TFP effect initially)
+        states["tfp_multiplier"] = np.ones(data.shape[0])
+
         bundle_matrix = create_bundle_matrix(np.array(configuration.substitution_bundles))
 
         return cls(
@@ -658,9 +661,9 @@ class Firms(Agent):
 
         Determines production based on:
         - Target production levels
-        - Labor input constraints
-        - Intermediate input constraints
-        - Capital input constraints
+        - Labor input constraints (scaled by TFP)
+        - Intermediate input constraints (scaled by TFP)
+        - Capital input constraints (scaled by TFP)
 
         Returns:
             np.ndarray: Actual production quantity for each firm
@@ -670,6 +673,7 @@ class Firms(Agent):
             current_labour_inputs=self.ts.current("labour_inputs"),
             current_limiting_intermediate_inputs=self.ts.current("limiting_intermediate_inputs"),
             current_limiting_capital_inputs=self.ts.current("limiting_capital_inputs"),
+            tfp_multiplier=self.states.get("tfp_multiplier"),
         )
 
     def compute_total_sales(self) -> np.ndarray:
@@ -1890,6 +1894,48 @@ class Firms(Agent):
         input_index = self.industries.index(input_industry)
 
         self.intermediate_inputs_productivity_matrix[input_index, producing_index] *= 1 + increase_pct
+
+    def compute_tfp_growth(self) -> np.ndarray:
+        """Calculate TFP growth rates for all firms.
+
+        Uses the configured productivity growth function to compute
+        TFP growth based on:
+        - Current TFP levels
+        - Current production
+        - Investment in productivity (capital investment as proxy)
+        - Configuration parameters
+
+        Returns:
+            np.ndarray: TFP growth rates for each firm
+        """
+        # Use total capital bought as proxy for productivity investment
+        # This can be refined later to track specific productivity investments
+        productivity_investment = self.ts.current("total_capital_inputs_bought_costs")
+
+        # Get configuration parameters, using defaults if not specified
+        base_growth = getattr(self.configuration.parameters, "tfp_base_growth_rate", 0.0025)  # 0.25% quarterly
+        elasticity = getattr(self.configuration.parameters, "tfp_investment_elasticity", 0.3)
+
+        # Use productivity growth function if available, otherwise use simple growth
+        if "productivity_growth" in self.functions:
+            return self.functions["productivity_growth"].compute_tfp_growth(
+                current_tfp=self.states["tfp_multiplier"],
+                production=self.ts.current("production"),
+                productivity_investment=productivity_investment,
+                base_growth_rate=base_growth,
+                investment_elasticity=elasticity,
+            )
+        else:
+            # Simple base growth if no function configured
+            return np.full_like(self.states["tfp_multiplier"], base_growth)
+
+    def update_tfp(self) -> None:
+        """Update TFP multipliers based on computed growth rates.
+
+        Computes TFP growth and updates the tfp_multiplier state variable.
+        """
+        tfp_growth = self.compute_tfp_growth()
+        self.states["tfp_multiplier"] *= 1 + tfp_growth
 
 
 def fillna(array: np.ndarray, value: float = 0):
