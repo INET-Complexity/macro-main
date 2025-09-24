@@ -339,15 +339,17 @@ class FirmsParameters(BaseModel):
     tfp_investment_elasticity: float = Field(0.3, ge=0.0, le=1.0, description="Returns to scale for TFP investment")
 
     @classmethod
-    def disaggregated_industries_default(cls, n_industries: int) -> "FirmsParameters":
+    def disaggregated_industries_default(
+        cls, n_industries: int, tfp_base_growth_rate: float = 0.0025, tfp_investment_elasticity: float = 0.3
+    ) -> "FirmsParameters":
         return cls(
             **{
                 "capital_inputs_delay": [0 for _ in range(n_industries)],
                 "depreciation_rates": [0.0 for _ in range(n_industries)],
                 "capital_inputs_utilisation_rate": 1.0,
                 "intermediate_inputs_utilisation_rate": 1.0,
-                "tfp_base_growth_rate": 0.0025,
-                "tfp_investment_elasticity": 0.3,
+                "tfp_base_growth_rate": tfp_base_growth_rate,
+                "tfp_investment_elasticity": tfp_investment_elasticity,
             }
         )
 
@@ -366,7 +368,7 @@ class FirmsConfiguration(BaseModel):
         calculate_hill_exponent (bool): Whether to calculate Hill exponent
     """
 
-    parameters: FirmsParameters = FirmsParameters()
+    parameters: FirmsParameters = FirmsParameters.disaggregated_industries_default(n_industries=18)
     functions: FirmsFunctions = FirmsFunctions()
     calculate_hill_exponent: bool = True
     substitution_bundles: list = DEFAULT_BUNDLE
@@ -382,7 +384,13 @@ class FirmsConfiguration(BaseModel):
         return values
 
     @classmethod
-    def n_industries_default(cls, n_industries: int, bundles: Optional[list[list[int]]] = None):
+    def n_industries_default(
+        cls,
+        n_industries: int,
+        bundles: Optional[list[list[int]]] = None,
+        tfp_base_growth_rate: float = 0.0025,
+        tfp_investment_elasticity: float = 0.3,
+    ) -> "FirmsConfiguration":
         if bundles is None:
             bundles = []
 
@@ -399,7 +407,11 @@ class FirmsConfiguration(BaseModel):
 
         bundles_grouped = create_good_bundle(n_industries=n_industries, bundles=bundles)
         return cls(
-            parameters=FirmsParameters.disaggregated_industries_default(n_industries),
+            parameters=FirmsParameters.disaggregated_industries_default(
+                n_industries,
+                tfp_base_growth_rate=tfp_base_growth_rate,
+                tfp_investment_elasticity=tfp_investment_elasticity,
+            ),
             functions=functions,
             calculate_hill_exponent=True,
             substitution_bundles=bundles_grouped,

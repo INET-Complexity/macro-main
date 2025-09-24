@@ -133,12 +133,12 @@ class SimpleTFPGrowth(ProductivityGrowth):
             valid_firms = positive_production & positive_investment
 
             if np.any(valid_firms):
-                investment_intensity[valid_firms] = (
-                    productivity_investment[valid_firms] / production[valid_firms]
-                )
+                investment_intensity[valid_firms] = productivity_investment[valid_firms] / production[valid_firms]
 
                 # Apply diminishing returns with elasticity parameter
-                investment_contribution = investment_effectiveness * np.power(investment_intensity, investment_elasticity)
+                investment_contribution = investment_effectiveness * np.power(
+                    investment_intensity, investment_elasticity
+                )
 
                 tfp_growth += investment_contribution
 
@@ -191,11 +191,11 @@ class StochasticTFPGrowth(ProductivityGrowth):
             valid_firms = positive_production & positive_investment
 
             if np.any(valid_firms):
-                investment_intensity[valid_firms] = (
-                    productivity_investment[valid_firms] / production[valid_firms]
-                )
+                investment_intensity[valid_firms] = productivity_investment[valid_firms] / production[valid_firms]
 
-                investment_contribution = investment_effectiveness * np.power(investment_intensity, investment_elasticity)
+                investment_contribution = investment_effectiveness * np.power(
+                    investment_intensity, investment_elasticity
+                )
 
                 tfp_growth += investment_contribution
 
@@ -266,9 +266,7 @@ class SectoralTFPGrowth(ProductivityGrowth):
             valid_firms = positive_production & positive_investment
 
             if np.any(valid_firms):
-                investment_intensity[valid_firms] = (
-                    productivity_investment[valid_firms] / production[valid_firms]
-                )
+                investment_intensity[valid_firms] = productivity_investment[valid_firms] / production[valid_firms]
 
                 # Apply sector-specific effectiveness if available
                 if sector_ids is not None:
