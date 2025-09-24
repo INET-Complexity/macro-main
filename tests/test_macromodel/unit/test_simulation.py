@@ -380,3 +380,76 @@ def test_large_firing_rate(allind_datawrapper):
     simulation.run()
 
     assert True
+
+
+@pytest.mark.parametrize(
+    "tfp_growth_type", ["NoOpTFPGrowth", "SimpleTFPGrowth", "StochasticTFPGrowth", "SectoralTFPGrowth"]
+)
+@pytest.mark.parametrize("seed", [0, 100])
+def test_simulation_with_tfp_growth(datawrapper, seed, tfp_growth_type):
+    """Test the simulation with different TFP growth configurations."""
+    # Create base configuration
+    configuration = SimulationConfiguration(country_configurations={"FRA": CountryConfiguration()})
+
+    # Modify the TFP growth configuration
+    configuration.country_configurations["FRA"].firms.functions.productivity_growth.name = tfp_growth_type
+
+    # Set parameters based on TFP growth type
+    if tfp_growth_type == "NoOpTFPGrowth":
+        # No parameters needed for NoOp
+        configuration.country_configurations["FRA"].firms.functions.productivity_growth.parameters = {}
+    elif tfp_growth_type == "SimpleTFPGrowth":
+        # Parameters for simple TFP growth
+        configuration.country_configurations["FRA"].firms.functions.productivity_growth.parameters = {
+            "investment_effectiveness": 0.1
+        }
+        # Also set the base growth rate in parameters
+        configuration.country_configurations["FRA"].firms.parameters.tfp_base_growth_rate = 0.001  # 0.1% per period
+        configuration.country_configurations["FRA"].firms.parameters.tfp_investment_elasticity = 0.3
+    elif tfp_growth_type == "StochasticTFPGrowth":
+        # Parameters for stochastic TFP growth
+        configuration.country_configurations["FRA"].firms.functions.productivity_growth.parameters = {
+            "investment_effectiveness": 0.1,
+            "shock_std": 0.005,  # 0.5% standard deviation for shocks
+        }
+        configuration.country_configurations["FRA"].firms.parameters.tfp_base_growth_rate = 0.001
+        configuration.country_configurations["FRA"].firms.parameters.tfp_investment_elasticity = 0.3
+    elif tfp_growth_type == "SectoralTFPGrowth":
+        # Parameters for sectoral TFP growth
+        configuration.country_configurations["FRA"].firms.functions.productivity_growth.parameters = {
+            "investment_effectiveness": 0.1,
+            "sector_base_growth": {},  # Could specify sector-specific rates here
+            "sector_effectiveness": {},  # Could specify sector-specific effectiveness here
+        }
+        configuration.country_configurations["FRA"].firms.parameters.tfp_base_growth_rate = 0.001
+        configuration.country_configurations["FRA"].firms.parameters.tfp_investment_elasticity = 0.3
+
+    configuration.seed = seed
+
+    # Create and run simulation
+    simulation = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=configuration)
+
+    assert set(simulation.countries.keys()) == {"FRA"}
+
+    # Check that TFP multiplier is initialized
+    firms = simulation.countries["FRA"].firms
+    assert "tfp_multiplier" in firms.states
+    assert np.all(firms.states["tfp_multiplier"] == 1.0)  # Should start at 1.0
+
+    # Run simulation for several iterations
+    for _ in range(5):
+        simulation.iterate()
+
+    # Check TFP behavior based on type
+    final_tfp = firms.states["tfp_multiplier"]
+
+    if tfp_growth_type == "NoOpTFPGrowth":
+        # TFP should remain at 1.0 (no growth)
+        assert np.allclose(final_tfp, 1.0), f"NoOpTFPGrowth should keep TFP at 1.0, got {final_tfp}"
+    else:
+        # For other types, TFP might change (though with small growth rates, changes could be minimal)
+        # We mainly check that the simulation runs without errors
+        assert np.all(final_tfp > 0), f"TFP should be positive, got {final_tfp}"
+        assert np.all(np.isfinite(final_tfp)), f"TFP should be finite, got {final_tfp}"
+
+    assert True

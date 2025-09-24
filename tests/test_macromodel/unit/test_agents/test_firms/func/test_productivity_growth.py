@@ -35,14 +35,14 @@ class TestSimpleTFPGrowth:
 
     def test_investment_driven_growth(self):
         """Test TFP growth with investment."""
-        growth_func = SimpleTFPGrowth()
+        effectiveness = 0.1
+        growth_func = SimpleTFPGrowth(investment_effectiveness=effectiveness)
         n_firms = 3
         current_tfp = np.ones(n_firms)
         production = np.array([100.0, 200.0, 150.0])
         productivity_investment = np.array([10.0, 20.0, 0.0])
         base_growth = 0.0025
         elasticity = 0.5
-        effectiveness = 0.1
 
         tfp_growth = growth_func.compute_tfp_growth(
             current_tfp=current_tfp,
@@ -50,7 +50,6 @@ class TestSimpleTFPGrowth:
             productivity_investment=productivity_investment,
             base_growth_rate=base_growth,
             investment_elasticity=elasticity,
-            investment_effectiveness=effectiveness,
         )
 
         # Calculate expected growth
@@ -98,14 +97,14 @@ class TestStochasticTFPGrowth:
 
     def test_stochastic_shocks(self):
         """Test that stochastic shocks are applied."""
-        growth_func = StochasticTFPGrowth()
+        shock_std = 0.01
+        growth_func = StochasticTFPGrowth(shock_std=shock_std)
         n_firms = 100  # Large number for statistical testing
         current_tfp = np.ones(n_firms)
         production = np.full(n_firms, 100.0)
         productivity_investment = np.zeros(n_firms)
         base_growth = 0.0025
         elasticity = 0.3
-        shock_std = 0.01
 
         # Set random seed for reproducibility
         np.random.seed(42)
@@ -116,7 +115,6 @@ class TestStochasticTFPGrowth:
             productivity_investment=productivity_investment,
             base_growth_rate=base_growth,
             investment_elasticity=elasticity,
-            shock_std=shock_std,
         )
 
         # Check that growth varies around base growth
@@ -126,7 +124,8 @@ class TestStochasticTFPGrowth:
 
     def test_zero_shock_std(self):
         """Test that zero shock_std gives same result as SimpleTFPGrowth."""
-        stochastic = StochasticTFPGrowth()
+        # Create StochasticTFPGrowth with shock_std=0.0 in constructor
+        stochastic = StochasticTFPGrowth(shock_std=0.0)
         simple = SimpleTFPGrowth()
 
         n_firms = 5
@@ -142,7 +141,6 @@ class TestStochasticTFPGrowth:
             productivity_investment=productivity_investment,
             base_growth_rate=base_growth,
             investment_elasticity=elasticity,
-            shock_std=0.0,  # No shocks
         )
 
         simple_growth = simple.compute_tfp_growth(
@@ -161,7 +159,12 @@ class TestSectoralTFPGrowth:
 
     def test_sector_specific_base_growth(self):
         """Test different base growth rates by sector."""
-        growth_func = SectoralTFPGrowth()
+        sector_base_growth = {
+            0: 0.001,  # Low growth sector
+            1: 0.003,  # High growth sector
+            # Sector 2 uses default
+        }
+        growth_func = SectoralTFPGrowth(sector_base_growth=sector_base_growth)
         n_firms = 6
         current_tfp = np.ones(n_firms)
         production = np.full(n_firms, 100.0)
@@ -171,11 +174,6 @@ class TestSectoralTFPGrowth:
 
         # Assign firms to sectors
         sector_ids = np.array([0, 0, 1, 1, 2, 2])
-        sector_base_growth = {
-            0: 0.001,  # Low growth sector
-            1: 0.003,  # High growth sector
-            # Sector 2 uses default
-        }
 
         tfp_growth = growth_func.compute_tfp_growth(
             current_tfp=current_tfp,
@@ -184,7 +182,6 @@ class TestSectoralTFPGrowth:
             base_growth_rate=base_growth,
             investment_elasticity=elasticity,
             sector_ids=sector_ids,
-            sector_base_growth=sector_base_growth,
         )
 
         assert np.allclose(tfp_growth[0:2], 0.001)  # Sector 0
@@ -193,7 +190,11 @@ class TestSectoralTFPGrowth:
 
     def test_sector_specific_effectiveness(self):
         """Test different investment effectiveness by sector."""
-        growth_func = SectoralTFPGrowth()
+        sector_effectiveness = {
+            0: 0.2,  # High effectiveness
+            1: 0.05,  # Low effectiveness
+        }
+        growth_func = SectoralTFPGrowth(sector_effectiveness=sector_effectiveness)
         n_firms = 4
         current_tfp = np.ones(n_firms)
         production = np.full(n_firms, 100.0)
@@ -202,10 +203,6 @@ class TestSectoralTFPGrowth:
         elasticity = 0.5
 
         sector_ids = np.array([0, 0, 1, 1])
-        sector_effectiveness = {
-            0: 0.2,  # High effectiveness
-            1: 0.05,  # Low effectiveness
-        }
 
         tfp_growth = growth_func.compute_tfp_growth(
             current_tfp=current_tfp,
@@ -214,7 +211,6 @@ class TestSectoralTFPGrowth:
             base_growth_rate=base_growth,
             investment_elasticity=elasticity,
             sector_ids=sector_ids,
-            sector_effectiveness=sector_effectiveness,
         )
 
         # Calculate expected values
@@ -285,13 +281,13 @@ class TestProductivityGrowthEdgeCases:
 
     def test_very_high_investment_intensity(self):
         """Test behavior with very high investment relative to production."""
-        growth_func = SimpleTFPGrowth()
+        effectiveness = 0.1
+        growth_func = SimpleTFPGrowth(investment_effectiveness=effectiveness)
         current_tfp = np.array([1.0])
         production = np.array([1.0])  # Very small production
         productivity_investment = np.array([100.0])  # Very high investment
         base_growth = 0.0025
         elasticity = 0.3
-        effectiveness = 0.1
 
         tfp_growth = growth_func.compute_tfp_growth(
             current_tfp=current_tfp,
@@ -299,7 +295,6 @@ class TestProductivityGrowthEdgeCases:
             productivity_investment=productivity_investment,
             base_growth_rate=base_growth,
             investment_elasticity=elasticity,
-            investment_effectiveness=effectiveness,
         )
 
         # Should be bounded and reasonable
