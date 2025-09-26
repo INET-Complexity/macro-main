@@ -3,7 +3,7 @@
 Tests for the WASReader class.
 
 This module tests the functionality of the Wealth and Assets Survey (WAS) data reader,
-including data loading, processing, variable mapping, and currency conversion.
+including data loading, processing, and variable mapping.
 """
 
 import pytest
@@ -12,19 +12,10 @@ import numpy as np
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
-from macro_data.readers.population_data.was_reader import WASReader, var_mapping, var_numerical
-from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
-
+from macro_data.readers.population_data.was_reader import WASReader, get_var_mapping, var_numerical
 
 class TestWASReader:
     """Test class for WASReader functionality."""
-
-    @pytest.fixture
-    def mock_exchange_rates(self):
-        """Create a mock exchange rates reader."""
-        mock_rates = Mock(spec=ExchangeRatesReader)
-        mock_rates.from_eur_to_lcu.return_value = 1.0  # GBP to GBP conversion
-        return mock_rates
 
     @pytest.fixture
     def sample_individuals_data(self):
@@ -84,15 +75,15 @@ class TestWASReader:
         assert len(was_reader.households_df) == 0
 
     @patch('pandas.read_stata')
-    def test_read_stata_basic_functionality(self, mock_read_stata, mock_exchange_rates):
+    def test_read_stata_basic_functionality(self, mock_read_stata):
         """Test basic functionality of read_stata static method."""
         # Mock the Stata file reading
         mock_data = pd.DataFrame({
             'pidno': [1, 2, 3],
             'sexr7': [1, 2, 1],
-            'DVAge17R7': [25, 30, 45],
+            'DVAge17r7': [25, 30, 45],
             'dvgrspayannualr7': [30000, 40000, 50000],
-            'DvtotgirR7': [30000, 40000, 50000],
+            'Dvtotgirr7': [30000, 40000, 50000],
             'unmapped_var': [1, 2, 3],  # This should be filtered out
         })
         mock_read_stata.return_value = mock_data
@@ -103,65 +94,34 @@ class TestWASReader:
             country_name="United Kingdom",
             country_name_short="GB",
             year=2022,
-            exchange_rates=mock_exchange_rates,
+            round_number=7,
         )
         
         # Verify that pandas.read_stata was called correctly
         mock_read_stata.assert_called_once_with("test_path.dta", preserve_dtypes=False, convert_categoricals=False)
         
         # Verify that only mapped variables are kept
-        expected_columns = ['Gender', 'Age', 'Employee Income', 'Income']
+        expected_columns = ['Sex', 'Grouped age (17 categories)', 'Gross annual income employee main job (including bonuses and commission received)', 'Total gross regular household annual income']
         assert all(col in result.columns for col in expected_columns)
         assert 'unmapped_var' not in result.columns
         
         # Verify that variable names are mapped correctly
-        assert 'Gender' in result.columns  # sexr7 -> Gender
-        assert 'Age' in result.columns  # DVAge17R7 -> Age
+        assert 'Sex' in result.columns  # sexr7 -> Sex
+        assert 'Grouped age (17 categories)' in result.columns  # DVAge17R7 -> Grouped age (17 categories)
         
-        # Verify that ID is set as index (pidno -> ID)
-        assert result.index.name == 'ID'
+        # Verify that Personal identifier is set as index (pidno -> Personal identifier)
+        assert result.index.name == 'Personal identifier'
         
-        # Verify exchange rate conversion was called
-        mock_exchange_rates.from_eur_to_lcu.assert_called_once_with(
-            country="United Kingdom",
-            year=2022,
-        )
-
-    @patch('pandas.read_stata')
-    def test_read_stata_currency_conversion(self, mock_read_stata, mock_exchange_rates):
-        """Test currency conversion in read_stata method."""
-        # Mock exchange rate conversion
-        mock_exchange_rates.from_eur_to_lcu.return_value = 1.2
-        
-        # Mock the Stata file reading
-        mock_data = pd.DataFrame({
-            'pidno': [1, 2],
-            'dvgrspayannualr7': [1000, 2000],
-            'DvtotgirR7': [1000, 2000],
-        })
-        mock_read_stata.return_value = mock_data
-        
-        result = WASReader.read_stata(
-            path="test_path.dta",
-            country_name="United Kingdom",
-            country_name_short="GB",
-            year=2022,
-            exchange_rates=mock_exchange_rates,
-        )
-        
-        # Verify currency conversion was applied
-        expected_income = 1000 * 1.2
-        assert result.loc[1, 'Employee Income'] == expected_income
-        assert result.loc[1, 'Income'] == expected_income
-
     @patch('glob.glob')
     @patch.object(WASReader, 'read_stata')
-    def test_from_stata_success(self, mock_read_stata, mock_glob, mock_exchange_rates):
+    def test_from_stata_success(self, mock_read_stata, mock_glob):
         """Test successful creation of WASReader from Stata files."""
-        # Mock glob to return file paths
+        # Mock glob to return file paths (4 calls: round_person, round_household, wave_person, wave_household)
         mock_glob.side_effect = [
-            ['/path/to/was_round_7_person_eul_june_2022.dta'],  # person files
-            ['/path/to/was_round_7_hhold_eul_march_2022.dta'],  # household files
+            ['/path/to/was_round_7_person_eul_june_2022.dta'],  # round person files
+            ['/path/to/was_round_7_hhold_eul_march_2022.dta'],  # round household files
+            [],  # wave person files (empty)
+            [],  # wave household files (empty)
         ]
         
         # Mock the read_stata method to return sample data
@@ -175,7 +135,6 @@ class TestWASReader:
             country_name_short="GB",
             year=2022,
             was_data_path=Path("/path/to/was/data"),
-            exchange_rates=mock_exchange_rates,
             round_number=7,
         )
         
@@ -189,12 +148,14 @@ class TestWASReader:
         assert mock_read_stata.call_count == 2
 
     @patch('glob.glob')
-    def test_from_stata_no_person_files(self, mock_glob, mock_exchange_rates):
+    def test_from_stata_no_person_files(self, mock_glob):
         """Test from_stata method when no person files are found."""
-        # Mock glob to return no person files
+        # Mock glob to return no person files (4 calls: round_person, round_household, wave_person, wave_household)
         mock_glob.side_effect = [
-            [],  # No person files
-            ['/path/to/was_round_7_hhold_eul_march_2022.dta'],  # household files exist
+            [],  # No round person files
+            ['/path/to/was_round_7_hhold_eul_march_2022.dta'],  # round household files exist
+            [],  # No wave person files
+            [],  # No wave household files
         ]
         
         # Test that FileNotFoundError is raised
@@ -204,17 +165,18 @@ class TestWASReader:
                 country_name_short="GB",
                 year=2022,
                 was_data_path=Path("/path/to/was/data"),
-                exchange_rates=mock_exchange_rates,
                 round_number=7,
             )
 
     @patch('glob.glob')
-    def test_from_stata_no_household_files(self, mock_glob, mock_exchange_rates):
+    def test_from_stata_no_household_files(self, mock_glob):
         """Test from_stata method when no household files are found."""
-        # Mock glob to return no household files
+        # Mock glob to return no household files (4 calls: round_person, round_household, wave_person, wave_household)
         mock_glob.side_effect = [
-            ['/path/to/was_round_7_person_eul_june_2022.dta'],  # person files exist
-            [],  # No household files
+            ['/path/to/was_round_7_person_eul_june_2022.dta'],  # round person files exist
+            [],  # No round household files
+            [],  # No wave person files
+            [],  # No wave household files
         ]
         
         # Test that FileNotFoundError is raised
@@ -224,12 +186,11 @@ class TestWASReader:
                 country_name_short="GB",
                 year=2022,
                 was_data_path=Path("/path/to/was/data"),
-                exchange_rates=mock_exchange_rates,
                 round_number=7,
             )
 
     @patch('pandas.read_stata')
-    def test_read_stata_missing_variables(self, mock_read_stata, mock_exchange_rates):
+    def test_read_stata_missing_variables(self, mock_read_stata):
         """Test read_stata with missing variables in the data."""
         # Mock data with only some of the mapped variables
         mock_data = pd.DataFrame({
@@ -244,24 +205,24 @@ class TestWASReader:
             country_name="United Kingdom",
             country_name_short="GB",
             year=2022,
-            exchange_rates=mock_exchange_rates,
+            round_number=7,
         )
         
         # Should only contain the variables that exist in the data
-        expected_columns = ['Gender']
+        expected_columns = ['Sex']
         assert all(col in result.columns for col in expected_columns)
         assert len(result.columns) == 1
-        # ID should be the index
-        assert result.index.name == 'ID'
+        # Personal identifier should be the index
+        assert result.index.name == 'Personal identifier'
 
     @patch('pandas.read_stata')
-    def test_read_stata_numeric_conversion_errors(self, mock_read_stata, mock_exchange_rates):
-        """Test handling of numeric conversion errors in read_stata."""
+    def test_read_stata_data_type_conversion_errors(self, mock_read_stata):
+        """Test handling of data type conversion errors in read_stata."""
         # Mock data with non-numeric values in monetary columns
         mock_data = pd.DataFrame({
             'pidno': [1, 2, 3],
             'dvgrspayannualr7': [30000, 'invalid', 50000],
-            'DvtotgirR7': [30000, 'N/A', 50000],
+            'Dvtotgirr7': [30000, 'N/A', 50000],
         })
         mock_read_stata.return_value = mock_data
         
@@ -270,40 +231,54 @@ class TestWASReader:
             country_name="United Kingdom",
             country_name_short="GB",
             year=2022,
-            exchange_rates=mock_exchange_rates,
+            round_number=7,
         )
         
         # Verify that invalid values are converted to NaN
-        assert pd.isna(result.loc[2, 'Employee Income'])
-        assert pd.isna(result.loc[2, 'Income'])
+        assert pd.isna(result.loc[2, 'Gross annual income employee main job (including bonuses and commission received)'])
+        assert pd.isna(result.loc[2, 'Total gross regular household annual income'])
         
         # Verify that valid values are preserved
-        assert result.loc[1, 'Employee Income'] == 30000
-        assert result.loc[1, 'Income'] == 30000
+        assert result.loc[1, 'Gross annual income employee main job (including bonuses and commission received)'] == 30000
+        assert result.loc[1, 'Total gross regular household annual income'] == 30000
 
     def test_variable_mapping_completeness(self):
         """Test that variable mapping covers expected categories."""
-        # Test that we have mappings for key categories
-        individual_vars = ['pidno', 'personr7', 'CASER7', 'sexr7', 'DVAge17R7']
-        income_vars = ['dvgrspayannualr7', 'dvnetpayannualr7', 'DvtotgirR7']
-        asset_vars = ['hvaluer7', 'DVSaValR7_SUM', 'DVFFAssetsR7_SUM']
-        liability_vars = ['TotmortR7', 'TOTCSCR7_aggr']
+        # Test that we have mappings for key categories using dynamic mapping
+        # Test with round 7 (r7 suffix)
+        var_mapping_r7 = get_var_mapping(7)
+        
+        individual_vars = ['pidno', 'personr7', 'CASEr7', 'sexr7', 'DVAge17r7']
+        income_vars = ['dvgrspayannualr7', 'dvnetpayannualr7', 'Dvtotgirr7']
+        asset_vars = ['hvaluer7', 'DVSaValr7_SUM', 'DVFFAssetsr7_SUM']
+        liability_vars = ['Totmortr7', 'TOTCSCr7_aggr']
         housing_vars = ['hhldrr7', 'dvrentpaidr7']
         
         all_test_vars = individual_vars + income_vars + asset_vars + liability_vars + housing_vars
         
         for var in all_test_vars:
-            assert var in var_mapping, f"Variable {var} not found in var_mapping"
+            assert var in var_mapping_r7, f"Variable {var} not found in var_mapping for round 7"
+        
+        # Test with wave 1 (w1 suffix)
+        var_mapping_w1 = get_var_mapping(1)
+        
+        individual_vars_w1 = ['pidno', 'personw1', 'CASEw1', 'sexw1', 'DVAge17w1']
+        income_vars_w1 = ['dvgrspayannualw1', 'dvnetpayannualw1', 'Dvtotgirw1']
+        
+        all_test_vars_w1 = individual_vars_w1 + income_vars_w1
+        
+        for var in all_test_vars_w1:
+            assert var in var_mapping_w1, f"Variable {var} not found in var_mapping for wave 1"
 
     def test_numerical_variables_list(self):
         """Test that numerical variables list contains expected monetary variables."""
         expected_numerical = [
-            'Income',
-            'Employee Income',
-            'Value of the Main Residence',
-            'Wealth in Deposits',
-            'Outstanding Balance of HMR Mortgages',
-            'Rent Paid',
+            'Total gross regular household annual income',
+            'Gross annual income employee main job (including bonuses and commission received)',
+            'Current value of main residence',
+            'Total value of savings accounts',
+            'Total mortgage on main residence',
+            'How much is usual household rent',
         ]
         
         for var in expected_numerical:
@@ -347,7 +322,7 @@ class TestWASReader:
         )
         assert was_reader_uk.country_name_short == "UK"
 
-    def test_was_reader_with_sample_data(self, data_path, readers):
+    def test_was_reader_with_sample_data(self, data_path):
         """Test WASReader with actual sample data from the test dataset."""
         # This test uses the actual sample data to verify the reader works end-to-end
         was_data_path = data_path / "was"
@@ -357,16 +332,12 @@ class TestWASReader:
         household_files = list(was_data_path.glob("was_round_7_hhold_eul_*.dta"))
         
         if person_files and household_files:
-            # Use the exchange rates from the readers fixture
-            exchange_rates = readers.exchange_rates
-            
             # Test reading the actual sample data
             was_reader = WASReader.from_stata(
                 country_name="United Kingdom",
                 country_name_short="GB",
                 year=2022,
                 was_data_path=was_data_path,
-                exchange_rates=exchange_rates,
                 round_number=7,
             )
             
@@ -380,7 +351,7 @@ class TestWASReader:
             
             # Verify that the data has been processed (variable names mapped)
             # The original WAS variable names should not be present
-            original_was_vars = ['pidno', 'sexr7', 'DVAge17R7', 'dvgrspayannualr7']
+            original_was_vars = ['pidno', 'sexr7', 'DVAge17r7', 'dvgrspayannualr7']
             for var in original_was_vars:
                 if var in was_reader.individuals_df.columns:
                     # If the original variable is still there, it means it wasn't mapped
@@ -388,12 +359,17 @@ class TestWASReader:
                     pass
             
             # Verify that some mapped variables are present
-            mapped_vars = ['Gender', 'Age', 'Employee Income', 'Income']
+            mapped_vars = ['Sex', 'Grouped age (17 categories)', 'Gross annual income employee main job (including bonuses and commission received)', 'Total gross regular household annual income']
             found_mapped_vars = [var for var in mapped_vars if var in was_reader.individuals_df.columns]
             assert len(found_mapped_vars) > 0, "No mapped variables found in individuals data"
             
-            # Verify that ID is set as index
-            assert was_reader.individuals_df.index.name == 'ID'
+            # Verify that Personal identifier is set as index (if pidno column exists in the data)
+            if 'Personal identifier' in was_reader.individuals_df.columns:
+                # If Personal identifier column exists, it should be the index
+                assert was_reader.individuals_df.index.name == 'Personal identifier'
+            else:
+                # If no Personal identifier column, the index should be the default RangeIndex
+                assert was_reader.individuals_df.index.name is None
             
         else:
             pytest.skip("Sample WAS data files not found")

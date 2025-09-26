@@ -30,7 +30,7 @@ from macro_data.util.clean_data import remove_outliers
 from macro_data.util.imputation import apply_iterative_imputer
 from macro_data.util.regressions import fit_linear
 
-# WAS-specific column restrictions - adapted from HFCS but with WAS-specific variables
+# WAS-specific column restrictions - using original WAS data variable names
 RESTRICT_COLS = [
     "Type",
     "Corresponding Individuals ID",
@@ -41,90 +41,90 @@ RESTRICT_COLS = [
     "Corresponding Additionally Owned Houses ID",
     "Income",
     "Investment",
-    "Employee Income",
-    "Regular Social Transfers",
-    "Rental Income from Real Estate",
-    "Income from Financial Assets",
+    "Gross annual income employee main job (including bonuses and commission received)",
+    "Annual Household Income - Total benefits received",
+    "Annual Household Income - Gross rental income",
+    "Total income in £ over last 12 months received in dividends, interest or return on investments",
     "Saving Rate",
-    "Rent Paid",
+    "How much is usual household rent",
     "Rent Imputed",
     "Wealth",
     "Net Wealth",
     "Wealth in Real Assets",
-    "Value of the Main Residence",
-    "Value of other Properties",
+    "Value of main residence",
+    "Total value of other houses",
     "Wealth Other Real Assets",
-    "Wealth in Deposits",
+    "Total value of savings accounts",
     "Wealth in Other Financial Assets",
     "Wealth in Financial Assets",
-    "Outstanding Balance of HMR Mortgages",
-    "Outstanding Balance of Mortgages on other Properties",
+    "Total mortgage on main residence",
+    "Total property debt excluding main residence",
     "Outstanding Balance of other Non-Mortgage Loans",
     "Debt",
     "Debt Installments",
     "Tenure Status of the Main Residence",
     "Number of Properties other than Household Main Residence",
-    # WAS-specific variables
-    "Value of Household Vehicles",
-    "Value of Household Valuables",
-    "Value of Self-Employment Businesses",
-    "Formal Financial Assets",
-    "Voluntary Pension",
-    "Outstanding Balance of Credit Card Debt",
-    "Household Debt Burden",
-    "Non-Mortgage Debt Burden",
+    # WAS-specific variables using original names
+    "Total value of all vehicles",
+    "Value of all household goods and collectables",
+    "Approximate value of share of business after deducting outstanding debts",
+    "Total value of all formal financial assets",
+    "Total value of individual pension wealth",
+    "Hhold total outstanding credit/store/charge card balance",
+    "Burden of mortgage and other debt on household",
+    "Burden from non-mortgage debt",
 ]
 
-# WAS-specific monetary columns that need conversion
+# WAS-specific monetary columns for processing - using original WAS data variable names
 CONVERT_HH_COLS = [
-    "Rent Paid",
+    "How much is usual household rent",
     "Amount spent on Consumption of Goods and Services",
-    "Rental Income from Real Estate",
-    "Income from Financial Assets",
-    "Income from Pensions",
-    "Regular Social Transfers",
+    "Annual Household Income - Gross rental income",
+    "Total income in £ over last 12 months received in dividends, interest or return on investments",
+    "Annual Household Income - Gross occupational or private pension",
+    "Annual Household Income - Total benefits received",
     "Income",
-    "Value of the Main Residence",
-    "Value of other Properties",
-    "Value of Household Vehicles",
-    "Value of Household Valuables",
-    "Value of Self-Employment Businesses",
-    "Wealth in Deposits",
-    "Formal Financial Assets",
+    "Value of main residence",
+    "Total value of other houses",
+    "Total value of all vehicles",
+    "Value of all household goods and collectables",
+    "Approximate value of share of business after deducting outstanding debts",
+    "Total value of savings accounts",
+    "Total value of all formal financial assets",
     "Other Assets",
-    "Voluntary Pension",
-    "Outstanding Balance of HMR Mortgages",
-    "Outstanding Balance of Mortgages on other Properties",
-    "Outstanding Balance of Credit Card Debt",
+    "Total value of individual pension wealth",
+    "Total mortgage on main residence",
+    "Total property debt excluding main residence",
+    "Hhold total outstanding credit/store/charge card balance",
     "Outstanding Balance of other Non-Mortgage Loans",
-    # WAS-specific monetary variables
-    "Employee Income",
-    "Employee Income Net",
+    # WAS-specific monetary variables using original names
+    "Gross annual income employee main job (including bonuses and commission received)",
+    "Net annual income employee main job (including bonuses and commission received)",
     "Employee Income ASHE",
-    "Self-Employment Income",
-    "Self-Employment Income Net",
-    "Self-Employment Income Total",
-    "Rental Income Gross",
-    "Rental Income Net",
-    "Investment Income Gross",
-    "Investment Income Net",
-    "Working Age Benefits",
-    "Disability Benefits",
-    "Pensioner Benefits",
-    "Total Property Value",
-    "Value of Other Property",
-    "Value of Second Homes",
-    "Other Property Debt",
-    "Other Property Mortgage",
+    "Gross annual self-employed income main job",
+    "Net annual self-employed income main job",
+    "Total Annual Gross self employed income (main and second job)",
+    "Annual Household Income - Gross rental income",
+    "Annual Household Income - Net rental income",
+    "Annual Household Income - Gross investment income",
+    "Annual Household Income - Net investment income",
+    "Working Age Benefits 1",
+    "Disability Benefits 1",
+    "Pensioner Benefits 1",
+    "Sum of all property values",
+    "Total value of other property excluding main property",
+    "Value of second homes",
+    "Total debt houses not main residence",
+    "Total property debt excluding main residence",
 ]
 
 CONVERT_IND_COLS = [
-    "Employee Income", 
-    "Employee Income Net",
+    "Gross annual income employee main job (including bonuses and commission received)", 
+    "Net annual income employee main job (including bonuses and commission received)",
     "Employee Income ASHE",
-    "Self-Employment Income",
-    "Self-Employment Income Net",
-    "Self-Employment Income Total",
+    "Gross annual self-employed income main job",
+    "Net annual self-employed income main job",
+    "Total Annual Gross self employed income (main and second job)",
     "Income from Unemployment Benefits", 
     "Income"
 ]
@@ -136,10 +136,13 @@ class SyntheticWASPopulation(SyntheticPopulation):
 
     This class extends the base SyntheticPopulation class to handle WAS-specific data processing,
     including UK-specific household characteristics, wealth patterns, and housing data.
+    
+    Note: WAS data is UK-specific. While the interface maintains country_name parameters for
+    compatibility with the base class, all instances will use UK data regardless of input.
 
     Attributes:
-        country_name (str): The name of the country.
-        country_name_short (str): The short name of the country.
+        country_name (str): Always "United Kingdom" (hardcoded for WAS data).
+        country_name_short (str): Always "GB" (hardcoded for WAS data).
         scale (int): The scale of the population.
         year (int): The year of the population data.
         industries (list[str]): The list of industries.
@@ -152,7 +155,8 @@ class SyntheticWASPopulation(SyntheticPopulation):
 
     Methods:
         from_readers(cls, readers, country_name, country_name_short, scale, year, industry_data, industries, total_unemployment_benefits, rent_as_fraction_of_unemployment_rate, n_quantiles=5):
-            Creates a SyntheticWASPopulation instance from data readers.
+            Creates a SyntheticWASPopulation instance from data readers. Note: country_name parameters
+            are maintained for interface compatibility but only UK data will be used.
 
         restrict(self):
             Restricts the household data to selected columns.
@@ -182,12 +186,17 @@ class SyntheticWASPopulation(SyntheticPopulation):
         consumption_weights_by_income: np.ndarray,
         investment: np.ndarray,
     ):
+        # WAS data is UK-specific, so we hardcode UK values regardless of input
+        # This maintains interface compatibility while ensuring UK-only usage
+        uk_country_name = "GBR"
+        uk_country_name_short = "GB"
+        
         saving_rates_model = LinearRegression()
         social_transfers_model = LinearRegression()
         wealth_distribution_model = LinearRegression()
         super().__init__(
-            country_name,
-            country_name_short,
+            uk_country_name,
+            uk_country_name_short,
             scale,
             year,
             industries,
@@ -219,18 +228,20 @@ class SyntheticWASPopulation(SyntheticPopulation):
         rent_as_fraction_of_unemployment_rate: float = 0.25,
         n_quantiles: int = 5,
         population_ratio: float = 1.0,
-        exch_rate: float = 1.0,
         proxied_country: str | Country = None,
         yearly_factor: float = 4.0,
     ) -> "SyntheticWASPopulation":
         """
         Creates a synthetic population from WAS data readers.
+        
+        Note: WAS data is UK-specific. The country_name parameter is maintained for interface
+        compatibility but only UK/GBR data will be used regardless of the input.
 
         Args:
             cls: The class object.
             readers (DataReaders): The data readers object.
-            country_name (Country): The country object.
-            country_name_short (str): The short name of the country.
+            country_name (Country): The country object (should be UK/GBR for WAS data).
+            country_name_short (str): The short name of the country (ignored, UK used internally).
             scale (int): The scaling factor.
             year (int): The year.
             quarter (int): The quarter.
@@ -241,17 +252,19 @@ class SyntheticWASPopulation(SyntheticPopulation):
             rent_as_fraction_of_unemployment_rate (float): The rent as fraction of unemployment rate.
             n_quantiles (int): The number of quantiles.
             population_ratio (float): The population ratio.
-            exch_rate (float): The exchange rate.
             proxied_country (str | Country): The proxied country.
             yearly_factor (float): The yearly factor.
 
         Returns:
             SyntheticWASPopulation: The synthetic population.
         """
-        # Get WAS data for the country
-        was_reader = readers.was.get(country_name)
+        # WAS data is UK-specific - hardcode UK country for data retrieval
+        uk_country = Country.GBR  # Use GBR enum value for UK
+        
+        # Get WAS data for UK (regardless of input country_name)
+        was_reader = readers.was.get(uk_country)
         if was_reader is None:
-            raise ValueError(f"No WAS data available for country {country_name}")
+            raise ValueError(f"No WAS data available for UK (WAS is UK-specific)")
 
         # Get household and individual data from WAS
         households_df = was_reader.households_df.copy()
@@ -305,14 +318,14 @@ class SyntheticWASPopulation(SyntheticPopulation):
         investment_weights = investment_weights / investment_weights.sum()
 
         # Calculate social housing rent
-        social_housing_rent = households_df["Rent Paid"].mean() * rent_as_fraction_of_unemployment_rate
+        social_housing_rent = households_df["How much is usual household rent"].mean() * rent_as_fraction_of_unemployment_rate
 
         # Calculate coefficient for financial assets income
         coefficient_fa_income = 0.05  # Default value, can be adjusted based on WAS data
 
         return cls(
-            country_name=str(country_name),
-            country_name_short=country_name_short,
+            country_name="GBR",  # Hardcoded UK value
+            country_name_short="GB",        # Hardcoded UK short code
             scale=scale,
             year=year,
             industries=industries,
@@ -384,30 +397,30 @@ class SyntheticWASPopulation(SyntheticPopulation):
         """Set other real assets wealth from WAS data."""
         # Sum up all real assets except main residence
         other_real_assets = (
-            self.household_data["Value of other Properties"].fillna(0) +
-            self.household_data["Value of Household Vehicles"].fillna(0) +
-            self.household_data["Value of Household Valuables"].fillna(0) +
-            self.household_data["Value of Self-Employment Businesses"].fillna(0)
+            self.household_data["Total value of other houses"].fillna(0) +
+            self.household_data["Total value of all vehicles"].fillna(0) +
+            self.household_data["Value of all household goods and collectables"].fillna(0) +
+            self.household_data["Approximate value of share of business after deducting outstanding debts"].fillna(0)
         )
         self.household_data["Wealth Other Real Assets"] = other_real_assets
 
     def set_household_total_real_assets(self) -> None:
         """Set total real assets wealth from WAS data."""
         self.household_data["Wealth in Real Assets"] = (
-            self.household_data["Value of the Main Residence"].fillna(0) +
+            self.household_data["Value of main residence"].fillna(0) +
             self.household_data["Wealth Other Real Assets"]
         )
 
     def set_household_deposits(self) -> None:
         """Set deposits wealth from WAS data."""
-        self.household_data["Wealth in Deposits"] = self.household_data["Wealth in Deposits"].fillna(0)
+        self.household_data["Wealth in Deposits"] = self.household_data["Total value of savings accounts"].fillna(0)
 
     def set_household_other_financial_assets(self) -> None:
         """Set other financial assets wealth from WAS data."""
         other_financial_assets = (
-            self.household_data["Formal Financial Assets"].fillna(0) +
+            self.household_data["Total value of all formal financial assets"].fillna(0) +
             self.household_data["Other Assets"].fillna(0) +
-            self.household_data["Voluntary Pension"].fillna(0)
+            self.household_data["Total value of individual pension wealth"].fillna(0)
         )
         self.household_data["Wealth in Other Financial Assets"] = other_financial_assets
 
@@ -428,15 +441,15 @@ class SyntheticWASPopulation(SyntheticPopulation):
     def set_household_mortgage_debt(self) -> None:
         """Set mortgage debt from WAS data."""
         mortgage_debt = (
-            self.household_data["Outstanding Balance of HMR Mortgages"].fillna(0) +
-            self.household_data["Other Property Mortgage"].fillna(0)
+            self.household_data["Total mortgage on main residence"].fillna(0) +
+            self.household_data["Total property debt excluding main residence"].fillna(0)
         )
         self.household_data["Outstanding Balance of HMR Mortgages"] = mortgage_debt
 
     def set_household_other_debt(self) -> None:
         """Set other debt from WAS data."""
         other_debt = (
-            self.household_data["Outstanding Balance of Credit Card Debt"].fillna(0) +
+            self.household_data["Hhold total outstanding credit/store/charge card balance"].fillna(0) +
             self.household_data["Outstanding Balance of other Non-Mortgage Loans"].fillna(0)
         )
         self.household_data["Outstanding Balance of other Non-Mortgage Loans"] = other_debt
@@ -457,8 +470,8 @@ class SyntheticWASPopulation(SyntheticPopulation):
     def set_household_employee_income(self) -> None:
         """Set household employee income from WAS data."""
         # Sum employee income across all individuals in household
-        employee_income = self.individual_data.groupby("HID")["Employee Income"].sum()
-        self.household_data["Employee Income"] = self.household_data["HID"].map(employee_income).fillna(0)
+        employee_income = self.individual_data.groupby("Household identifier")["Gross annual income employee main job (including bonuses and commission received)"].sum()
+        self.household_data["Employee Income"] = self.household_data["Household identifier"].map(employee_income).fillna(0)
 
     def set_household_social_transfers(
         self, total_social_transfers: float, independents: Optional[list[str]] = None
@@ -471,9 +484,9 @@ class SyntheticWASPopulation(SyntheticPopulation):
             independents (Optional[list[str]]): List of independent variables.
         """
         # Use WAS-specific social transfers data
-        if "Regular Social Transfers" in self.household_data.columns:
+        if "Annual Household Income - Total benefits received" in self.household_data.columns:
             # Use actual WAS social transfers data
-            self.household_data["Regular Social Transfers"] = self.household_data["Regular Social Transfers"].fillna(0)
+            self.household_data["Regular Social Transfers"] = self.household_data["Annual Household Income - Total benefits received"].fillna(0)
         else:
             # Fallback to proportional distribution
             total_households = len(self.household_data)
@@ -481,8 +494,8 @@ class SyntheticWASPopulation(SyntheticPopulation):
 
     def set_household_income_from_financial_assets(self) -> None:
         """Set income from financial assets from WAS data."""
-        if "Income from Financial Assets" in self.household_data.columns:
-            self.household_data["Income from Financial Assets"] = self.household_data["Income from Financial Assets"].fillna(0)
+        if "Total income in £ over last 12 months received in dividends, interest or return on investments" in self.household_data.columns:
+            self.household_data["Income from Financial Assets"] = self.household_data["Total income in £ over last 12 months received in dividends, interest or return on investments"].fillna(0)
         else:
             # Calculate based on financial assets and coefficient
             self.household_data["Income from Financial Assets"] = (
@@ -500,7 +513,7 @@ class SyntheticWASPopulation(SyntheticPopulation):
                 self.household_data["Employee Income"] +
                 self.household_data["Regular Social Transfers"] +
                 self.household_data["Income from Financial Assets"] +
-                self.household_data["Rental Income from Real Estate"].fillna(0)
+                self.household_data["Annual Household Income - Gross rental income"].fillna(0)
             )
 
     def set_debt_installments(
@@ -677,7 +690,7 @@ class SyntheticWASPopulation(SyntheticPopulation):
         # Use WAS-specific wealth distribution modeling
         # This is a simplified version - can be enhanced with more sophisticated modeling
         income = self.household_data["Income"].values
-        age = self.individual_data["Age"].values if "Age" in self.individual_data.columns else np.ones(len(income)) * 45
+        age = self.individual_data["Grouped age (17 categories)"].values if "Grouped age (17 categories)" in self.individual_data.columns else np.ones(len(income)) * 45
         
         # Simple wealth distribution model based on income and age
         # Higher income and older households tend to have more wealth
@@ -763,8 +776,8 @@ def sample_households(
         sampled_households = hfcs_households_data.copy()
     
     # Get corresponding individuals
-    household_ids = sampled_households["HID"].unique()
-    sampled_individuals = hfcs_individuals_data[hfcs_individuals_data["HID"].isin(household_ids)]
+    household_ids = sampled_households["Household identifier"].unique()
+    sampled_individuals = hfcs_individuals_data[hfcs_individuals_data["Household identifier"].isin(household_ids)]
     
     return sampled_households, sampled_individuals
 
