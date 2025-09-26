@@ -104,6 +104,9 @@ from macro_data.processing.synthetic_matching.matching_individuals_with_firms im
 from macro_data.processing.synthetic_population.hfcs_synthetic_population import (
     SyntheticHFCSPopulation,
 )
+from macro_data.processing.synthetic_population.was_synthetic_population import (
+    SyntheticWASPopulation,
+)
 from macro_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
 )
@@ -234,18 +237,33 @@ class SyntheticCountry:
             country, year, quarter, readers, exogenous_country_data, country_configuration.central_bank_configuration
         )
 
-        population: SyntheticHFCSPopulation = SyntheticHFCSPopulation.from_readers(
-            readers=readers,
-            country_name=country,
-            year=year,
-            quarter=quarter,
-            industry_data=country_industry_data,
-            industries=industries,
-            scale=country_configuration.scale,
-            total_unemployment_benefits=total_unemployment_benefits,
-            country_name_short=country.to_two_letter_code(),
-            exogenous_data=exogenous_country_data,
-        )
+        # Use WAS data for GBR if available, otherwise use HFCS
+        if country == "GBR" and country in readers.was:
+            population: SyntheticWASPopulation = SyntheticWASPopulation.from_readers(
+                readers=readers,
+                country_name=country,
+                year=year,
+                quarter=quarter,
+                industry_data=country_industry_data,
+                industries=industries,
+                scale=country_configuration.scale,
+                total_unemployment_benefits=total_unemployment_benefits,
+                country_name_short=country.to_two_letter_code(),
+                exogenous_data=exogenous_country_data,
+            )
+        else:
+            population: SyntheticHFCSPopulation = SyntheticHFCSPopulation.from_readers(
+                readers=readers,
+                country_name=country,
+                year=year,
+                quarter=quarter,
+                industry_data=country_industry_data,
+                industries=industries,
+                scale=country_configuration.scale,
+                total_unemployment_benefits=total_unemployment_benefits,
+                country_name_short=country.to_two_letter_code(),
+                exogenous_data=exogenous_country_data,
+            )
 
         firms = DefaultSyntheticFirms.from_readers(
             readers=readers,
@@ -419,21 +437,36 @@ class SyntheticCountry:
 
         exch_rate_proxy_to_lcu = readers.exchange_rates.from_eur_to_lcu(country, year)
 
-        population: SyntheticHFCSPopulation = SyntheticHFCSPopulation.from_readers(
-            readers=readers,
-            country_name=proxy_country,
-            year=year,
-            industry_data=country_industry_data,
-            industries=industries,
-            scale=country_configuration.scale,
-            total_unemployment_benefits=total_unemployment_benefits,
-            country_name_short=proxy_country.to_two_letter_code(),
-            population_ratio=population_ratio,
-            exch_rate=exch_rate_proxy_to_lcu,
-            proxied_country=country,
-            quarter=quarter,
-            exogenous_data=exogenous_country_data,
-        )
+        # Use WAS data for GBR if available, otherwise use HFCS
+        if country == "GBR" and country in readers.was:
+            population: SyntheticWASPopulation = SyntheticWASPopulation.from_readers(
+                readers=readers,
+                country_name=country,
+                year=year,
+                quarter=quarter,
+                industry_data=country_industry_data,
+                industries=industries,
+                scale=country_configuration.scale,
+                total_unemployment_benefits=total_unemployment_benefits,
+                country_name_short=country.to_two_letter_code(),
+                exogenous_data=exogenous_country_data,
+            )
+        else:
+            population: SyntheticHFCSPopulation = SyntheticHFCSPopulation.from_readers(
+                readers=readers,
+                country_name=proxy_country,
+                year=year,
+                industry_data=country_industry_data,
+                industries=industries,
+                scale=country_configuration.scale,
+                total_unemployment_benefits=total_unemployment_benefits,
+                country_name_short=proxy_country.to_two_letter_code(),
+                population_ratio=population_ratio,
+                exch_rate=exch_rate_proxy_to_lcu,
+                proxied_country=country,
+                quarter=quarter,
+                exogenous_data=exogenous_country_data,
+            )
 
         firms = DefaultSyntheticFirms.from_readers(
             readers=readers,

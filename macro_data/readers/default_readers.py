@@ -17,6 +17,7 @@ Key features:
 - Country-specific data processing
 """
 
+import logging
 import warnings
 from dataclasses import dataclass
 from datetime import date
@@ -56,6 +57,7 @@ from macro_data.readers.population_data.compustat_firms_reader import (
     CompustatFirmsReader,
 )
 from macro_data.readers.population_data.hfcs_reader import HFCSReader
+from macro_data.readers.population_data.was_reader import WASReader
 from macro_data.readers.socioeconomic_data.wiod_sea_data import WIODSEAReader
 from macro_data.readers.util.prune_util import DataFilterWarning
 
@@ -73,6 +75,7 @@ class DataPaths:
         exchange_rates_path (Path): Path to exchange rates data
         eurostat_path (Path): Path to Eurostat data directory
         hfcs_path (Path): Path to Household Finance and Consumption Survey data
+        was_path (Path): Path to Wealth and Assets Survey data
         icio_paths (dict[int, Path]): Paths to ICIO tables by year
         icio_pivot_paths (dict[int, Path]): Paths to pivoted ICIO data by year
         wiod_sea_path (Path): Path to WIOD SEA data
@@ -94,6 +97,7 @@ class DataPaths:
     exchange_rates_path: Path
     eurostat_path: Path
     hfcs_path: Path
+    was_path: Path
     icio_paths: dict[int, Path]
     icio_pivot_paths: dict[int, Path]
     wiod_sea_path: Path
@@ -126,6 +130,7 @@ class DataPaths:
             exchange_rates_path=raw_data_path / "exchange_rates" / "exchange_rates.csv",
             eurostat_path=raw_data_path / "eurostat",
             hfcs_path=raw_data_path / "hfcs",
+            was_path=raw_data_path / "was",
             icio_paths={year: raw_data_path / "icio" / f"{year}_SML.csv" for year in icio_years},
             icio_pivot_paths={year: raw_data_path / "icio" / f"{year}_SML_P.csv" for year in icio_years},
             wiod_sea_path=raw_data_path / "wiod_sea" / "wiod_sea.csv",
@@ -165,6 +170,7 @@ class DataReaders:
         oecd_econ (OECDEconData): OECD economic data reader
         world_bank (WorldBankReader): World Bank data reader
         hfcs (dict[str, HFCSReader]): Household Finance and Consumption Survey readers
+        was (dict[str, WASReader]): Wealth and Assets Survey readers
         eurostat (EuroStatReader): Eurostat data reader
         ons (ONSReader): ONS data reader
         policy_rates (PolicyRatesReader): Policy rates reader
@@ -183,6 +189,7 @@ class DataReaders:
     oecd_econ: OECDEconData
     world_bank: WorldBankReader
     hfcs: dict[str, HFCSReader]
+    was: dict[str, WASReader]
     eurostat: EuroStatReader
     ons: ONSReader
     policy_rates: PolicyRatesReader
@@ -285,6 +292,38 @@ class DataReaders:
             )
             for country_name, proxy_country in zip(country_names, proxified)
         }
+
+        # Initialize WAS readers for GBR (Great Britain) - always try to use WAS data for UK
+        was = {}
+        for country_name, proxy_country in zip(country_names, proxified):
+            if country_name.to_two_letter_code() == "GB":
+                # Always try to use WAS data for GBR, regardless of proxy settings
+                try:
+                    # Try Stata format first, fall back to CSV if not found
+                    try:
+                        was[country_name] = WASReader.from_stata(
+                            country_name=country_name,
+                            country_name_short=country_name.to_two_letter_code(),
+                            was_data_path=datapaths.was_path,
+                            year=simulation_year,
+                            exchange_rates=exchange_rates,
+                            round_number=7,  # Use Round 7 as default
+                        )
+                    except FileNotFoundError:
+                        # Fall back to CSV format for testing
+                        was[country_name] = WASReader.from_csv(
+                            country_name=country_name,
+                            country_name_short=country_name.to_two_letter_code(),
+                            was_data_path=datapaths.was_path,
+                            year=simulation_year,
+                            exchange_rates=exchange_rates,
+                            num_surveys=1,  # Use only one survey for testing
+                        )
+                except FileNotFoundError:
+                    # WAS data files not found, skip WAS initialization
+                    # The synthetic country will fall back to HFCS data
+                    logging.warning(f"WAS data files not found for {country_name}. Falling back to HFCS data.")
+                    pass
 
         if use_disagg_can_2014_reader:
             # check that only Canada is in the country names
@@ -466,6 +505,7 @@ class DataReaders:
             oecd_econ=oecd_econ,
             world_bank=world_bank,
             hfcs=hfcs,
+            was=was,
             eurostat=eurostat,
             ons=ons_reader,
             policy_rates=policy_rates,
