@@ -1895,6 +1895,40 @@ class Firms(Agent):
 
         self.intermediate_inputs_productivity_matrix[input_index, producing_index] *= 1 + increase_pct
 
+    def compute_productivity_investment(self) -> np.ndarray:
+        """Calculate investment above depreciation replacement.
+
+        Separates total capital investment into:
+        1. Replacement investment: covers depreciation to maintain capacity
+        2. Net investment: excess that can drive productivity improvements
+
+        Returns:
+            np.ndarray: Net investment (productivity investment) for each firm
+        """
+        # Calculate replacement needs: production × depreciation_matrix
+        # We need current good prices for monetary calculation
+        # Use previous period prices as current prices aren't available yet in the timestep
+        if len(self.ts.price) > 1:
+            current_good_prices = self.ts.prev("price")  # Previous period prices
+        else:
+            current_good_prices = self.average_initial_price
+
+        # Calculate replacement investment needed (in monetary terms)
+        production = self.ts.current("production")
+        depreciation_matrix = self.capital_inputs_depreciation_matrix[:, self.states["Industry"]].T
+
+        # For each firm, calculate total replacement cost across all capital types
+        replacement_needs = production[:, None] * depreciation_matrix
+        total_replacement_cost = (replacement_needs * current_good_prices[None, :]).sum(axis=1)
+
+        # Actual total investment
+        total_investment = self.ts.current("total_capital_inputs_bought_costs")
+
+        # Net investment = productivity investment (cannot be negative)
+        productivity_investment = np.maximum(0, total_investment - total_replacement_cost)
+
+        return productivity_investment
+
     def compute_tfp_growth(self) -> np.ndarray:
         """Calculate TFP growth rates for all firms.
 
@@ -1902,15 +1936,14 @@ class Firms(Agent):
         TFP growth based on:
         - Current TFP levels
         - Current production
-        - Investment in productivity (capital investment as proxy)
+        - Net investment in productivity (investment above depreciation replacement)
         - Configuration parameters
 
         Returns:
             np.ndarray: TFP growth rates for each firm
         """
-        # Use total capital bought as proxy for productivity investment
-        # This can be refined later to track specific productivity investments
-        productivity_investment = self.ts.current("total_capital_inputs_bought_costs")
+        # Use actual productivity investment (net investment above replacement)
+        productivity_investment = self.compute_productivity_investment()
 
         # Get configuration parameters, using defaults if not specified
         base_growth = getattr(self.configuration.parameters, "tfp_base_growth_rate", 0.0025)  # 0.25% quarterly
