@@ -1456,18 +1456,6 @@ class Country:
             "Central Bank Policy Rate": self.central_bank.ts.get_aggregate("policy_rate"),
         }
 
-    def headlines(self) -> pd.DataFrame:
-        """Create a DataFrame of headlines for the country."""
-        data_dict = {
-            "GDP": self.economy.ts.get_aggregate("gdp_output"),
-            "CPI": self.economy.total_cpi_inflation(),
-            "Unemployment Rate": self.economy.unemployment_rate(),
-            # net trade
-            # government debt to GDP ratio
-            # wage share
-            # gini?
-        }
-
         if self.add_emissions:
             data_dict["Firm Input Emissions"] = self.firms.get_total_inputs_emissions()
             data_dict["Firm Capital Emissions"] = self.firms.get_total_capital_emissions()
@@ -1491,6 +1479,20 @@ class Country:
                 data_dict[f"Government Emissions {input_name}"] = self.government_entities.disaggregated_emissions(
                     input_rename
                 )
+
+        return pd.DataFrame(data_dict)
+
+    def headlines(self) -> pd.DataFrame:
+        """Create a DataFrame of headlines for the country."""
+        data_dict = {
+            "GDP": self.economy.ts.get_aggregate("gdp_output"),
+            "CPI": self.economy.total_cpi_inflation(),
+            "Unemployment Rate": self.economy.unemployment_rate(),
+            # net trade
+            # government debt to GDP ratio
+            # wage share
+            # gini?
+        }
 
         return pd.DataFrame(data_dict)
 
