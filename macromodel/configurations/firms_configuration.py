@@ -294,6 +294,17 @@ class ProductivityGrowth(BaseModel):
     parameters: dict[str, Any] = {}
 
 
+class ProductivityInvestmentPlanner(BaseModel):
+    """
+    The function for planning productivity investments.
+    Options: NoProductivityInvestmentPlanner, SimpleProductivityInvestmentPlanner, OptimalProductivityInvestmentPlanner
+    """
+
+    name: Literal["NoProductivityInvestmentPlanner", "SimpleProductivityInvestmentPlanner", "OptimalProductivityInvestmentPlanner"] = "NoProductivityInvestmentPlanner"
+    path_name: str = "productivity_investment_planner"
+    parameters: dict[str, Any] = {}
+
+
 class FirmsFunctions(BaseModel):
     bought_goods_distributor: BoughtGoodsDistributor = BoughtGoodsDistributor()
     demand_estimator: DemandEstimator = DemandEstimator()
@@ -305,6 +316,7 @@ class FirmsFunctions(BaseModel):
     prices: Prices = Prices()
     production: Production = Production()
     productivity_growth: ProductivityGrowth = ProductivityGrowth()  # Defaults to NoOpTFPGrowth
+    productivity_investment_planner: ProductivityInvestmentPlanner = ProductivityInvestmentPlanner()  # Defaults to NoProductivityInvestmentPlanner
     target_capital_inputs: TargetCapitalInputs = TargetCapitalInputs()
     target_credit: TargetCredit = TargetCredit()
     target_intermediate_inputs: TargetIntermediateInputs = TargetIntermediateInputs()
