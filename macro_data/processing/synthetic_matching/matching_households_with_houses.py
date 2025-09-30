@@ -36,6 +36,15 @@ Note:
     This module focuses on harmonizing housing data from different sources
     to create a consistent initial state. The actual housing market dynamics
     are implemented in the simulation package.
+
+    Tenure status in HFCS falls into 4 categories:
+    1. Own ('1')
+    2. Part own ('2')
+    3. Rent ('3')
+    4. Free use of their home ('4')
+
+    This module treats part-owners and free-users as owner-occupiers. It adds
+    a category for social renters ('-1').
 """
 
 import numpy as np
@@ -150,6 +159,7 @@ def set_housing_df(
     rescale_factor = total_imputed_rent / housing_df.loc[owned_houses, "Rent"].sum()
     housing_df.loc[owned_houses, "Rent"] *= rescale_factor
 
+    # List of households that own ('1'), part own ('2') or have free use of their home ('4')
     owner_indices = np.isin(synthetic_population.household_data["Tenure Status of the Main Residence"], [1, 2, 4])
     synthetic_population.household_data.loc[owner_indices, "Rent Imputed"] = housing_df.loc[owned_houses, "Rent"].values
 
@@ -168,10 +178,10 @@ def create_owners_df(synthetic_population: SyntheticPopulation) -> pd.DataFrame:
     2. Creates unique IDs for each of their houses
     3. Creates separate columns for owner ID and occupant ID
     4. Uses corresponding household ID from HFCS to fill owner and occupant ID columns
-    
+
     The simplifying assumption is that households that part own or have free use of their property
     will one day own their property outright (e.g. through rent-to-buy or inheritance).
-    
+
     Args:
         synthetic_population (SyntheticPopulation): Household survey data
             with tenure information
@@ -185,7 +195,7 @@ def create_owners_df(synthetic_population: SyntheticPopulation) -> pd.DataFrame:
             - Value: Harmonized property value
             - Rent: NaN (filled later with imputed rent)
     """
-    # List of households that own, part own or have free use of their home
+    # List of households that own ('1'), part own ('2') or have free use of their home ('4')
     households_owning = np.isin(synthetic_population.household_data["Tenure Status of the Main Residence"], [1, 2, 4])
     owners_df = pd.DataFrame(index=range(households_owning.sum()))
     owners_df["House ID"] = owners_df.index
@@ -287,14 +297,14 @@ def housing_info_from_population(rental_income_taxes: float, synthetic_populatio
     """Create landlord IDs and number of properties per landlord.
 
     This function estimates the number of properties per landlord and their IDs by:
-    1. Counting up all the renters using HFCS data on tenure status
+    1. Counting up all the renters using HFCS data on tenure status (response '3' in the data)
     2. Counting up all the non-primary residence properties owned by HFCS respondents
     3. If more renters than properties, the additional renters are assumed to be social renters (using function set_social_housing_renters)
     4. Rescale rent paid to match rent received minus taxes
     5. Fetch owner IDs from HFCS and assign to houses as landlord IDs
 
     The assumes that all non-primary residence properties are rented out rather than used as holiday homes, short-term lets, etc.
-    
+
     In future this should be revised to first fetch number of social tenants in each country from another data source, allocate remaining renters to houses, then assume remaining properties are second homes etc.
 
     Args:
@@ -339,14 +349,14 @@ def set_social_housing_renters(
 
     If there are more renters than surplus properties owned by owner-occupying households,
     this function defines them as social renters:
-    1. Count how many renters there are
+    1. Count how many renters there are (response '3' in the HFCS data)
     2. Count whether there are more renters than surplus properties
-    3. Assign those excess renters to social housing
+    3. Assign those excess renters to social housing by giving them tenure status '-1'
     4. Update those households' tenure status records
     5. Update the rent they pay to the social housing rent level
 
     This is a placeholder simplification pending further work to incorporate social housing data.
-    
+
     Args:
         num_other_properties_owned (int): Total private rental properties
         num_renters (int): Total number of renters
@@ -367,19 +377,16 @@ def match_renters_to_properties(
     rental_income_taxes: float,
     max_matching_size: int = 1000,
 ) -> None:
-    """Harmonize tenant-property relationships in the rental market.
+    """Match renters to properties.
 
-    This function reconciles rental market data by:
-    1. Matching tenant records with property data
-    2. Harmonizing rental payments with income
-    3. Validating relationships for consistency
-    4. Updating all related records
+    This function allocates renters to rented out properties by:
+    1. Fetching renters' data on how much rent they pay
+    2. Fetching landlords' data on how much rent they receive
+    3. Matching renters to landlords by finding the closest rent paid to rent received
+    4. Make sure non-renters don't pay rent
+    5. Update renters' rent to be in line with housing market data
 
-    The process ensures:
-    - Tenant-property relationships match
-    - Rental payments are consistent
-    - Tax effects are properly handled
-    - Data is properly validated
+    This matching is fairly imprecise. Part-owners who pay rent are omitted from this process, instead treated like owner-occupiers.
 
     Args:
         synthetic_population (SyntheticPopulation): Household survey data
@@ -454,7 +461,7 @@ def match_renters_to_properties(
 
     synthetic_population.household_data["Corresponding Inhabited House ID"] = mapped_df["House ID"]
 
-    # Only reset rent for owner-occupied households (they shouldn't pay rent)
+    # Only reset rent for households that own ('1'), part own ('2') or have free use of their home ('4')
     # Preserve the processed HFCS rent data for renters
     owners = synthetic_population.household_data["Tenure Status of the Main Residence"].isin([1, 2, 4])
     synthetic_population.household_data.loc[owners, "Rent Paid"] = 0
