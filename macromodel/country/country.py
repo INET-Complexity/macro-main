@@ -626,7 +626,7 @@ class Country:
         )
 
         # Update TFP before production (only if TFP growth is configured)
-        if not self.assume_zero_growth and hasattr(self.firms.configuration.parameters, "tfp_base_growth_rate"):
+        if not self.assume_zero_growth:
             self.firms.update_tfp()
 
         # Firm production
