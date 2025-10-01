@@ -1959,7 +1959,7 @@ class Firms(Agent):
         if len(self.ts.price) > 1:
             current_good_prices = self.ts.prev("price")  # Previous period prices
         else:
-            current_good_prices = self.average_initial_price
+            current_good_prices = self.ts.current("price")  # Initial prices for
 
         # Calculate replacement investment needed (in monetary terms)
         production = self.ts.current("production")
