@@ -151,6 +151,89 @@ def test_can_provincial(can_provincial_datawrapper):
     assert True
 
 
+def test_tfp_growth_with_investment(datawrapper):
+    """Test that TFP growth mechanism works with productivity investment.
+
+    Creates two simulations with identical seeds:
+    1. Control: No TFP growth (all parameters set to zero/disabled)
+    2. Treatment: TFP growth enabled with high investment effectiveness and low hurdle rate
+
+    Verifies that firms in the treatment simulation have higher TFP after several periods.
+    """
+    # Base configuration for control (no TFP growth)
+    config_no_growth = SimulationConfiguration(country_configurations={"FRA": CountryConfiguration()})
+    config_no_growth.seed = 42  # Fixed seed for reproducibility
+
+    # Disable TFP growth in control
+    config_no_growth.country_configurations["FRA"].firms.parameters.tfp_base_growth_rate = 0.0
+    config_no_growth.country_configurations["FRA"].firms.parameters.tfp_investment_elasticity = 0.0
+
+    # Configuration for treatment (with TFP growth)
+    config_with_growth = deepcopy(config_no_growth)
+
+    # Enable TFP growth with favorable parameters
+    config_with_growth.country_configurations["FRA"].firms.parameters.tfp_base_growth_rate = 0.001  # 0.1% base growth
+    config_with_growth.country_configurations["FRA"].firms.parameters.tfp_investment_elasticity = 0.5  # High elasticity
+
+    # Set productivity investment planner parameters
+    config_with_growth.country_configurations["FRA"].firms.functions.productivity_investment_planner.name = (
+        "SimpleProductivityInvestmentPlanner"
+    )
+    config_with_growth.country_configurations["FRA"].firms.functions.productivity_investment_planner.parameters = {
+        "hurdle_rate": 1e-5,  # Very low hurdle rate (almost no discounting)
+        "investment_effectiveness": 0.5,  # High effectiveness
+        "investment_elasticity": 0.5,  # Match the TFP elasticity
+        "max_investment_fraction": 0.2,  # Allow up to 20% of available cash
+    }
+
+    # Also configure the productivity growth function
+    config_with_growth.country_configurations["FRA"].firms.functions.productivity_growth.name = "SimpleTFPGrowth"
+    config_with_growth.country_configurations["FRA"].firms.functions.productivity_growth.parameters = {
+        "investment_effectiveness": 0.5,  # High effectiveness for growth calculation
+    }
+
+    # Create simulations
+    sim_no_growth = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=config_no_growth)
+
+    sim_with_growth = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=config_with_growth)
+
+    # Get initial TFP values (should be identical)
+    initial_tfp_no_growth = sim_no_growth.countries["FRA"].firms.states["tfp_multiplier"].copy()
+    initial_tfp_with_growth = sim_with_growth.countries["FRA"].firms.states["tfp_multiplier"].copy()
+
+    # Verify initial TFP values are the same (both should be 1.0)
+    np.testing.assert_array_almost_equal(initial_tfp_no_growth, initial_tfp_with_growth)
+    np.testing.assert_array_almost_equal(initial_tfp_no_growth, np.ones_like(initial_tfp_no_growth))
+
+    # Run both simulations for several periods
+    n_periods = 10
+    for _ in range(n_periods):
+        sim_no_growth.iterate()
+        sim_with_growth.iterate()
+
+    # Get final TFP values
+    final_tfp_no_growth = sim_no_growth.countries["FRA"].firms.states["tfp_multiplier"]
+    final_tfp_with_growth = sim_with_growth.countries["FRA"].firms.states["tfp_multiplier"]
+
+    # Verify that TFP in the growth simulation is higher
+    # Control should remain at 1.0 (no growth)
+    np.testing.assert_array_almost_equal(final_tfp_no_growth, np.ones_like(final_tfp_no_growth))
+
+    # Treatment should have TFP > 1.0 for at least most firms
+    assert np.mean(final_tfp_with_growth) > 1.0, "Average TFP should be greater than 1.0 with growth enabled"
+    assert np.sum(final_tfp_with_growth > 1.0) > len(final_tfp_with_growth) * 0.8, "Most firms should have TFP > 1.0"
+
+    # Verify all firms in treatment have at least as much TFP as control
+    assert np.all(final_tfp_with_growth >= final_tfp_no_growth), "All firms should have TFP >= control"
+
+    # Check that productivity investment is actually happening
+    if len(sim_with_growth.countries["FRA"].firms.ts.executed_productivity_investment) > 0:
+        total_investment = sum(
+            inv.sum() for inv in sim_with_growth.countries["FRA"].firms.ts.executed_productivity_investment
+        )
+        assert total_investment > 0, "There should be positive productivity investment"
+
+
 def test_check_compatibility(datawrapper):
     """Test the compatibility check."""
     france = CountryName("FRA")
