@@ -423,6 +423,8 @@ class Firms(Agent):
     def set_targets(
         self,
         bank_overdraft_rate_on_firm_deposits: np.ndarray,
+        estimated_growth: float,
+        estimated_inflation: float,
     ) -> None:
         """Set production and input targets for firms.
 
@@ -431,9 +433,12 @@ class Firms(Agent):
         - Target production levels
         - Desired labor inputs
         - Target input purchases
+        - Planned productivity investment
 
         Args:
             bank_overdraft_rate_on_firm_deposits (np.ndarray): Overdraft interest rates
+            estimated_growth: Expected real growth rate
+            estimated_inflation: Expected inflation rate
         """
         self.ts.limiting_intermediate_inputs.append(
             self.functions["production"].compute_limiting_intermediate_inputs_stock(
@@ -465,6 +470,49 @@ class Firms(Agent):
         self.ts.desired_labour_inputs.append(self.compute_desired_labour_inputs())
         self.ts.target_intermediate_inputs_production.append(self.compute_target_intermediate_inputs_production())
         self.ts.target_capital_inputs_production.append(self.compute_target_capital_inputs_production())
+        self.ts.planned_productivity_investment.append(
+            self.plan_productivity_investment(
+                estimated_growth=estimated_growth,
+                estimated_inflation=estimated_inflation,
+                bank_overdraft_rate_on_firm_deposits=bank_overdraft_rate_on_firm_deposits,
+            )
+        )
+
+    def plan_productivity_investment(
+        self, estimated_growth: float, estimated_inflation: float, bank_overdraft_rate_on_firm_deposits: np.ndarray
+    ) -> np.ndarray:
+        """Plan productivity investment amounts for each firm.
+
+        Uses the productivity investment planner to determine optimal investment
+        amounts based on current conditions and expected returns. Only invests
+        if there is available cash after accounting for capital replacement needs.
+
+        Args:
+            estimated_growth: Expected real growth rate
+            estimated_inflation: Expected inflation rate
+            bank_overdraft_rate_on_firm_deposits: Bank overdraft rates
+
+        Returns:
+            np.ndarray: Planned productivity investment amounts for each firm
+        """
+        # Calculate expected capital costs
+        # Use current prices adjusted for inflation as expected prices
+        expected_prices = (1 + estimated_inflation) * self.ts.current("price")
+        expected_capital_costs = np.matmul(self.ts.current("target_capital_inputs"), expected_prices)
+
+        # Calculate available cash after capital investment
+        # This is the long-term credit minus the capital replacement needs
+        available_cash = self.ts.current("target_long_term_credit") - expected_capital_costs
+
+        # Only allow positive available cash (no borrowing for productivity investment)
+        available_cash = np.maximum(0.0, available_cash)
+
+        return self.functions["productivity_investment_planner"].plan_productivity_investment(
+            current_tfp=self.states["tfp_multiplier"],
+            current_production=self.ts.current("production"),
+            current_unit_costs=self.compute_unit_costs(),
+            available_cash=available_cash,
+        )
 
     def compute_estimated_profits(self, estimated_growth: float, estimated_inflation: float) -> np.ndarray:
         """Estimate future profits for each firm.
@@ -1929,6 +1977,18 @@ class Firms(Agent):
 
         return productivity_investment
 
+    def execute_productivity_investment(self) -> None:
+        """Execute planned productivity investment and store the realized amounts.
+
+        This method should be called after production and investment decisions
+        are finalized to record the actual productivity investment made.
+        """
+        # Calculate actual productivity investment (net above replacement)
+        executed_investment = self.compute_productivity_investment()
+
+        # Store in time series
+        self.ts.executed_productivity_investment.append(executed_investment)
+
     def compute_tfp_growth(self) -> np.ndarray:
         """Calculate TFP growth rates for all firms.
 
@@ -1936,14 +1996,19 @@ class Firms(Agent):
         TFP growth based on:
         - Current TFP levels
         - Current production
-        - Net investment in productivity (investment above depreciation replacement)
+        - Executed productivity investment (if available, otherwise computed)
         - Configuration parameters
 
         Returns:
             np.ndarray: TFP growth rates for each firm
         """
-        # Use actual productivity investment (net investment above replacement)
-        productivity_investment = self.compute_productivity_investment()
+        # Use executed productivity investment if available (from time series),
+        # otherwise fall back to computing it
+        if len(self.ts.executed_productivity_investment) > 0:
+            productivity_investment = self.ts.current("executed_productivity_investment")
+        else:
+            # Fallback for initial period or if execute_productivity_investment wasn't called
+            productivity_investment = self.compute_productivity_investment()
 
         # Get configuration parameters, using defaults if not specified
         base_growth = getattr(self.configuration.parameters, "tfp_base_growth_rate", 0.0025)  # 0.25% quarterly

@@ -86,6 +86,8 @@ class FirmTimeSeries(TimeSeries):
     - estimated_growth_by_firm: Expected growth rates
     - unconstrained_target_intermediate_inputs: Desired input purchases
     - unconstrained_target_capital_inputs: Desired capital purchases
+    - planned_productivity_investment: Investment amount planned for TFP improvement
+    - executed_productivity_investment: Actual investment made in TFP improvement
 
     Emissions:
     - inputs_emissions: Emissions from input use
@@ -222,6 +224,8 @@ class FirmTimeSeries(TimeSeries):
             unconstrained_target_capital_inputs_costs=np.full(data.shape[0], np.nan),
             target_intermediate_inputs=used_intermediate_inputs,
             target_capital_inputs=used_capital_inputs,
+            planned_productivity_investment=np.zeros(data.shape[0]),
+            executed_productivity_investment=np.zeros(data.shape[0]),
             #
             inventory=data["Inventory"].values,
             inventory_nominal=data["Price"].values * data["Inventory"].values,
@@ -422,6 +426,8 @@ def create_firms_timeseries(
         unconstrained_target_capital_inputs_costs=np.full(data.shape[0], np.nan),
         target_intermediate_inputs=used_intermediate_inputs,
         target_capital_inputs=used_capital_inputs,
+        planned_productivity_investment=np.zeros(data.shape[0]),
+        executed_productivity_investment=np.zeros(data.shape[0]),
         #
         inventory=data["Inventory"].values,
         inventory_nominal=data["Price"].values * data["Inventory"].values,
