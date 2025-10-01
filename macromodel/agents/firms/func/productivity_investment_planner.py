@@ -51,7 +51,7 @@ class ProductivityInvestmentPlanner(ABC):
         current_production: np.ndarray,
         current_unit_costs: np.ndarray,
         available_cash: np.ndarray,
-        **kwargs
+        **kwargs,
     ) -> np.ndarray:
         """Plan productivity investment for each firm.
 
@@ -179,7 +179,7 @@ class NoProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
         current_production: np.ndarray,
         current_unit_costs: np.ndarray,
         available_cash: np.ndarray,
-        **kwargs
+        **kwargs,
     ) -> np.ndarray:
         """Return zero productivity investment for all firms.
 
@@ -234,7 +234,7 @@ class SimpleProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
         current_production: np.ndarray,
         current_unit_costs: np.ndarray,
         available_cash: np.ndarray,
-        **kwargs
+        **kwargs,
     ) -> np.ndarray:
         """Plan productivity investment using simple rules.
 
@@ -258,9 +258,7 @@ class SimpleProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
         candidate_investment = self.investment_propensity * budget
 
         # Compute hurdle-adjusted present value of cost savings
-        hurdle_value = self.compute_hurdle_adjusted_value(
-            candidate_investment, current_production, current_unit_costs
-        )
+        hurdle_value = self.compute_hurdle_adjusted_value(candidate_investment, current_production, current_unit_costs)
 
         # Investment is profitable if hurdle-adjusted value exceeds investment cost
         profitable = hurdle_value > candidate_investment
@@ -309,7 +307,7 @@ class OptimalProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
         current_production: np.ndarray,
         current_unit_costs: np.ndarray,
         available_cash: np.ndarray,
-        **kwargs
+        **kwargs,
     ) -> np.ndarray:
         """Plan productivity investment by optimizing expected returns.
 
@@ -353,9 +351,7 @@ class OptimalProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
                 prod_array = np.array([current_production[i]])
                 costs_array = np.array([current_unit_costs[i]])
 
-                hurdle_value = self.compute_hurdle_adjusted_value(
-                    inv_array, prod_array, costs_array
-                )[0]
+                hurdle_value = self.compute_hurdle_adjusted_value(inv_array, prod_array, costs_array)[0]
 
                 # NPV: hurdle-adjusted value minus investment cost
                 npv = hurdle_value - investment
