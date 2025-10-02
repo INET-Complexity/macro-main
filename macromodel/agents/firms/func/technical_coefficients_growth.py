@@ -27,25 +27,12 @@ class TechnicalCoefficientsGrowth(ABC):
     Attributes:
         investment_effectiveness (float): How effectively investment translates to improvements (ψ)
         diminishing_returns_factor (float): Rate of diminishing returns (δ)
-        cumulative_intermediate_improvements (np.ndarray): Tracks cumulative improvements
-            for intermediate inputs to implement diminishing returns [n_firms x n_industries]
-        cumulative_capital_improvements (np.ndarray): Tracks cumulative improvements
-            for capital inputs to implement diminishing returns [n_firms x n_industries]
     """
 
-    def __init__(
-        self,
-        n_firms: int,
-        n_industries: int,
-        investment_effectiveness: float = 0.1,
-        diminishing_returns_factor: float = 0.5,
-        **kwargs
-    ):
-        """Initialize technical coefficients growth tracker.
+    def __init__(self, investment_effectiveness: float = 0.1, diminishing_returns_factor: float = 0.5, **kwargs):
+        """Initialize technical coefficients growth calculator.
 
         Args:
-            n_firms (int): Number of firms
-            n_industries (int): Number of industries/input types
             investment_effectiveness (float): How effectively investment translates to improvements (ψ)
                 Default: 0.1 (10% effectiveness)
             diminishing_returns_factor (float): Rate of diminishing returns (δ)
@@ -56,14 +43,11 @@ class TechnicalCoefficientsGrowth(ABC):
         self.investment_effectiveness = investment_effectiveness
         self.diminishing_returns_factor = diminishing_returns_factor
 
-        # Initialize cumulative improvement trackers (per firm, per input type)
-        self.cumulative_intermediate_improvements = np.zeros((n_firms, n_industries))
-        self.cumulative_capital_improvements = np.zeros((n_firms, n_industries))
-
     @abstractmethod
     def compute_intermediate_multiplier_growth(
         self,
         current_multipliers: np.ndarray,
+        cumulative_improvements: np.ndarray,
         base_coefficients: np.ndarray,
         firm_industries: np.ndarray,
         technical_investment: np.ndarray,
@@ -75,6 +59,7 @@ class TechnicalCoefficientsGrowth(ABC):
 
         Args:
             current_multipliers (np.ndarray): Current firm multipliers [n_firms x n_industries]
+            cumulative_improvements (np.ndarray): Cumulative past improvements [n_firms x n_industries]
             base_coefficients (np.ndarray): Base industry coefficients [n_industries x n_industries]
             firm_industries (np.ndarray): Industry index for each firm [n_firms]
             technical_investment (np.ndarray): Investment in each input's productivity [n_firms x n_industries]
@@ -91,6 +76,7 @@ class TechnicalCoefficientsGrowth(ABC):
     def compute_capital_multiplier_growth(
         self,
         current_multipliers: np.ndarray,
+        cumulative_improvements: np.ndarray,
         base_coefficients: np.ndarray,
         firm_industries: np.ndarray,
         technical_investment: np.ndarray,
@@ -102,6 +88,7 @@ class TechnicalCoefficientsGrowth(ABC):
 
         Args:
             current_multipliers (np.ndarray): Current firm multipliers [n_firms x n_industries]
+            cumulative_improvements (np.ndarray): Cumulative past improvements [n_firms x n_industries]
             base_coefficients (np.ndarray): Base industry coefficients [n_industries x n_industries]
             firm_industries (np.ndarray): Industry index for each firm [n_firms]
             technical_investment (np.ndarray): Investment in each input's productivity [n_firms x n_industries]
@@ -113,18 +100,6 @@ class TechnicalCoefficientsGrowth(ABC):
             np.ndarray: Growth rates for each multiplier [n_firms x n_industries]
         """
         pass
-
-    def update_cumulative_improvements(
-        self, intermediate_growth: np.ndarray, capital_growth: np.ndarray
-    ) -> None:
-        """Update cumulative improvement trackers after growth is applied.
-
-        Args:
-            intermediate_growth (np.ndarray): Applied growth rates for intermediate multipliers [n_firms x n_industries]
-            capital_growth (np.ndarray): Applied growth rates for capital multipliers [n_firms x n_industries]
-        """
-        self.cumulative_intermediate_improvements += intermediate_growth
-        self.cumulative_capital_improvements += capital_growth
 
     @staticmethod
     def update_multipliers(current_multipliers: np.ndarray, growth_rates: np.ndarray) -> np.ndarray:
@@ -140,7 +115,6 @@ class TechnicalCoefficientsGrowth(ABC):
         return current_multipliers * (1 + growth_rates)
 
 
-
 class NoOpTechnicalGrowth(TechnicalCoefficientsGrowth):
     """No-operation technical growth implementation (static multipliers).
 
@@ -149,20 +123,19 @@ class NoOpTechnicalGrowth(TechnicalCoefficientsGrowth):
     interface needs to be satisfied.
     """
 
-    def __init__(self, n_firms: int, n_industries: int, **kwargs):
+    def __init__(self, **kwargs):
         """Initialize NoOpTechnicalGrowth (ignores all parameters).
 
         Args:
-            n_firms (int): Number of firms
-            n_industries (int): Number of industries/input types
             **kwargs: Additional parameters (all ignored)
         """
-        super().__init__(n_firms, n_industries)
+        super().__init__(investment_effectiveness=0.0, diminishing_returns_factor=0.0)
         # NoOp doesn't need any parameters
 
     def compute_intermediate_multiplier_growth(
         self,
         current_multipliers: np.ndarray,
+        cumulative_improvements: np.ndarray,
         base_coefficients: np.ndarray,
         firm_industries: np.ndarray,
         technical_investment: np.ndarray,
@@ -174,6 +147,7 @@ class NoOpTechnicalGrowth(TechnicalCoefficientsGrowth):
 
         Args:
             current_multipliers (np.ndarray): Current multipliers (ignored)
+            cumulative_improvements (np.ndarray): Cumulative improvements (ignored)
             base_coefficients (np.ndarray): Base coefficients (ignored)
             firm_industries (np.ndarray): Firm industries (ignored)
             technical_investment (np.ndarray): Investment amounts (ignored)
@@ -189,6 +163,7 @@ class NoOpTechnicalGrowth(TechnicalCoefficientsGrowth):
     def compute_capital_multiplier_growth(
         self,
         current_multipliers: np.ndarray,
+        cumulative_improvements: np.ndarray,
         base_coefficients: np.ndarray,
         firm_industries: np.ndarray,
         technical_investment: np.ndarray,
@@ -200,6 +175,7 @@ class NoOpTechnicalGrowth(TechnicalCoefficientsGrowth):
 
         Args:
             current_multipliers (np.ndarray): Current multipliers (ignored)
+            cumulative_improvements (np.ndarray): Cumulative improvements (ignored)
             base_coefficients (np.ndarray): Base coefficients (ignored)
             firm_industries (np.ndarray): Firm industries (ignored)
             technical_investment (np.ndarray): Investment amounts (ignored)
@@ -228,28 +204,20 @@ class SimpleTechnicalGrowth(TechnicalCoefficientsGrowth):
     - Ω_ij = cumulative past improvements for firm i on input j
     """
 
-    def __init__(
-        self,
-        n_firms: int,
-        n_industries: int,
-        investment_effectiveness: float = 0.1,
-        diminishing_returns_factor: float = 0.5,
-        **kwargs
-    ):
+    def __init__(self, investment_effectiveness: float = 0.1, diminishing_returns_factor: float = 0.5, **kwargs):
         """Initialize SimpleTechnicalGrowth with parameters.
 
         Args:
-            n_firms (int): Number of firms
-            n_industries (int): Number of industries/input types
             investment_effectiveness (float): How effectively investment translates to improvements (ψ)
             diminishing_returns_factor (float): Rate of diminishing returns (δ)
             **kwargs: Additional parameters (for future extensions)
         """
-        super().__init__(n_firms, n_industries, investment_effectiveness, diminishing_returns_factor, **kwargs)
+        super().__init__(investment_effectiveness, diminishing_returns_factor, **kwargs)
 
     def compute_intermediate_multiplier_growth(
         self,
         current_multipliers: np.ndarray,
+        cumulative_improvements: np.ndarray,
         base_coefficients: np.ndarray,
         firm_industries: np.ndarray,
         technical_investment: np.ndarray,
@@ -304,7 +272,7 @@ class SimpleTechnicalGrowth(TechnicalCoefficientsGrowth):
             investment_intensity[valid_mask] = technical_investment[valid_mask] / reference_costs[valid_mask]
 
             # Apply diminishing returns based on cumulative improvements
-            diminishing_factor = np.exp(-self.diminishing_returns_factor * self.cumulative_intermediate_improvements)
+            diminishing_factor = np.exp(-self.diminishing_returns_factor * cumulative_improvements)
 
             # Calculate growth rates
             growth_rates[valid_mask] = (
@@ -316,6 +284,7 @@ class SimpleTechnicalGrowth(TechnicalCoefficientsGrowth):
     def compute_capital_multiplier_growth(
         self,
         current_multipliers: np.ndarray,
+        cumulative_improvements: np.ndarray,
         base_coefficients: np.ndarray,
         firm_industries: np.ndarray,
         technical_investment: np.ndarray,
@@ -329,6 +298,7 @@ class SimpleTechnicalGrowth(TechnicalCoefficientsGrowth):
 
         Args:
             current_multipliers (np.ndarray): Current multipliers [n_firms x n_industries]
+            cumulative_improvements (np.ndarray): Cumulative past improvements [n_firms x n_industries]
             base_coefficients (np.ndarray): Base coefficients [n_industries x n_industries]
             firm_industries (np.ndarray): Industry for each firm [n_firms]
             technical_investment (np.ndarray): Investment [n_firms x n_industries]
@@ -367,157 +337,10 @@ class SimpleTechnicalGrowth(TechnicalCoefficientsGrowth):
             investment_intensity = np.zeros((n_firms, n_industries))
             investment_intensity[valid_mask] = technical_investment[valid_mask] / reference_costs[valid_mask]
 
-            diminishing_factor = np.exp(-self.diminishing_returns_factor * self.cumulative_capital_improvements)
+            diminishing_factor = np.exp(-self.diminishing_returns_factor * cumulative_improvements)
 
             growth_rates[valid_mask] = (
                 self.investment_effectiveness * investment_intensity[valid_mask] * diminishing_factor[valid_mask]
             )
 
         return growth_rates
-
-
-class BundleAwareTechnicalGrowth(SimpleTechnicalGrowth):
-    """Technical growth with bundle-aware investment effects.
-
-    Extends SimpleTechnicalGrowth to account for substitution bundles.
-    Within a bundle, improvements to one input can affect the effective
-    productivity of the entire bundle through spillover effects.
-    """
-
-    def __init__(
-        self,
-        n_firms: int,
-        n_industries: int,
-        investment_effectiveness: float = 0.1,
-        diminishing_returns_factor: float = 0.5,
-        substitution_bundles: Optional[np.ndarray] = None,
-        bundle_spillover: float = 0.2,
-        **kwargs
-    ):
-        """Initialize with bundle information.
-
-        Args:
-            n_firms (int): Number of firms
-            n_industries (int): Number of industries/input types
-            investment_effectiveness (float): How effectively investment translates to improvements
-            diminishing_returns_factor (float): Rate of diminishing returns
-            substitution_bundles (Optional[np.ndarray]): Bundle matrix [n_industries x n_bundles]
-                indicating which inputs belong to which substitution bundles
-            bundle_spillover (float): Fraction of improvement that spills over to bundle members
-            **kwargs: Additional parameters
-        """
-        super().__init__(n_firms, n_industries, investment_effectiveness, diminishing_returns_factor)
-        self.substitution_bundles = substitution_bundles
-        self.bundle_spillover = bundle_spillover
-
-    def apply_bundle_effects(self, growth_rates: np.ndarray) -> np.ndarray:
-        """Apply bundle spillover effects to growth rates.
-
-        When one input in a bundle improves, it can have positive spillovers
-        to other inputs in the same bundle (representing complementarities).
-
-        Args:
-            growth_rates (np.ndarray): Base growth rates [n_firms x n_industries]
-
-        Returns:
-            np.ndarray: Adjusted growth rates with bundle effects
-        """
-        if self.substitution_bundles is None:
-            return growth_rates
-
-        adjusted_rates = growth_rates.copy()
-
-        # For each bundle
-        for bundle_idx in range(self.substitution_bundles.shape[1]):
-            bundle_members = self.substitution_bundles[:, bundle_idx] > 0
-
-            if np.any(bundle_members):
-                # Calculate average improvement in the bundle for each firm
-                for firm_idx in range(growth_rates.shape[0]):
-                    firm_bundle_rates = growth_rates[firm_idx, bundle_members]
-                    if len(firm_bundle_rates) > 0:
-                        bundle_avg = np.mean(firm_bundle_rates)
-
-                        # Apply spillover to all bundle members for this firm
-                        for input_idx in np.where(bundle_members)[0]:
-                            # Add spillover from other bundle members
-                            spillover = self.bundle_spillover * (bundle_avg - growth_rates[firm_idx, input_idx])
-                            adjusted_rates[firm_idx, input_idx] += max(0, spillover)
-
-        return adjusted_rates
-
-    def compute_intermediate_multiplier_growth(
-        self,
-        current_multipliers: np.ndarray,
-        base_coefficients: np.ndarray,
-        firm_industries: np.ndarray,
-        technical_investment: np.ndarray,
-        production: np.ndarray,
-        prices: np.ndarray,
-        **kwargs,
-    ) -> np.ndarray:
-        """Calculate growth rates with bundle effects.
-
-        Args:
-            current_multipliers (np.ndarray): Current multipliers
-            base_coefficients (np.ndarray): Base coefficients
-            firm_industries (np.ndarray): Firm industries
-            technical_investment (np.ndarray): Investment in each input
-            production (np.ndarray): Current production levels
-            prices (np.ndarray): Current input prices
-            **kwargs: Additional parameters
-
-        Returns:
-            np.ndarray: Growth rates with bundle effects
-        """
-        # Get base growth rates from parent class
-        base_growth = super().compute_intermediate_multiplier_growth(
-            current_multipliers,
-            base_coefficients,
-            firm_industries,
-            technical_investment,
-            production,
-            prices,
-            **kwargs,
-        )
-
-        # Apply bundle effects
-        return self.apply_bundle_effects(base_growth)
-
-    def compute_capital_multiplier_growth(
-        self,
-        current_multipliers: np.ndarray,
-        base_coefficients: np.ndarray,
-        firm_industries: np.ndarray,
-        technical_investment: np.ndarray,
-        production: np.ndarray,
-        prices: np.ndarray,
-        **kwargs,
-    ) -> np.ndarray:
-        """Calculate growth rates with bundle effects.
-
-        Args:
-            current_multipliers (np.ndarray): Current multipliers
-            base_coefficients (np.ndarray): Base coefficients
-            firm_industries (np.ndarray): Firm industries
-            technical_investment (np.ndarray): Investment in each input
-            production (np.ndarray): Current production levels
-            prices (np.ndarray): Current input prices
-            **kwargs: Additional parameters
-
-        Returns:
-            np.ndarray: Growth rates with bundle effects
-        """
-        # Get base growth rates from parent class
-        base_growth = super().compute_capital_multiplier_growth(
-            current_multipliers,
-            base_coefficients,
-            firm_industries,
-            technical_investment,
-            production,
-            prices,
-            **kwargs,
-        )
-
-        # Apply bundle effects
-        return self.apply_bundle_effects(base_growth)
