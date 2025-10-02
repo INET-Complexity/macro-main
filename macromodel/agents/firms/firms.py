@@ -425,6 +425,7 @@ class Firms(Agent):
         bank_overdraft_rate_on_firm_deposits: np.ndarray,
         estimated_growth: float,
         estimated_inflation: float,
+        current_good_prices: np.ndarray,
     ) -> None:
         """Set production and input targets for firms.
 
@@ -439,6 +440,7 @@ class Firms(Agent):
             bank_overdraft_rate_on_firm_deposits (np.ndarray): Overdraft interest rates
             estimated_growth: Expected real growth rate
             estimated_inflation: Expected inflation rate
+            current_good_prices (np.ndarray): Industry-level average prices
         """
         self.ts.limiting_intermediate_inputs.append(
             self.functions["production"].compute_limiting_intermediate_inputs_stock(
@@ -470,16 +472,18 @@ class Firms(Agent):
         self.ts.desired_labour_inputs.append(self.compute_desired_labour_inputs())
         self.ts.target_intermediate_inputs_production.append(self.compute_target_intermediate_inputs_production())
         self.ts.target_capital_inputs_production.append(self.compute_target_capital_inputs_production())
-        self.ts.planned_productivity_investment.append(
-            self.plan_productivity_investment(
-                estimated_growth=estimated_growth,
-                estimated_inflation=estimated_inflation,
-                bank_overdraft_rate_on_firm_deposits=bank_overdraft_rate_on_firm_deposits,
-            )
+
+        # Plan productivity investment using industry-level prices
+        planned_investment = self.plan_productivity_investment(
+            estimated_inflation=estimated_inflation,
+            current_good_prices=current_good_prices,
         )
+        self.ts.planned_productivity_investment.append(planned_investment)
 
     def plan_productivity_investment(
-        self, estimated_growth: float, estimated_inflation: float, bank_overdraft_rate_on_firm_deposits: np.ndarray
+        self,
+        estimated_inflation: float,
+        current_good_prices: np.ndarray,
     ) -> np.ndarray:
         """Plan productivity investment amounts for each firm.
 
@@ -488,16 +492,16 @@ class Firms(Agent):
         if there is available cash after accounting for capital replacement needs.
 
         Args:
-            estimated_growth: Expected real growth rate
             estimated_inflation: Expected inflation rate
-            bank_overdraft_rate_on_firm_deposits: Bank overdraft rates
+            current_good_prices: Industry-level average prices for inputs
 
         Returns:
             np.ndarray: Planned productivity investment amounts for each firm
         """
-        # Calculate expected capital costs
+        # Calculate expected capital costs using industry-level prices
         # Use current prices adjusted for inflation as expected prices
-        expected_prices = (1 + estimated_inflation) * self.ts.current("price")
+        expected_prices = (1 + estimated_inflation) * current_good_prices
+        # Target capital inputs are in real units, so multiply by expected prices to get costs
         expected_capital_costs = np.matmul(self.ts.current("target_capital_inputs"), expected_prices)
 
         # Calculate available cash after capital investment

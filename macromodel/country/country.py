@@ -482,6 +482,7 @@ class Country:
             bank_overdraft_rate_on_firm_deposits=self.banks.ts.current("overdraft_rate_on_firm_deposits"),
             estimated_growth=self.economy.ts.current("estimated_growth")[0],
             estimated_inflation=self.economy.ts.current("estimated_ppi_inflation")[0],
+            current_good_prices=self.economy.ts.current("good_prices"),
         )
 
         # Changes in labour productivity
