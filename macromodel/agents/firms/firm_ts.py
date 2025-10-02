@@ -88,6 +88,9 @@ class FirmTimeSeries(TimeSeries):
     - unconstrained_target_capital_inputs: Desired capital purchases
     - planned_productivity_investment: Investment amount planned for TFP improvement
     - executed_productivity_investment: Actual investment made in TFP improvement
+    - planned_technical_investment: Investment amount planned for technical coefficient improvements
+    - executed_technical_investment: Actual investment made in technical coefficient improvements
+    - technical_investment_by_input: Distribution of technical investment across input types (n_firms x n_industries)
 
     Emissions:
     - inputs_emissions: Emissions from input use
@@ -226,6 +229,9 @@ class FirmTimeSeries(TimeSeries):
             target_capital_inputs=used_capital_inputs,
             planned_productivity_investment=np.zeros(data.shape[0]),
             executed_productivity_investment=np.zeros(data.shape[0]),
+            planned_technical_investment=np.zeros(data.shape[0]),
+            executed_technical_investment=np.zeros(data.shape[0]),
+            technical_investment_by_input=np.zeros((data.shape[0], n_industries)),
             #
             inventory=data["Inventory"].values,
             inventory_nominal=data["Price"].values * data["Inventory"].values,
@@ -428,6 +434,9 @@ def create_firms_timeseries(
         target_capital_inputs=used_capital_inputs,
         planned_productivity_investment=np.zeros(data.shape[0]),
         executed_productivity_investment=np.zeros(data.shape[0]),
+        planned_technical_investment=np.zeros(data.shape[0]),
+        executed_technical_investment=np.zeros(data.shape[0]),
+        technical_investment_by_input=np.zeros((data.shape[0], n_industries)),
         #
         inventory=data["Inventory"].values,
         inventory_nominal=data["Price"].values * data["Inventory"].values,
