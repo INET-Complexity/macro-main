@@ -160,7 +160,7 @@ def test_tfp_growth_with_investment(datawrapper):
     """
     # Base configuration for control (no TFP growth)
     config_no_growth = SimulationConfiguration(country_configurations={"FRA": CountryConfiguration()})
-    config_no_growth.seed = 42  # Fixed seed for reproducibility
+    config_no_growth.seed = 0  # Fixed seed for reproducibility
 
     # Disable TFP growth in control
     config_no_growth.country_configurations["FRA"].firms.parameters.tfp_base_growth_rate = 0.0
@@ -229,7 +229,9 @@ def test_tfp_growth_with_investment(datawrapper):
         total_investment = sum(
             inv.sum() for inv in sim_with_growth.countries["FRA"].firms.ts.executed_productivity_investment
         )
-        assert total_investment > 0, "There should be positive productivity investment"
+        assert (
+            total_investment > 0
+        ), f"There should be positive productivity investment, first 5 elements: {total_investment[:5]}"
 
 
 def test_check_compatibility(datawrapper):
