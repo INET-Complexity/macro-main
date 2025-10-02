@@ -233,6 +233,18 @@ class Firms(Agent):
         # Initialize TFP multiplier to 1.0 (no TFP effect initially)
         states["tfp_multiplier"] = np.ones(data.shape[0])
 
+        # Initialize technical coefficient multipliers and cumulative improvements
+        n_firms = data.shape[0]
+        n_industries = len(synthetic_firms.industries)
+
+        # Multipliers start at 1.0 (no improvement initially)
+        states["intermediate_tech_multipliers"] = np.ones((n_firms, n_industries))
+        states["capital_tech_multipliers"] = np.ones((n_firms, n_industries))
+
+        # Cumulative improvements start at 0.0
+        states["cumulative_intermediate_improvements"] = np.zeros((n_firms, n_industries))
+        states["cumulative_capital_improvements"] = np.zeros((n_firms, n_industries))
+
         bundle_matrix = create_bundle_matrix(np.array(configuration.substitution_bundles))
 
         return cls(
