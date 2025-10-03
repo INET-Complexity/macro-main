@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from macromodel.agents.firms.func.productivity_investment_planner import (
     NoProductivityInvestmentPlanner,
@@ -21,7 +20,7 @@ class TestNoProductivityInvestmentPlanner:
         current_unit_costs = np.full(n_firms, 5.0)
         available_cash = np.full(n_firms, 1000.0)
 
-        planned_investment = planner.plan_productivity_investment(
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
             current_tfp=current_tfp,
             current_production=current_production,
             current_unit_costs=current_unit_costs,
@@ -29,8 +28,11 @@ class TestNoProductivityInvestmentPlanner:
         )
 
         # Should return all zeros
-        expected = np.zeros(n_firms)
-        assert np.allclose(planned_investment, expected)
+        expected_1d = np.zeros(n_firms)
+        expected_2d = np.zeros((n_firms, technical_investment.shape[1]))  # Match actual shape
+        assert np.allclose(total_investment, expected_1d)
+        assert np.allclose(tfp_investment, expected_1d)
+        assert np.allclose(technical_investment, expected_2d)
 
     def test_ignores_all_parameters(self):
         """Test that no investment planner ignores all input parameters."""
@@ -42,14 +44,16 @@ class TestNoProductivityInvestmentPlanner:
         current_unit_costs = np.array([100.0])
         available_cash = np.array([10000.0])
 
-        planned_investment = planner.plan_productivity_investment(
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
             current_tfp=current_tfp,
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
         )
 
-        assert np.allclose(planned_investment, [0.0])
+        assert np.allclose(total_investment, [0.0])
+        assert np.allclose(tfp_investment, [0.0])
+        assert np.allclose(technical_investment, [0.0])
 
 
 class TestSimpleProductivityInvestmentPlanner:
@@ -71,7 +75,7 @@ class TestSimpleProductivityInvestmentPlanner:
         current_unit_costs = np.array([8.0, 12.0, 10.0])  # Unit costs for cost savings calculation
         available_cash = np.array([500.0, 800.0, 600.0])
 
-        planned_investment = planner.plan_productivity_investment(
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
             current_tfp=current_tfp,
             current_production=current_production,
             current_unit_costs=current_unit_costs,
@@ -79,10 +83,12 @@ class TestSimpleProductivityInvestmentPlanner:
         )
 
         # All values should be non-negative
-        assert np.all(planned_investment >= 0)
+        assert np.all(total_investment >= 0)
+        assert np.all(tfp_investment >= 0)
+        assert np.all(technical_investment >= 0)
         # Should not exceed maximum investment constraints
         max_investment = np.minimum(0.5 * available_cash, 0.1 * current_production)
-        assert np.all(planned_investment <= max_investment + 1e-10)
+        assert np.all(total_investment <= max_investment + 1e-10)
 
     def test_higher_unit_costs_encourage_investment(self):
         """Test that firms with higher unit costs invest more (higher returns from cost savings)."""
@@ -98,7 +104,7 @@ class TestSimpleProductivityInvestmentPlanner:
         current_unit_costs = np.array([5.0, 15.0])  # Second firm has higher costs
         available_cash = np.array([1000.0, 1000.0])
 
-        planned_investment = planner.plan_productivity_investment(
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
             current_tfp=current_tfp,
             current_production=current_production,
             current_unit_costs=current_unit_costs,
@@ -106,7 +112,7 @@ class TestSimpleProductivityInvestmentPlanner:
         )
 
         # Firm with higher unit costs should invest more (higher returns from cost reduction)
-        assert planned_investment[1] >= planned_investment[0]
+        assert total_investment[1] >= total_investment[0]
 
     def test_hurdle_rate_constraint_with_cost_savings(self):
         """Test that investments are rejected when cost savings don't meet hurdle rate."""
@@ -123,7 +129,7 @@ class TestSimpleProductivityInvestmentPlanner:
         current_unit_costs = np.array([2.0])  # Low unit costs = low savings potential
         available_cash = np.array([500.0])
 
-        planned_investment = planner.plan_productivity_investment(
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
             current_tfp=current_tfp,
             current_production=current_production,
             current_unit_costs=current_unit_costs,
@@ -131,7 +137,9 @@ class TestSimpleProductivityInvestmentPlanner:
         )
 
         # High hurdle rate + low effectiveness + low unit costs should lead to no investment
-        assert np.allclose(planned_investment, [0.0])
+        assert np.allclose(total_investment, [0.0])
+        assert np.allclose(tfp_investment, [0.0])
+        assert np.allclose(technical_investment, [0.0])
 
     def test_budget_constraints(self):
         """Test that investment respects budget constraints."""
@@ -146,7 +154,7 @@ class TestSimpleProductivityInvestmentPlanner:
         current_unit_costs = np.array([20.0])  # High unit costs = high savings potential
         available_cash = np.array([5.0])  # Very limited cash
 
-        planned_investment = planner.plan_productivity_investment(
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
             current_tfp=current_tfp,
             current_production=current_production,
             current_unit_costs=current_unit_costs,
@@ -159,7 +167,7 @@ class TestSimpleProductivityInvestmentPlanner:
         expected_budget = min(cash_constraint, output_constraint)
 
         # Investment should not exceed the more restrictive constraint
-        assert planned_investment[0] <= expected_budget + 1e-10
+        assert total_investment[0] <= expected_budget + 1e-10
 
     def test_zero_unit_costs_no_investment(self):
         """Test that zero unit costs lead to no investment (no cost savings possible)."""
@@ -173,7 +181,7 @@ class TestSimpleProductivityInvestmentPlanner:
         current_unit_costs = np.array([0.0])  # Zero unit costs
         available_cash = np.array([500.0])
 
-        planned_investment = planner.plan_productivity_investment(
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
             current_tfp=current_tfp,
             current_production=current_production,
             current_unit_costs=current_unit_costs,
@@ -181,7 +189,9 @@ class TestSimpleProductivityInvestmentPlanner:
         )
 
         # No unit costs means no cost savings possible
-        assert np.allclose(planned_investment, [0.0])
+        assert np.allclose(total_investment, [0.0])
+        assert np.allclose(tfp_investment, [0.0])
+        assert np.allclose(technical_investment, [0.0])
 
     def test_zero_cash_handling(self):
         """Test behavior when firms have no cash available."""
@@ -192,14 +202,16 @@ class TestSimpleProductivityInvestmentPlanner:
         current_unit_costs = np.array([10.0])
         available_cash = np.array([0.0])  # No cash available
 
-        planned_investment = planner.plan_productivity_investment(
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
             current_tfp=current_tfp,
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
         )
 
-        assert np.allclose(planned_investment, [0.0])
+        assert np.allclose(total_investment, [0.0])
+        assert np.allclose(tfp_investment, [0.0])
+        assert np.allclose(technical_investment, [0.0])
 
     def test_hurdle_value_calculation_correctness(self):
         """Test that the hurdle-adjusted value calculation is mathematically correct."""
@@ -243,17 +255,19 @@ class TestOptimalProductivityInvestmentPlanner:
         current_unit_costs = np.array([15.0])  # Good cost savings potential
         available_cash = np.array([500.0])
 
-        planned_investment = planner.plan_productivity_investment(
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
             current_tfp=current_tfp,
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
         )
 
-        assert np.all(planned_investment >= 0)
+        assert np.all(total_investment >= 0)
+        assert np.all(tfp_investment >= 0)
+        assert np.all(technical_investment >= 0)
         # Should respect budget constraint
         budget = planner.compute_investment_budget(available_cash, current_production)
-        assert planned_investment[0] <= budget[0] + 1e-10
+        assert total_investment[0] <= budget[0] + 1e-10
 
     def test_optimal_better_than_simple(self):
         """Test that optimal planner finds better solutions than simple planner."""
@@ -281,14 +295,14 @@ class TestOptimalProductivityInvestmentPlanner:
         current_unit_costs = np.array([12.0])
         available_cash = np.array([500.0])
 
-        optimal_investment = optimal_planner.plan_productivity_investment(
+        optimal_total, optimal_tfp, optimal_tech = optimal_planner.plan_productivity_investment(
             current_tfp=current_tfp,
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
         )
 
-        simple_investment = simple_planner.plan_productivity_investment(
+        simple_total, simple_tfp, simple_tech = simple_planner.plan_productivity_investment(
             current_tfp=current_tfp,
             current_production=current_production,
             current_unit_costs=current_unit_costs,
@@ -304,8 +318,8 @@ class TestOptimalProductivityInvestmentPlanner:
             )[0]
             return hurdle_value - investment
 
-        optimal_npv = calculate_npv(optimal_investment[0])
-        simple_npv = calculate_npv(simple_investment[0])
+        optimal_npv = calculate_npv(optimal_total[0])
+        simple_npv = calculate_npv(simple_total[0])
 
         # Optimal should achieve at least as good NPV as simple
         assert optimal_npv >= simple_npv - 1e-6
@@ -323,19 +337,23 @@ class TestOptimalProductivityInvestmentPlanner:
         current_unit_costs = np.array([8.0, 12.0, 10.0, 15.0])
         available_cash = np.array([400.0, 600.0, 500.0, 800.0])
 
-        planned_investment = planner.plan_productivity_investment(
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
             current_tfp=current_tfp,
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
         )
 
-        assert len(planned_investment) == n_firms
-        assert np.all(planned_investment >= 0)
+        assert len(total_investment) == n_firms
+        assert len(tfp_investment) == n_firms
+        assert len(technical_investment) == n_firms
+        assert np.all(total_investment >= 0)
+        assert np.all(tfp_investment >= 0)
+        assert np.all(technical_investment >= 0)
 
         # Each firm's investment should respect individual budget constraints
         budgets = planner.compute_investment_budget(available_cash, current_production)
-        assert np.all(planned_investment <= budgets + 1e-10)
+        assert np.all(total_investment <= budgets + 1e-10)
 
     def test_no_investment_when_unprofitable(self):
         """Test that optimal planner invests nothing when unprofitable."""
@@ -349,7 +367,7 @@ class TestOptimalProductivityInvestmentPlanner:
         current_unit_costs = np.array([2.0])  # Low costs = limited savings potential
         available_cash = np.array([200.0])
 
-        planned_investment = planner.plan_productivity_investment(
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
             current_tfp=current_tfp,
             current_production=current_production,
             current_unit_costs=current_unit_costs,
@@ -357,7 +375,9 @@ class TestOptimalProductivityInvestmentPlanner:
         )
 
         # Should find no profitable investment
-        assert np.allclose(planned_investment, [0.0])
+        assert np.allclose(total_investment, [0.0])
+        assert np.allclose(tfp_investment, [0.0])
+        assert np.allclose(technical_investment, [0.0])
 
 
 class TestProductivityInvestmentPlannerUtilities:
@@ -430,7 +450,7 @@ class TestProductivityInvestmentPlannerUtilities:
         current_unit_costs = np.array([10.0, 12.0])
         available_cash = np.array([500.0, 300.0])
 
-        planned_investment = planner.plan_productivity_investment(
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
             current_tfp=current_tfp,
             current_production=current_production,
             current_unit_costs=current_unit_costs,
@@ -438,10 +458,16 @@ class TestProductivityInvestmentPlannerUtilities:
         )
 
         # No NaN or inf values
-        assert not np.isnan(planned_investment).any()
-        assert not np.isinf(planned_investment).any()
+        assert not np.isnan(total_investment).any()
+        assert not np.isinf(total_investment).any()
+        assert not np.isnan(tfp_investment).any()
+        assert not np.isinf(tfp_investment).any()
+        assert not np.isnan(technical_investment).any()
+        assert not np.isinf(technical_investment).any()
         # Zero production firm should get zero investment
-        assert planned_investment[1] == 0.0
+        assert total_investment[1] == 0.0
+        assert tfp_investment[1] == 0.0
+        assert (technical_investment[1] == 0.0).all()  # type: ignore
 
     def test_negative_cash_handling(self):
         """Test handling of negative cash balances."""
@@ -452,7 +478,7 @@ class TestProductivityInvestmentPlannerUtilities:
         current_unit_costs = np.array([10.0])
         available_cash = np.array([-100.0])  # Negative cash
 
-        planned_investment = planner.plan_productivity_investment(
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
             current_tfp=current_tfp,
             current_production=current_production,
             current_unit_costs=current_unit_costs,
@@ -460,7 +486,9 @@ class TestProductivityInvestmentPlannerUtilities:
         )
 
         # Should handle negative cash gracefully (no investment possible)
-        assert np.allclose(planned_investment, [0.0])
+        assert np.allclose(total_investment, [0.0])
+        assert np.allclose(tfp_investment, [0.0])
+        assert np.allclose(technical_investment, [0.0])
 
     def test_empty_arrays(self):
         """Test with empty input arrays."""
@@ -471,15 +499,19 @@ class TestProductivityInvestmentPlannerUtilities:
         current_unit_costs = np.array([])
         available_cash = np.array([])
 
-        planned_investment = planner.plan_productivity_investment(
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
             current_tfp=current_tfp,
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
         )
 
-        assert len(planned_investment) == 0
-        assert isinstance(planned_investment, np.ndarray)
+        assert len(total_investment) == 0
+        assert len(tfp_investment) == 0
+        assert len(technical_investment) == 0
+        assert isinstance(total_investment, np.ndarray)
+        assert isinstance(tfp_investment, np.ndarray)
+        assert isinstance(technical_investment, np.ndarray)
 
     def test_cost_savings_vs_production_scaling(self):
         """Test that hurdle values scale properly with production and unit costs."""
