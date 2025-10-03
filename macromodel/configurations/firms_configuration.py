@@ -413,7 +413,10 @@ class FirmsParameters(BaseModel):
     )
 
     # Bundle arbitrage parameters
-    enable_bundle_arbitrage: bool = Field(False, description="Enable bundle-aware arbitrage in technical investment")
+    enable_bundle_arbitrage: bool = Field(True, description="Enable bundle-aware arbitrage in technical investment")
+    bundle_significance_threshold: float = Field(
+        0.1, ge=0.0, le=1.0, description="Min fraction of spending for bundle arbitrage to apply"
+    )
     arbitrage_intensity: float = Field(2.0, ge=0.0, le=5.0, description="Intensity of bundle arbitrage effects")
 
     @classmethod

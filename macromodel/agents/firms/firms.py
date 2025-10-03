@@ -525,29 +525,14 @@ class Firms(Agent):
         self.ts.target_capital_inputs_production.append(self.compute_target_capital_inputs_production())
 
         # Plan productivity investment using industry-level prices
-        total_investment = self.plan_productivity_investment(
+        total_investment, tfp_investment, technical_investment = self.plan_productivity_investment(
             estimated_inflation=estimated_inflation,
             current_good_prices=current_good_prices,
         )
         # Store total investment for backward compatibility
         self.ts.planned_productivity_investment.append(total_investment)
 
-        # Allocate between TFP and technical coefficient investments
-        if np.sum(total_investment) > 0:  # Only allocate if there's actual investment
-            tfp_investment, technical_investment = self.functions[
-                "productivity_investment_planner"
-            ].allocate_productivity_investment(
-                total_investment=total_investment,
-                current_prices=current_good_prices,
-                input_usage=self.ts.current("real_amount_bought_as_intermediate_inputs"),
-                current_tech_multipliers=self.states["intermediate_tech_multipliers"],
-            )
-        else:
-            # No investment case
-            tfp_investment = np.zeros_like(total_investment)
-            technical_investment = np.zeros((len(total_investment), len(current_good_prices)))
-
-        # Store separate components for new allocation logic
+        # Store separate components for new allocation logic (now done directly by the planner)
         self.ts.planned_tfp_investment.append(tfp_investment)
         self.ts.planned_technical_investment.append(technical_investment)
 
