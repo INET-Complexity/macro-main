@@ -320,7 +320,6 @@ class ProductivityInvestmentPlanner(BaseModel):
     }
 
 
-
 class FirmsFunctions(BaseModel):
     bought_goods_distributor: BoughtGoodsDistributor = BoughtGoodsDistributor()
     demand_estimator: DemandEstimator = DemandEstimator()
