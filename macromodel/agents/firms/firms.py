@@ -540,7 +540,7 @@ class Firms(Agent):
         self,
         estimated_inflation: float,
         current_good_prices: np.ndarray,
-    ) -> np.ndarray:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Plan productivity investment amounts for each firm.
 
         Uses the productivity investment planner to determine optimal investment
@@ -567,15 +567,17 @@ class Firms(Agent):
         # Only allow positive available cash (no borrowing for productivity investment)
         available_cash = np.maximum(0.0, available_cash)
 
-        # Get total investment from planner
-        total_investment = self.functions["productivity_investment_planner"].plan_productivity_investment(
+        # Get investment allocation from planner
+        total_investment, tfp_investment, technical_investment = self.functions[
+            "productivity_investment_planner"
+        ].plan_productivity_investment(
             current_tfp=self.states["tfp_multiplier"],
             current_production=self.ts.current("production"),
             current_unit_costs=self.compute_unit_costs(),
             available_cash=available_cash,
         )
 
-        return total_investment
+        return total_investment, tfp_investment, technical_investment
 
     def compute_estimated_profits(self, estimated_growth: float, estimated_inflation: float) -> np.ndarray:
         """Estimate future profits for each firm.
