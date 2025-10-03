@@ -180,9 +180,9 @@ class TestBundleArbitrageInvestmentAllocation:
 
         # With singleton bundles, arbitrage intensity should make no difference
         # since there are no substitution opportunities
-        assert np.allclose(tech_low, tech_high, rtol=1e-10), (
-            "Singleton bundles should be unaffected by arbitrage intensity"
-        )
+        assert np.allclose(
+            tech_low, tech_high, rtol=1e-10
+        ), "Singleton bundles should be unaffected by arbitrage intensity"
 
         # Investment should follow base priority logic (expensive inputs get higher priority)
         investments = tech_low[0]
