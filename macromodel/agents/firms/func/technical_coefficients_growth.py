@@ -251,13 +251,9 @@ class SimpleTechnicalGrowth(TechnicalCoefficientsGrowth):
             industry = firm_industries[i]
             effective_coefficients[i, :] = base_coefficients[industry, :] * current_multipliers[i, :]
 
-        # Calculate quantities used: quantity_ij = production_i / effective_coefficient_ij
-        quantities = np.zeros((n_firms, n_industries))
-        positive_coeff = effective_coefficients > 0
-        if np.any(positive_coeff):
-            quantities[positive_coeff] = (
-                production[:, np.newaxis][positive_coeff] / effective_coefficients[positive_coeff]
-            )
+        # Calculate quantities used: quantity_ij = production_i * effective_coefficient_ij
+        # For intermediate inputs, quantity = production * coefficient (inputs needed per unit output)
+        quantities = production[:, np.newaxis] * effective_coefficients
 
         # Reference cost = price * quantity
         reference_costs = prices[np.newaxis, :] * quantities
@@ -318,13 +314,9 @@ class SimpleTechnicalGrowth(TechnicalCoefficientsGrowth):
             industry = firm_industries[i]
             effective_coefficients[i, :] = base_coefficients[industry, :] * current_multipliers[i, :]
 
-        # Calculate quantities used
-        quantities = np.zeros((n_firms, n_industries))
-        positive_coeff = effective_coefficients > 0
-        if np.any(positive_coeff):
-            quantities[positive_coeff] = (
-                production[:, np.newaxis][positive_coeff] / effective_coefficients[positive_coeff]
-            )
+        # Calculate quantities used: quantity_ij = production_i * effective_coefficient_ij
+        # For capital inputs, quantity = production * coefficient (capital needed per unit output)
+        quantities = production[:, np.newaxis] * effective_coefficients
 
         # Reference cost = price * quantity
         reference_costs = prices[np.newaxis, :] * quantities
