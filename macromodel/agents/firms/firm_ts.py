@@ -86,8 +86,13 @@ class FirmTimeSeries(TimeSeries):
     - estimated_growth_by_firm: Expected growth rates
     - unconstrained_target_intermediate_inputs: Desired input purchases
     - unconstrained_target_capital_inputs: Desired capital purchases
-    - planned_productivity_investment: Investment amount planned for TFP improvement
-    - executed_productivity_investment: Actual investment made in TFP improvement
+    - planned_productivity_investment: Investment amount planned for TFP improvement (total)
+    - executed_productivity_investment: Actual investment made in TFP improvement (total)
+    - planned_tfp_investment: TFP portion of planned productivity investment (n_firms)
+    - executed_tfp_investment: TFP portion of executed productivity investment (n_firms)
+    - planned_technical_investment: Technical coefficient portion of planned productivity investment (n_firms x n_industries)
+    - executed_technical_investment: Technical coefficient portion of executed productivity investment (n_firms x n_industries)
+    - technical_investment_by_input: Distribution of technical investment across input types (n_firms x n_industries)
 
     Emissions:
     - inputs_emissions: Emissions from input use
@@ -226,6 +231,11 @@ class FirmTimeSeries(TimeSeries):
             target_capital_inputs=used_capital_inputs,
             planned_productivity_investment=np.zeros(data.shape[0]),
             executed_productivity_investment=np.zeros(data.shape[0]),
+            planned_tfp_investment=np.zeros(data.shape[0]),
+            executed_tfp_investment=np.zeros(data.shape[0]),
+            planned_technical_investment=np.zeros((data.shape[0], n_industries)),
+            executed_technical_investment=np.zeros((data.shape[0], n_industries)),
+            technical_investment_by_input=np.zeros((data.shape[0], n_industries)),
             #
             inventory=data["Inventory"].values,
             inventory_nominal=data["Price"].values * data["Inventory"].values,
@@ -428,6 +438,11 @@ def create_firms_timeseries(
         target_capital_inputs=used_capital_inputs,
         planned_productivity_investment=np.zeros(data.shape[0]),
         executed_productivity_investment=np.zeros(data.shape[0]),
+        planned_tfp_investment=np.zeros(data.shape[0]),
+        executed_tfp_investment=np.zeros(data.shape[0]),
+        planned_technical_investment=np.zeros((data.shape[0], n_industries)),
+        executed_technical_investment=np.zeros((data.shape[0], n_industries)),
+        technical_investment_by_input=np.zeros((data.shape[0], n_industries)),
         #
         inventory=data["Inventory"].values,
         inventory_nominal=data["Price"].values * data["Inventory"].values,

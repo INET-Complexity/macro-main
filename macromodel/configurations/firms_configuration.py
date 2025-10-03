@@ -304,7 +304,34 @@ class ProductivityInvestmentPlanner(BaseModel):
         "NoProductivityInvestmentPlanner", "SimpleProductivityInvestmentPlanner", "OptimalProductivityInvestmentPlanner"
     ] = "NoProductivityInvestmentPlanner"
     path_name: str = "productivity_investment_planner"
-    parameters: dict[str, Any] = {}
+    parameters: dict[str, Any] = {
+        # TFP parameters (existing)
+        "hurdle_rate": 0.15,
+        "max_investment_fraction": 0.1,
+        "investment_effectiveness": 0.1,
+        "investment_elasticity": 0.3,
+        # Technical coefficient parameters (new)
+        "tfp_investment_share": 0.4,
+        "technical_investment_effectiveness": 0.15,
+        "technical_diminishing_returns": 0.5,
+        "price_weight": 0.4,
+        "usage_weight": 0.3,
+        "potential_weight": 0.3,
+    }
+
+
+class TechnicalCoefficientsGrowth(BaseModel):
+    """
+    The function for computing technical coefficients growth.
+    Options: NoOpTechnicalGrowth, SimpleTechnicalGrowth
+    """
+
+    name: Literal["NoOpTechnicalGrowth", "SimpleTechnicalGrowth"] = "NoOpTechnicalGrowth"
+    path_name: str = "technical_coefficients_growth"
+    parameters: dict[str, Any] = {
+        "investment_effectiveness": 0.15,
+        "diminishing_returns_factor": 0.5,
+    }
 
 
 class FirmsFunctions(BaseModel):
@@ -329,6 +356,7 @@ class FirmsFunctions(BaseModel):
     excess_demand: ExcessDemand = ExcessDemand()
     labour_productivity: LabourProductivity = LabourProductivity()
     profit_estimator: ProfitEstimator = ProfitEstimator()
+    technical_coefficients_growth: TechnicalCoefficientsGrowth = TechnicalCoefficientsGrowth()
 
 
 class FirmsParameters(BaseModel):
@@ -354,9 +382,59 @@ class FirmsParameters(BaseModel):
     tfp_base_growth_rate: float = Field(0.0025, ge=0.0, le=0.1, description="Base TFP growth rate (quarterly)")
     tfp_investment_elasticity: float = Field(0.3, ge=0.0, le=1.0, description="Returns to scale for TFP investment")
 
+    # Productivity investment allocation parameters
+    max_productivity_investment_fraction: float = Field(
+        0.15, ge=0.0, le=1.0, description="Max productivity investment as fraction of output value"
+    )
+    max_productivity_cash_fraction: float = Field(
+        0.3, ge=0.0, le=1.0, description="Max productivity investment as fraction of available cash"
+    )
+    tfp_investment_share: float = Field(
+        0.4, ge=0.0, le=1.0, description="Share of productivity budget allocated to TFP (vs technical)"
+    )
+
+    # Technical coefficient investment parameters
+    technical_investment_effectiveness: float = Field(
+        0.15, ge=0.0, le=1.0, description="Effectiveness of technical coefficient investment"
+    )
+    technical_diminishing_returns: float = Field(
+        0.5, ge=0.0, le=2.0, description="Diminishing returns factor for technical improvements"
+    )
+
+    # Investment targeting weights
+    price_weight: float = Field(
+        0.4, ge=0.0, le=1.0, description="Weight for price-based targeting in technical investment"
+    )
+    usage_weight: float = Field(
+        0.3, ge=0.0, le=1.0, description="Weight for usage-based targeting in technical investment"
+    )
+    potential_weight: float = Field(
+        0.3, ge=0.0, le=1.0, description="Weight for improvement potential in technical investment"
+    )
+
+    # Bundle arbitrage parameters
+    enable_bundle_arbitrage: bool = Field(True, description="Enable bundle-aware arbitrage in technical investment")
+    bundle_significance_threshold: float = Field(
+        0.1, ge=0.0, le=1.0, description="Min fraction of spending for bundle arbitrage to apply"
+    )
+    arbitrage_intensity: float = Field(2.0, ge=0.0, le=5.0, description="Intensity of bundle arbitrage effects")
+
     @classmethod
     def disaggregated_industries_default(
-        cls, n_industries: int, tfp_base_growth_rate: float = 0.0025, tfp_investment_elasticity: float = 0.3
+        cls,
+        n_industries: int,
+        tfp_base_growth_rate: float = 0.0025,
+        tfp_investment_elasticity: float = 0.3,
+        max_productivity_investment_fraction: float = 0.15,
+        max_productivity_cash_fraction: float = 0.3,
+        tfp_investment_share: float = 0.4,
+        technical_investment_effectiveness: float = 0.15,
+        technical_diminishing_returns: float = 0.5,
+        price_weight: float = 0.4,
+        usage_weight: float = 0.3,
+        potential_weight: float = 0.3,
+        enable_bundle_arbitrage: bool = False,
+        arbitrage_intensity: float = 2.0,
     ) -> "FirmsParameters":
         return cls(
             **{
@@ -366,6 +444,17 @@ class FirmsParameters(BaseModel):
                 "intermediate_inputs_utilisation_rate": 1.0,
                 "tfp_base_growth_rate": tfp_base_growth_rate,
                 "tfp_investment_elasticity": tfp_investment_elasticity,
+                # Use defaults for new productivity investment parameters
+                "max_productivity_investment_fraction": max_productivity_investment_fraction,
+                "max_productivity_cash_fraction": max_productivity_cash_fraction,
+                "tfp_investment_share": tfp_investment_share,
+                "technical_investment_effectiveness": technical_investment_effectiveness,
+                "technical_diminishing_returns": technical_diminishing_returns,
+                "price_weight": price_weight,
+                "usage_weight": usage_weight,
+                "potential_weight": potential_weight,
+                "enable_bundle_arbitrage": enable_bundle_arbitrage,
+                "arbitrage_intensity": arbitrage_intensity,
             }
         )
 
@@ -406,9 +495,13 @@ class FirmsConfiguration(BaseModel):
         bundles: Optional[list[list[int]]] = None,
         tfp_base_growth_rate: float = 0.0025,
         tfp_investment_elasticity: float = 0.3,
+        enable_bundle_arbitrage: bool = False,
     ) -> "FirmsConfiguration":
         if bundles is None:
             bundles = []
+
+        if len(bundles) == 0 and enable_bundle_arbitrage:
+            raise ValueError("Bundle arbitrage cannot be enabled without defining bundles.")
 
         if len(bundles) > 0:
             functions = FirmsFunctions(
