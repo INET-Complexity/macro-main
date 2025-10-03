@@ -552,11 +552,13 @@ def test_tfp_only_investment_allocation(datawrapper, seed=42):
     # Configure for TFP-only investment allocation
     firms_config = configuration.country_configurations["FRA"].firms
     firms_config.functions.productivity_investment_planner.name = "SimpleProductivityInvestmentPlanner"
-    firms_config.functions.productivity_investment_planner.parameters.update({
-        "tfp_investment_share": 1.0,  # 100% to TFP
-        "max_investment_fraction": 0.2,  # High investment to see effects
-        "investment_effectiveness": 0.3,  # High effectiveness
-    })
+    firms_config.functions.productivity_investment_planner.parameters.update(
+        {
+            "tfp_investment_share": 1.0,  # 100% to TFP
+            "max_investment_fraction": 0.2,  # High investment to see effects
+            "investment_effectiveness": 0.3,  # High effectiveness
+        }
+    )
     firms_config.functions.productivity_growth.name = "SimpleTFPGrowth"
     firms_config.functions.technical_coefficients_growth.name = "NoOpTechnicalGrowth"  # Disable technical growth
 
@@ -583,10 +585,12 @@ def test_tfp_only_investment_allocation(datawrapper, seed=42):
     assert np.all(final_tfp >= 1.0), "TFP multipliers should be >= 1.0"
 
     # Technical coefficients should remain at 1.0 (no technical investment)
-    assert np.allclose(final_intermediate_tech, initial_intermediate_tech), \
-        "Intermediate tech multipliers should not change with TFP-only investment"
-    assert np.allclose(final_capital_tech, initial_capital_tech), \
-        "Capital tech multipliers should not change with TFP-only investment"
+    assert np.allclose(
+        final_intermediate_tech, initial_intermediate_tech
+    ), "Intermediate tech multipliers should not change with TFP-only investment"
+    assert np.allclose(
+        final_capital_tech, initial_capital_tech
+    ), "Capital tech multipliers should not change with TFP-only investment"
     assert np.allclose(final_intermediate_tech, 1.0), "Intermediate tech multipliers should stay at 1.0"
     assert np.allclose(final_capital_tech, 1.0), "Capital tech multipliers should stay at 1.0"
 
@@ -603,18 +607,22 @@ def test_technical_only_investment_allocation(datawrapper, seed=42):
     # Configure for technical-only investment allocation
     firms_config = configuration.country_configurations["FRA"].firms
     firms_config.functions.productivity_investment_planner.name = "SimpleProductivityInvestmentPlanner"
-    firms_config.functions.productivity_investment_planner.parameters.update({
-        "tfp_investment_share": 0.0,  # 0% to TFP, 100% to technical
-        "max_investment_fraction": 0.2,  # High investment to see effects
-        "technical_investment_effectiveness": 0.3,  # High effectiveness
-        "technical_diminishing_returns": 0.1,  # Low diminishing returns for faster growth
-    })
+    firms_config.functions.productivity_investment_planner.parameters.update(
+        {
+            "tfp_investment_share": 0.0,  # 0% to TFP, 100% to technical
+            "max_investment_fraction": 0.2,  # High investment to see effects
+            "technical_investment_effectiveness": 0.3,  # High effectiveness
+            "technical_diminishing_returns": 0.1,  # Low diminishing returns for faster growth
+        }
+    )
     firms_config.functions.productivity_growth.name = "NoOpTFPGrowth"  # Disable TFP growth
     firms_config.functions.technical_coefficients_growth.name = "SimpleTechnicalGrowth"
-    firms_config.functions.technical_coefficients_growth.parameters.update({
-        "investment_effectiveness": 0.3,
-        "diminishing_returns_factor": 0.1,
-    })
+    firms_config.functions.technical_coefficients_growth.parameters.update(
+        {
+            "investment_effectiveness": 0.3,
+            "diminishing_returns_factor": 0.1,
+        }
+    )
 
     # Create and run simulation
     simulation = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=configuration)
@@ -648,8 +656,9 @@ def test_technical_only_investment_allocation(datawrapper, seed=42):
     capital_improved = np.any(final_capital_tech > initial_capital_tech)
 
     # At least one type should have improved
-    assert intermediate_improved or capital_improved, \
-        "At least some technical multipliers should improve with technical-only investment"
+    assert (
+        intermediate_improved or capital_improved
+    ), "At least some technical multipliers should improve with technical-only investment"
 
     # All multipliers should be >= 1.0 (productivity improvements)
     assert np.all(final_intermediate_tech >= 1.0), "Intermediate tech multipliers should be >= 1.0"
@@ -677,5 +686,6 @@ def test_technical_only_investment_allocation(datawrapper, seed=42):
     intermediate_some_better = (effective_intermediate > base_intermediate_for_firms).sum() > 0
     capital_some_better = (effective_capital > base_capital_for_firms).sum() > 0
 
-    assert intermediate_some_better or capital_some_better, \
-        "At least some effective coefficients should be strictly better than base coefficients"
+    assert (
+        intermediate_some_better or capital_some_better
+    ), "At least some effective coefficients should be strictly better than base coefficients"
