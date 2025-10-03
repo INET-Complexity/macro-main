@@ -486,11 +486,29 @@ class Firms(Agent):
         self.ts.target_capital_inputs_production.append(self.compute_target_capital_inputs_production())
 
         # Plan productivity investment using industry-level prices
-        planned_investment = self.plan_productivity_investment(
+        total_investment = self.plan_productivity_investment(
             estimated_inflation=estimated_inflation,
             current_good_prices=current_good_prices,
         )
-        self.ts.planned_productivity_investment.append(planned_investment)
+        # Store total investment for backward compatibility
+        self.ts.planned_productivity_investment.append(total_investment)
+
+        # Allocate between TFP and technical coefficient investments
+        if np.sum(total_investment) > 0:  # Only allocate if there's actual investment
+            tfp_investment, technical_investment = self.functions["productivity_investment_planner"].allocate_productivity_investment(
+                total_investment=total_investment,
+                current_prices=current_good_prices,
+                input_usage=self.ts.current("real_amount_bought_as_intermediate_inputs"),
+                current_tech_multipliers=self.states["intermediate_tech_multipliers"],
+            )
+        else:
+            # No investment case
+            tfp_investment = np.zeros_like(total_investment)
+            technical_investment = np.zeros((len(total_investment), len(current_good_prices)))
+
+        # Store separate components for new allocation logic
+        self.ts.planned_tfp_investment.append(tfp_investment)
+        self.ts.planned_technical_investment.append(technical_investment)
 
     def plan_productivity_investment(
         self,
@@ -508,7 +526,7 @@ class Firms(Agent):
             current_good_prices: Industry-level average prices for inputs
 
         Returns:
-            np.ndarray: Planned productivity investment amounts for each firm
+            np.ndarray: Total planned investment for each firm
         """
         # Calculate expected capital costs using industry-level prices
         # Use current prices adjusted for inflation as expected prices
@@ -523,12 +541,15 @@ class Firms(Agent):
         # Only allow positive available cash (no borrowing for productivity investment)
         available_cash = np.maximum(0.0, available_cash)
 
-        return self.functions["productivity_investment_planner"].plan_productivity_investment(
+        # Get total investment from planner
+        total_investment = self.functions["productivity_investment_planner"].plan_productivity_investment(
             current_tfp=self.states["tfp_multiplier"],
             current_production=self.ts.current("production"),
             current_unit_costs=self.compute_unit_costs(),
             available_cash=available_cash,
         )
+
+        return total_investment
 
     def compute_estimated_profits(self, estimated_growth: float, estimated_inflation: float) -> np.ndarray:
         """Estimate future profits for each firm.
