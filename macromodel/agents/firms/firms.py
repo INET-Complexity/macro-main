@@ -506,9 +506,7 @@ class Firms(Agent):
         )
         self.ts.limiting_capital_inputs.append(
             self.functions["production"].compute_limiting_capital_inputs_stock(
-                capital_inputs_productivity_matrix=self.base_capital_inputs_productivity_matrix[
-                    :, self.states["Industry"]
-                ].T,
+                capital_inputs_productivity_matrix=self.get_effective_capital_coefficients(),
                 capital_inputs_stock=self.ts.current("capital_inputs_stock"),
                 capital_inputs_utilisation_rate=self.capital_inputs_utilisation_rate,
                 goods_criticality_matrix=self.goods_criticality_matrix,
