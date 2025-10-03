@@ -552,7 +552,7 @@ class Firms(Agent):
             current_good_prices: Industry-level average prices for inputs
 
         Returns:
-            np.ndarray: Total planned investment for each firm
+            tuple[np.ndarray, np.ndarray, np.ndarray]: Total investment, TFP investment, technical investment
         """
         # Calculate expected capital costs using industry-level prices
         # Use current prices adjusted for inflation as expected prices
