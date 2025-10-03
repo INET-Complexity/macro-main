@@ -320,6 +320,20 @@ class ProductivityInvestmentPlanner(BaseModel):
     }
 
 
+class TechnicalCoefficientsGrowth(BaseModel):
+    """
+    The function for computing technical coefficients growth.
+    Options: NoOpTechnicalGrowth, SimpleTechnicalGrowth
+    """
+
+    name: Literal["NoOpTechnicalGrowth", "SimpleTechnicalGrowth"] = "NoOpTechnicalGrowth"
+    path_name: str = "technical_coefficients_growth"
+    parameters: dict[str, Any] = {
+        "investment_effectiveness": 0.15,
+        "diminishing_returns_factor": 0.5,
+    }
+
+
 class FirmsFunctions(BaseModel):
     bought_goods_distributor: BoughtGoodsDistributor = BoughtGoodsDistributor()
     demand_estimator: DemandEstimator = DemandEstimator()
@@ -342,6 +356,7 @@ class FirmsFunctions(BaseModel):
     excess_demand: ExcessDemand = ExcessDemand()
     labour_productivity: LabourProductivity = LabourProductivity()
     profit_estimator: ProfitEstimator = ProfitEstimator()
+    technical_coefficients_growth: TechnicalCoefficientsGrowth = TechnicalCoefficientsGrowth()
 
 
 class FirmsParameters(BaseModel):

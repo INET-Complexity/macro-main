@@ -377,6 +377,13 @@ class SimpleProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
         investment_effectiveness: float = 0.1,
         investment_elasticity: float = 0.3,
         investment_propensity: float = 0.2,
+        # New parameters for technical coefficient investment
+        tfp_investment_share: float = 0.4,
+        technical_investment_effectiveness: float = 0.15,
+        technical_diminishing_returns: float = 0.5,
+        price_weight: float = 0.4,
+        usage_weight: float = 0.3,
+        potential_weight: float = 0.3,
     ):
         """Initialize the simple productivity investment planner.
 
@@ -392,6 +399,12 @@ class SimpleProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
             max_investment_fraction,
             investment_effectiveness,
             investment_elasticity,
+            tfp_investment_share,
+            technical_investment_effectiveness,
+            technical_diminishing_returns,
+            price_weight,
+            usage_weight,
+            potential_weight,
         )
         self.investment_propensity = investment_propensity
 
@@ -450,6 +463,13 @@ class OptimalProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
         investment_effectiveness: float = 0.1,
         investment_elasticity: float = 0.3,
         search_steps: int = 20,
+        # New parameters for technical coefficient investment
+        tfp_investment_share: float = 0.4,
+        technical_investment_effectiveness: float = 0.15,
+        technical_diminishing_returns: float = 0.5,
+        price_weight: float = 0.4,
+        usage_weight: float = 0.3,
+        potential_weight: float = 0.3,
     ):
         """Initialize the optimal productivity investment planner.
 
@@ -465,6 +485,12 @@ class OptimalProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
             max_investment_fraction,
             investment_effectiveness,
             investment_elasticity,
+            tfp_investment_share,
+            technical_investment_effectiveness,
+            technical_diminishing_returns,
+            price_weight,
+            usage_weight,
+            potential_weight,
         )
         self.search_steps = search_steps
 
