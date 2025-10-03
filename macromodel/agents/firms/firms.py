@@ -495,7 +495,9 @@ class Firms(Agent):
 
         # Allocate between TFP and technical coefficient investments
         if np.sum(total_investment) > 0:  # Only allocate if there's actual investment
-            tfp_investment, technical_investment = self.functions["productivity_investment_planner"].allocate_productivity_investment(
+            tfp_investment, technical_investment = self.functions[
+                "productivity_investment_planner"
+            ].allocate_productivity_investment(
                 total_investment=total_investment,
                 current_prices=current_good_prices,
                 input_usage=self.ts.current("real_amount_bought_as_intermediate_inputs"),
