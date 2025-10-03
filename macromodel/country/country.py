@@ -629,6 +629,8 @@ class Country:
         # Update TFP before production (only if TFP growth is configured)
         if not self.assume_zero_growth:
             self.firms.update_tfp()
+            # Update technical coefficient multipliers
+            self.firms.update_technical_coefficients()
 
         # Firm production
         if self.assume_zero_growth:

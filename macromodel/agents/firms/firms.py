@@ -41,9 +41,9 @@ class Firms(Agent):
         functions (dict[str, Callable]): Production and decision functions
         ts (FirmTimeSeries): Time series data for firms
         states (dict[str, np.ndarray]): Current state variables
-        intermediate_inputs_productivity_matrix (np.ndarray): Input-output coefficients
-        capital_inputs_productivity_matrix (np.ndarray): Capital productivity coefficients
-        capital_inputs_depreciation_matrix (np.ndarray): Capital depreciation rates
+        base_intermediate_inputs_productivity_matrix (np.ndarray): Input-output coefficients
+        base_capital_inputs_productivity_matrix (np.ndarray): Capital productivity coefficients
+        base_capital_inputs_depreciation_matrix (np.ndarray): Capital depreciation rates
         goods_criticality_matrix (np.ndarray): Critical input requirements
         intermediate_inputs_utilisation_rate (float): Input capacity utilization
         capital_inputs_utilisation_rate (float): Capital capacity utilization
@@ -116,9 +116,9 @@ class Firms(Agent):
         )
 
         self.functions: dict[str, Any] = functions
-        self.intermediate_inputs_productivity_matrix = intermediate_inputs_productivity_matrix
-        self.capital_inputs_productivity_matrix = capital_inputs_productivity_matrix
-        self.capital_inputs_depreciation_matrix = capital_inputs_depreciation_matrix
+        self.base_intermediate_inputs_productivity_matrix = intermediate_inputs_productivity_matrix
+        self.base_capital_inputs_productivity_matrix = capital_inputs_productivity_matrix
+        self.base_capital_inputs_depreciation_matrix = capital_inputs_depreciation_matrix
         self.goods_criticality_matrix = goods_criticality_matrix
         self.intermediate_inputs_utilisation_rate = intermediate_inputs_utilisation_rate
         self.capital_inputs_utilisation_rate = capital_inputs_utilisation_rate
@@ -132,6 +132,42 @@ class Firms(Agent):
         self.industries = industries
 
         self.substitution_bundles = bundle_matrix
+
+    def get_effective_intermediate_coefficients(self) -> np.ndarray:
+        """Get the effective intermediate input coefficients for each firm.
+
+        Returns base coefficients adjusted by firm-specific technical multipliers.
+        Shape: [n_industries, n_firms] (transposed for firm-wise operations)
+        """
+        # Base matrix is [n_industries, n_industries]
+        # Select columns for each firm's industry
+        base_coefficients = self.base_intermediate_inputs_productivity_matrix[:, self.states["Industry"]].T
+
+        # Apply firm-specific multipliers if they exist
+        multipliers = self.states.get("intermediate_tech_multipliers")
+        if multipliers is not None:
+            # Multipliers are [n_firms, n_industries]
+            # Base coefficients are [n_firms, n_industries] after transpose
+            # Element-wise multiply each firm's coefficients by their multipliers
+            return base_coefficients * multipliers
+
+        return base_coefficients
+
+    def get_effective_capital_coefficients(self) -> np.ndarray:
+        """Get the effective capital input coefficients for each firm.
+
+        Returns base coefficients adjusted by firm-specific technical multipliers.
+        Shape: [n_industries, n_firms] (transposed for firm-wise operations)
+        """
+        # For capital, we use the depreciation matrix
+        base_coefficients = self.base_capital_inputs_depreciation_matrix[:, self.states["Industry"]].T
+
+        # Apply firm-specific multipliers if they exist
+        multipliers = self.states.get("capital_tech_multipliers")
+        if multipliers is not None:
+            return base_coefficients * multipliers
+
+        return base_coefficients
 
     @classmethod
     def from_pickled_agent(
@@ -318,9 +354,9 @@ class Firms(Agent):
             / configuration.parameters.intermediate_inputs_utilisation_rate
             * np.divide(
                 self.ts.current("production"),
-                self.intermediate_inputs_productivity_matrix[:, industries],
-                out=np.zeros(self.intermediate_inputs_productivity_matrix[:, industries].shape),
-                where=self.intermediate_inputs_productivity_matrix[:, industries] != 0.0,
+                self.base_intermediate_inputs_productivity_matrix[:, industries],
+                out=np.zeros(self.base_intermediate_inputs_productivity_matrix[:, industries].shape),
+                where=self.base_intermediate_inputs_productivity_matrix[:, industries] != 0.0,
             ).T
         )
 
@@ -329,9 +365,9 @@ class Firms(Agent):
             / configuration.parameters.capital_inputs_utilisation_rate
             * np.divide(
                 self.ts.current("production"),
-                self.capital_inputs_productivity_matrix[:, industries],
-                out=np.zeros(self.capital_inputs_productivity_matrix[:, industries].shape),
-                where=self.capital_inputs_productivity_matrix[:, industries] != 0.0,
+                self.base_capital_inputs_productivity_matrix[:, industries],
+                out=np.zeros(self.base_capital_inputs_productivity_matrix[:, industries].shape),
+                where=self.base_capital_inputs_productivity_matrix[:, industries] != 0.0,
             ).T
         )
 
@@ -341,6 +377,11 @@ class Firms(Agent):
             intermediate_inputs_stock=inter_inputs_stock,
             capital_inputs_stock=cap_inputs_stock,
         )
+
+        # Reset productivity multipliers to 1
+        self.states["tfp_multiplier"] = np.ones_like(self.states["tfp_multiplier"])
+        self.states["intermediate_tech_multipliers"] = np.ones_like(self.states["intermediate_tech_multipliers"])
+        self.states["capital_tech_multipliers"] = np.ones_like(self.states["capital_tech_multipliers"])
 
         self.configuration = deepcopy(configuration)
 
@@ -456,9 +497,7 @@ class Firms(Agent):
         """
         self.ts.limiting_intermediate_inputs.append(
             self.functions["production"].compute_limiting_intermediate_inputs_stock(
-                intermediate_inputs_productivity_matrix=self.intermediate_inputs_productivity_matrix[
-                    :, self.states["Industry"]
-                ].T,
+                intermediate_inputs_productivity_matrix=self.get_effective_intermediate_coefficients(),
                 intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
                 intermediate_inputs_utilisation_rate=self.intermediate_inputs_utilisation_rate,
                 goods_criticality_matrix=self.goods_criticality_matrix,
@@ -467,7 +506,7 @@ class Firms(Agent):
         )
         self.ts.limiting_capital_inputs.append(
             self.functions["production"].compute_limiting_capital_inputs_stock(
-                capital_inputs_productivity_matrix=self.capital_inputs_productivity_matrix[
+                capital_inputs_productivity_matrix=self.base_capital_inputs_productivity_matrix[
                     :, self.states["Industry"]
                 ].T,
                 capital_inputs_stock=self.ts.current("capital_inputs_stock"),
@@ -1009,9 +1048,7 @@ class Firms(Agent):
         """
         return self.functions["target_intermediate_inputs"].compute_unconstrained_target_intermediate_inputs(
             current_target_production=self.ts.current("target_intermediate_inputs_production"),
-            intermediate_inputs_productivity_matrix=self.intermediate_inputs_productivity_matrix[
-                :, self.states["Industry"]
-            ].T,
+            intermediate_inputs_productivity_matrix=self.get_effective_intermediate_coefficients(),
             prev_intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
             initial_intermediate_inputs_stock=self.ts.initial("intermediate_inputs_stock"),
             prev_production=self.ts.current("production"),
@@ -1059,7 +1096,7 @@ class Firms(Agent):
         """
         return self.functions["target_capital_inputs"].compute_unconstrained_target_capital_inputs(
             current_target_production=self.ts.current("target_capital_inputs_production"),
-            capital_inputs_depreciation_matrix=self.capital_inputs_depreciation_matrix[:, self.states["Industry"]].T,
+            capital_inputs_depreciation_matrix=self.get_effective_capital_coefficients(),
             prev_capital_inputs_stock=self.ts.current("capital_inputs_stock"),
             initial_capital_inputs_stock=self.ts.initial("capital_inputs_stock"),
             prev_production=self.ts.current("production"),
@@ -1420,9 +1457,7 @@ class Firms(Agent):
         """
         return self.functions["production"].compute_intermediate_inputs_used(
             realised_production=self.ts.current("production"),
-            intermediate_inputs_productivity_matrix=self.intermediate_inputs_productivity_matrix[
-                :, self.states["Industry"]
-            ].T,
+            intermediate_inputs_productivity_matrix=self.get_effective_intermediate_coefficients(),
             intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
             goods_criticality_matrix=self.goods_criticality_matrix,
             substitution_bundle_matrix=self.substitution_bundles,
@@ -1482,7 +1517,7 @@ class Firms(Agent):
         """
         return self.functions["production"].compute_capital_inputs_used(
             realised_production=self.ts.current("production"),
-            capital_inputs_depreciation_matrix=self.capital_inputs_depreciation_matrix[:, self.states["Industry"]].T,
+            capital_inputs_depreciation_matrix=self.get_effective_capital_coefficients(),
             capital_inputs_stock=self.ts.current("capital_inputs_stock"),
             goods_criticality_matrix=self.goods_criticality_matrix,
             substitution_bundle_matrix=self.substitution_bundles,
@@ -1980,7 +2015,7 @@ class Firms(Agent):
         producing_index = self.industries.index(producing_industry)
         input_index = self.industries.index(input_industry)
 
-        self.intermediate_inputs_productivity_matrix[input_index, producing_index] *= 1 + increase_pct
+        self.base_intermediate_inputs_productivity_matrix[input_index, producing_index] *= 1 + increase_pct
 
     def compute_productivity_investment(self) -> np.ndarray:
         """Calculate investment above depreciation replacement.
@@ -2002,7 +2037,7 @@ class Firms(Agent):
 
         # Calculate replacement investment needed (in monetary terms)
         production = self.ts.current("production")
-        depreciation_matrix = self.capital_inputs_depreciation_matrix[:, self.states["Industry"]].T
+        depreciation_matrix = self.base_capital_inputs_depreciation_matrix[:, self.states["Industry"]].T
 
         # For each firm, calculate total replacement cost across all capital types
         replacement_needs = production[:, None] * depreciation_matrix
@@ -2073,6 +2108,69 @@ class Firms(Agent):
         """
         tfp_growth = self.compute_tfp_growth()
         self.states["tfp_multiplier"] *= 1 + tfp_growth
+
+    def update_technical_coefficients(self) -> None:
+        """Update technical coefficient multipliers based on computed growth rates.
+
+        Computes technical coefficient growth and updates the intermediate and capital
+        tech multiplier state variables based on technical investment.
+        """
+        if "technical_coefficients_growth" not in self.functions:
+            return  # No technical growth configured
+
+        growth_func = self.functions["technical_coefficients_growth"]
+
+        # Get current technical investment (if any)
+        if hasattr(self.ts, "planned_technical_investment") and len(self.ts.planned_technical_investment) > 0:
+            technical_investment = self.ts.current("planned_technical_investment")
+        else:
+            # No technical investment yet
+            return
+
+        # Use actual base technical coefficients (a_ij matrices)
+        base_intermediate_coefficients = self.base_intermediate_inputs_productivity_matrix
+        base_capital_coefficients = self.base_capital_inputs_depreciation_matrix
+
+        # Update intermediate coefficient multipliers
+        intermediate_growth = growth_func.compute_intermediate_multiplier_growth(
+            current_multipliers=self.states["intermediate_tech_multipliers"],
+            cumulative_improvements=self.states.get(
+                "cumulative_intermediate_improvements", np.zeros_like(self.states["intermediate_tech_multipliers"])
+            ),
+            base_coefficients=base_intermediate_coefficients,
+            firm_industries=self.states["Industry"],
+            technical_investment=technical_investment,
+            production=self.ts.current("production"),
+            prices=self.ts.current("price"),  # Use current firm prices as proxy for industry prices
+        )
+
+        # Update capital coefficient multipliers
+        capital_growth = growth_func.compute_capital_multiplier_growth(
+            current_multipliers=self.states["capital_tech_multipliers"],
+            cumulative_improvements=self.states.get(
+                "cumulative_capital_improvements", np.zeros_like(self.states["capital_tech_multipliers"])
+            ),
+            base_coefficients=base_capital_coefficients,
+            firm_industries=self.states["Industry"],
+            technical_investment=technical_investment,
+            production=self.ts.current("production"),
+            prices=self.ts.current("price"),  # Use current firm prices as proxy for industry prices
+        )
+
+        # Apply growth to multipliers
+        self.states["intermediate_tech_multipliers"] *= 1 + intermediate_growth
+        self.states["capital_tech_multipliers"] *= 1 + capital_growth
+
+        # Update cumulative improvements for diminishing returns
+        if "cumulative_intermediate_improvements" not in self.states:
+            self.states["cumulative_intermediate_improvements"] = intermediate_growth.copy()
+        else:
+            self.states["cumulative_intermediate_improvements"] += intermediate_growth
+
+        if "cumulative_capital_improvements" not in self.states:
+            self.states["cumulative_capital_improvements"] = capital_growth.copy()
+        else:
+            self.states["cumulative_capital_improvements"] += capital_growth
 
 
 def fillna(array: np.ndarray, value: float = 0):
