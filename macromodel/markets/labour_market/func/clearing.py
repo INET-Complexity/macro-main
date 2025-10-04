@@ -987,13 +987,14 @@ class PolednaLabourMarketClearer(LabourMarketClearer):
             current_individuals_activity[hires] = ActivityStatus.EMPLOYED
 
         # Sanity check
-        assert np.all(
+        no_zero_employees = np.all(
             np.bincount(
                 individuals_corresponding_firm[individuals_corresponding_firm >= 0],
                 minlength=firms.ts.current("n_firms"),
             )
             > 0
         )
+        assert no_zero_employees
 
         # Update individuals activity status
         current_individuals_activity[

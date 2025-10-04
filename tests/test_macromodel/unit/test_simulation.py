@@ -635,7 +635,7 @@ def test_technical_only_investment_allocation(datawrapper, seed=42):
 
     # Store base coefficients for comparison
     base_intermediate_coeffs = firms.base_intermediate_inputs_productivity_matrix
-    base_capital_coeffs = firms.base_capital_inputs_depreciation_matrix
+    base_capital_coeffs = firms.base_capital_inputs_productivity_matrix
 
     # Run simulation for several iterations to allow investment effects
     for _ in range(10):

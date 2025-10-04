@@ -160,7 +160,7 @@ class Firms(Agent):
         Shape: [n_industries, n_firms] (transposed for firm-wise operations)
         """
         # For capital, we use the depreciation matrix
-        base_coefficients = self.base_capital_inputs_depreciation_matrix[:, self.states["Industry"]].T
+        base_coefficients = self.base_capital_inputs_productivity_matrix[:, self.states["Industry"]].T
 
         # Apply firm-specific multipliers if they exist
         multipliers = self.states.get("capital_tech_multipliers")
