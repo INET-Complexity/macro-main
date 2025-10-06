@@ -558,11 +558,23 @@ class Firms(Agent):
         # Target capital inputs are in real units, so multiply by expected prices to get costs
         expected_capital_costs = np.matmul(self.ts.current("target_capital_inputs"), expected_prices)
 
-        # Calculate available cash after capital investment
-        # This is the long-term credit minus the capital replacement needs
-        available_cash = self.ts.current("target_long_term_credit") - expected_capital_costs
+        # Calculate available cash for productivity investment
+        # First ensure capital replacement is covered, then use remaining capacity
 
-        # Only allow positive available cash (no borrowing for productivity investment)
+        # Current liquid resources (deposits, can be negative for overdrafts)
+        current_deposits = self.ts.current("deposits")
+
+        # Total credit capacity (short-term + long-term)
+        total_target_credit = self.ts.current("target_short_term_credit") + self.ts.current("target_long_term_credit")
+
+        # Total financial capacity = deposits + available credit
+        total_financial_capacity = current_deposits + total_target_credit
+
+        # Available cash = total capacity minus capital replacement needs
+        # This ensures capital replacement is prioritized
+        available_cash = total_financial_capacity - expected_capital_costs
+
+        # Only allow positive available cash (no borrowing beyond capacity)
         available_cash = np.maximum(0.0, available_cash)
 
         # Get investment allocation from planner
@@ -1502,7 +1514,7 @@ class Firms(Agent):
         """
         return self.functions["production"].compute_capital_inputs_used(
             realised_production=self.ts.current("production"),
-            capital_inputs_depreciation_matrix=self.get_effective_capital_coefficients(),
+            capital_inputs_depreciation_matrix=self.base_capital_inputs_depreciation_matrix,
             capital_inputs_stock=self.ts.current("capital_inputs_stock"),
             goods_criticality_matrix=self.goods_criticality_matrix,
             substitution_bundle_matrix=self.substitution_bundles,
