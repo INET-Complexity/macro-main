@@ -156,7 +156,7 @@ class ProductivityInvestmentPlanner(ABC):
         self,
         available_cash: np.ndarray,
         current_production: np.ndarray,
-        max_cash_fraction: float = 0.5,
+        max_cash_fraction: float = 0.1,
     ) -> np.ndarray:
         """Calculate available budget for productivity investment.
 
