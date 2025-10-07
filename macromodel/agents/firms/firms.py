@@ -1093,7 +1093,9 @@ class Firms(Agent):
         """
         return self.functions["target_capital_inputs"].compute_unconstrained_target_capital_inputs(
             current_target_production=self.ts.current("target_capital_inputs_production"),
-            capital_inputs_depreciation_matrix=self.get_effective_capital_coefficients(),
+            capital_inputs_depreciation_matrix=self.base_capital_inputs_depreciation_matrix[
+                :, self.states["Industry"]
+            ].T,
             prev_capital_inputs_stock=self.ts.current("capital_inputs_stock"),
             initial_capital_inputs_stock=self.ts.initial("capital_inputs_stock"),
             prev_production=self.ts.current("production"),
@@ -1514,7 +1516,9 @@ class Firms(Agent):
         """
         return self.functions["production"].compute_capital_inputs_used(
             realised_production=self.ts.current("production"),
-            capital_inputs_depreciation_matrix=self.base_capital_inputs_depreciation_matrix,
+            capital_inputs_depreciation_matrix=self.base_capital_inputs_depreciation_matrix[
+                :, self.states["Industry"]
+            ].T,
             capital_inputs_stock=self.ts.current("capital_inputs_stock"),
             goods_criticality_matrix=self.goods_criticality_matrix,
             substitution_bundle_matrix=self.substitution_bundles,
@@ -2126,7 +2130,7 @@ class Firms(Agent):
 
         # Use actual base technical coefficients (a_ij matrices)
         base_intermediate_coefficients = self.base_intermediate_inputs_productivity_matrix
-        base_capital_coefficients = self.base_capital_inputs_depreciation_matrix
+        base_capital_coefficients = self.base_capital_inputs_productivity_matrix
 
         # Update intermediate coefficient multipliers
         intermediate_growth = growth_func.compute_intermediate_multiplier_growth(
