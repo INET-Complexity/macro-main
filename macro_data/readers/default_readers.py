@@ -299,26 +299,14 @@ class DataReaders:
             if country_name.to_two_letter_code() == "GB":
                 # Always try to use WAS data for GBR, regardless of proxy settings
                 try:
-                    # Try Stata format first, fall back to CSV if not found
-                    try:
-                        was[country_name] = WASReader.from_stata(
-                            country_name=country_name,
-                            country_name_short=country_name.to_two_letter_code(),
-                            was_data_path=datapaths.was_path,
-                            year=simulation_year,
-                            exchange_rates=exchange_rates,
-                            round_number=7,  # Use Round 7 as default
-                        )
-                    except FileNotFoundError:
-                        # Fall back to CSV format for testing
-                        was[country_name] = WASReader.from_csv(
-                            country_name=country_name,
-                            country_name_short=country_name.to_two_letter_code(),
-                            was_data_path=datapaths.was_path,
-                            year=simulation_year,
-                            exchange_rates=exchange_rates,
-                            num_surveys=1,  # Use only one survey for testing
-                        )
+                    was[country_name] = WASReader.from_stata(
+                        country_name=country_name,
+                        country_name_short=country_name.to_two_letter_code(),
+                        was_data_path=datapaths.was_path,
+                        year=simulation_year,
+                        exchange_rates=exchange_rates,
+                        round_number=7,  # Use Round 7 as default
+                    )
                 except FileNotFoundError:
                     # WAS data files not found, skip WAS initialization
                     # The synthetic country will fall back to HFCS data
