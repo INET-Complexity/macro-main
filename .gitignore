@@ -145,3 +145,7 @@ dmypy.json
 /dataSources.local.xml
 # IDE files
 .idea/
+
+# Model runs
+/inet-macro-dev/
+/dev/
