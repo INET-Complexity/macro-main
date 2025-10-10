@@ -585,6 +585,11 @@ class Firms(Agent):
             current_production=self.ts.current("production"),
             current_unit_costs=self.compute_unit_costs(),
             available_cash=available_cash,
+            current_prices=current_good_prices,
+            n_industries=self.n_industries,
+            input_usage=self.ts.current("used_intermediate_inputs"),
+            current_tech_multipliers=self.states["intermediate_tech_multipliers"],
+            substitution_bundle_matrix=self.substitution_bundles,
         )
 
         return total_investment, tfp_investment, technical_investment

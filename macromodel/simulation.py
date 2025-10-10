@@ -11,9 +11,9 @@ exchange rates, and rest-of-world effects. It provides functionality to:
 
 import logging
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 import h5py
 import numpy as np
@@ -63,6 +63,7 @@ class Simulation:
     initial_year: int
     aggregate_country_price_index: float = 1.0
     regional_aggregator: Optional[RegionalAggregator] = None
+    prehooks: list[Callable] = field(default_factory=list)
 
     @classmethod
     def from_datawrapper(
@@ -237,17 +238,38 @@ class Simulation:
         """Optional[int]: Random seed used for reproducible simulations."""
         return self.configuration.seed
 
+    def run_prehooks(self, year: int, month: int) -> None:
+        """Execute all registered pre-hooks before iteration logic.
+
+        Args:
+            year (int): Current year of the simulation
+            month (int): Current month of the simulation
+        """
+        for hook in self.prehooks:
+            # Warn if month is not a quarter start (1, 4, 7, 10)
+            if month not in [1, 4, 7, 10]:
+                hook_name = getattr(hook, '__name__', 'unknown_hook')
+                logging.warning(
+                    f"Pre-hook '{hook_name}' called at month {month}, which is not a quarter start. "
+                    "The simulation frequency may be quarterly."
+                )
+            hook(self, year, month)
+
     def iterate(self):
         """Execute one timestep of the simulation.
 
         Performs a complete iteration of the economic model, including:
-        1. Exchange rate updates
-        2. Country-level economic processes
-        3. Labor market clearing
-        4. Housing and credit market clearing
-        5. Goods market clearing
-        6. Metric updates and recording
+        1. Pre-hook execution
+        2. Exchange rate updates
+        3. Country-level economic processes
+        4. Labor market clearing
+        5. Housing and credit market clearing
+        6. Goods market clearing
+        7. Metric updates and recording
         """
+        # Execute pre-hooks before any iteration logic
+        self.run_prehooks(self.timestep.year, self.timestep.month)
+
         # self.exchange_rates.set_current_exchange_rates(current_year=self.timestep.year)
 
         for ind, country in enumerate(self.countries.values()):

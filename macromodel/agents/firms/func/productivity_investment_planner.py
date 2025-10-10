@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import numpy as np
 
@@ -71,7 +72,11 @@ class ProductivityInvestmentPlanner(ABC):
         current_production: np.ndarray,
         current_unit_costs: np.ndarray,
         available_cash: np.ndarray,
-        **kwargs,
+        current_prices: np.ndarray,
+        n_industries: int,
+        input_usage: np.ndarray,
+        current_tech_multipliers: np.ndarray,
+        substitution_bundle_matrix: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Plan productivity investment for each firm.
 
@@ -80,16 +85,20 @@ class ProductivityInvestmentPlanner(ABC):
         Also allocates the investment between TFP and technical coefficient improvements.
 
         Args:
-            current_tfp (np.ndarray): Current TFP multipliers
-            current_production (np.ndarray): Current production levels
-            current_unit_costs (np.ndarray): Current unit costs of production
-            available_cash (np.ndarray): Cash available for investment
-            **kwargs: Additional parameters for specific implementations
+            current_tfp (np.ndarray): Current TFP multipliers [n_firms]
+            current_production (np.ndarray): Current production levels [n_firms]
+            current_unit_costs (np.ndarray): Current unit costs of production [n_firms]
+            available_cash (np.ndarray): Cash available for investment [n_firms]
+            current_prices (np.ndarray): Current market prices [n_industries]
+            n_industries (int): Number of industries
+            input_usage (np.ndarray): Input usage by firms [n_firms x n_industries]
+            current_tech_multipliers (np.ndarray): Current technical multipliers [n_firms x n_industries]
+            substitution_bundle_matrix (np.ndarray): Bundle matrix [n_industries x n_bundles]
 
         Returns:
             tuple[np.ndarray, np.ndarray, np.ndarray]: Tuple containing:
-                - Total planned productivity investment for each firm
-                - TFP investment portion for each firm
+                - Total planned productivity investment for each firm [n_firms]
+                - TFP investment portion for each firm [n_firms]
                 - Technical investment by input [n_firms x n_industries]
         """
         pass
@@ -256,7 +265,7 @@ class ProductivityInvestmentPlanner(ABC):
         n_firms, n_industries = input_usage.shape
 
         # Price-based priority: expensive inputs get higher weight
-        avg_price = np.mean(current_prices)
+        avg_price: np.ndarray = np.mean(current_prices)  # type: ignore
         relative_prices = current_prices / (avg_price + 1e-10)
 
         # Usage-based priority: heavily used inputs get higher weight
@@ -424,7 +433,11 @@ class NoProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
         current_production: np.ndarray,
         current_unit_costs: np.ndarray,
         available_cash: np.ndarray,
-        **kwargs,
+        current_prices: np.ndarray,
+        n_industries: int,
+        input_usage: np.ndarray,
+        current_tech_multipliers: np.ndarray,
+        substitution_bundle_matrix: Optional[np.ndarray],
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Return zero productivity investment for all firms.
 
@@ -433,14 +446,16 @@ class NoProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
             current_production (np.ndarray): Current production levels
             current_unit_costs (np.ndarray): Current unit costs of production
             available_cash (np.ndarray): Cash available for investment
-            **kwargs: Additional parameters (ignored)
+            current_prices (np.ndarray): Current market prices by industry
+            n_industries (int): Number of industries
+            input_usage (np.ndarray): Used intermediate inputs [n_firms x n_industries]
+            current_tech_multipliers (np.ndarray): Technical coefficient multipliers [n_firms x n_industries]
+            substitution_bundle_matrix (np.ndarray | None): Substitution bundle matrix
 
         Returns:
             tuple: Zero investments (total, TFP, technical by input)
         """
         n_firms = len(current_production)
-        # For compatibility, get n_industries from kwargs or use a default
-        n_industries = kwargs.get("n_industries", 18)
 
         total_investment = np.zeros(n_firms)
         tfp_investment = np.zeros(n_firms)
@@ -500,7 +515,11 @@ class SimpleProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
         current_production: np.ndarray,
         current_unit_costs: np.ndarray,
         available_cash: np.ndarray,
-        **kwargs,
+        current_prices: np.ndarray,
+        n_industries: int,
+        input_usage: np.ndarray,
+        current_tech_multipliers: np.ndarray,
+        substitution_bundle_matrix: Optional[np.ndarray],
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Plan productivity investment using simple rules.
 
@@ -512,7 +531,11 @@ class SimpleProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
             current_production (np.ndarray): Current production levels
             current_unit_costs (np.ndarray): Current unit costs of production
             available_cash (np.ndarray): Cash available for investment
-            **kwargs: Additional parameters including substitution_bundle_matrix
+            current_prices (np.ndarray): Current market prices by industry
+            n_industries (int): Number of industries
+            input_usage (np.ndarray): Used intermediate inputs [n_firms x n_industries]
+            current_tech_multipliers (np.ndarray): Technical coefficient multipliers [n_firms x n_industries]
+            substitution_bundle_matrix (np.ndarray | None): Substitution bundle matrix
 
         Returns:
             tuple: (total_investment, tfp_investment, technical_investment_by_input)
@@ -532,30 +555,18 @@ class SimpleProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
         # Only invest where profitable
         total_investment = np.where(profitable, candidate_investment, 0)
 
-        # Get required parameters from kwargs
-        current_prices = kwargs.get("current_prices", np.ones(kwargs.get("n_industries", 18)))
-        input_usage = kwargs.get("input_usage", np.zeros((len(current_production), kwargs.get("n_industries", 18))))
-        current_tech_multipliers = kwargs.get("current_tech_multipliers", np.ones_like(input_usage))
-        substitution_bundle_matrix = kwargs.get("substitution_bundle_matrix")
-
         if substitution_bundle_matrix is not None:
             # Allocate between TFP and technical using bundle-aware logic
-            bundle_significance_threshold = kwargs.get("bundle_significance_threshold", 0.1)
-            arbitrage_intensity = kwargs.get("arbitrage_intensity", 2.0)
-
             tfp_investment, technical_investment = self.allocate_productivity_investment(
                 total_investment,
                 current_prices,
                 input_usage,
                 current_tech_multipliers,
                 substitution_bundle_matrix,
-                bundle_significance_threshold,
-                arbitrage_intensity,
             )
         else:
             # Fallback to simple allocation without bundle logic
             tfp_investment = self.tfp_investment_share * total_investment
-            n_industries = kwargs.get("n_industries", 18)
             technical_budget = (1.0 - self.tfp_investment_share) * total_investment
             technical_investment = np.zeros((len(current_production), n_industries))
             # Distribute technical budget evenly across inputs for simplicity
@@ -616,7 +627,11 @@ class OptimalProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
         current_production: np.ndarray,
         current_unit_costs: np.ndarray,
         available_cash: np.ndarray,
-        **kwargs,
+        current_prices: np.ndarray,
+        n_industries: int,
+        input_usage: np.ndarray,
+        current_tech_multipliers: np.ndarray,
+        substitution_bundle_matrix: Optional[np.ndarray],
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Plan productivity investment by optimizing expected returns.
 
@@ -628,7 +643,11 @@ class OptimalProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
             current_production (np.ndarray): Current production levels
             current_unit_costs (np.ndarray): Current unit costs of production
             available_cash (np.ndarray): Cash available for investment
-            **kwargs: Additional parameters
+            current_prices (np.ndarray): Current market prices by industry
+            n_industries (int): Number of industries
+            input_usage (np.ndarray): Used intermediate inputs [n_firms x n_industries]
+            current_tech_multipliers (np.ndarray): Technical coefficient multipliers [n_firms x n_industries]
+            substitution_bundle_matrix (np.ndarray | None): Substitution bundle matrix
 
         Returns:
             tuple: (total_investment, tfp_investment, technical_investment_by_input)
@@ -672,30 +691,18 @@ class OptimalProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
 
             total_investment[i] = best_investment
 
-        # Get required parameters from kwargs for allocation
-        current_prices = kwargs.get("current_prices", np.ones(kwargs.get("n_industries", 18)))
-        input_usage = kwargs.get("input_usage", np.zeros((len(current_production), kwargs.get("n_industries", 18))))
-        current_tech_multipliers = kwargs.get("current_tech_multipliers", np.ones_like(input_usage))
-        substitution_bundle_matrix = kwargs.get("substitution_bundle_matrix")
-
         if substitution_bundle_matrix is not None:
             # Allocate between TFP and technical using bundle-aware logic
-            bundle_significance_threshold = kwargs.get("bundle_significance_threshold", 0.1)
-            arbitrage_intensity = kwargs.get("arbitrage_intensity", 2.0)
-
             tfp_investment, technical_investment = self.allocate_productivity_investment(
                 total_investment,
                 current_prices,
                 input_usage,
                 current_tech_multipliers,
                 substitution_bundle_matrix,
-                bundle_significance_threshold,
-                arbitrage_intensity,
             )
         else:
             # Fallback to simple allocation without bundle logic
             tfp_investment = self.tfp_investment_share * total_investment
-            n_industries = kwargs.get("n_industries", 18)
             technical_budget = (1.0 - self.tfp_investment_share) * total_investment
             technical_investment = np.zeros((len(current_production), n_industries))
             # Distribute technical budget evenly across inputs for simplicity
