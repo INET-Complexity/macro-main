@@ -7,6 +7,17 @@ from macromodel.agents.firms.func.productivity_investment_planner import (
 )
 
 
+def create_test_params(n_firms, n_industries=18):
+    """Create default test parameters for productivity investment planning."""
+    return {
+        "current_prices": np.ones(n_industries),
+        "n_industries": n_industries,
+        "input_usage": np.ones((n_firms, n_industries)),
+        "current_tech_multipliers": np.ones((n_firms, n_industries)),
+        "substitution_bundle_matrix": None,
+    }
+
+
 class TestNoProductivityInvestmentPlanner:
     """Test the NoProductivityInvestmentPlanner implementation."""
 
@@ -25,6 +36,7 @@ class TestNoProductivityInvestmentPlanner:
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
+            **create_test_params(n_firms),
         )
 
         # Should return all zeros
@@ -49,6 +61,7 @@ class TestNoProductivityInvestmentPlanner:
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
+            **create_test_params(1),
         )
 
         assert np.allclose(total_investment, [0.0])
@@ -80,6 +93,7 @@ class TestSimpleProductivityInvestmentPlanner:
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
+            **create_test_params(n_firms),
         )
 
         # All values should be non-negative
@@ -109,6 +123,7 @@ class TestSimpleProductivityInvestmentPlanner:
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
+            **create_test_params(2),
         )
 
         # Firm with higher unit costs should invest more (higher returns from cost reduction)
@@ -134,6 +149,7 @@ class TestSimpleProductivityInvestmentPlanner:
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
+            **create_test_params(1),
         )
 
         # High hurdle rate + low effectiveness + low unit costs should lead to no investment
@@ -159,6 +175,7 @@ class TestSimpleProductivityInvestmentPlanner:
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
+            **create_test_params(1),
         )
 
         # Investment should be limited by cash constraint
@@ -186,6 +203,7 @@ class TestSimpleProductivityInvestmentPlanner:
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
+            **create_test_params(1),
         )
 
         # No unit costs means no cost savings possible
@@ -207,6 +225,7 @@ class TestSimpleProductivityInvestmentPlanner:
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
+            **create_test_params(1),
         )
 
         assert np.allclose(total_investment, [0.0])
@@ -260,6 +279,7 @@ class TestOptimalProductivityInvestmentPlanner:
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
+            **create_test_params(1),
         )
 
         assert np.all(total_investment >= 0)
@@ -300,6 +320,7 @@ class TestOptimalProductivityInvestmentPlanner:
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
+            **create_test_params(1),
         )
 
         simple_total, simple_tfp, simple_tech = simple_planner.plan_productivity_investment(
@@ -307,6 +328,7 @@ class TestOptimalProductivityInvestmentPlanner:
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
+            **create_test_params(1),
         )
 
         # Calculate NPV for both solutions
@@ -342,6 +364,7 @@ class TestOptimalProductivityInvestmentPlanner:
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
+            **create_test_params(n_firms),
         )
 
         assert len(total_investment) == n_firms
@@ -372,6 +395,7 @@ class TestOptimalProductivityInvestmentPlanner:
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
+            **create_test_params(1),
         )
 
         # Should find no profitable investment
@@ -455,6 +479,7 @@ class TestProductivityInvestmentPlannerUtilities:
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
+            **create_test_params(2),
         )
 
         # No NaN or inf values
@@ -483,6 +508,7 @@ class TestProductivityInvestmentPlannerUtilities:
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
+            **create_test_params(1),
         )
 
         # Should handle negative cash gracefully (no investment possible)
@@ -504,6 +530,7 @@ class TestProductivityInvestmentPlannerUtilities:
             current_production=current_production,
             current_unit_costs=current_unit_costs,
             available_cash=available_cash,
+            **create_test_params(0),
         )
 
         assert len(total_investment) == 0

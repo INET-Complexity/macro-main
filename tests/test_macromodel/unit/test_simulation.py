@@ -691,3 +691,35 @@ def test_technical_only_investment_allocation(datawrapper, seed=42):
     assert (
         intermediate_some_better or capital_some_better
     ), "At least some effective coefficients should be strictly better than base coefficients"
+
+
+def test_prehooks(datawrapper):
+    """Test that pre-hooks execute correctly before each iteration."""
+    # Track hook calls
+    hook_calls = []
+
+    def test_hook(simulation: Simulation, year: int, month: int) -> None:
+        """Simple test hook that records when it's called."""
+        hook_calls.append((year, month))
+
+    # Create simulation
+    configuration = SimulationConfiguration(country_configurations={"FRA": CountryConfiguration()})
+    configuration.seed = 0
+
+    simulation = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=configuration)
+
+    # Register the test hook
+    simulation.prehooks.append(test_hook)
+
+    # Run for 3 iterations
+    for _ in range(3):
+        simulation.iterate()
+
+    # Verify hook was called correct number of times
+    assert len(hook_calls) == 3, f"Expected 3 hook calls, got {len(hook_calls)}"
+
+    # Verify each call had year and month
+    for year, month in hook_calls:
+        assert isinstance(year, int), "Year should be an integer"
+        assert isinstance(month, int), "Month should be an integer"
+        assert 1 <= month <= 12, f"Month should be between 1 and 12, got {month}"
