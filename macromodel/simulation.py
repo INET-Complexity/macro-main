@@ -248,7 +248,7 @@ class Simulation:
         for hook in self.prehooks:
             # Warn if month is not a quarter start (1, 4, 7, 10)
             if month not in [1, 4, 7, 10]:
-                hook_name = getattr(hook, '__name__', 'unknown_hook')
+                hook_name = getattr(hook, "__name__", "unknown_hook")
                 logging.warning(
                     f"Pre-hook '{hook_name}' called at month {month}, which is not a quarter start. "
                     "The simulation frequency may be quarterly."
