@@ -148,3 +148,7 @@ dmypy.json
 
 #Wealth and Assets Survey data
 *.dta 
+
+# Model runs
+/inet-macro-dev/
+/dev/

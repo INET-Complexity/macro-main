@@ -431,8 +431,19 @@ class Simulation:
             pd.DataFrame: DataFrame containing summary statistics for the country
         """
         return self.countries[country].shallow_output()
-    
-    def get_country_gdp_debug_output(self, country: str):
+
+    def get_country_headlines(self, country: str):
+        """Get headlines for a specific country.
+
+        Args:
+            country (str): Country code to get data for
+
+        Returns:
+            pd.DataFrame: DataFrame containing headlines for the country
+        """
+        return self.countries[country].headlines()
+
+    def get_country_gdp_components_df(self, country: str):
         """Get detailed GDP breakdown for a specific country.
 
         Args:
@@ -441,7 +452,7 @@ class Simulation:
         Returns:
             pd.DataFrame: DataFrame containing detailed GDP breakdown for the country
         """
-        return self.countries[country].gdp_debug_output()
+        return self.countries[country].gdp_components_df
 
 
 def check_compatibility(
