@@ -21,6 +21,7 @@ class TestBundleArbitrageInvestmentAllocation:
             price_weight=0.5,
             usage_weight=0.3,
             potential_weight=0.2,
+            n_firms=2,
         )
 
         # Setup test scenario: 2 firms, 4 industries
@@ -91,6 +92,7 @@ class TestBundleArbitrageInvestmentAllocation:
 
         planner = SimpleProductivityInvestmentPlanner(
             tfp_investment_share=0.0,
+            n_firms=2,
         )
 
         n_firms, n_industries = 2, 4
@@ -140,9 +142,7 @@ class TestBundleArbitrageInvestmentAllocation:
     def test_singleton_bundles_no_arbitrage(self):
         """Test that singleton bundles don't apply arbitrage (no substitution opportunity)."""
 
-        planner = SimpleProductivityInvestmentPlanner(
-            tfp_investment_share=0.0,
-        )
+        planner = SimpleProductivityInvestmentPlanner(tfp_investment_share=0.0, n_firms=1)
 
         n_firms, n_industries = 1, 3
         # All singleton bundles (no multi-input bundles)
@@ -196,6 +196,7 @@ class TestBundleArbitrageInvestmentAllocation:
 
         planner = SimpleProductivityInvestmentPlanner(
             tfp_investment_share=0.0,
+            n_firms=1,
         )
 
         n_firms, n_industries = 1, 6
@@ -251,6 +252,7 @@ class TestBundleArbitrageInvestmentAllocation:
             price_weight=0.3,
             usage_weight=0.4,
             potential_weight=0.3,
+            n_firms=1,
         )
 
         n_firms, n_industries = 1, 4
@@ -300,7 +302,7 @@ class TestBundleArbitrageInvestmentAllocation:
     def test_zero_investment_budget(self):
         """Test handling of zero investment budgets."""
 
-        planner = SimpleProductivityInvestmentPlanner()
+        planner = SimpleProductivityInvestmentPlanner(n_firms=2)
 
         n_firms, n_industries = 2, 3
         bundles = [[0, 1]]

@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from macromodel.agents.firms.func.productivity_investment_planner import (
     NoProductivityInvestmentPlanner,
@@ -23,8 +24,8 @@ class TestNoProductivityInvestmentPlanner:
 
     def test_always_returns_zero_investment(self):
         """Test that no investment planner always returns zero."""
-        planner = NoProductivityInvestmentPlanner()
         n_firms = 5
+        planner = NoProductivityInvestmentPlanner(n_firms=n_firms)
 
         current_tfp = np.ones(n_firms)
         current_production = np.full(n_firms, 100.0)
@@ -48,7 +49,7 @@ class TestNoProductivityInvestmentPlanner:
 
     def test_ignores_all_parameters(self):
         """Test that no investment planner ignores all input parameters."""
-        planner = NoProductivityInvestmentPlanner()
+        planner = NoProductivityInvestmentPlanner(n_firms=1)
 
         # Test with extreme values
         current_tfp = np.array([10.0])
@@ -80,6 +81,7 @@ class TestSimpleProductivityInvestmentPlanner:
             investment_effectiveness=0.1,
             investment_elasticity=0.3,
             investment_propensity=0.5,
+            n_firms=3,
         )
 
         n_firms = 3
@@ -110,6 +112,7 @@ class TestSimpleProductivityInvestmentPlanner:
             hurdle_rate=0.05,  # Low hurdle rate to allow investment
             investment_propensity=0.5,
             investment_effectiveness=0.1,
+            n_firms=2,
         )
 
         # Two identical firms except for unit costs
@@ -137,6 +140,7 @@ class TestSimpleProductivityInvestmentPlanner:
             investment_effectiveness=0.00,  # no effectiveness
             investment_elasticity=0.3,
             investment_propensity=0.5,
+            n_firms=1,
         )
 
         current_tfp = np.array([1.0])
@@ -163,6 +167,7 @@ class TestSimpleProductivityInvestmentPlanner:
             hurdle_rate=0.05,  # Low hurdle rate
             max_investment_fraction=0.2,  # Allow more investment relative to output
             investment_propensity=1.0,  # Try to invest all available budget
+            n_firms=1,
         )
 
         current_tfp = np.array([1.0])
@@ -191,6 +196,7 @@ class TestSimpleProductivityInvestmentPlanner:
         planner = SimpleProductivityInvestmentPlanner(
             hurdle_rate=0.05,
             investment_propensity=1.0,
+            n_firms=1,
         )
 
         current_tfp = np.array([1.0])
@@ -213,7 +219,7 @@ class TestSimpleProductivityInvestmentPlanner:
 
     def test_zero_cash_handling(self):
         """Test behavior when firms have no cash available."""
-        planner = SimpleProductivityInvestmentPlanner()
+        planner = SimpleProductivityInvestmentPlanner(n_firms=1)
 
         current_tfp = np.array([1.0])
         current_production = np.array([100.0])
@@ -238,6 +244,7 @@ class TestSimpleProductivityInvestmentPlanner:
             hurdle_rate=0.15,
             investment_effectiveness=0.1,
             investment_elasticity=0.5,
+            n_firms=1,
         )
 
         productivity_investment = np.array([10.0])
@@ -267,6 +274,7 @@ class TestOptimalProductivityInvestmentPlanner:
         planner = OptimalProductivityInvestmentPlanner(
             hurdle_rate=0.10,
             search_steps=50,  # More steps for better optimization
+            n_firms=1,
         )
 
         current_tfp = np.array([1.0])
@@ -297,6 +305,7 @@ class TestOptimalProductivityInvestmentPlanner:
             "max_investment_fraction": 0.1,
             "investment_effectiveness": 0.1,
             "investment_elasticity": 0.3,
+            "n_firms": 1,
         }
 
         optimal_planner = OptimalProductivityInvestmentPlanner(
@@ -351,6 +360,7 @@ class TestOptimalProductivityInvestmentPlanner:
         planner = OptimalProductivityInvestmentPlanner(
             hurdle_rate=0.12,
             search_steps=20,
+            n_firms=4,
         )
 
         n_firms = 4
@@ -383,6 +393,7 @@ class TestOptimalProductivityInvestmentPlanner:
         planner = OptimalProductivityInvestmentPlanner(
             hurdle_rate=0.50,  # Very high hurdle rate
             investment_effectiveness=0.00,  # no effectiveness
+            n_firms=1,
         )
 
         current_tfp = np.array([1.0])
@@ -412,6 +423,7 @@ class TestProductivityInvestmentPlannerUtilities:
         planner = SimpleProductivityInvestmentPlanner(
             investment_effectiveness=0.1,
             investment_elasticity=0.3,
+            n_firms=3,
         )
 
         productivity_investment = np.array([10.0, 20.0, 0.0])
@@ -431,6 +443,7 @@ class TestProductivityInvestmentPlannerUtilities:
             hurdle_rate=0.15,
             investment_effectiveness=0.1,
             investment_elasticity=0.3,
+            n_firms=2,
         )
 
         productivity_investment = np.array([5.0, 10.0])
@@ -450,6 +463,7 @@ class TestProductivityInvestmentPlannerUtilities:
         """Test investment budget calculation."""
         planner = SimpleProductivityInvestmentPlanner(
             max_investment_fraction=0.15,
+            n_firms=3,
         )
 
         available_cash = np.array([1000.0, 500.0, 2000.0])
@@ -467,7 +481,9 @@ class TestProductivityInvestmentPlannerUtilities:
 
     def test_zero_production_handling(self):
         """Test graceful handling of zero production."""
-        planner = SimpleProductivityInvestmentPlanner()
+        planner = SimpleProductivityInvestmentPlanner(
+            n_firms=2,
+        )
 
         current_tfp = np.array([1.0, 1.0])
         current_production = np.array([100.0, 0.0])  # Second firm has zero production
@@ -496,7 +512,9 @@ class TestProductivityInvestmentPlannerUtilities:
 
     def test_negative_cash_handling(self):
         """Test handling of negative cash balances."""
-        planner = SimpleProductivityInvestmentPlanner()
+        planner = SimpleProductivityInvestmentPlanner(
+            n_firms=1,
+        )
 
         current_tfp = np.array([1.0])
         current_production = np.array([100.0])
@@ -518,7 +536,7 @@ class TestProductivityInvestmentPlannerUtilities:
 
     def test_empty_arrays(self):
         """Test with empty input arrays."""
-        planner = SimpleProductivityInvestmentPlanner()
+        planner = SimpleProductivityInvestmentPlanner(n_firms=0)
 
         current_tfp = np.array([])
         current_production = np.array([])
@@ -546,6 +564,7 @@ class TestProductivityInvestmentPlannerUtilities:
             hurdle_rate=0.15,
             investment_effectiveness=0.1,
             investment_elasticity=0.5,
+            n_firms=2,
         )
 
         # Same investment intensity for both firms
@@ -568,11 +587,13 @@ class TestProductivityInvestmentPlannerUtilities:
             hurdle_rate=0.15,
             investment_effectiveness=0.05,
             investment_elasticity=0.3,
+            n_firms=1,
         )
         high_effectiveness_planner = SimpleProductivityInvestmentPlanner(
             hurdle_rate=0.15,
             investment_effectiveness=0.15,
             investment_elasticity=0.3,
+            n_firms=1,
         )
 
         productivity_investment = np.array([10.0])
@@ -588,3 +609,152 @@ class TestProductivityInvestmentPlannerUtilities:
 
         # Higher effectiveness should lead to higher hurdle-adjusted values
         assert high_values[0] > low_values[0]
+
+
+class TestHeterogeneousParameters:
+    """Test heterogeneous parameter functionality across firms."""
+
+    def test_heterogeneous_investment_effectiveness(self):
+        """Test that different firms can have different investment effectiveness."""
+        n_firms = 3
+        planner = SimpleProductivityInvestmentPlanner(
+            n_firms=n_firms,
+            investment_effectiveness=[0.05, 0.10, 0.15],  # Different effectiveness per firm
+            hurdle_rate=0.01,  # Low hurdle rate to ensure investment
+            investment_propensity=1.0,
+        )
+
+        # Verify parameters are arrays with correct values
+        assert isinstance(planner.investment_effectiveness, np.ndarray)
+        assert len(planner.investment_effectiveness) == n_firms
+        assert np.allclose(planner.investment_effectiveness, [0.05, 0.10, 0.15])
+
+        # Test that effectiveness affects investment decisions differently
+        current_tfp = np.ones(n_firms)
+        current_production = np.array([100.0, 100.0, 100.0])  # Same production
+        current_unit_costs = np.array([10.0, 10.0, 10.0])  # Same costs
+        available_cash = np.array([1000.0, 1000.0, 1000.0])  # Same cash
+
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(n_firms),
+        )
+
+        # Firms with higher effectiveness should get higher expected returns
+        # and potentially invest more (depending on optimization)
+        assert np.all(total_investment >= 0)
+        assert len(total_investment) == n_firms
+
+    def test_heterogeneous_hurdle_rate(self):
+        """Test that different firms can have different hurdle rates."""
+        n_firms = 3
+        planner = SimpleProductivityInvestmentPlanner(
+            n_firms=n_firms,
+            hurdle_rate=[0.05, 0.15, 0.30],  # Very different hurdle rates
+            investment_effectiveness=0.1,
+            investment_propensity=1.0,
+        )
+
+        # Verify parameters
+        assert isinstance(planner.hurdle_rate, np.ndarray)
+        assert np.allclose(planner.hurdle_rate, [0.05, 0.15, 0.30])
+
+        current_tfp = np.ones(n_firms)
+        current_production = np.array([100.0, 100.0, 100.0])
+        current_unit_costs = np.array([10.0, 10.0, 10.0])
+        available_cash = np.array([500.0, 500.0, 500.0])
+
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(n_firms),
+        )
+
+        # Firm with low hurdle rate (0.05) should invest more than firm with high hurdle rate (0.30)
+        # because more investments pass the hurdle
+        assert total_investment[0] >= total_investment[2] or total_investment[2] == 0
+
+    def test_mixed_heterogeneous_and_uniform(self):
+        """Test mixing heterogeneous and uniform parameters."""
+        n_firms = 4
+        planner = SimpleProductivityInvestmentPlanner(
+            n_firms=n_firms,
+            hurdle_rate=[0.10, 0.12, 0.15, 0.20],  # Heterogeneous
+            investment_effectiveness=0.1,  # Uniform
+            investment_elasticity=[0.2, 0.3, 0.4, 0.5],  # Heterogeneous
+            max_investment_fraction=0.15,  # Uniform
+        )
+
+        # Check parameter types and shapes
+        assert isinstance(planner.hurdle_rate, np.ndarray)
+        assert len(planner.hurdle_rate) == n_firms
+        assert isinstance(planner.investment_effectiveness, np.ndarray)
+        assert len(planner.investment_effectiveness) == n_firms
+        assert np.allclose(planner.investment_effectiveness, 0.1)  # All same value
+        assert isinstance(planner.investment_elasticity, np.ndarray)
+        assert np.allclose(planner.investment_elasticity, [0.2, 0.3, 0.4, 0.5])
+
+    def test_heterogeneous_technical_parameters(self):
+        """Test heterogeneous parameters for technical coefficient investment."""
+        n_firms = 3
+        planner = SimpleProductivityInvestmentPlanner(
+            n_firms=n_firms,
+            technical_investment_effectiveness=[0.10, 0.15, 0.20],
+            technical_diminishing_returns=[0.3, 0.5, 0.7],
+            price_weight=[0.5, 0.4, 0.3],
+            usage_weight=[0.3, 0.3, 0.4],
+            potential_weight=[0.2, 0.3, 0.3],
+            tfp_investment_share=0.5,  # 50/50 split
+        )
+
+        # Verify arrays
+        assert np.allclose(planner.technical_investment_effectiveness, [0.10, 0.15, 0.20])
+        assert np.allclose(planner.technical_diminishing_returns, [0.3, 0.5, 0.7])
+        assert np.allclose(planner.price_weight, [0.5, 0.4, 0.3])
+        assert np.allclose(planner.usage_weight, [0.3, 0.3, 0.4])
+        assert np.allclose(planner.potential_weight, [0.2, 0.3, 0.3])
+
+    def test_optimal_planner_with_heterogeneous_params(self):
+        """Test that OptimalProductivityInvestmentPlanner works with heterogeneous parameters."""
+        n_firms = 2
+        planner = OptimalProductivityInvestmentPlanner(
+            n_firms=n_firms,
+            hurdle_rate=[0.10, 0.15],
+            investment_effectiveness=[0.08, 0.12],
+            search_steps=10,
+        )
+
+        # Verify parameters
+        assert np.allclose(planner.hurdle_rate, [0.10, 0.15])
+        assert np.allclose(planner.investment_effectiveness, [0.08, 0.12])
+
+        current_tfp = np.ones(n_firms)
+        current_production = np.array([100.0, 150.0])
+        current_unit_costs = np.array([10.0, 12.0])
+        available_cash = np.array([500.0, 600.0])
+
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(n_firms),
+        )
+
+        # Should produce valid investment decisions
+        assert len(total_investment) == n_firms
+        assert np.all(total_investment >= 0)
+        assert np.all(np.isfinite(total_investment))
+
+    def test_parameter_validation_wrong_length(self):
+        """Test that wrong length parameters raise an error."""
+        with pytest.raises(ValueError, match="does not match n_firms"):
+            SimpleProductivityInvestmentPlanner(
+                n_firms=3,
+                hurdle_rate=[0.10, 0.15],  # Only 2 values for 3 firms
+            )
