@@ -180,6 +180,7 @@ def test_tfp_growth_with_investment(datawrapper):
         "SimpleProductivityInvestmentPlanner"
     )
     config_with_growth.country_configurations["FRA"].firms.functions.productivity_investment_planner.parameters = {
+        "n_firms": config_with_growth.country_configurations["FRA"].firms.n_firms,
         "hurdle_rate": 1e-5,  # Very low hurdle rate (almost no discounting)
         "investment_effectiveness": 0.5,  # High effectiveness
         "investment_elasticity": 0.5,  # Match the TFP elasticity
@@ -723,3 +724,81 @@ def test_prehooks(datawrapper):
         assert isinstance(year, int), "Year should be an integer"
         assert isinstance(month, int), "Month should be an integer"
         assert 1 <= month <= 12, f"Month should be between 1 and 12, got {month}"
+
+
+def test_heterogeneous_investment_effectiveness(datawrapper):
+    """Test simulation with heterogeneous investment effectiveness across firms.
+
+    This tests that we can set different investment effectiveness parameters
+    for different firms and that the simulation runs correctly.
+    """
+    configuration = SimulationConfiguration(country_configurations={"FRA": CountryConfiguration()})
+    configuration.seed = 0
+
+    # Get n_firms from the configuration
+    n_firms = configuration.country_configurations["FRA"].firms.n_firms
+
+    # Set up productivity investment with heterogeneous parameters
+    # Create a list of investment effectiveness values that vary across firms
+    # Low effectiveness for first third, medium for middle third, high for last third
+    investment_effectiveness_list = []
+    for i in range(n_firms):
+        if i < n_firms // 3:
+            investment_effectiveness_list.append(0.05)  # Low
+        elif i < 2 * n_firms // 3:
+            investment_effectiveness_list.append(0.10)  # Medium
+        else:
+            investment_effectiveness_list.append(0.15)  # High
+
+    # Configure productivity investment planner with heterogeneous parameters
+    configuration.country_configurations["FRA"].firms.functions.productivity_investment_planner.name = (
+        "SimpleProductivityInvestmentPlanner"
+    )
+    configuration.country_configurations["FRA"].firms.functions.productivity_investment_planner.parameters = {
+        "n_firms": n_firms,
+        "hurdle_rate": 0.10,  # Uniform
+        "investment_effectiveness": investment_effectiveness_list,  # Heterogeneous
+        "investment_elasticity": 0.3,  # Uniform
+        "max_investment_fraction": 0.15,
+        "investment_propensity": 0.5,
+    }
+
+    # Enable TFP growth to see the effects
+    configuration.country_configurations["FRA"].firms.functions.productivity_growth.name = "SimpleTFPGrowth"
+    configuration.country_configurations["FRA"].firms.functions.productivity_growth.parameters = {
+        "investment_effectiveness": 0.1
+    }
+    configuration.country_configurations["FRA"].firms.parameters.tfp_base_growth_rate = 0.001
+
+    # Create and run simulation
+    simulation = Simulation.from_datawrapper(datawrapper=datawrapper, simulation_configuration=configuration)
+
+    # Verify heterogeneous parameters were set correctly
+    planner = simulation.countries["FRA"].firms.functions["productivity_investment_planner"]
+    assert isinstance(planner.investment_effectiveness, np.ndarray)
+    assert len(planner.investment_effectiveness) == n_firms
+    # Check that we have the three different values
+    unique_values = np.unique(planner.investment_effectiveness)
+    assert len(unique_values) == 3
+    assert np.allclose(sorted(unique_values), [0.05, 0.10, 0.15])
+
+    # Store initial TFP
+    initial_tfp = simulation.countries["FRA"].firms.states["tfp_multiplier"].copy()
+
+    # Run simulation for several periods
+    for _ in range(10):
+        simulation.iterate()
+
+    # Get final TFP
+    final_tfp = simulation.countries["FRA"].firms.states["tfp_multiplier"]
+
+    # Verify simulation ran successfully
+    assert np.all(final_tfp >= initial_tfp), "TFP should not decrease"
+    assert np.all(np.isfinite(final_tfp)), "TFP should be finite"
+
+    # Check that at least some firms invested (if there was investment opportunity)
+    if len(simulation.countries["FRA"].firms.ts.executed_productivity_investment) > 0:
+        total_investment_history = simulation.countries["FRA"].firms.ts.executed_productivity_investment
+        total_invested = sum(inv.sum() for inv in total_investment_history)
+        # Just verify no errors - investment amount depends on profitability
+        assert total_invested >= 0
