@@ -1,6 +1,6 @@
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 def create_good_bundle(n_industries: int, bundles: Optional[list[list[int]]] = None) -> list:
@@ -298,6 +298,12 @@ class ProductivityInvestmentPlanner(BaseModel):
     """
     The function for planning productivity investments.
     Options: NoProductivityInvestmentPlanner, SimpleProductivityInvestmentPlanner, OptimalProductivityInvestmentPlanner
+
+    All parameters can be specified as either:
+    - float: uniform value applied to all firms
+    - list[float]: heterogeneous values, one per firm (length must match n_firms)
+
+    Note: n_firms is automatically injected during instantiation and does not need to be specified here.
     """
 
     name: Literal[
@@ -305,18 +311,19 @@ class ProductivityInvestmentPlanner(BaseModel):
     ] = "NoProductivityInvestmentPlanner"
     path_name: str = "productivity_investment_planner"
     parameters: dict[str, Any] = {
+        "n_firms": 18,  # Number of firms (default for aggregate model)
         # TFP parameters (existing)
-        "hurdle_rate": 0.15,
-        "max_investment_fraction": 0.1,
-        "investment_effectiveness": 0.1,
-        "investment_elasticity": 0.3,
+        "hurdle_rate": 0.15,  # Can be float or list[float]
+        "max_investment_fraction": 0.1,  # Can be float or list[float]
+        "investment_effectiveness": 0.1,  # Can be float or list[float]
+        "investment_elasticity": 0.3,  # Can be float or list[float]
         # Technical coefficient parameters (new)
-        "tfp_investment_share": 0.4,
-        "technical_investment_effectiveness": 0.15,
-        "technical_diminishing_returns": 0.5,
-        "price_weight": 0.4,
-        "usage_weight": 0.3,
-        "potential_weight": 0.3,
+        "tfp_investment_share": 0.4,  # Can be float or list[float]
+        "technical_investment_effectiveness": 0.15,  # Can be float or list[float]
+        "technical_diminishing_returns": 0.5,  # Can be float or list[float]
+        "price_weight": 0.4,  # Can be float or list[float]
+        "usage_weight": 0.3,  # Can be float or list[float]
+        "potential_weight": 0.3,  # Can be float or list[float]
     }
 
 
@@ -369,10 +376,13 @@ class FirmsParameters(BaseModel):
     - Investment behavior settings
 
     Attributes:
-        capital_inputs_delay (list[int]): Delays in capital input availability by industry
-        depreciation_rates (list[float]): Asset depreciation rates by industry
+        capital_inputs_delay (list[int]): Delays in capital input availability by firm
+        depreciation_rates (list[float]): Asset depreciation rates by firm
         capital_inputs_utilisation_rate (float): Capacity utilization for capital
         intermediate_inputs_utilisation_rate (float): Capacity utilization for inputs
+
+    Note:
+        The length of capital_inputs_delay and depreciation_rates determines n_firms.
     """
 
     capital_inputs_delay: list[int] = [0 for _ in range(18)]
@@ -477,6 +487,61 @@ class FirmsConfiguration(BaseModel):
     functions: FirmsFunctions = FirmsFunctions()
     calculate_hill_exponent: bool = True
     substitution_bundles: list = DEFAULT_BUNDLE
+
+    @property
+    def n_firms(self) -> int:
+        """Get number of firms from parameters.
+
+        The number of firms is inferred from the length of capital_inputs_delay
+        or depreciation_rates lists in FirmsParameters.
+
+        Returns:
+            int: Number of firms configured
+        """
+        return len(self.parameters.capital_inputs_delay)
+
+    @model_validator(mode="after")
+    def validate_n_firms_consistency(self) -> "FirmsConfiguration":
+        """Validate that n_firms is consistent across all parameters that use it."""
+        # Get n_firms from parameters
+        n_firms_from_delay = len(self.parameters.capital_inputs_delay)
+        n_firms_from_depreciation = len(self.parameters.depreciation_rates)
+
+        # Ensure capital_inputs_delay and depreciation_rates have same length
+        if n_firms_from_delay != n_firms_from_depreciation:
+            raise ValueError(
+                f"capital_inputs_delay length ({n_firms_from_delay}) must match "
+                f"depreciation_rates length ({n_firms_from_depreciation})"
+            )
+
+        n_firms = n_firms_from_delay
+
+        # Only validate productivity investment planner if it's being used (not NoProductivityInvestmentPlanner)
+        if self.functions.productivity_investment_planner.name != "NoProductivityInvestmentPlanner":
+            # Validate n_firms in productivity investment planner matches
+            planner_n_firms = self.functions.productivity_investment_planner.parameters.get("n_firms")
+            if planner_n_firms is not None and planner_n_firms != n_firms:
+                raise ValueError(
+                    f"Productivity investment planner n_firms ({planner_n_firms}) must match "
+                    f"FirmsParameters n_firms ({n_firms})"
+                )
+
+            # Set n_firms in productivity investment planner if not set
+            if planner_n_firms is None:
+                self.functions.productivity_investment_planner.parameters["n_firms"] = n_firms
+
+            # Validate that list parameters in productivity investment planner have correct length
+            for param_name, param_value in self.functions.productivity_investment_planner.parameters.items():
+                if param_name == "n_firms":
+                    continue
+                if isinstance(param_value, list):
+                    if len(param_value) != n_firms:
+                        raise ValueError(
+                            f"Productivity investment parameter '{param_name}' has length {len(param_value)} "
+                            f"but n_firms is {n_firms}"
+                        )
+
+        return self
 
     @property
     def reset_params(self):
