@@ -27,43 +27,66 @@ class ProductivityInvestmentPlanner(ABC):
 
     def __init__(
         self,
-        hurdle_rate: float = 0.15,
-        max_investment_fraction: float = 0.1,
-        investment_effectiveness: float = 0.1,
-        investment_elasticity: float = 0.3,
+        n_firms: int,
+        hurdle_rate: float | list[float] = 0.15,
+        max_investment_fraction: float | list[float] = 0.1,
+        investment_effectiveness: float | list[float] = 0.1,
+        investment_elasticity: float | list[float] = 0.3,
         # New parameters for technical coefficient investment
-        tfp_investment_share: float = 0.4,
-        technical_investment_effectiveness: float = 0.15,
-        technical_diminishing_returns: float = 0.5,
-        price_weight: float = 0.4,
-        usage_weight: float = 0.3,
-        potential_weight: float = 0.3,
+        tfp_investment_share: float | list[float] = 0.4,
+        technical_investment_effectiveness: float | list[float] = 0.15,
+        technical_diminishing_returns: float | list[float] = 0.5,
+        price_weight: float | list[float] = 0.4,
+        usage_weight: float | list[float] = 0.3,
+        potential_weight: float | list[float] = 0.3,
     ):
         """Initialize the productivity investment planner.
 
         Args:
-            hurdle_rate (float): Minimum required return on investment
-            max_investment_fraction (float): Max investment as fraction of output
-            investment_effectiveness (float): TFP growth effectiveness parameter
-            investment_elasticity (float): Diminishing returns parameter
-            tfp_investment_share (float): Share of budget allocated to TFP vs technical
-            technical_investment_effectiveness (float): Technical coefficient growth effectiveness
-            technical_diminishing_returns (float): Exponential diminishing returns factor
-            price_weight (float): Weight for price-based input targeting
-            usage_weight (float): Weight for usage-based input targeting
-            potential_weight (float): Weight for improvement potential targeting
+            n_firms (int): Number of firms (required to convert scalars to arrays)
+            hurdle_rate (float | list[float]): Minimum required return on investment
+            max_investment_fraction (float | list[float]): Max investment as fraction of output
+            investment_effectiveness (float | list[float]): TFP growth effectiveness parameter
+            investment_elasticity (float | list[float]): Diminishing returns parameter
+            tfp_investment_share (float | list[float]): Share of budget allocated to TFP vs technical
+            technical_investment_effectiveness (float | list[float]): Technical coefficient growth effectiveness
+            technical_diminishing_returns (float | list[float]): Exponential diminishing returns factor
+            price_weight (float | list[float]): Weight for price-based input targeting
+            usage_weight (float | list[float]): Weight for usage-based input targeting
+            potential_weight (float | list[float]): Weight for improvement potential targeting
         """
-        self.hurdle_rate = hurdle_rate
-        self.max_investment_fraction = max_investment_fraction
-        self.investment_effectiveness = investment_effectiveness
-        self.investment_elasticity = investment_elasticity
+        self.n_firms = n_firms
+
+        # Convert all parameters to numpy arrays with shape (n_firms,)
+        self.hurdle_rate = self._to_array(hurdle_rate, n_firms)
+        self.max_investment_fraction = self._to_array(max_investment_fraction, n_firms)
+        self.investment_effectiveness = self._to_array(investment_effectiveness, n_firms)
+        self.investment_elasticity = self._to_array(investment_elasticity, n_firms)
         # Technical coefficient parameters
-        self.tfp_investment_share = tfp_investment_share
-        self.technical_investment_effectiveness = technical_investment_effectiveness
-        self.technical_diminishing_returns = technical_diminishing_returns
-        self.price_weight = price_weight
-        self.usage_weight = usage_weight
-        self.potential_weight = potential_weight
+        self.tfp_investment_share = self._to_array(tfp_investment_share, n_firms)
+        self.technical_investment_effectiveness = self._to_array(technical_investment_effectiveness, n_firms)
+        self.technical_diminishing_returns = self._to_array(technical_diminishing_returns, n_firms)
+        self.price_weight = self._to_array(price_weight, n_firms)
+        self.usage_weight = self._to_array(usage_weight, n_firms)
+        self.potential_weight = self._to_array(potential_weight, n_firms)
+
+    def _to_array(self, value: float | list[float], n_firms: int) -> np.ndarray:
+        """Convert scalar or list to numpy array with shape (n_firms,).
+
+        Args:
+            value (float | list[float]): Scalar or list of values
+            n_firms (int): Number of firms
+
+        Returns:
+            np.ndarray: Array with shape (n_firms,)
+        """
+        if isinstance(value, (list, tuple)):
+            arr = np.array(value)
+            if len(arr) != n_firms:
+                raise ValueError(f"Parameter list length {len(arr)} does not match n_firms {n_firms}")
+            return arr
+        else:
+            return np.full(n_firms, value)
 
     @abstractmethod
     def plan_productivity_investment(
@@ -277,11 +300,11 @@ class ProductivityInvestmentPlanner(ABC):
         # Improvement potential: lower efficiency gets higher weight
         improvement_potential = 1.0 / np.maximum(0.5, current_tech_multipliers)
 
-        # Combine factors using configuration weights
+        # Combine factors using configuration weights (now firm-specific)
         priorities = (
-            self.price_weight * relative_prices[np.newaxis, :]
-            + self.usage_weight * relative_usage
-            + self.potential_weight * improvement_potential
+            self.price_weight[:, np.newaxis] * relative_prices[np.newaxis, :]
+            + self.usage_weight[:, np.newaxis] * relative_usage
+            + self.potential_weight[:, np.newaxis] * improvement_potential
         )
 
         return priorities
@@ -399,13 +422,13 @@ class ProductivityInvestmentPlanner(ABC):
             where=(current_production[:, np.newaxis] * current_coefficients) > 0,
         )
 
-        # Apply exponential diminishing returns
-        diminishing_factor = np.exp(-self.technical_diminishing_returns * cumulative_improvements)
+        # Apply exponential diminishing returns (firm-specific parameters)
+        diminishing_factor = np.exp(-self.technical_diminishing_returns[:, np.newaxis] * cumulative_improvements)
 
-        # Effective technical growth with diminishing returns
+        # Effective technical growth with diminishing returns (firm-specific parameters)
         technical_growth = (
-            self.technical_investment_effectiveness
-            * np.power(investment_intensity, self.investment_elasticity)
+            self.technical_investment_effectiveness[:, np.newaxis]
+            * np.power(investment_intensity, self.investment_elasticity[:, np.newaxis])
             * diminishing_factor
         )
 
@@ -473,29 +496,32 @@ class SimpleProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
 
     def __init__(
         self,
-        hurdle_rate: float = 0.15,
-        max_investment_fraction: float = 0.1,
-        investment_effectiveness: float = 0.1,
-        investment_elasticity: float = 0.3,
-        investment_propensity: float = 0.2,
+        n_firms: int,
+        hurdle_rate: float | list[float] = 0.15,
+        max_investment_fraction: float | list[float] = 0.1,
+        investment_effectiveness: float | list[float] = 0.1,
+        investment_elasticity: float | list[float] = 0.3,
+        investment_propensity: float | list[float] = 0.2,
         # New parameters for technical coefficient investment
-        tfp_investment_share: float = 0.4,
-        technical_investment_effectiveness: float = 0.15,
-        technical_diminishing_returns: float = 0.5,
-        price_weight: float = 0.4,
-        usage_weight: float = 0.3,
-        potential_weight: float = 0.3,
+        tfp_investment_share: float | list[float] = 0.4,
+        technical_investment_effectiveness: float | list[float] = 0.15,
+        technical_diminishing_returns: float | list[float] = 0.5,
+        price_weight: float | list[float] = 0.4,
+        usage_weight: float | list[float] = 0.3,
+        potential_weight: float | list[float] = 0.3,
     ):
         """Initialize the simple productivity investment planner.
 
         Args:
-            hurdle_rate (float): Minimum required return on investment
-            max_investment_fraction (float): Max investment as fraction of output
-            investment_effectiveness (float): TFP growth effectiveness parameter
-            investment_elasticity (float): Diminishing returns parameter
-            investment_propensity (float): Fraction of budget to invest
+            n_firms (int): Number of firms
+            hurdle_rate (float | list[float]): Minimum required return on investment
+            max_investment_fraction (float | list[float]): Max investment as fraction of output
+            investment_effectiveness (float | list[float]): TFP growth effectiveness parameter
+            investment_elasticity (float | list[float]): Diminishing returns parameter
+            investment_propensity (float | list[float]): Fraction of budget to invest
         """
         super().__init__(
+            n_firms,
             hurdle_rate,
             max_investment_fraction,
             investment_effectiveness,
@@ -507,7 +533,7 @@ class SimpleProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
             usage_weight,
             potential_weight,
         )
-        self.investment_propensity = investment_propensity
+        self.investment_propensity = self._to_array(investment_propensity, n_firms)
 
     def plan_productivity_investment(
         self,
@@ -585,29 +611,32 @@ class OptimalProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
 
     def __init__(
         self,
-        hurdle_rate: float = 0.15,
-        max_investment_fraction: float = 0.1,
-        investment_effectiveness: float = 0.1,
-        investment_elasticity: float = 0.3,
+        n_firms: int,
+        hurdle_rate: float | list[float] = 0.15,
+        max_investment_fraction: float | list[float] = 0.1,
+        investment_effectiveness: float | list[float] = 0.1,
+        investment_elasticity: float | list[float] = 0.3,
         search_steps: int = 20,
         # New parameters for technical coefficient investment
-        tfp_investment_share: float = 0.4,
-        technical_investment_effectiveness: float = 0.15,
-        technical_diminishing_returns: float = 0.5,
-        price_weight: float = 0.4,
-        usage_weight: float = 0.3,
-        potential_weight: float = 0.3,
+        tfp_investment_share: float | list[float] = 0.4,
+        technical_investment_effectiveness: float | list[float] = 0.15,
+        technical_diminishing_returns: float | list[float] = 0.5,
+        price_weight: float | list[float] = 0.4,
+        usage_weight: float | list[float] = 0.3,
+        potential_weight: float | list[float] = 0.3,
     ):
         """Initialize the optimal productivity investment planner.
 
         Args:
-            hurdle_rate (float): Minimum required return on investment
-            max_investment_fraction (float): Max investment as fraction of output
-            investment_effectiveness (float): TFP growth effectiveness parameter
-            investment_elasticity (float): Diminishing returns parameter
+            n_firms (int): Number of firms
+            hurdle_rate (float | list[float]): Minimum required return on investment
+            max_investment_fraction (float | list[float]): Max investment as fraction of output
+            investment_effectiveness (float | list[float]): TFP growth effectiveness parameter
+            investment_elasticity (float | list[float]): Diminishing returns parameter
             search_steps (int): Number of steps in optimization search
         """
         super().__init__(
+            n_firms,
             hurdle_rate,
             max_investment_fraction,
             investment_effectiveness,
