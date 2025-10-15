@@ -516,20 +516,12 @@ class FirmsConfiguration(BaseModel):
 
         n_firms = n_firms_from_delay
 
-        # Only validate productivity investment planner if it's being used (not NoProductivityInvestmentPlanner)
+        # Always set n_firms in productivity investment planner (even if not currently active)
+        # This ensures it's correct if the user later activates the planner
+        self.functions.productivity_investment_planner.parameters["n_firms"] = n_firms
+
+        # Only validate list parameter lengths if planner is active
         if self.functions.productivity_investment_planner.name != "NoProductivityInvestmentPlanner":
-            # Validate n_firms in productivity investment planner matches
-            planner_n_firms = self.functions.productivity_investment_planner.parameters.get("n_firms")
-            if planner_n_firms is not None and planner_n_firms != n_firms:
-                raise ValueError(
-                    f"Productivity investment planner n_firms ({planner_n_firms}) must match "
-                    f"FirmsParameters n_firms ({n_firms})"
-                )
-
-            # Set n_firms in productivity investment planner if not set
-            if planner_n_firms is None:
-                self.functions.productivity_investment_planner.parameters["n_firms"] = n_firms
-
             # Validate that list parameters in productivity investment planner have correct length
             for param_name, param_value in self.functions.productivity_investment_planner.parameters.items():
                 if param_name == "n_firms":
@@ -538,7 +530,8 @@ class FirmsConfiguration(BaseModel):
                     if len(param_value) != n_firms:
                         raise ValueError(
                             f"Productivity investment parameter '{param_name}' has length {len(param_value)} "
-                            f"but n_firms is {n_firms}"
+                            f"but n_firms is {n_firms}. "
+                            f"When using list parameters, they must match the number of firms."
                         )
 
         return self
