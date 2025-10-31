@@ -279,7 +279,11 @@ class DataReaders:
             path=datapaths.eurostat_path, country_code_path=datapaths.country_codes_path, total_output=total_output
         )
 
-        proxified = [country if country.is_eu_country else proxy_country_dict[country] for country in country_names]
+        # Use proxy only for countries that are not EU and don't have microdata
+        proxified = [
+            country if (country.is_eu_country or country.has_microdata) else proxy_country_dict[country]
+            for country in country_names
+        ]
 
         hfcs = {
             proxy_country: HFCSReader.from_csv(
@@ -299,13 +303,14 @@ class DataReaders:
             if country_name.to_two_letter_code() == "GB":
                 # Always try to use WAS data for GBR, regardless of proxy settings
                 try:
+                    # WAS data files are in the 'stata' subdirectory
+                    was_data_path = datapaths.was_path / "stata"
                     was[country_name] = WASReader.from_stata(
-                        country_name=country_name,
+                        country_name=str(country_name),
                         country_name_short=country_name.to_two_letter_code(),
-                        was_data_path=datapaths.was_path,
                         year=simulation_year,
-                        exchange_rates=exchange_rates,
-                        round_number=7,  # Use Round 7 as default
+                        was_data_path=was_data_path,
+                        # round_number=None will automatically detect the most recent dataset <= simulation_year
                     )
                 except FileNotFoundError:
                     # WAS data files not found, skip WAS initialization
@@ -532,11 +537,13 @@ class DataReaders:
         """
         investment_fractions = {}
         for country_name in country_names:
-            if country_name.is_eu_country:
+            # Use direct data for EU countries or countries with microdata (like GBR with WAS)
+            if country_name.is_eu_country or country_name.has_microdata:
                 investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(
                     country_name, year=year
                 )
             else:
+                # Use proxy for countries without microdata
                 investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(
                     proxy_country_dict[country_name], year=year
                 )

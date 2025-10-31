@@ -253,7 +253,8 @@ def get_investment_fractions(
         data_country = country_name
         if isinstance(country_name, Region):
             data_country = country_name.parent_country
-        if not data_country.is_eu_country:
+        # Use proxy only if country is not EU and doesn't have microdata
+        if not data_country.is_eu_country and not data_country.has_microdata:
             data_country = proxy_country_dict[data_country]
 
         investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(data_country, year=year)

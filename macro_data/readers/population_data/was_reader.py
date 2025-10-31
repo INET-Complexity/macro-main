@@ -19,7 +19,8 @@ Example:
     from pathlib import Path
     from macro_data.readers.population_data.was_reader import WASReader
 
-    # Read WAS data for Great Britain in 2022
+    # Read most recent WAS data for Great Britain in 2022
+    # Automatically selects round 8 (2020-2022) since it's the most recent <= 2022
     was = WASReader.from_stata(
         country_name="United Kingdom",
         country_name_short="GB",
@@ -257,7 +258,7 @@ class WASReader:
         country_name_short: str,
         year: int,
         was_data_path: Path,
-        round_number: int = 7,
+        round_number: int | None = None,
     ) -> "WASReader":
         """
         Create a WASReader instance from Stata (.dta) files.
@@ -276,8 +277,9 @@ class WASReader:
             Survey year
         was_data_path : Path
             Base path to WAS data files
-        round_number : int, optional
-            WAS round/wave number to read (default: 7)
+        round_number : int | None, optional
+            WAS round/wave number to read. If None, automatically loads the most recent dataset 
+            with end year <= the specified year parameter (default: None)
 
         Returns
         -------
@@ -289,21 +291,30 @@ class WASReader:
         - Files are expected to be named was_round_X_person_eul_*.dta and was_round_X_hhold_eul_*.dta
           OR was_wave_X_person_eul_*.dta and was_wave_X_hhold_eul_*.dta
         - The method searches for both "round" and "wave" naming patterns
+        - If round_number is None, automatically detects and loads the most recent dataset 
+          available before or equal to the specified year
         - WAS data is already in GBP, so conversion is typically 1:1
         """
         import glob
         
+        # Resolve the path to ensure it's absolute and correct
+        was_data_path = Path(was_data_path).resolve()
+        
+        # If round_number not specified, find the most recent dataset before or equal to year
+        if round_number is None:
+            round_number = cls._find_most_recent_round(was_data_path, year)
+        
         # Try both round and wave patterns
-        round_person_path = was_data_path / f"was_round_{round_number}_person_eul_*.dta"
-        round_household_path = was_data_path / f"was_round_{round_number}_hhold_eul_*.dta"
-        wave_person_path = was_data_path / f"was_wave_{round_number}_person_eul_*.dta"
-        wave_household_path = was_data_path / f"was_wave_{round_number}_hhold_eul_*.dta"
+        round_person_path = str(was_data_path / f"was_round_{round_number}_person_eul_*.dta")
+        round_household_path = str(was_data_path / f"was_round_{round_number}_hhold_eul_*.dta")
+        wave_person_path = str(was_data_path / f"was_wave_{round_number}_person_eul_*.dta")
+        wave_household_path = str(was_data_path / f"was_wave_{round_number}_hhold_eul_*.dta")
         
         # Find actual files matching the patterns
-        round_person_files = glob.glob(str(round_person_path))
-        round_household_files = glob.glob(str(round_household_path))
-        wave_person_files = glob.glob(str(wave_person_path))
-        wave_household_files = glob.glob(str(wave_household_path))
+        round_person_files = glob.glob(round_person_path)
+        round_household_files = glob.glob(round_household_path)
+        wave_person_files = glob.glob(wave_person_path)
+        wave_household_files = glob.glob(wave_household_path)
         
         # Determine which pattern to use (prefer round if both exist)
         if round_person_files and round_household_files:
@@ -357,6 +368,110 @@ class WASReader:
             individuals_df=individuals_df,
             households_df=households_df,
         )
+    
+    @staticmethod
+    def _get_round_end_year(round_num: int) -> int:
+        """
+        Get the end year for a given WAS round/wave number.
+        
+        Parameters
+        ----------
+        round_num : int
+            Round/wave number (1-8)
+            
+        Returns
+        -------
+        int
+            End year of the survey period
+            
+        Notes
+        -----
+        - Waves 1-5: 2006-2008, 2008-2010, 2010-2012, 2012-2014, 2014-2016
+        - Rounds 6-8: 2016-2018, 2018-2020, 2020-2022
+        """
+        round_to_year = {
+            1: 2008,  # Wave 1: 2006-2008
+            2: 2010,  # Wave 2: 2008-2010
+            3: 2012,  # Wave 3: 2010-2012
+            4: 2014,  # Wave 4: 2012-2014
+            5: 2016,  # Wave 5: 2014-2016
+            6: 2018,  # Round 6: 2016-2018
+            7: 2020,  # Round 7: 2018-2020
+            8: 2022,  # Round 8: 2020-2022
+        }
+        return round_to_year.get(round_num, 0)
+    
+    @staticmethod
+    def _find_most_recent_round(was_data_path: Path, year: int) -> int:
+        """
+        Find the most recent WAS round/wave number before or equal to the specified year.
+        
+        Parameters
+        ----------
+        was_data_path : Path
+            Base path to WAS data files
+        year : int
+            Target year - returns most recent round/wave with end year <= this year
+            
+        Returns
+        -------
+        int
+            The most recent round/wave number found that is <= the specified year
+            
+        Notes
+        -----
+        - Scans for both 'round' (6-8) and 'wave' (1-5) patterns
+        - Returns the highest round number found where end year <= specified year
+        - Waves 1-5 map directly to rounds 1-5
+        """
+        import glob
+        import re
+        
+        # Resolve the path to ensure it's absolute and correct
+        was_data_path = Path(was_data_path).resolve()
+        
+        available_rounds = set()
+        
+        # Search for all round files (rounds 6-8)
+        round_pattern = str(was_data_path / "was_round_*_person_eul_*.dta")
+        round_files = glob.glob(round_pattern)
+        
+        for file_path in round_files:
+            match = re.search(r"was_round_(\d+)_person_eul_", file_path)
+            if match:
+                round_num = int(match.group(1))
+                available_rounds.add(round_num)
+        
+        # Search for all wave files (waves 1-5, which correspond to rounds 1-5)
+        wave_pattern = str(was_data_path / "was_wave_*_person_eul_*.dta")
+        wave_files = glob.glob(wave_pattern)
+        
+        for file_path in wave_files:
+            match = re.search(r"was_wave_(\d+)_person_eul_", file_path)
+            if match:
+                wave_num = int(match.group(1))
+                available_rounds.add(wave_num)  # Waves map directly to rounds
+        
+        if not available_rounds:
+            raise FileNotFoundError(
+                f"No WAS data files found in {was_data_path}. "
+                f"Expected files matching patterns: was_round_*_person_eul_*.dta or was_wave_*_person_eul_*.dta"
+            )
+        
+        # Filter rounds to those with end year <= specified year, then get the maximum
+        valid_rounds = [
+            r for r in available_rounds 
+            if WASReader._get_round_end_year(r) <= year
+        ]
+        
+        if not valid_rounds:
+            available_years = sorted([WASReader._get_round_end_year(r) for r in available_rounds])
+            raise ValueError(
+                f"No WAS dataset found for year {year} or earlier. "
+                f"Available datasets end in years: {available_years}"
+            )
+        
+        return max(valid_rounds)
 
     @staticmethod
     def read_stata(
@@ -403,10 +518,27 @@ class WASReader:
         # Get the appropriate variable mapping for this round/wave
         var_mapping = get_var_mapping(round_number)
         
-        # Keep only mapped variables that exist in the data
-        available_vars = [col for col in var_mapping.keys() if col in df.columns]
+        # Create case-insensitive column lookup
+        df_columns_lower = {col.lower(): col for col in df.columns}
+        
+        # Match variables case-insensitively and build actual column mapping
+        available_vars = []
+        actual_column_mapping = {}
+        for expected_var, mapped_name in var_mapping.items():
+            # Try exact match first
+            if expected_var in df.columns:
+                available_vars.append(expected_var)
+                actual_column_mapping[expected_var] = mapped_name
+            # Try case-insensitive match
+            elif expected_var.lower() in df_columns_lower:
+                actual_col = df_columns_lower[expected_var.lower()]
+                available_vars.append(actual_col)
+                actual_column_mapping[actual_col] = mapped_name
+        
+        # Keep only matched variables
         df = df[available_vars].copy()
-        df.rename(columns=var_mapping, inplace=True)
+        # Rename using the actual column names found
+        df.rename(columns=actual_column_mapping, inplace=True)
         
         # Set index to Personal identifier if available
         if "Personal identifier" in df.columns:

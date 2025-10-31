@@ -72,6 +72,36 @@ EU_COUNTRIES = [
     "BGR",  # Bulgaria
 ]
 
+COUNTRIES_WITH_MICRODATA = [
+    "AUT",  # Austria
+    "BEL",  # Belgium
+    "CZE",  # Czech Republic
+    "DNK",  # Denmark
+    "FIN",  # Finland
+    "FRA",  # France
+    "DEU",  # Germany
+    "GRC",  # Greece
+    "HUN",  # Hungary
+    "IRL",  # Ireland
+    "ITA",  # Italy
+    "LUX",  # Luxembourg
+    "NLD",  # Netherlands
+    "POL",  # Poland
+    "PRT",  # Portugal
+    "SVK",  # Slovakia
+    "ESP",  # Spain
+    "SWE",  # Sweden
+    "EST",  # Estonia
+    "LVA",  # Latvia
+    "SVN",  # Slovenia
+    "LTU",  # Lithuania
+    "HRV",  # Croatia
+    "CYP",  # Cyprus
+    "MLT",  # Malta
+    "ROU",  # Romania
+    "BGR",  # Bulgaria
+    "GBR",  # United Kingdom
+]
 
 class Country(StrEnum):
     """
@@ -341,3 +371,13 @@ class Country(StrEnum):
             bool: True if the country is an EU member, False otherwise
         """
         return self.value in EU_COUNTRIES
+
+    @property
+    def has_microdata(self):
+        """
+        Check if the country has household microdata available.
+
+        Returns:
+            bool: True if the country has household microdata, False otherwise
+        """
+        return self.value in COUNTRIES_WITH_MICRODATA

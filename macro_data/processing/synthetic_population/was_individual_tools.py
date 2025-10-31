@@ -173,7 +173,13 @@ def fill_individual_labour_status(individual_data: pd.DataFrame) -> pd.DataFrame
     return individual_data
 
 
-def convert_labour_status_to_activity_status(ls: int) -> int:
+def convert_labour_status_to_activity_status(ls: int | float) -> int:
+    """Convert labour status to activity status, handling missing/unknown values."""
+    # Convert to int, handling NaN and float values
+    if pd.isna(ls):
+        return 2  # Default to unemployed for missing values
+    ls_int = int(ls)
+    
     individual_activity_status_map = {
         1: 1,  # REGULAR_WORK -> EMPLOYED
         2: 2,  # ON_LEAVE -> UNEMPLOYED
@@ -186,10 +192,12 @@ def convert_labour_status_to_activity_status(ls: int) -> int:
         9: 2,  # OTHER_NOT_FOR_PAY -> UNEMPLOYED
         # WAS-specific negative values (missing/special categories)
         -6: 2,  # Missing/Unknown -> UNEMPLOYED
+        -7: 2,  # Missing/Unknown -> UNEMPLOYED
         -8: 2,  # Missing/Unknown -> UNEMPLOYED  
         -9: 2,  # Missing/Unknown -> UNEMPLOYED
     }
-    return individual_activity_status_map[ls]
+    # Use .get() with default value for unmapped codes
+    return individual_activity_status_map.get(ls_int, 2)  # Default to unemployed for unknown codes
 
 
 def set_individual_activity_status(

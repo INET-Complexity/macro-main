@@ -167,13 +167,13 @@ class DataWrapper:
             np.random.seed(int(time.time()))
 
         for country, country_config in configuration.country_configs.items():
-            if country_config.eu_proxy_country is None and not country.is_eu_country:
-                raise ValueError(f"{country} is not in EU: please set an EU proxy country.")
+            if country_config.eu_proxy_country is None and not country.has_microdata:
+                raise ValueError(f"{country} has no household microdata: please set a proxy country with microdata.")
 
         proxy_country_dict = {
             country: configuration.country_configs[country].eu_proxy_country
             for country in configuration.countries
-            if not country.is_eu_country
+            if configuration.country_configs[country].eu_proxy_country is not None
         }
 
         country_names = configuration.countries
@@ -261,10 +261,14 @@ class DataWrapper:
 
         proxy_inflation = {}
 
-        non_eu_countries = [country for country in country_names if not country.is_eu_country]
+        # Only process countries that need proxies (no microdata)
+        countries_needing_proxy = [
+            country for country in country_names 
+            if not country.is_eu_country and not country.has_microdata
+        ]
 
-        for country in non_eu_countries:
-            if proxy_country_dict[country] is not None:
+        for country in countries_needing_proxy:
+            if proxy_country_dict.get(country) is not None:
                 proxy_country = proxy_country_dict[country]
                 inflation = readers.imf_reader.get_inflation(proxy_country)
                 if inflation is None:
@@ -284,8 +288,7 @@ class DataWrapper:
             quarter=quarter,
         )
 
-        # currently only EU countries implemented
-
+        # EU countries and countries with microdata (like GBR with WAS)
         synthetic_countries = {
             country: SyntheticCountry.eu_synthetic_country(
                 country=country,
@@ -307,11 +310,12 @@ class DataWrapper:
                 ),
             )
             for country in country_names
-            if country.is_eu_country
+            if country.is_eu_country or country.has_microdata
         }
 
+        # Countries without microdata that need proxies
         for country in country_names:
-            if not country.is_eu_country:
+            if not country.is_eu_country and not country.has_microdata:
                 synthetic_countries[country] = SyntheticCountry.proxied_synthetic_country(
                     country=country,
                     proxy_country=configuration.country_configs[country].eu_proxy_country,
@@ -324,7 +328,7 @@ class DataWrapper:
                     year_range=year_range,
                     goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
                     quarter=quarter,
-                    proxy_inflation_data=proxy_inflation[country],
+                    proxy_inflation_data=proxy_inflation.get(country, None),
                     emission_factors=(
                         EmissionsData.from_readers(
                             emission_factors, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country, year)

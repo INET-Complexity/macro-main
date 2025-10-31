@@ -238,7 +238,7 @@ class SyntheticCountry:
         )
 
         # Use WAS data for GBR if available, otherwise use HFCS
-        if country == "GBR" and country in readers.was:
+        if country == Country.UNITED_KINGDOM and country in readers.was:
             population: SyntheticWASPopulation = SyntheticWASPopulation.from_readers(
                 readers=readers,
                 country_name=country,
@@ -277,6 +277,14 @@ class SyntheticCountry:
             emission_factors=emission_factors,
         )
 
+        # For non-EU countries with microdata (like GBR), use a proxy EU country for Eurostat data
+        proxy_eu_country = None
+        if not country.is_eu_country and country_configuration.eu_proxy_country:
+            proxy_eu_country = country_configuration.eu_proxy_country
+        elif not country.is_eu_country:
+            # Default to France if no proxy specified
+            proxy_eu_country = Country.FRANCE
+        
         banks = DefaultSyntheticBanks.from_readers(
             readers=readers,
             country_name=country,
@@ -286,6 +294,7 @@ class SyntheticCountry:
             banks_data_configuration=country_configuration.banks_configuration,
             quarter=quarter,
             inflation_data=exogenous_country_data.inflation,
+            proxy_eu_country=proxy_eu_country,
         )
 
         synthetic_goods_market = SyntheticGoodsMarket.from_readers(
@@ -438,7 +447,7 @@ class SyntheticCountry:
         exch_rate_proxy_to_lcu = readers.exchange_rates.from_eur_to_lcu(country, year)
 
         # Use WAS data for GBR if available, otherwise use HFCS
-        if country == "GBR" and country in readers.was:
+        if country == Country.UNITED_KINGDOM and country in readers.was:
             population: SyntheticWASPopulation = SyntheticWASPopulation.from_readers(
                 readers=readers,
                 country_name=country,

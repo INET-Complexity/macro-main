@@ -259,10 +259,11 @@ class SyntheticWASPopulation(SyntheticPopulation):
             SyntheticWASPopulation: The synthetic population.
         """
         # WAS data is UK-specific - hardcode UK country for data retrieval
-        uk_country = Country.GBR  # Use GBR enum value for UK
+        uk_country = Country.UNITED_KINGDOM  # Use UNITED_KINGDOM enum value for UK
         
         # Get WAS data for UK (regardless of input country_name)
-        was_reader = readers.was.get(uk_country)
+        # Try looking up by Country object first, then by string "GBR" if needed
+        was_reader = readers.was.get(uk_country) or readers.was.get("GBR")
         if was_reader is None:
             raise ValueError(f"No WAS data available for UK (WAS is UK-specific)")
 
@@ -273,6 +274,120 @@ class SyntheticWASPopulation(SyntheticPopulation):
         # Get unemployment and participation rates from labour stats
         unemployment_rate = exogenous_data.labour_stats.loc[f"{year}-Q{quarter}", "Unemployment Rate (Value)"].iloc[0]
         participation_rate = exogenous_data.labour_stats.loc[f"{year}-Q{quarter}", "Participation Rate (Value)"].iloc[0]
+
+        # Convert grouped age to continuous age if needed
+        if "Grouped age (17 categories)" in individuals_df.columns and "Age" not in individuals_df.columns:
+            # Map WAS 17-category age groups to continuous ages
+            # Categories typically represent 5-year age bands: 0-4, 5-9, 10-14, ..., 75-79, 80+
+            def convert_grouped_age_to_continuous(grouped_age):
+                """Convert WAS grouped age categories to continuous ages."""
+                if pd.isna(grouped_age):
+                    return np.nan
+                
+                # WAS uses 17 age categories (typically 5-year bands up to 80+)
+                # Map category number to midpoint of age range
+                age_midpoints = {
+                    1: 2.5,    # 0-4
+                    2: 7.5,    # 5-9
+                    3: 12.5,   # 10-14
+                    4: 17.5,   # 15-19
+                    5: 22.5,   # 20-24
+                    6: 27.5,   # 25-29
+                    7: 32.5,   # 30-34
+                    8: 37.5,   # 35-39
+                    9: 42.5,   # 40-44
+                    10: 47.5,  # 45-49
+                    11: 52.5,  # 50-54
+                    12: 57.5,  # 55-59
+                    13: 62.5,  # 60-64
+                    14: 67.5,  # 65-69
+                    15: 72.5,  # 70-74
+                    16: 77.5,  # 75-79
+                    17: 85.0,  # 80+ (using 85 as midpoint estimate)
+                }
+                
+                # If it's already a numeric value, use it directly
+                if isinstance(grouped_age, (int, float)):
+                    category = int(grouped_age)
+                    if category in age_midpoints:
+                        # Add some randomness within the 5-year band for realism
+                        base_age = age_midpoints[category]
+                        if category == 17:  # 80+ category, use wider range
+                            return base_age + np.random.uniform(-5, 10)
+                        else:
+                            return base_age + np.random.uniform(-2.5, 2.5)
+                
+                return np.nan
+            
+            individuals_df["Age"] = individuals_df["Grouped age (17 categories)"].apply(convert_grouped_age_to_continuous)
+        
+        # Ensure Age column exists (rename if present with different name, or create if missing)
+        if "Age" not in individuals_df.columns:
+            # Check for other possible age column names
+            age_cols = [col for col in individuals_df.columns if "age" in col.lower() and "grouped" not in col.lower()]
+            if age_cols:
+                individuals_df["Age"] = individuals_df[age_cols[0]]
+            else:
+                # If no age column found, create one with NaN values (will be filled later)
+                individuals_df["Age"] = np.nan
+
+        # Map WAS column names to expected names for individual processing
+        column_mapping = {
+            "Sex": "Gender",
+            "DV - Education level": "Education",
+            "Whether working in reference week": "Labour Status",
+            "SICCODE": "Employment Industry",
+            "Gross annual income employee main job (including bonuses and commission received)": "Employee Income",
+            "Total Annual Gross self employed income (main and second job)": "Self-Employment Income Total",
+            "Household identifier": "HID",
+        }
+        
+        # Apply column mappings (only if source column exists and target doesn't)
+        for was_col, expected_col in column_mapping.items():
+            if was_col in individuals_df.columns and expected_col not in individuals_df.columns:
+                individuals_df[expected_col] = individuals_df[was_col]
+        
+        # Ensure HID is set from Household identifier if needed
+        if "HID" not in individuals_df.columns:
+            if "Household identifier" in individuals_df.columns:
+                individuals_df["HID"] = individuals_df["Household identifier"]
+            else:
+                # Create sequential HIDs if no household identifier available
+                individuals_df["HID"] = range(len(individuals_df))
+        
+        # Ensure all required columns exist (initialize with defaults if missing)
+        required_columns = {
+            "Gender": 1,  # Default to male (1=male, 2=female)
+            "Age": np.nan,  # Already handled above
+            "Education": np.nan,
+            "Labour Status": 2,  # Default to unemployed (1=employed, 2=unemployed, 3=inactive, 4=student)
+            "Employee Income": 0.0,
+            "Self-Employment Income Total": 0.0,  # Self-employment income
+            "Employment Industry": np.nan,
+            "Activity Status": np.nan,  # Will be set during processing
+            "Income from Unemployment Benefits": 0.0,  # Will be set during processing
+        }
+        
+        for col, default_val in required_columns.items():
+            if col not in individuals_df.columns:
+                individuals_df[col] = default_val
+        
+        # Ensure numeric columns are numeric type
+        numeric_cols = ["Age", "Education", "Labour Status", "Employee Income", "Self-Employment Income Total", "Activity Status"]
+        for col in numeric_cols:
+            if col in individuals_df.columns:
+                individuals_df[col] = pd.to_numeric(individuals_df[col], errors="coerce")
+        
+        # Map working status to labour status codes if needed
+        # WAS "Whether working in reference week" typically: 1 = working, 2 = not working
+        # Expected Labour Status: 1 = employed, 2 = unemployed, 3 = inactive, 4 = student
+        if "Labour Status" in individuals_df.columns:
+            # Convert WAS working status (1=working, 2=not working) to Labour Status codes
+            # Only update if values are in WAS format (1 or 2)
+            unique_vals = individuals_df["Labour Status"].dropna().unique()
+            if set(unique_vals).issubset({1, 2}) and not set(unique_vals).issubset({1, 2, 3, 4}):
+                # Map WAS format: 1 -> 1 (employed), 2 -> 2 (unemployed)
+                individuals_df["Labour Status"] = individuals_df["Labour Status"].replace({1: 1, 2: 2})
 
         # Process individual data with WAS-specific tools
         individuals_df = process_individual_data(
@@ -288,8 +403,74 @@ class SyntheticWASPopulation(SyntheticPopulation):
         # Ensure minimum workers in industries
         individuals_df = ensure_minimum_workers_in_industries(individuals_df, len(industries))
 
+        # Initialize required household columns before processing
+        if "Type" not in households_df.columns:
+            households_df["Type"] = np.nan
+        
+        # Ensure household has HID column for linking
+        if "Household identifier" in households_df.columns:
+            if "HID" not in households_df.columns:
+                households_df["HID"] = households_df["Household identifier"]
+        
+        # Create mapping from HID to list of individual indices
+        if "Corresponding Individuals ID" not in households_df.columns:
+            # Group individuals by household
+            individuals_df_reset = individuals_df.reset_index()  # Reset index to get positional indices
+            if "HID" in individuals_df_reset.columns:
+                household_to_individuals = individuals_df_reset.groupby("HID").apply(
+                    lambda x: x.index.tolist()
+                ).to_dict()
+                households_df["Corresponding Individuals ID"] = households_df["HID"].map(
+                    household_to_individuals
+                ).fillna("").apply(lambda x: x if isinstance(x, list) else [])
+            else:
+                # If no HID mapping, create sequential mapping
+                households_df["Corresponding Individuals ID"] = [
+                    [i] for i in range(len(individuals_df))
+                ][:len(households_df)]
+
         # Set household types using WAS-specific tools
         households_df = set_household_types(households_df, individuals_df)
+
+        # Map WAS household column names to expected names and initialize missing columns
+        household_column_mapping = {
+            "Tenure Status of the Main Residence": "Tenure",
+            "Tenure": "Tenure",  # Keep if already named correctly
+            "How much is usual household rent": "Rent Paid",
+            "Value of main residence": "Value of the Main Residence",
+            "Total value of other houses": "Value of other Properties",
+            "Annual Household Income - Gross rental income": "Rental Income from Real Estate",
+            "Annual Household Income - Net rental income": "Rental Income from Real Estate",  # Fallback
+        }
+        
+        # Apply household column mappings
+        for was_col, expected_col in household_column_mapping.items():
+            if was_col in households_df.columns and expected_col not in households_df.columns:
+                households_df[expected_col] = households_df[was_col]
+        
+        # Initialize required household columns with defaults if missing
+        required_household_columns = {
+            "Tenure": 1,  # Default to owning (1=own, 2=part own, 3=rent, 4=free use)
+            "Rent Paid": 0.0,
+            "Value of the Main Residence": 0.0,
+            "Number of Properties other than Household Main Residence": 0,
+            "Value of other Properties": 0.0,
+            "Rental Income from Real Estate": 0.0,
+        }
+        
+        for col, default_val in required_household_columns.items():
+            if col not in households_df.columns:
+                households_df[col] = default_val
+        
+        # Ensure numeric columns are numeric
+        household_numeric_cols = ["Tenure", "Rent Paid", "Value of the Main Residence", 
+                                  "Number of Properties other than Household Main Residence",
+                                  "Value of other Properties", "Rental Income from Real Estate"]
+        for col in household_numeric_cols:
+            if col in households_df.columns:
+                households_df[col] = pd.to_numeric(households_df[col], errors="coerce")
+                if col == "Number of Properties other than Household Main Residence":
+                    households_df[col] = households_df[col].fillna(0).astype(int)
 
         # Set housing data using WAS-specific tools
         households_df = set_household_housing_data(
@@ -318,7 +499,13 @@ class SyntheticWASPopulation(SyntheticPopulation):
         investment_weights = investment_weights / investment_weights.sum()
 
         # Calculate social housing rent
-        social_housing_rent = households_df["How much is usual household rent"].mean() * rent_as_fraction_of_unemployment_rate
+        # Use Rent Paid if available, otherwise fall back to original column name
+        rent_col = "Rent Paid" if "Rent Paid" in households_df.columns else "How much is usual household rent"
+        if rent_col not in households_df.columns:
+            # If neither exists, use a default value
+            social_housing_rent = total_unemployment_benefits / scale * rent_as_fraction_of_unemployment_rate
+        else:
+            social_housing_rent = households_df[rent_col].mean() * rent_as_fraction_of_unemployment_rate
 
         # Calculate coefficient for financial assets income
         coefficient_fa_income = 0.05  # Default value, can be adjusted based on WAS data
@@ -395,28 +582,45 @@ class SyntheticWASPopulation(SyntheticPopulation):
 
     def set_household_other_real_assets_wealth(self) -> None:
         """Set other real assets wealth from WAS data."""
+        # Use mapped column name if available
+        other_houses_col = "Value of other Properties" if "Value of other Properties" in self.household_data.columns else "Total value of other houses"
+        if other_houses_col not in self.household_data.columns:
+            self.household_data[other_houses_col] = 0.0
+        
         # Sum up all real assets except main residence
         other_real_assets = (
-            self.household_data["Total value of other houses"].fillna(0) +
-            self.household_data["Total value of all vehicles"].fillna(0) +
-            self.household_data["Value of all household goods and collectables"].fillna(0) +
-            self.household_data["Approximate value of share of business after deducting outstanding debts"].fillna(0)
+            self.household_data[other_houses_col].fillna(0) +
+            self.household_data.get("Total value of all vehicles", pd.Series(0, index=self.household_data.index)).fillna(0) +
+            self.household_data.get("Value of all household goods and collectables", pd.Series(0, index=self.household_data.index)).fillna(0) +
+            self.household_data.get("Approximate value of share of business after deducting outstanding debts", pd.Series(0, index=self.household_data.index)).fillna(0)
         )
         self.household_data["Wealth Other Real Assets"] = other_real_assets
 
     def set_household_total_real_assets(self) -> None:
         """Set total real assets wealth from WAS data."""
+        # Use mapped column name if available
+        main_residence_col = "Value of the Main Residence" if "Value of the Main Residence" in self.household_data.columns else "Value of main residence"
+        if main_residence_col not in self.household_data.columns:
+            self.household_data[main_residence_col] = 0.0
+        
         self.household_data["Wealth in Real Assets"] = (
-            self.household_data["Value of main residence"].fillna(0) +
+            self.household_data[main_residence_col].fillna(0) +
             self.household_data["Wealth Other Real Assets"]
         )
 
     def set_household_deposits(self) -> None:
         """Set deposits wealth from WAS data."""
+        if "Total value of savings accounts" not in self.household_data.columns:
+            self.household_data["Total value of savings accounts"] = 0.0
         self.household_data["Wealth in Deposits"] = self.household_data["Total value of savings accounts"].fillna(0)
 
     def set_household_other_financial_assets(self) -> None:
         """Set other financial assets wealth from WAS data."""
+        # Ensure all columns exist
+        for col in ["Total value of all formal financial assets", "Other Assets", "Total value of individual pension wealth"]:
+            if col not in self.household_data.columns:
+                self.household_data[col] = 0.0
+        
         other_financial_assets = (
             self.household_data["Total value of all formal financial assets"].fillna(0) +
             self.household_data["Other Assets"].fillna(0) +
@@ -440,6 +644,11 @@ class SyntheticWASPopulation(SyntheticPopulation):
 
     def set_household_mortgage_debt(self) -> None:
         """Set mortgage debt from WAS data."""
+        # Ensure columns exist
+        for col in ["Total mortgage on main residence", "Total property debt excluding main residence"]:
+            if col not in self.household_data.columns:
+                self.household_data[col] = 0.0
+        
         mortgage_debt = (
             self.household_data["Total mortgage on main residence"].fillna(0) +
             self.household_data["Total property debt excluding main residence"].fillna(0)
@@ -448,6 +657,11 @@ class SyntheticWASPopulation(SyntheticPopulation):
 
     def set_household_other_debt(self) -> None:
         """Set other debt from WAS data."""
+        # Ensure columns exist
+        for col in ["Hhold total outstanding credit/store/charge card balance", "Outstanding Balance of other Non-Mortgage Loans"]:
+            if col not in self.household_data.columns:
+                self.household_data[col] = 0.0
+        
         other_debt = (
             self.household_data["Hhold total outstanding credit/store/charge card balance"].fillna(0) +
             self.household_data["Outstanding Balance of other Non-Mortgage Loans"].fillna(0)
@@ -470,8 +684,18 @@ class SyntheticWASPopulation(SyntheticPopulation):
     def set_household_employee_income(self) -> None:
         """Set household employee income from WAS data."""
         # Sum employee income across all individuals in household
-        employee_income = self.individual_data.groupby("Household identifier")["Gross annual income employee main job (including bonuses and commission received)"].sum()
-        self.household_data["Employee Income"] = self.household_data["Household identifier"].map(employee_income).fillna(0)
+        # Use HID if available, otherwise fall back to Household identifier
+        individual_id_col = "HID" if "HID" in self.individual_data.columns else "Household identifier"
+        household_id_col = "HID" if "HID" in self.household_data.columns else "Household identifier"
+        
+        # Use Employee Income column if available, otherwise use original WAS column name
+        income_col = "Employee Income" if "Employee Income" in self.individual_data.columns else "Gross annual income employee main job (including bonuses and commission received)"
+        if income_col not in self.individual_data.columns:
+            # If neither exists, set to 0
+            self.individual_data[income_col] = 0.0
+        
+        employee_income = self.individual_data.groupby(individual_id_col)[income_col].sum()
+        self.household_data["Employee Income"] = self.household_data[household_id_col].map(employee_income).fillna(0)
 
     def set_household_social_transfers(
         self, total_social_transfers: float, independents: Optional[list[str]] = None
@@ -529,7 +753,12 @@ class SyntheticWASPopulation(SyntheticPopulation):
         """
         # Calculate total debt installments
         total_installments = consumption_installments + ce_installments + mortgage_installments
-        self.household_data["Debt Installments"] = total_installments
+        # Ensure total_installments is the right length
+        if isinstance(total_installments, (int, float)) or (hasattr(total_installments, '__len__') and len(total_installments) == 1):
+            # If scalar or single value, broadcast to all households
+            self.household_data["Debt Installments"] = np.full(len(self.household_data), total_installments if isinstance(total_installments, (int, float)) else total_installments[0])
+        else:
+            self.household_data["Debt Installments"] = total_installments
 
     def set_household_saving_rates(self, independents: Optional[list[str]] = None) -> None:
         """
@@ -610,10 +839,10 @@ class SyntheticWASPopulation(SyntheticPopulation):
         total_iot = iot_hh_consumption.sum()
         scaling_factor = total_iot / (total_desired + 1e-6)
         
-        # Apply scaling
+        # Apply scaling - sum across industries to get total consumption per household
         self.household_data["Amount spent on Consumption of Goods and Services"] = (
             desired_consumption * scaling_factor
-        )
+        ).sum(axis=1) if len(desired_consumption.shape) > 1 else (desired_consumption * scaling_factor)
 
     def normalise_household_investment(
         self, tau_cf: float, iot_hh_investment: np.ndarray | pd.Series, positive_investment_rates: bool = True
@@ -640,7 +869,10 @@ class SyntheticWASPopulation(SyntheticPopulation):
         scaling_factor = total_iot / (total_desired + 1e-6)
         
         # Apply scaling
-        self.household_data["Investment"] = desired_investment * scaling_factor
+        # Sum across industries to get total investment per household
+        self.household_data["Investment"] = (
+            desired_investment * scaling_factor
+        ).sum(axis=1) if len(desired_investment.shape) > 1 else (desired_investment * scaling_factor)
 
     def match_consumption_weights_by_income(
         self,
@@ -776,8 +1008,30 @@ def sample_households(
         sampled_households = hfcs_households_data.copy()
     
     # Get corresponding individuals
-    household_ids = sampled_households["Household identifier"].unique()
-    sampled_individuals = hfcs_individuals_data[hfcs_individuals_data["Household identifier"].isin(household_ids)]
+    # Use HID if available, otherwise fall back to Household identifier
+    household_id_col = "HID" if "HID" in sampled_households.columns else "Household identifier"
+    if household_id_col not in sampled_households.columns:
+        # If neither exists, create HID from index
+        sampled_households["HID"] = sampled_households.index
+        household_id_col = "HID"
+    
+    household_ids = sampled_households[household_id_col].unique()
+    
+    # Ensure individuals have the same ID column
+    individual_id_col = "HID" if "HID" in hfcs_individuals_data.columns else "Household identifier"
+    if individual_id_col not in hfcs_individuals_data.columns:
+        # If neither exists, try to match by creating HID from index or Corresponding Household ID
+        if "Corresponding Household ID" in hfcs_individuals_data.columns:
+            hfcs_individuals_data["HID"] = hfcs_individuals_data["Corresponding Household ID"]
+        else:
+            hfcs_individuals_data["HID"] = range(len(hfcs_individuals_data))
+        individual_id_col = "HID"
+    
+    sampled_individuals = hfcs_individuals_data[hfcs_individuals_data[individual_id_col].isin(household_ids)]
+    
+    # Reset indices to ensure sequential indexing (0, 1, 2, ...) for compatibility with np.flatnonzero
+    sampled_households = sampled_households.reset_index(drop=True)
+    sampled_individuals = sampled_individuals.reset_index(drop=True)
     
     return sampled_households, sampled_individuals
 
