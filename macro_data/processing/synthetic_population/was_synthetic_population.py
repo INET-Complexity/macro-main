@@ -30,7 +30,7 @@ from macro_data.util.clean_data import remove_outliers
 from macro_data.util.imputation import apply_iterative_imputer
 from macro_data.util.regressions import fit_linear
 
-# WAS-specific column restrictions - using original WAS data variable names
+# WAS-specific column restrictions - using standard column names (matching HFCS and households.py expectations)
 RESTRICT_COLS = [
     "Type",
     "Corresponding Individuals ID",
@@ -41,38 +41,29 @@ RESTRICT_COLS = [
     "Corresponding Additionally Owned Houses ID",
     "Income",
     "Investment",
-    "Gross annual income employee main job (including bonuses and commission received)",
-    "Annual Household Income - Total benefits received",
-    "Annual Household Income - Gross rental income",
-    "Total income in £ over last 12 months received in dividends, interest or return on investments",
+    "Employee Income",
+    "Regular Social Transfers",
+    "Rental Income from Real Estate",
+    "Income from Financial Assets",
     "Saving Rate",
-    "How much is usual household rent",
+    "Rent Paid",
     "Rent Imputed",
     "Wealth",
     "Net Wealth",
     "Wealth in Real Assets",
-    "Value of main residence",
-    "Total value of other houses",
+    "Value of the Main Residence",
+    "Value of other Properties",
     "Wealth Other Real Assets",
-    "Total value of savings accounts",
+    "Wealth in Deposits",
     "Wealth in Other Financial Assets",
     "Wealth in Financial Assets",
-    "Total mortgage on main residence",
-    "Total property debt excluding main residence",
+    "Outstanding Balance of HMR Mortgages",
+    "Outstanding Balance of Mortgages on other Properties",
     "Outstanding Balance of other Non-Mortgage Loans",
     "Debt",
     "Debt Installments",
     "Tenure Status of the Main Residence",
     "Number of Properties other than Household Main Residence",
-    # WAS-specific variables using original names
-    "Total value of all vehicles",
-    "Value of all household goods and collectables",
-    "Approximate value of share of business after deducting outstanding debts",
-    "Total value of all formal financial assets",
-    "Total value of individual pension wealth",
-    "Hhold total outstanding credit/store/charge card balance",
-    "Burden of mortgage and other debt on household",
-    "Burden from non-mortgage debt",
 ]
 
 # WAS-specific monetary columns for processing - using original WAS data variable names
@@ -462,10 +453,86 @@ class SyntheticWASPopulation(SyntheticPopulation):
             if col not in households_df.columns:
                 households_df[col] = default_val
         
+        # Ensure standard column names exist (required by RESTRICT_COLS and households.py)
+        # These columns are created by mapping or computation, but RESTRICT_COLS expects standard names
+        
+        # Ensure "Tenure Status of the Main Residence" exists
+        if "Tenure Status of the Main Residence" not in households_df.columns:
+            if "Tenure" in households_df.columns:
+                households_df["Tenure Status of the Main Residence"] = households_df["Tenure"]
+            else:
+                households_df["Tenure Status of the Main Residence"] = 1
+        
+        # Ensure "Rent Paid" exists (standard name, mapped from "How much is usual household rent")
+        if "Rent Paid" not in households_df.columns:
+            if "How much is usual household rent" in households_df.columns:
+                households_df["Rent Paid"] = households_df["How much is usual household rent"]
+        
+        # Ensure "Value of the Main Residence" exists (standard name, mapped from "Value of main residence")
+        if "Value of the Main Residence" not in households_df.columns:
+            if "Value of main residence" in households_df.columns:
+                households_df["Value of the Main Residence"] = households_df["Value of main residence"]
+        
+        # Ensure "Value of other Properties" exists (standard name, mapped from "Total value of other houses")
+        if "Value of other Properties" not in households_df.columns:
+            if "Total value of other houses" in households_df.columns:
+                households_df["Value of other Properties"] = households_df["Total value of other houses"]
+        
+        # Ensure "Rental Income from Real Estate" exists (standard name, mapped from WAS column)
+        if "Rental Income from Real Estate" not in households_df.columns:
+            if "Annual Household Income - Gross rental income" in households_df.columns:
+                households_df["Rental Income from Real Estate"] = households_df["Annual Household Income - Gross rental income"]
+            elif "Annual Household Income - Net rental income" in households_df.columns:
+                households_df["Rental Income from Real Estate"] = households_df["Annual Household Income - Net rental income"]
+        
+        # Ensure "Employee Income" exists (computed from individual data, will be set later but ensure column exists)
+        if "Employee Income" not in households_df.columns:
+            households_df["Employee Income"] = 0.0
+        
+        # Ensure "Regular Social Transfers" exists (computed later, but ensure column exists)
+        if "Regular Social Transfers" not in households_df.columns:
+            if "Annual Household Income - Total benefits received" in households_df.columns:
+                households_df["Regular Social Transfers"] = households_df["Annual Household Income - Total benefits received"]
+            else:
+                households_df["Regular Social Transfers"] = 0.0
+        
+        # Ensure "Income from Financial Assets" exists (computed later, but ensure column exists)
+        if "Income from Financial Assets" not in households_df.columns:
+            if "Total income in £ over last 12 months received in dividends, interest or return on investments" in households_df.columns:
+                households_df["Income from Financial Assets"] = households_df["Total income in £ over last 12 months received in dividends, interest or return on investments"]
+            else:
+                households_df["Income from Financial Assets"] = 0.0
+        
+        # Ensure "Wealth in Deposits" exists (computed later in compute_household_wealth, but ensure column exists)
+        if "Wealth in Deposits" not in households_df.columns:
+            if "Total value of savings accounts" in households_df.columns:
+                households_df["Wealth in Deposits"] = households_df["Total value of savings accounts"]
+            else:
+                households_df["Wealth in Deposits"] = 0.0
+        
+        # Ensure "Outstanding Balance of HMR Mortgages" exists (computed later, but ensure column exists)
+        if "Outstanding Balance of HMR Mortgages" not in households_df.columns:
+            if "Total mortgage on main residence" in households_df.columns:
+                households_df["Outstanding Balance of HMR Mortgages"] = households_df["Total mortgage on main residence"]
+            else:
+                households_df["Outstanding Balance of HMR Mortgages"] = 0.0
+        
+        # Ensure "Outstanding Balance of Mortgages on other Properties" exists (computed later, but ensure column exists)
+        if "Outstanding Balance of Mortgages on other Properties" not in households_df.columns:
+            if "Total property debt excluding main residence" in households_df.columns:
+                households_df["Outstanding Balance of Mortgages on other Properties"] = households_df["Total property debt excluding main residence"]
+            else:
+                households_df["Outstanding Balance of Mortgages on other Properties"] = 0.0
+        
         # Ensure numeric columns are numeric
-        household_numeric_cols = ["Tenure", "Rent Paid", "Value of the Main Residence", 
-                                  "Number of Properties other than Household Main Residence",
-                                  "Value of other Properties", "Rental Income from Real Estate"]
+        household_numeric_cols = [
+            "Tenure", "Tenure Status of the Main Residence", "Rent Paid", "Value of the Main Residence", 
+            "Number of Properties other than Household Main Residence",
+            "Value of other Properties", "Rental Income from Real Estate",
+            "Employee Income", "Regular Social Transfers", "Income from Financial Assets",
+            "Wealth in Deposits", "Outstanding Balance of HMR Mortgages",
+            "Outstanding Balance of Mortgages on other Properties"
+        ]
         for col in household_numeric_cols:
             if col in households_df.columns:
                 households_df[col] = pd.to_numeric(households_df[col], errors="coerce")
@@ -809,6 +876,20 @@ class SyntheticWASPopulation(SyntheticPopulation):
         investment_rate = np.clip(investment_rate, 0, 0.4)  # Cap at 40%
         
         self.household_data["Investment Rate"] = investment_rate
+
+    @property
+    def industry_consumption_before_vat(self):
+        """Calculate household consumption by industry before VAT from WAS data."""
+        cons_weights = self.consumption_weights
+        income = self.household_data["Income"].values
+        sr = self.household_data["Saving Rate"].values
+        current_hh_consumption = default_desired_consumption(
+            income_=income,
+            consumption_weights_=cons_weights,
+            saving_rates_=sr,
+            tau_vat_=0,
+        )
+        return current_hh_consumption
 
     def normalise_household_consumption(
         self,
