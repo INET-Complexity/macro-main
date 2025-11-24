@@ -7,10 +7,11 @@ This script generates a detailed comparison report showing:
 - Correlation preservation
 """
 
-import pandas as pd
-import numpy as np
-from pathlib import Path
 import argparse
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
 
 
 def compare_distributions(original_dir: Path, spoofed_dir: Path):
@@ -67,14 +68,10 @@ def compare_distributions(original_dir: Path, spoofed_dir: Path):
 
         # Calculate percent differences
         stats["mean_diff_pct"] = (
-            (stats["mean_spoof"] - stats["mean_orig"]) / abs(stats["mean_orig"]) * 100
-            if stats["mean_orig"] != 0
-            else 0
+            (stats["mean_spoof"] - stats["mean_orig"]) / abs(stats["mean_orig"]) * 100 if stats["mean_orig"] != 0 else 0
         )
         stats["std_diff_pct"] = (
-            (stats["std_spoof"] - stats["std_orig"]) / abs(stats["std_orig"]) * 100
-            if stats["std_orig"] != 0
-            else 0
+            (stats["std_spoof"] - stats["std_orig"]) / abs(stats["std_orig"]) * 100 if stats["std_orig"] != 0 else 0
         )
 
         return stats
@@ -113,9 +110,7 @@ def compare_distributions(original_dir: Path, spoofed_dir: Path):
                     f"    Mean:   {stats['mean_orig']:>12.2f} → {stats['mean_spoof']:>12.2f} "
                     f"({stats['mean_diff_pct']:+.1f}%)"
                 )
-                print(
-                    f"    Median: {stats['median_orig']:>12.2f} → {stats['median_spoof']:>12.2f}"
-                )
+                print(f"    Median: {stats['median_orig']:>12.2f} → {stats['median_spoof']:>12.2f}")
                 print(
                     f"    Std:    {stats['std_orig']:>12.2f} → {stats['std_spoof']:>12.2f} "
                     f"({stats['std_diff_pct']:+.1f}%)"
@@ -124,9 +119,7 @@ def compare_distributions(original_dir: Path, spoofed_dir: Path):
                     f"    Range:  [{stats['min_orig']:.2f}, {stats['max_orig']:.2f}] → "
                     f"[{stats['min_spoof']:.2f}, {stats['max_spoof']:.2f}]"
                 )
-                print(
-                    f"    Missing: {stats['missing_pct_orig']:.1f}% → {stats['missing_pct_spoof']:.1f}%"
-                )
+                print(f"    Missing: {stats['missing_pct_orig']:.1f}% → {stats['missing_pct_spoof']:.1f}%")
 
     # Check correlations
     print("\n" + "=" * 80)
@@ -191,9 +184,7 @@ def compare_distributions(original_dir: Path, spoofed_dir: Path):
 
 def main():
     """Main function."""
-    parser = argparse.ArgumentParser(
-        description="Compare original and spoofed HFCS data"
-    )
+    parser = argparse.ArgumentParser(description="Compare original and spoofed HFCS data")
     parser.add_argument(
         "--original",
         type=str,
