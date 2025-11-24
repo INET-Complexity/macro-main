@@ -1,0 +1,792 @@
+{
+  "files": [
+    {
+      "name": "firms_annual.csv",
+      "shape": [
+        2508,
+        7
+      ],
+      "columns": {
+        "Unnamed: 0": {
+          "dtype": "int64",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 2508,
+          "type": "numeric",
+          "min": 2.0,
+          "max": 30773.0,
+          "mean": 12079.794258373206,
+          "median": 9565.0,
+          "std": 8859.247257415524
+        },
+        "gvkey": {
+          "dtype": "int64",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 2503,
+          "type": "numeric",
+          "min": 1932.0,
+          "max": 357641.0,
+          "mean": 236581.37480063795,
+          "median": 247523.5,
+          "std": 77702.80868600268
+        },
+        "fyear": {
+          "dtype": "float64",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 1,
+          "type": "numeric",
+          "min": 2014.0,
+          "max": 2014.0,
+          "mean": 2014.0,
+          "median": 2014.0,
+          "std": 0.0,
+          "is_categorical": true,
+          "unique_values": [
+            2014.0
+          ],
+          "value_distribution": {
+            "2014.0": 2508
+          }
+        },
+        "datadate": {
+          "dtype": "object",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 12,
+          "type": "categorical",
+          "top_values": {
+            "2014-12-31": 1659,
+            "2015-03-31": 257,
+            "2014-06-30": 163,
+            "2014-09-30": 153,
+            "2015-04-30": 50,
+            "2015-01-31": 39,
+            "2014-07-31": 36,
+            "2015-02-28": 35,
+            "2014-11-30": 34,
+            "2014-08-31": 30
+          }
+        },
+        "emp": {
+          "dtype": "float64",
+          "null_count": 826,
+          "null_pct": 32.93460925039872,
+          "unique_count": 1127,
+          "type": "numeric",
+          "min": 0.001,
+          "max": 574.127,
+          "mean": 11.773831153388823,
+          "median": 0.5485,
+          "std": 41.496675629040176
+        },
+        "conm": {
+          "dtype": "object",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 2503,
+          "type": "categorical",
+          "top_values": {
+            "NEXT 15 GROUP PLC": 2,
+            "CELEBRUS TECHNOLOGIES PLC": 2,
+            "CENTAUR MEDIA": 2,
+            "ACCENTRO REAL ESTATE AG": 2,
+            "DEUTSCHE KONSUM REIT AG": 2,
+            "VERBIO SE": 1,
+            "ASHMORE GROUP PLC": 1,
+            "NANOGATE SE": 1,
+            "TTI": 1,
+            "TRADEGATE AG": 1
+          }
+        },
+        "loc": {
+          "dtype": "object",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 7,
+          "type": "categorical",
+          "top_values": {
+            "GBR": 1168,
+            "DEU": 592,
+            "FRA": 512,
+            "MEX": 129,
+            "AUT": 64,
+            "USA": 40,
+            "CAN": 3
+          }
+        }
+      }
+    },
+    {
+      "name": "firms_quarterly.csv",
+      "shape": [
+        9267,
+        19
+      ],
+      "columns": {
+        "Unnamed: 0": {
+          "dtype": "int64",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 9267,
+          "type": "numeric",
+          "min": 8.0,
+          "max": 105491.0,
+          "mean": 39720.198230279486,
+          "median": 28506.0,
+          "std": 30254.34385371222
+        },
+        "gvkey": {
+          "dtype": "int64",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 2521,
+          "type": "numeric",
+          "min": 1932.0,
+          "max": 357641.0,
+          "mean": 230893.53825401963,
+          "median": 241201.0,
+          "std": 77215.41819065528
+        },
+        "curcdq": {
+          "dtype": "object",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 18,
+          "type": "categorical",
+          "top_values": {
+            "EUR": 4285,
+            "GBP": 3875,
+            "USD": 530,
+            "MXN": 481,
+            "AUD": 32,
+            "TWD": 16,
+            "ILS": 8,
+            "RUB": 4,
+            "SAR": 4,
+            "NZD": 4
+          }
+        },
+        "fqtr": {
+          "dtype": "int64",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 4,
+          "type": "numeric",
+          "min": 1.0,
+          "max": 4.0,
+          "mean": 2.5411675838998597,
+          "median": 3.0,
+          "std": 1.1309207375055017,
+          "is_categorical": true,
+          "unique_values": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "value_distribution": {
+            "4": 2519,
+            "2": 2259,
+            "1": 2256,
+            "3": 2233
+          }
+        },
+        "fyearq": {
+          "dtype": "int64",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 1,
+          "type": "numeric",
+          "min": 2014.0,
+          "max": 2014.0,
+          "mean": 2014.0,
+          "median": 2014.0,
+          "std": 0.0,
+          "is_categorical": true,
+          "unique_values": [
+            2014
+          ],
+          "value_distribution": {
+            "2014": 9267
+          }
+        },
+        "datadate": {
+          "dtype": "object",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 21,
+          "type": "categorical",
+          "top_values": {
+            "2014-06-30": 2011,
+            "2014-12-31": 1891,
+            "2014-09-30": 1865,
+            "2014-03-31": 1770,
+            "2013-12-31": 284,
+            "2015-03-31": 257,
+            "2013-09-30": 149,
+            "2014-07-31": 143,
+            "2014-08-31": 117,
+            "2014-10-31": 111
+          }
+        },
+        "atq": {
+          "dtype": "float64",
+          "null_count": 252,
+          "null_pct": 2.7193266429265135,
+          "unique_count": 5867,
+          "type": "numeric",
+          "min": 0.0,
+          "max": 2758447.0,
+          "mean": 16115.039021630615,
+          "median": 159.345,
+          "std": 120844.04940806204
+        },
+        "ceqq": {
+          "dtype": "float64",
+          "null_count": 2743,
+          "null_pct": 29.599654688680268,
+          "unique_count": 4263,
+          "type": "numeric",
+          "min": -768065.672,
+          "max": 203171.669,
+          "mean": 2115.6136253832005,
+          "median": 54.355000000000004,
+          "std": 16454.361947219804
+        },
+        "dlttq": {
+          "dtype": "float64",
+          "null_count": 3169,
+          "null_pct": 34.196611632675086,
+          "unique_count": 3882,
+          "type": "numeric",
+          "min": 0.0,
+          "max": 997384.286,
+          "mean": 4022.2684060839624,
+          "median": 41.674549999999996,
+          "std": 31854.103131419408
+        },
+        "dptbq": {
+          "dtype": "float64",
+          "null_count": 9065,
+          "null_pct": 97.82022229416208,
+          "unique_count": 159,
+          "type": "numeric",
+          "min": 0.309,
+          "max": 161700.0,
+          "mean": 21725.137498514854,
+          "median": 6481.191,
+          "std": 35112.016123987334
+        },
+        "gpq": {
+          "dtype": "float64",
+          "null_count": 3175,
+          "null_pct": 34.261357505125716,
+          "unique_count": 3961,
+          "type": "numeric",
+          "min": -8451.673,
+          "max": 250800.036,
+          "mean": 671.0048325673013,
+          "median": 13.528,
+          "std": 7286.955399514741
+        },
+        "invtq": {
+          "dtype": "float64",
+          "null_count": 3734,
+          "null_pct": 40.2935146217762,
+          "unique_count": 3469,
+          "type": "numeric",
+          "min": 0.0001,
+          "max": 49938.656,
+          "mean": 665.8561974878006,
+          "median": 18.868,
+          "std": 3019.790808931158
+        },
+        "lltq": {
+          "dtype": "float64",
+          "null_count": 3353,
+          "null_pct": 36.18215172116111,
+          "unique_count": 3793,
+          "type": "numeric",
+          "min": -210.421,
+          "max": 2561929.787,
+          "mean": 4176.313463814677,
+          "median": 28.659,
+          "std": 60397.1595899018
+        },
+        "ltq": {
+          "dtype": "float64",
+          "null_count": 259,
+          "null_pct": 2.7948634941189163,
+          "unique_count": 5698,
+          "type": "numeric",
+          "min": 0.0,
+          "max": 2896089.134,
+          "mean": 13592.35109071936,
+          "median": 51.4965,
+          "std": 116575.81724684527
+        },
+        "revtq": {
+          "dtype": "float64",
+          "null_count": 808,
+          "null_pct": 8.719110823351677,
+          "unique_count": 5576,
+          "type": "numeric",
+          "min": -6432.424,
+          "max": 425414.729,
+          "mean": 1361.8610263033454,
+          "median": 25.435,
+          "std": 11417.632494891122
+        },
+        "conm": {
+          "dtype": "object",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 2521,
+          "type": "categorical",
+          "top_values": {
+            "SHAFTESBURY CAPITAL PLC": 8,
+            "PIERER MOBILITY AG": 6,
+            "PREMIER FOODS PLC": 5,
+            "NEXT 15 GROUP PLC": 5,
+            "ALPHA MOS S A": 5,
+            "CENTAUR MEDIA": 5,
+            "VOLUTION GROUP PLC": 5,
+            "ACCENTRO REAL ESTATE AG": 5,
+            "CELEBRUS TECHNOLOGIES PLC": 5,
+            "JPEL PRIVATE EQUITY LTD": 4
+          }
+        },
+        "conml": {
+          "dtype": "object",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 2521,
+          "type": "categorical",
+          "top_values": {
+            "Shaftesbury Capital PLC": 8,
+            "PIERER Mobility AG": 6,
+            "Premier Foods PLC": 5,
+            "Next 15 Group plc": 5,
+            "Alpha MOS S.A": 5,
+            "Centaur Media": 5,
+            "Volution Group plc": 5,
+            "Accentro Real Estate AG": 5,
+            "Celebrus Technologies plc": 5,
+            "JPEL Private Equity Ltd": 4
+          }
+        },
+        "gsector": {
+          "dtype": "float64",
+          "null_count": 811,
+          "null_pct": 8.751483759576994,
+          "unique_count": 11,
+          "type": "numeric",
+          "min": 10.0,
+          "max": 60.0,
+          "mean": 33.002010406811735,
+          "median": 35.0,
+          "std": 14.00481021453877,
+          "is_categorical": true,
+          "unique_values": [
+            10.0,
+            15.0,
+            20.0,
+            25.0,
+            30.0,
+            35.0,
+            40.0,
+            45.0,
+            50.0,
+            55.0,
+            60.0
+          ],
+          "value_distribution": {
+            "20.0": 1568,
+            "40.0": 1226,
+            "45.0": 1045,
+            "25.0": 1044,
+            "35.0": 754,
+            "15.0": 726,
+            "60.0": 635,
+            "50.0": 497,
+            "30.0": 443,
+            "10.0": 366,
+            "55.0": 152
+          }
+        },
+        "loc": {
+          "dtype": "object",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 7,
+          "type": "categorical",
+          "top_values": {
+            "GBR": 4369,
+            "DEU": 2096,
+            "FRA": 1903,
+            "MEX": 501,
+            "AUT": 237,
+            "USA": 149,
+            "CAN": 12
+          }
+        }
+      }
+    },
+    {
+      "name": "banks.csv",
+      "shape": [
+        1691,
+        17
+      ],
+      "columns": {
+        "Unnamed: 0": {
+          "dtype": "int64",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 1691,
+          "type": "numeric",
+          "min": 0.0,
+          "max": 1832.0,
+          "mean": 917.2708456534594,
+          "median": 939.0,
+          "std": 519.7320554280465
+        },
+        "gvkey": {
+          "dtype": "int64",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 423,
+          "type": "numeric",
+          "min": 2002.0,
+          "max": 268025.0,
+          "mean": 70769.14429331756,
+          "median": 61487.0,
+          "std": 60421.12373420914
+        },
+        "curcdq": {
+          "dtype": "object",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 2,
+          "type": "categorical",
+          "top_values": {
+            "USD": 1663,
+            "CAD": 28
+          }
+        },
+        "fqtr": {
+          "dtype": "int64",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 4,
+          "type": "numeric",
+          "min": 1.0,
+          "max": 4.0,
+          "mean": 2.4991129509166172,
+          "median": 2.0,
+          "std": 1.1180997905698808,
+          "is_categorical": true,
+          "unique_values": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "value_distribution": {
+            "1": 423,
+            "2": 423,
+            "3": 423,
+            "4": 422
+          }
+        },
+        "fyearq": {
+          "dtype": "int64",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 1,
+          "type": "numeric",
+          "min": 2014.0,
+          "max": 2014.0,
+          "mean": 2014.0,
+          "median": 2014.0,
+          "std": 0.0,
+          "is_categorical": true,
+          "unique_values": [
+            2014
+          ],
+          "value_distribution": {
+            "2014": 1691
+          }
+        },
+        "datadate": {
+          "dtype": "object",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 11,
+          "type": "categorical",
+          "top_values": {
+            "2014-06-30": 417,
+            "2014-03-31": 414,
+            "2014-09-30": 393,
+            "2014-12-31": 380,
+            "2013-12-31": 37,
+            "2013-09-30": 23,
+            "2014-01-31": 6,
+            "2014-04-30": 6,
+            "2014-07-31": 6,
+            "2014-10-31": 6
+          }
+        },
+        "tic": {
+          "dtype": "object",
+          "null_count": 4,
+          "null_pct": 0.2365464222353637,
+          "unique_count": 422,
+          "type": "categorical",
+          "top_values": {
+            "BPOP": 4,
+            "HFWA": 4,
+            "SFDL": 4,
+            "LBAI": 4,
+            "HTBK": 4,
+            "PFBC": 4,
+            "FGBI": 4,
+            "UBOH": 4,
+            "PGC": 4,
+            "FNWD": 4
+          }
+        },
+        "conm": {
+          "dtype": "object",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 423,
+          "type": "categorical",
+          "top_values": {
+            "POPULAR INC": 4,
+            "HERITAGE FINANCIAL CORP": 4,
+            "SECURITY FEDERAL CORP": 4,
+            "LAKELAND BANCORP INC": 4,
+            "HERITAGE COMMERCE CORP": 4,
+            "PREFERRED BANK LOS ANGELES": 4,
+            "FIRST GUARANTY BANCSHARES": 4,
+            "UNITED BANCSHARES INC/OH": 4,
+            "PEAPACK-GLADSTONE FINAN CORP": 4,
+            "FINWARD BANCORP": 4
+          }
+        },
+        "atq": {
+          "dtype": "float64",
+          "null_count": 126,
+          "null_pct": 7.451212300413957,
+          "unique_count": 1565,
+          "type": "numeric",
+          "min": 71.383,
+          "max": 2758447.0,
+          "mean": 78030.0341744409,
+          "median": 1465.739,
+          "std": 353288.13241408794
+        },
+        "ciq": {
+          "dtype": "float64",
+          "null_count": 290,
+          "null_pct": 17.14961561206387,
+          "unique_count": 1360,
+          "type": "numeric",
+          "min": -7138.435,
+          "max": 12229.0,
+          "mean": 129.39317416131334,
+          "median": 4.919,
+          "std": 734.5326134744691
+        },
+        "dlttq": {
+          "dtype": "float64",
+          "null_count": 161,
+          "null_pct": 9.52099349497339,
+          "unique_count": 1122,
+          "type": "numeric",
+          "min": 0.0,
+          "max": 510875.31,
+          "mean": 6252.7364568627445,
+          "median": 49.8925,
+          "std": 36036.766480080885
+        },
+        "dptcq": {
+          "dtype": "float64",
+          "null_count": 131,
+          "null_pct": 7.746895328208161,
+          "unique_count": 1557,
+          "type": "numeric",
+          "min": 0.0,
+          "max": 1508469.0,
+          "mean": 40542.21434615385,
+          "median": 1131.975,
+          "std": 169474.77790380447
+        },
+        "ltq": {
+          "dtype": "float64",
+          "null_count": 135,
+          "null_pct": 7.983441750443525,
+          "unique_count": 1555,
+          "type": "numeric",
+          "min": 65.193,
+          "max": 2565999.0,
+          "mean": 72820.89141388175,
+          "median": 1313.367,
+          "std": 330745.47205598187
+        },
+        "teqq": {
+          "dtype": "float64",
+          "null_count": 145,
+          "null_pct": 8.574807806031934,
+          "unique_count": 1542,
+          "type": "numeric",
+          "min": 0.449,
+          "max": 243471.0,
+          "mean": 5621.851299482535,
+          "median": 156.84699999999998,
+          "std": 25216.885914756716
+        },
+        "dltisy": {
+          "dtype": "float64",
+          "null_count": 461,
+          "null_pct": 27.261975162625667,
+          "unique_count": 485,
+          "type": "numeric",
+          "min": 0.0,
+          "max": 78831.426,
+          "mean": 1093.1751650406504,
+          "median": 3.801,
+          "std": 5952.809936047343
+        },
+        "dltry": {
+          "dtype": "float64",
+          "null_count": 412,
+          "null_pct": 24.36428149024246,
+          "unique_count": 791,
+          "type": "numeric",
+          "min": 0.0,
+          "max": 79091.035,
+          "mean": 910.2552533229084,
+          "median": 4.6,
+          "std": 5276.989255027952
+        },
+        "loc": {
+          "dtype": "object",
+          "null_count": 0,
+          "null_pct": 0.0,
+          "unique_count": 5,
+          "type": "categorical",
+          "top_values": {
+            "USA": 1623,
+            "GBR": 28,
+            "CAN": 28,
+            "FRA": 8,
+            "DEU": 4
+          }
+        }
+      }
+    }
+  ],
+  "relationships": {
+    "gvkey_overlap": {
+      "annual_unique": 2503,
+      "quarterly_unique": 2521,
+      "bank_unique": 423,
+      "annual_quarterly_overlap": 2503,
+      "banks_firms_overlap": 8
+    },
+    "conm_overlap": {
+      "annual_unique": 2503,
+      "quarterly_unique": 2521,
+      "bank_unique": 423,
+      "annual_quarterly_overlap": 2503
+    },
+    "country_distribution": {
+      "annual": {
+        "GBR": 1168,
+        "DEU": 592,
+        "FRA": 512,
+        "MEX": 129,
+        "AUT": 64,
+        "USA": 40,
+        "CAN": 3
+      },
+      "quarterly": {
+        "GBR": 4369,
+        "DEU": 2096,
+        "FRA": 1903,
+        "MEX": 501,
+        "AUT": 237,
+        "USA": 149,
+        "CAN": 12
+      },
+      "banks": {
+        "USA": 1623,
+        "GBR": 28,
+        "CAN": 28,
+        "FRA": 8,
+        "DEU": 4
+      }
+    }
+  },
+  "spoofing_strategy": {
+    "overview": "Compustat data contains confidential company financial information. Key identifiers like gvkey (company ID), conm (company name), and tic (ticker symbol) should be anonymized or removed. Financial metrics should be spoofed while maintaining distributions.",
+    "critical_constraints": [
+      "conm must be consistent between firms_annual and firms_quarterly (used for merging)",
+      "gvkey should be unique per company within each file",
+      "loc (country) should be preserved or consistently spoofed",
+      "fyear/fyearq and fqtr should be preserved (time identifiers)",
+      "Currency codes (curcdq) should match country locations"
+    ],
+    "columns_to_remove": [
+      "firms_annual.csv:gvkey",
+      "firms_annual.csv:conm",
+      "firms_quarterly.csv:gvkey",
+      "firms_quarterly.csv:conm",
+      "firms_quarterly.csv:conml",
+      "banks.csv:gvkey",
+      "banks.csv:tic",
+      "banks.csv:conm"
+    ],
+    "columns_to_spoof": {
+      "firms_annual.csv:Unnamed: 0": "lognormal",
+      "firms_annual.csv:fyear": "categorical_resample",
+      "firms_annual.csv:datadate": "categorical_resample",
+      "firms_annual.csv:emp": "lognormal",
+      "firms_annual.csv:loc": "categorical_resample",
+      "firms_quarterly.csv:Unnamed: 0": "lognormal",
+      "firms_quarterly.csv:curcdq": "categorical_resample",
+      "firms_quarterly.csv:fqtr": "categorical_resample",
+      "firms_quarterly.csv:fyearq": "categorical_resample",
+      "firms_quarterly.csv:datadate": "categorical_resample",
+      "firms_quarterly.csv:atq": "lognormal",
+      "firms_quarterly.csv:ceqq": "normal",
+      "firms_quarterly.csv:dlttq": "lognormal",
+      "firms_quarterly.csv:dptbq": "lognormal",
+      "firms_quarterly.csv:gpq": "normal",
+      "firms_quarterly.csv:invtq": "lognormal",
+      "firms_quarterly.csv:lltq": "normal",
+      "firms_quarterly.csv:ltq": "lognormal",
+      "firms_quarterly.csv:revtq": "normal",
+      "firms_quarterly.csv:gsector": "categorical_resample",
+      "firms_quarterly.csv:loc": "categorical_resample",
+      "banks.csv:Unnamed: 0": "lognormal",
+      "banks.csv:curcdq": "categorical_resample",
+      "banks.csv:fqtr": "categorical_resample",
+      "banks.csv:fyearq": "categorical_resample",
+      "banks.csv:datadate": "categorical_resample",
+      "banks.csv:atq": "lognormal",
+      "banks.csv:ciq": "normal",
+      "banks.csv:dlttq": "lognormal",
+      "banks.csv:dptcq": "lognormal",
+      "banks.csv:ltq": "lognormal",
+      "banks.csv:teqq": "lognormal",
+      "banks.csv:dltisy": "lognormal",
+      "banks.csv:dltry": "lognormal",
+      "banks.csv:loc": "categorical_resample"
+    }
+  }
+}
