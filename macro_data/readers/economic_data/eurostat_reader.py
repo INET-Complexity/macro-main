@@ -261,7 +261,7 @@ class EuroStatReader:
         if isinstance(country, str):
             country = Country(country)
         df = self.data["financial_balance_sheets"]
-        country_name_short = country.to_two_letter_code()
+        country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[
             df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S11,LIAB,F4," + country_name_short
         ]
@@ -292,7 +292,7 @@ class EuroStatReader:
         if isinstance(country, str):
             country = Country(country)
         df = self.data["financial_balance_sheets"]
-        country_name_short = country.to_two_letter_code()
+        country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[
             df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S12,LIAB,F4," + country_name_short
         ]
@@ -459,9 +459,11 @@ class EuroStatReader:
         if isinstance(country, str):
             country = Country(country)
         df = self.data["financial_balance_sheets"]
-        country_name_short = country.to_two_letter_code()
+        country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         df = df.loc[df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S11,ASS,F2," + country_name_short]
-        if str(year) in df.columns:
+        if df.empty or str(year) not in df.columns:
+            return np.nan
+        else:
             res = df[str(year)].values[0]
             if len(res) <= 2:
                 return np.nan
@@ -469,8 +471,6 @@ class EuroStatReader:
                 return float(res[:-2]) * 1e6 * ratio
             else:
                 return float(res) * 1e6 * ratio
-        else:
-            return np.nan
 
     # historic domestic
     def get_total_bank_equity(self, country: str, year: int, proxy_country: str = "FRA", ratio: float = 1.0) -> float:
@@ -881,7 +881,7 @@ class EuroStatReader:
         if isinstance(country, Region):
             country = country.parent_country
         df = self.data["real_estate_services"].set_index("freq,unit,stk_flow,induse,prod_na,geo\TIME_PERIOD")
-        country_name_short = country.to_two_letter_code()
+        country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
         return float(df.at["A,MIO_NAC,TOTAL,P3_S14,CPA_L68A," + country_name_short, str(year)]) / (
             float(df.at["A,MIO_NAC,TOTAL,P3_S14,CPA_L68A," + country_name_short, str(year)])
             + float(df.at["A,MIO_NAC,TOTAL,P3_S14,CPA_L68B," + country_name_short, str(year)])
