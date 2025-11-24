@@ -506,5 +506,5 @@ def check_country_rent_consistency(country: SyntheticCountry):
     # Rent should be between 1% and 40% of total income (generous bounds)
     # Lower bound relaxed for test datasets which may have many owners
     assert (
-        0.005 <= rent_to_income_ratio <= 0.40
+        0.01 <= rent_to_income_ratio <= 0.40
     ), f"Rent-to-income ratio {rent_to_income_ratio:.3f} is outside reasonable bounds [0.01, 0.40]"
