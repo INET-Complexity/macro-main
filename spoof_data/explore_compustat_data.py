@@ -56,15 +56,11 @@ def analyze_dataframe(df: pd.DataFrame, name: str) -> dict:
                     col_info["is_categorical"] = True
                     col_info["unique_values"] = sorted(non_null.unique().tolist())
                     value_counts = col_data.value_counts()
-                    col_info["value_distribution"] = {
-                        str(k): int(v) for k, v in value_counts.items()
-                    }
+                    col_info["value_distribution"] = {str(k): int(v) for k, v in value_counts.items()}
         else:
             col_info["type"] = "categorical"
             value_counts = col_data.value_counts()
-            col_info["top_values"] = {
-                str(k): int(v) for k, v in value_counts.head(10).items()
-            }
+            col_info["top_values"] = {str(k): int(v) for k, v in value_counts.head(10).items()}
 
         results["columns"][col] = col_info
 
@@ -87,11 +83,7 @@ def analyze_dataframe(df: pd.DataFrame, name: str) -> dict:
     return results
 
 
-def analyze_relationships(
-    firms_annual: pd.DataFrame,
-    firms_quarterly: pd.DataFrame,
-    banks: pd.DataFrame
-) -> dict:
+def analyze_relationships(firms_annual: pd.DataFrame, firms_quarterly: pd.DataFrame, banks: pd.DataFrame) -> dict:
     """Analyze relationships between the three dataframes."""
     print(f"\n{'='*60}")
     print("Analyzing Relationships")
@@ -206,15 +198,17 @@ def generate_spoofing_strategy(analysis_results: dict) -> dict:
                     strategy["columns_to_spoof"][f"{file_name}:{col_name}"] = "normal"
 
     # Add critical constraints
-    strategy["critical_constraints"].extend([
-        "conm must be consistent between firms_annual and firms_quarterly (used for merging)",
-        "gvkey should be unique per company within each file",
-        "loc (country) should be preserved or consistently spoofed",
-        "fyear/fyearq and fqtr should be preserved (time identifiers)",
-        "Currency codes (curcdq) should match country locations",
-    ])
+    strategy["critical_constraints"].extend(
+        [
+            "conm must be consistent between firms_annual and firms_quarterly (used for merging)",
+            "gvkey should be unique per company within each file",
+            "loc (country) should be preserved or consistently spoofed",
+            "fyear/fyearq and fqtr should be preserved (time identifiers)",
+            "Currency codes (curcdq) should match country locations",
+        ]
+    )
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Key Constraints:")
     for constraint in strategy["critical_constraints"]:
         print(f"  • {constraint}")
@@ -227,9 +221,9 @@ def main():
     # Paths
     data_dir = Path("tests/test_macro_data/unit/sample_raw_data/compustat")
 
-    print("="*60)
+    print("=" * 60)
     print("Compustat Data Exploration")
-    print("="*60)
+    print("=" * 60)
 
     # Load data
     firms_annual = pd.read_csv(data_dir / "firms_annual.csv")

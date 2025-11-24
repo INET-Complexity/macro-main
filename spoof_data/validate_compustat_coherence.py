@@ -10,9 +10,7 @@ from pathlib import Path
 import pandas as pd
 
 
-def validate_firms_data(
-    annual: pd.DataFrame, quarterly: pd.DataFrame
-) -> tuple[bool, list[str]]:
+def validate_firms_data(annual: pd.DataFrame, quarterly: pd.DataFrame) -> tuple[bool, list[str]]:
     """
     Validate firms annual and quarterly data for consistency.
 
@@ -21,9 +19,9 @@ def validate_firms_data(
     """
     errors = []
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Validating Firms Data")
-    print("="*60)
+    print("=" * 60)
 
     # Check 1: conm overlap (used for merging)
     annual_conm = set(annual["conm"].dropna().unique())
@@ -38,9 +36,7 @@ def validate_firms_data(
     if len(overlap) == 0:
         errors.append("No company names overlap between annual and quarterly data - merge will fail")
     elif len(overlap) < len(annual_conm) * 0.9:
-        errors.append(
-            f"Only {len(overlap)}/{len(annual_conm)} annual companies have quarterly data"
-        )
+        errors.append(f"Only {len(overlap)}/{len(annual_conm)} annual companies have quarterly data")
 
     # Check 2: gvkey uniqueness within files (skip if removed for spoofing)
     if "gvkey" in annual.columns:
@@ -76,8 +72,20 @@ def validate_firms_data(
     # Core columns needed for data processing (identifiers may be removed)
     annual_required = ["fyear", "datadate", "emp", "conm", "loc"]
     quarterly_required = [
-        "curcdq", "fqtr", "fyearq", "datadate", "atq", "ceqq",
-        "dlttq", "gpq", "invtq", "ltq", "revtq", "conm", "gsector", "loc"
+        "curcdq",
+        "fqtr",
+        "fyearq",
+        "datadate",
+        "atq",
+        "ceqq",
+        "dlttq",
+        "gpq",
+        "invtq",
+        "ltq",
+        "revtq",
+        "conm",
+        "gsector",
+        "loc",
     ]
 
     print(f"\n5. Required columns:")
@@ -138,9 +146,9 @@ def validate_banks_data(banks: pd.DataFrame) -> tuple[bool, list[str]]:
     """
     errors = []
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Validating Banks Data")
-    print("="*60)
+    print("=" * 60)
 
     # Check 1: gvkey uniqueness per time period (skip if removed for spoofing)
     if "gvkey" in banks.columns:
@@ -155,10 +163,7 @@ def validate_banks_data(banks: pd.DataFrame) -> tuple[bool, list[str]]:
         print(f"\n1. gvkey column removed (spoofed data) - skipping uniqueness check")
 
     # Check 2: Required columns exist (flexible for spoofed data)
-    required_cols = [
-        "curcdq", "fqtr", "fyearq", "datadate",
-        "atq", "dlttq", "dptcq", "ltq", "teqq", "loc"
-    ]
+    required_cols = ["curcdq", "fqtr", "fyearq", "datadate", "atq", "dlttq", "dptcq", "ltq", "teqq", "loc"]
 
     print(f"\n2. Required columns:")
     missing = set(required_cols) - set(banks.columns)
@@ -220,9 +225,7 @@ def validate_banks_data(banks: pd.DataFrame) -> tuple[bool, list[str]]:
 
 
 def validate_cross_file_consistency(
-    annual: pd.DataFrame,
-    quarterly: pd.DataFrame,
-    banks: pd.DataFrame
+    annual: pd.DataFrame, quarterly: pd.DataFrame, banks: pd.DataFrame
 ) -> tuple[bool, list[str]]:
     """
     Validate consistency across all three files.
@@ -232,9 +235,9 @@ def validate_cross_file_consistency(
     """
     errors = []
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Validating Cross-File Consistency")
-    print("="*60)
+    print("=" * 60)
 
     # Check 1: gvkey overlap (should be minimal - firms vs banks)
     # Skip if gvkey removed for spoofing
@@ -249,9 +252,7 @@ def validate_cross_file_consistency(
         print(f"   Overlap: {len(overlap)}")
 
         if len(overlap) > len(bank_gvkeys) * 0.1:
-            errors.append(
-                f"Large overlap ({len(overlap)}) between firm and bank gvkeys - may indicate data issues"
-            )
+            errors.append(f"Large overlap ({len(overlap)}) between firm and bank gvkeys - may indicate data issues")
     else:
         print(f"\n1. gvkey column removed (spoofed data) - skipping overlap check")
 
@@ -288,9 +289,9 @@ def main():
     """Main validation function."""
     data_dir = Path("tests/test_macro_data/unit/sample_raw_data/compustat")
 
-    print("="*60)
+    print("=" * 60)
     print("Compustat Data Coherence Validation")
-    print("="*60)
+    print("=" * 60)
 
     # Load data
     print("\nLoading data files...")
@@ -317,16 +318,14 @@ def main():
     all_errors.extend(banks_errors)
 
     # Validate cross-file consistency
-    cross_valid, cross_errors = validate_cross_file_consistency(
-        firms_annual, firms_quarterly, banks
-    )
+    cross_valid, cross_errors = validate_cross_file_consistency(firms_annual, firms_quarterly, banks)
     all_valid = all_valid and cross_valid
     all_errors.extend(cross_errors)
 
     # Print summary
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Validation Summary")
-    print("="*60)
+    print("=" * 60)
 
     if all_valid:
         print("✅ All validation checks passed!")

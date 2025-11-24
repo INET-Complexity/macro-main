@@ -32,16 +32,46 @@ class CompustatSpoofer:
     def generate_fake_company_name(self, idx: int) -> str:
         """Generate a fake but realistic-looking company name."""
         prefixes = [
-            "ACME", "GLOBAL", "UNITED", "FIRST", "NATIONAL", "CAPITAL",
-            "PREMIER", "ROYAL", "CENTRAL", "WESTERN", "EASTERN", "NORTHERN",
-            "SOUTHERN", "ATLANTIC", "PACIFIC", "CONTINENTAL", "UNIVERSAL",
-            "INTERNATIONAL", "GENERAL", "STANDARD", "FEDERAL", "COMMONWEALTH"
+            "ACME",
+            "GLOBAL",
+            "UNITED",
+            "FIRST",
+            "NATIONAL",
+            "CAPITAL",
+            "PREMIER",
+            "ROYAL",
+            "CENTRAL",
+            "WESTERN",
+            "EASTERN",
+            "NORTHERN",
+            "SOUTHERN",
+            "ATLANTIC",
+            "PACIFIC",
+            "CONTINENTAL",
+            "UNIVERSAL",
+            "INTERNATIONAL",
+            "GENERAL",
+            "STANDARD",
+            "FEDERAL",
+            "COMMONWEALTH",
         ]
 
         types = [
-            "INDUSTRIES", "GROUP", "HOLDINGS", "CORP", "INC", "LTD",
-            "ENTERPRISES", "SOLUTIONS", "SYSTEMS", "SERVICES", "PARTNERS",
-            "TECHNOLOGIES", "RESOURCES", "PRODUCTS", "MANUFACTURING"
+            "INDUSTRIES",
+            "GROUP",
+            "HOLDINGS",
+            "CORP",
+            "INC",
+            "LTD",
+            "ENTERPRISES",
+            "SOLUTIONS",
+            "SYSTEMS",
+            "SERVICES",
+            "PARTNERS",
+            "TECHNOLOGIES",
+            "RESOURCES",
+            "PRODUCTS",
+            "MANUFACTURING",
         ]
 
         # Generate deterministic name based on index
@@ -52,9 +82,7 @@ class CompustatSpoofer:
         # Add a number for uniqueness
         return f"{prefix} {company_type} {idx:04d}"
 
-    def spoof_categorical_column(
-        self, series: pd.Series, preserve_values: bool = False
-    ) -> pd.Series:
+    def spoof_categorical_column(self, series: pd.Series, preserve_values: bool = False) -> pd.Series:
         """
         Spoof a categorical column by resampling from the distribution.
 
@@ -70,19 +98,11 @@ class CompustatSpoofer:
 
         # For categorical, resample from observed distribution
         value_counts = series.value_counts(normalize=True, dropna=False)
-        spoofed = np.random.choice(
-            value_counts.index,
-            size=len(series),
-            p=value_counts.values,
-            replace=True
-        )
+        spoofed = np.random.choice(value_counts.index, size=len(series), p=value_counts.values, replace=True)
         return pd.Series(spoofed, index=series.index)
 
     def spoof_numerical_column(
-        self,
-        series: pd.Series,
-        distribution: str = "auto",
-        preserve_nans: bool = True
+        self, series: pd.Series, distribution: str = "auto", preserve_nans: bool = True
     ) -> pd.Series:
         """
         Spoof a numerical column by fitting and sampling from a distribution.
@@ -106,10 +126,7 @@ class CompustatSpoofer:
             # Treat as categorical - resample from observed values
             value_counts = non_missing.value_counts(normalize=True)
             spoofed_values = np.random.choice(
-                value_counts.index,
-                size=len(non_missing),
-                p=value_counts.values,
-                replace=True
+                value_counts.index, size=len(non_missing), p=value_counts.values, replace=True
             )
         else:
             # Auto-detect distribution
@@ -132,11 +149,7 @@ class CompustatSpoofer:
                         # No variation - use constant
                         spoofed_values = np.full(len(non_missing), positive_values.mean())
                     else:
-                        spoofed_values = np.random.lognormal(
-                            mean=mean_log,
-                            sigma=std_log,
-                            size=len(non_missing)
-                        )
+                        spoofed_values = np.random.lognormal(mean=mean_log, sigma=std_log, size=len(non_missing))
             else:  # normal
                 mean = non_missing.mean()
                 std = non_missing.std()
@@ -145,11 +158,7 @@ class CompustatSpoofer:
                     # No variation - use constant
                     spoofed_values = np.full(len(non_missing), mean)
                 else:
-                    spoofed_values = np.random.normal(
-                        loc=mean,
-                        scale=std,
-                        size=len(non_missing)
-                    )
+                    spoofed_values = np.random.normal(loc=mean, scale=std, size=len(non_missing))
 
         # Create result series maintaining NaN pattern
         if preserve_nans:
@@ -162,9 +171,9 @@ class CompustatSpoofer:
 
     def spoof_firms_annual(self, df: pd.DataFrame) -> pd.DataFrame:
         """Spoof firms_annual.csv data."""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("Spoofing firms_annual.csv")
-        print("="*60)
+        print("=" * 60)
 
         spoofed = df.copy()
 
@@ -188,9 +197,7 @@ class CompustatSpoofer:
 
         # Spoof employment
         print("  Spoofing emp (employment)...")
-        spoofed["emp"] = self.spoof_numerical_column(
-            spoofed["emp"], distribution="lognormal"
-        )
+        spoofed["emp"] = self.spoof_numerical_column(spoofed["emp"], distribution="lognormal")
 
         # Spoof index column
         spoofed["Unnamed: 0"] = np.arange(len(spoofed))
@@ -200,9 +207,9 @@ class CompustatSpoofer:
 
     def spoof_firms_quarterly(self, df: pd.DataFrame) -> pd.DataFrame:
         """Spoof firms_quarterly.csv data."""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("Spoofing firms_quarterly.csv")
-        print("="*60)
+        print("=" * 60)
 
         spoofed = df.copy()
 
@@ -232,22 +239,20 @@ class CompustatSpoofer:
 
         # Spoof financial metrics
         financial_cols = {
-            "atq": "lognormal",      # Assets
-            "ceqq": "normal",        # Equity (can be negative)
-            "dlttq": "lognormal",    # Debt
-            "dptbq": "lognormal",    # Deposits
-            "gpq": "normal",         # Profits (can be negative)
-            "invtq": "lognormal",    # Inventory
-            "lltq": "normal",        # Long-term liabilities (can be negative)
-            "ltq": "lognormal",      # Total liabilities
-            "revtq": "normal",       # Revenue (can be negative in rare cases)
+            "atq": "lognormal",  # Assets
+            "ceqq": "normal",  # Equity (can be negative)
+            "dlttq": "lognormal",  # Debt
+            "dptbq": "lognormal",  # Deposits
+            "gpq": "normal",  # Profits (can be negative)
+            "invtq": "lognormal",  # Inventory
+            "lltq": "normal",  # Long-term liabilities (can be negative)
+            "ltq": "lognormal",  # Total liabilities
+            "revtq": "normal",  # Revenue (can be negative in rare cases)
         }
 
         for col, dist in financial_cols.items():
             print(f"  Spoofing {col}...")
-            spoofed[col] = self.spoof_numerical_column(
-                spoofed[col], distribution=dist
-            )
+            spoofed[col] = self.spoof_numerical_column(spoofed[col], distribution=dist)
 
         # Spoof index column
         spoofed["Unnamed: 0"] = np.arange(len(spoofed))
@@ -257,9 +262,9 @@ class CompustatSpoofer:
 
     def spoof_banks(self, df: pd.DataFrame) -> pd.DataFrame:
         """Spoof banks.csv data."""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("Spoofing banks.csv")
-        print("="*60)
+        print("=" * 60)
 
         spoofed = df.copy()
 
@@ -286,21 +291,19 @@ class CompustatSpoofer:
 
         # Spoof financial metrics
         financial_cols = {
-            "atq": "lognormal",      # Assets
-            "ciq": "normal",         # Income (can be negative)
-            "dlttq": "lognormal",    # Debt
-            "dptcq": "lognormal",    # Deposits
-            "ltq": "lognormal",      # Liabilities
-            "teqq": "lognormal",     # Equity
-            "dltisy": "lognormal",   # Debt issuance
-            "dltry": "lognormal",    # Debt reduction
+            "atq": "lognormal",  # Assets
+            "ciq": "normal",  # Income (can be negative)
+            "dlttq": "lognormal",  # Debt
+            "dptcq": "lognormal",  # Deposits
+            "ltq": "lognormal",  # Liabilities
+            "teqq": "lognormal",  # Equity
+            "dltisy": "lognormal",  # Debt issuance
+            "dltry": "lognormal",  # Debt reduction
         }
 
         for col, dist in financial_cols.items():
             print(f"  Spoofing {col}...")
-            spoofed[col] = self.spoof_numerical_column(
-                spoofed[col], distribution=dist
-            )
+            spoofed[col] = self.spoof_numerical_column(spoofed[col], distribution=dist)
 
         # Spoof index column
         spoofed["Unnamed: 0"] = np.arange(len(spoofed))
@@ -309,10 +312,7 @@ class CompustatSpoofer:
         return spoofed
 
     def spoof_all(
-        self,
-        annual_path: Path,
-        quarterly_path: Path,
-        banks_path: Path
+        self, annual_path: Path, quarterly_path: Path, banks_path: Path
     ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Spoof all three Compustat files.
@@ -320,9 +320,9 @@ class CompustatSpoofer:
         Returns:
             (annual_spoofed, quarterly_spoofed, banks_spoofed)
         """
-        print("="*60)
+        print("=" * 60)
         print("Compustat Data Spoofing")
-        print("="*60)
+        print("=" * 60)
 
         # Load original data
         print("\nLoading original data...")
@@ -346,9 +346,9 @@ class CompustatSpoofer:
         """Save spoofed data to CSV files."""
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("Saving Spoofed Data")
-        print("="*60)
+        print("=" * 60)
 
         annual_path = output_dir / "firms_annual.csv"
         quarterly_path = output_dir / "firms_quarterly.csv"
@@ -381,6 +381,7 @@ def main():
             dst = original_dir / filename
             if src.exists():
                 import shutil
+
                 shutil.copy2(src, dst)
                 print(f"  ✓ Backed up {filename}")
 
@@ -390,16 +391,16 @@ def main():
     annual_spoofed, quarterly_spoofed, banks_spoofed = spoofer.spoof_all(
         annual_path=original_dir / "firms_annual.csv",
         quarterly_path=original_dir / "firms_quarterly.csv",
-        banks_path=original_dir / "banks.csv"
+        banks_path=original_dir / "banks.csv",
     )
 
     # Save spoofed data
     spoofer.save_spoofed_data(output_dir)
 
     # Verify merge will work
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Verification: Testing Merge Compatibility")
-    print("="*60)
+    print("=" * 60)
 
     annual_companies = set(annual_spoofed["conm"].unique())
     quarterly_companies = set(quarterly_spoofed["conm"].unique())
@@ -414,9 +415,9 @@ def main():
     else:
         print(f"  ❌ WARNING: No company overlap - merge will fail!")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Spoofing Complete!")
-    print("="*60)
+    print("=" * 60)
     print("\nOriginal data backed up to:", original_dir)
     print("Spoofed data saved to:", output_dir)
 
