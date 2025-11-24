@@ -99,8 +99,8 @@ class Simulation:
                     zero_initial_debt=False,
                     zero_initial_deposits=False,
                 )
-        
-        countries_without_row = [c for c in datawrapper.all_country_names if c != 'ROW']
+
+        countries_without_row = [c for c in datawrapper.all_country_names if c != "ROW"]
         countries_with_row = datawrapper.all_country_names
 
         running_multi_country = len(countries_without_row) > 1
@@ -269,7 +269,6 @@ class Simulation:
             self.regional_aggregator.sync_central_banks(self.countries)
 
         for ind, country in enumerate(self.countries.values()):
-
             # Clearing the housing and the credit market
             logging.info("Clearing the housing and the credit market")
             country.prepare_housing_market_clearing()
