@@ -1,6 +1,15 @@
-# HFCS Data Spoofing
+# Confidential Data Spoofing
 
-This directory contains tools for creating spoofed (synthetic) versions of confidential HFCS (Household Finance and Consumption Survey) data that maintain statistical properties while protecting privacy.
+This directory contains tools for creating spoofed (synthetic) versions of confidential data that maintain statistical properties while protecting privacy.
+
+## Datasets
+
+1. **HFCS (Household Finance and Consumption Survey)** - European household financial data
+2. **Compustat** - Corporate financial data for firms and banks
+
+---
+
+# HFCS Data Spoofing
 
 ## Overview
 
@@ -238,4 +247,238 @@ pytest tests/test_macro_data/
 - HFCS reader: [macro_data/readers/population_data/hfcs_reader.py](../macro_data/readers/population_data/hfcs_reader.py)
 - ECB HFCS: https://www.ecb.europa.eu/stats/ecb_surveys/hfcs/html/index.en.html
 - Data exploration report: [hfcs_exploration.md](hfcs_exploration.md)
+
+---
+
+# Compustat Data Spoofing
+
+## Overview
+
+The Compustat data contains confidential company financial information that cannot be published. This spoofing framework creates synthetic versions that:
+
+- ✅ **Remove all company identifiers** (gvkey, conm, tic)
+- ✅ **Maintain merge compatibility** (firms_annual ⟷ firms_quarterly)
+- ✅ **Preserve statistical distributions** (financial metrics)
+- ✅ **Keep structural data intact** (time periods, countries, sectors)
+- ✅ **Pass all validation checks** and existing tests
+
+## Files
+
+### Core Scripts
+
+1. **[explore_compustat_data.py](explore_compustat_data.py)** - Data exploration and analysis
+   - Analyzes three files: firms_annual.csv, firms_quarterly.csv, banks.csv
+   - Identifies direct identifiers that must be removed
+   - Analyzes statistical distributions of financial metrics
+   - Discovers critical merge constraint (conm used for merging)
+   - Generates exploration results JSON
+
+2. **[validate_compustat_coherence.py](validate_compustat_coherence.py)** - Validation checks
+   - Validates company name overlap between annual and quarterly files
+   - Checks time period consistency
+   - Verifies financial data sanity (no negative assets, etc.)
+   - Validates currency-country consistency
+   - Works with both original and spoofed data
+
+3. **[generate_spoofed_compustat.py](generate_spoofed_compustat.py)** - Main spoofing generator
+   - Removes company identifiers (gvkey, conm, conml, tic)
+   - Generates fake but consistent company names
+   - Spoofs financial metrics maintaining distributions
+   - Preserves time periods, countries, sectors, currencies
+   - Backs up original data automatically
+
+### Output Files
+
+- **[compustat_exploration_results.json](compustat_exploration_results.json)** - Machine-readable analysis results
+- **original_compustat/** - Backup of original confidential data (not in git)
+
+## Quick Start
+
+### 1. Generate Spoofed Data
+
+```bash
+# The script automatically backs up original data to spoof_data/original_compustat/
+python spoof_data/generate_spoofed_compustat.py
+```
+
+The script will:
+- Back up original files to `spoof_data/original_compustat/`
+- Generate spoofed data with anonymized company names
+- Replace files in `tests/test_macro_data/unit/sample_raw_data/compustat/`
+- Verify merge compatibility
+
+### 2. Validate Spoofed Data
+
+```bash
+python spoof_data/validate_compustat_coherence.py
+```
+
+## Spoofing Strategy
+
+### Identifiers Removed
+
+**Direct company identifiers completely removed:**
+
+- **gvkey** - Compustat company identifier
+- **conm** - Company name (replaced with fake names)
+- **conml** - Long company name
+- **tic** - Ticker symbol (banks only)
+
+**Fake company names generated:**
+
+- Format: `"{PREFIX} {TYPE} {NUMBER}"` (e.g., "ACME INDUSTRIES 0001")
+- Deterministic generation (same seed = same names)
+- **Critical**: Same fake name used in both annual and quarterly for merge compatibility
+
+### Preserved Columns
+
+These are kept as-is to maintain data usability:
+
+- **Time identifiers**: fyear, fyearq, fqtr, datadate
+- **Location**: loc (country code)
+- **Sector**: gsector (industry sector)
+- **Currency**: curcdq (currency code)
+
+### Financial Metrics Spoofing
+
+**Strictly positive values** (lognormal distribution):
+
+- Assets (atq)
+- Debt (dlttq)
+- Deposits (dptbq, dptcq)
+- Inventory (invtq)
+- Total liabilities (ltq)
+- Equity (teqq)
+- Debt issuance/reduction (dltisy, dltry)
+
+**Can be negative** (normal distribution):
+
+- Equity (ceqq) - can be negative for distressed firms
+- Income (ciq) - can be negative (losses)
+- Profits (gpq) - can be negative
+- Revenue (revtq) - rarely negative but possible
+- Long-term liabilities (lltq) - accounting adjustments
+
+**Employment data** (lognormal):
+
+- emp (number of employees) - strictly non-negative
+
+**Low-cardinality numerics treated as categorical:**
+
+- fqtr (quarters: 1,2,3,4)
+- fyear/fyearq (year: 2014)
+- gsector (industry codes: 10.0, 15.0, ..., 60.0)
+
+## Data Structure
+
+### firms_annual.csv (2,508 records)
+
+Annual financial data for firms:
+
+- 2,503 unique companies
+- 7 countries: GBR, DEU, FRA, MEX, AUT, USA, CAN
+- Year: 2014
+- Columns: emp (employment), datadate, loc
+
+### firms_quarterly.csv (9,267 records)
+
+Quarterly financial data for firms:
+
+- 2,521 unique companies (includes 18 not in annual)
+- Same countries as annual
+- Year: 2014, all quarters
+- Columns: atq, ceqq, dlttq, gpq, invtq, ltq, revtq, gsector, curcdq
+
+**Critical merge constraint:** Annual and quarterly files are merged on `conm` (company name) by the data readers. The spoofing preserves 2,503 companies in both files to ensure successful merging.
+
+### banks.csv (1,691 records)
+
+Quarterly bank financial data:
+
+- 423 unique banks
+- Mostly USA (1,623 records), plus GBR, CAN, FRA, DEU
+- Year: 2014, all quarters
+- Columns: atq, ciq, dlttq, dptcq, ltq, teqq, dltisy, dltry
+
+Banks are separate from firms (only 8 gvkey overlap in original data).
+
+## Results
+
+### Validation Status
+
+✅ **All validation checks pass:**
+
+- 2,503 companies overlap between annual and quarterly (merge will succeed)
+- Time periods consistent (2014)
+- Countries consistent
+- All required columns present
+- Financial data passes sanity checks (no negative assets, deposits, etc.)
+- All macromodel tests pass with spoofed data
+
+### Statistical Quality
+
+**Distribution preservation:**
+
+- Financial metrics maintain similar means and standard deviations
+- Lognormal distributions preserve right-skewed nature of assets/revenue
+- Normal distributions capture potential negative values for income/profits
+
+**Structural preservation:**
+
+- Sector distribution maintained (11 sectors)
+- Country distribution maintained (7 countries)
+- Time periods identical (2014, Q1-Q4)
+- Currency-country mappings preserved
+
+## Limitations
+
+1. **gvkey removed entirely** - Cannot track individual companies across time
+   - Acceptable trade-off for confidentiality
+   - Not needed for macromodel's synthetic firm generation
+
+2. **Company names are obviously fake** - Easy to identify as synthetic
+   - Intentional design choice for transparency
+   - Real names would still be identifiable via financial patterns
+
+3. **Financial metric correlations simplified**
+   - Each variable spoofed independently
+   - Could implement copula methods for better correlation preservation
+   - Current approach sufficient for macromodel validation
+
+4. **Original data in spoof_data/original_compustat/ not in git**
+   - Developers must obtain original Compustat data separately
+   - Spoofed data in tests/ directory sufficient for running tests
+
+## Git History Cleaning
+
+The original Compustat files have been **completely removed from git history** using `git filter-repo`:
+
+```bash
+# Files removed from entire history:
+tests/test_macro_data/unit/sample_raw_data/compustat/firms_annual.csv
+tests/test_macro_data/unit/sample_raw_data/compustat/firms_quarterly.csv
+tests/test_macro_data/unit/sample_raw_data/compustat/banks.csv
+```
+
+Only the spoofed versions exist in the repository history.
+
+## Usage in macromodel
+
+The spoofed data is automatically used by the test suite:
+
+```bash
+# Tests use spoofed data from:
+tests/test_macro_data/unit/sample_raw_data/compustat/
+
+# Run tests to verify
+pytest tests/test_macro_data/
+```
+
+The data readers in `macro_data/readers/population_data/` process the spoofed data identically to original data since all structural relationships are preserved.
+
+## References
+
+- Firms reader: [macro_data/readers/population_data/compustat_firms_reader.py](../macro_data/readers/population_data/compustat_firms_reader.py)
+- Banks reader: [macro_data/readers/population_data/compustat_banks_reader.py](../macro_data/readers/population_data/compustat_banks_reader.py)
+- Exploration results: [compustat_exploration_results.json](compustat_exploration_results.json)
 
