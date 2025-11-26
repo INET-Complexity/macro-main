@@ -128,14 +128,14 @@ base_var_mapping = {
 }
 
 
-def get_var_mapping(round_number: int) -> dict[str, str]:
+def get_var_mapping(variable_suffix: str) -> dict[str, str]:
     """
-    Generate variable mapping for a specific WAS round/wave.
+    Generate variable mapping for a specific WAS round/wave using the variable suffix.
     
     Parameters
     ----------
-    round_number : int
-        The round/wave number (1-8)
+    variable_suffix : str
+        The variable suffix ("w1", "w2", "w3", "w4", "w5", "r6", "r7", "r8")
         
     Returns
     -------
@@ -144,20 +144,14 @@ def get_var_mapping(round_number: int) -> dict[str, str]:
         
     Notes
     -----
-    - For rounds 1-5: uses 'w1', 'w2', 'w3', 'w4', 'w5' (waves)
-    - For rounds 6-8: uses 'r6', 'r7', 'r8' (rounds)
+    - For waves 1-5: uses 'w1', 'w2', 'w3', 'w4', 'w5'
+    - For rounds 6-8: uses 'r6', 'r7', 'r8'
     """
-    # Determine the suffix based on round number
-    if round_number <= 5:
-        suffix = f"w{round_number}"
-    else:
-        suffix = f"r{round_number}"
-    
     # Generate the mapping by replacing the placeholder
     var_mapping = {}
     for was_var, hfcs_var in base_var_mapping.items():
         # Replace the {round} placeholder with the appropriate suffix
-        mapped_var = was_var.format(round=suffix)
+        mapped_var = was_var.format(round=variable_suffix)
         var_mapping[mapped_var] = hfcs_var
     
     return var_mapping
@@ -300,50 +294,35 @@ class WASReader:
         # Resolve the path to ensure it's absolute and correct
         was_data_path = Path(was_data_path).resolve()
         
-        # If round_number not specified, find the most recent dataset before or equal to year
+        # Get configuration for this year (file pattern type, number, and variable suffix)
         if round_number is None:
-            round_number = cls._find_most_recent_round(was_data_path, year)
+            pattern_type, number, suffix = cls._get_was_config_for_year(was_data_path, year)
+        else:
+            # If round_number is explicitly provided, determine pattern type and suffix
+            if round_number <= 5:
+                pattern_type = "wave"
+                suffix = f"w{round_number}"
+            else:
+                pattern_type = "round"
+                suffix = f"r{round_number}"
+            number = round_number
         
-        # Try both round and wave patterns
-        round_person_path = str(was_data_path / f"was_round_{round_number}_person_eul_*.dta")
-        round_household_path = str(was_data_path / f"was_round_{round_number}_hhold_eul_*.dta")
-        wave_person_path = str(was_data_path / f"was_wave_{round_number}_person_eul_*.dta")
-        wave_household_path = str(was_data_path / f"was_wave_{round_number}_hhold_eul_*.dta")
+        # Build file paths based on pattern type
+        person_path = str(was_data_path / f"was_{pattern_type}_{number}_person_eul_*.dta")
+        household_path = str(was_data_path / f"was_{pattern_type}_{number}_hhold_eul_*.dta")
         
         # Find actual files matching the patterns
-        round_person_files = glob.glob(round_person_path)
-        round_household_files = glob.glob(round_household_path)
-        wave_person_files = glob.glob(wave_person_path)
-        wave_household_files = glob.glob(wave_household_path)
+        person_files = glob.glob(person_path)
+        household_files = glob.glob(household_path)
         
-        # Determine which pattern to use (prefer round if both exist)
-        if round_person_files and round_household_files:
-            person_files = round_person_files
-            household_files = round_household_files
-            pattern_type = "round"
-        elif wave_person_files and wave_household_files:
-            person_files = wave_person_files
-            household_files = wave_household_files
-            pattern_type = "wave"
-        else:
-            # Try to find any matching files for better error messages
-            all_person_files = round_person_files + wave_person_files
-            all_household_files = round_household_files + wave_household_files
-            
-            if not all_person_files:
-                raise FileNotFoundError(
-                    f"No person files found matching patterns: "
-                    f"{round_person_path} or {wave_person_path}"
-                )
-            if not all_household_files:
-                raise FileNotFoundError(
-                    f"No household files found matching patterns: "
-                    f"{round_household_path} or {wave_household_path}"
-                )
-            # If we have some files but not both types, use what we have
-            person_files = all_person_files
-            household_files = all_household_files
-            pattern_type = "mixed"
+        if not person_files:
+            raise FileNotFoundError(
+                f"No person files found matching pattern: {person_path}"
+            )
+        if not household_files:
+            raise FileNotFoundError(
+                f"No household files found matching pattern: {household_path}"
+            )
         
         # Read person data
         individuals_df = cls.read_stata(
@@ -351,7 +330,7 @@ class WASReader:
             country_name=country_name,
             country_name_short=country_name_short,
             year=year,
-            round_number=round_number,
+            variable_suffix=suffix,
         )
         
         # Read household data
@@ -360,7 +339,7 @@ class WASReader:
             country_name=country_name,
             country_name_short=country_name_short,
             year=year,
-            round_number=round_number,
+            variable_suffix=suffix,
         )
 
         return cls(
@@ -369,109 +348,90 @@ class WASReader:
             households_df=households_df,
         )
     
-    @staticmethod
-    def _get_round_end_year(round_num: int) -> int:
-        """
-        Get the end year for a given WAS round/wave number.
-        
-        Parameters
-        ----------
-        round_num : int
-            Round/wave number (1-8)
-            
-        Returns
-        -------
-        int
-            End year of the survey period
-            
-        Notes
-        -----
-        - Waves 1-5: 2006-2008, 2008-2010, 2010-2012, 2012-2014, 2014-2016
-        - Rounds 6-8: 2016-2018, 2018-2020, 2020-2022
-        """
-        round_to_year = {
-            1: 2008,  # Wave 1: 2006-2008
-            2: 2010,  # Wave 2: 2008-2010
-            3: 2012,  # Wave 3: 2010-2012
-            4: 2014,  # Wave 4: 2012-2014
-            5: 2016,  # Wave 5: 2014-2016
-            6: 2018,  # Round 6: 2016-2018
-            7: 2020,  # Round 7: 2018-2020
-            8: 2022,  # Round 8: 2020-2022
-        }
-        return round_to_year.get(round_num, 0)
+    # Mapping of years to file pattern type and variable suffix
+    YEAR_TO_WAS_CONFIG = {
+        # Wave 1: 2006-2008
+        2006: ("wave", 1, "w1"),
+        2007: ("wave", 1, "w1"),
+        2008: ("wave", 1, "w1"),
+        # Wave 2: 2009-2010
+        2009: ("wave", 2, "w2"),
+        2010: ("wave", 2, "w2"),
+        # Wave 3: 2011-2012
+        2011: ("wave", 3, "w3"),
+        2012: ("wave", 3, "w3"),
+        # Wave 4: 2013-2014
+        2013: ("wave", 4, "w4"),
+        2014: ("wave", 4, "w4"),
+        # Wave 5: 2015-2016
+        2015: ("wave", 5, "w5"),
+        2016: ("wave", 5, "w5"),
+        # Round 6: 2017-2018
+        2017: ("round", 6, "r6"),
+        2018: ("round", 6, "r6"),
+        # Round 7: 2019-2020
+        2019: ("round", 7, "r7"),
+        2020: ("round", 7, "r7"),
+        # Round 8: 2021-2022
+        2021: ("round", 8, "r8"),
+        2022: ("round", 8, "r8"),
+    }
     
     @staticmethod
-    def _find_most_recent_round(was_data_path: Path, year: int) -> int:
+    def _get_was_config_for_year(was_data_path: Path, year: int) -> tuple[str, int, str]:
         """
-        Find the most recent WAS round/wave number before or equal to the specified year.
+        Get the WAS configuration (file pattern type, number, and variable suffix) for a given year.
         
         Parameters
         ----------
         was_data_path : Path
-            Base path to WAS data files
+            Base path to WAS data files (used for validation only)
         year : int
-            Target year - returns most recent round/wave with end year <= this year
+            Target year
             
         Returns
         -------
-        int
-            The most recent round/wave number found that is <= the specified year
+        tuple[str, int, str]
+            A tuple of (pattern_type, number, suffix) where:
+            - pattern_type: "wave" or "round" (for file naming)
+            - number: The wave/round number (1-8)
+            - suffix: The variable suffix ("w1", "w2", "w3", "w4", "w5", "r6", "r7", "r8")
             
-        Notes
-        -----
-        - Scans for both 'round' (6-8) and 'wave' (1-5) patterns
-        - Returns the highest round number found where end year <= specified year
-        - Waves 1-5 map directly to rounds 1-5
+        Raises
+        ------
+        ValueError
+            If the year is not supported (not in YEAR_TO_WAS_CONFIG mapping)
+        FileNotFoundError
+            If no WAS data files are found in the specified path
         """
-        import glob
-        import re
+        # Check if year is in the mapping
+        if year not in WASReader.YEAR_TO_WAS_CONFIG:
+            supported_years = sorted(WASReader.YEAR_TO_WAS_CONFIG.keys())
+            raise ValueError(
+                f"Year {year} is not supported. Supported years: {min(supported_years)}-{max(supported_years)}"
+            )
         
-        # Resolve the path to ensure it's absolute and correct
+        pattern_type, number, suffix = WASReader.YEAR_TO_WAS_CONFIG[year]
+        
+        # Validate that files exist for this wave/round
+        import glob
         was_data_path = Path(was_data_path).resolve()
         
-        available_rounds = set()
+        # Check for files based on pattern type
+        if pattern_type == "round":
+            file_pattern = str(was_data_path / f"was_round_{number}_*_eul_*.dta")
+        else:  # pattern_type == "wave"
+            file_pattern = str(was_data_path / f"was_wave_{number}_*_eul_*.dta")
         
-        # Search for all round files (rounds 6-8)
-        round_pattern = str(was_data_path / "was_round_*_person_eul_*.dta")
-        round_files = glob.glob(round_pattern)
+        matching_files = glob.glob(file_pattern)
         
-        for file_path in round_files:
-            match = re.search(r"was_round_(\d+)_person_eul_", file_path)
-            if match:
-                round_num = int(match.group(1))
-                available_rounds.add(round_num)
-        
-        # Search for all wave files (waves 1-5, which correspond to rounds 1-5)
-        wave_pattern = str(was_data_path / "was_wave_*_person_eul_*.dta")
-        wave_files = glob.glob(wave_pattern)
-        
-        for file_path in wave_files:
-            match = re.search(r"was_wave_(\d+)_person_eul_", file_path)
-            if match:
-                wave_num = int(match.group(1))
-                available_rounds.add(wave_num)  # Waves map directly to rounds
-        
-        if not available_rounds:
+        if not matching_files:
             raise FileNotFoundError(
-                f"No WAS data files found in {was_data_path}. "
-                f"Expected files matching patterns: was_round_*_person_eul_*.dta or was_wave_*_person_eul_*.dta"
+                f"No WAS data files found for {pattern_type} {number} in {was_data_path}. "
+                f"Expected files matching: was_{pattern_type}_{number}_*_eul_*.dta"
             )
         
-        # Filter rounds to those with end year <= specified year, then get the maximum
-        valid_rounds = [
-            r for r in available_rounds 
-            if WASReader._get_round_end_year(r) <= year
-        ]
-        
-        if not valid_rounds:
-            available_years = sorted([WASReader._get_round_end_year(r) for r in available_rounds])
-            raise ValueError(
-                f"No WAS dataset found for year {year} or earlier. "
-                f"Available datasets end in years: {available_years}"
-            )
-        
-        return max(valid_rounds)
+        return (pattern_type, number, suffix)
 
     @staticmethod
     def read_stata(
@@ -479,7 +439,7 @@ class WASReader:
         country_name: str,
         country_name_short: str,
         year: int,
-        round_number: int,
+        variable_suffix: str,
     ) -> pd.DataFrame:
         """
         Read and process a single WAS Stata (.dta) file.
@@ -499,8 +459,8 @@ class WASReader:
             Two-letter country code for filtering
         year : int
             Survey year
-        round_number : int
-            WAS round/wave number for variable mapping
+        variable_suffix : str
+            Variable suffix for mapping ("w1", "w2", "w3", "w4", "w5", "r6", "r7", "r8")
 
         Returns
         -------
@@ -516,7 +476,7 @@ class WASReader:
         df = pd.read_stata(path, preserve_dtypes=False, convert_categoricals=False)
         
         # Get the appropriate variable mapping for this round/wave
-        var_mapping = get_var_mapping(round_number)
+        var_mapping = get_var_mapping(variable_suffix)
         
         # Create case-insensitive column lookup
         df_columns_lower = {col.lower(): col for col in df.columns}

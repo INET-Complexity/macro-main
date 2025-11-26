@@ -134,7 +134,7 @@ class TestWASReader:
             country_name="United Kingdom",
             country_name_short="GB",
             year=2022,
-            was_data_path=Path("/path/to/was/data"),
+            was_data_path=Path("./data/raw_data/was/stata"),
             round_number=7,
         )
         
@@ -164,7 +164,7 @@ class TestWASReader:
                 country_name="United Kingdom",
                 country_name_short="GB",
                 year=2022,
-                was_data_path=Path("/path/to/was/data"),
+                was_data_path=Path("./data/raw_data/was/stata"),
                 round_number=7,
             )
 
@@ -185,7 +185,7 @@ class TestWASReader:
                 country_name="United Kingdom",
                 country_name_short="GB",
                 year=2022,
-                was_data_path=Path("/path/to/was/data"),
+                was_data_path=Path("./data/raw_data/was/stata"),
                 round_number=7,
             )
 
@@ -323,53 +323,86 @@ class TestWASReader:
         assert was_reader_uk.country_name_short == "UK"
 
     def test_was_reader_with_sample_data(self, data_path):
-        """Test WASReader with actual sample data from the test dataset."""
-        # This test uses the actual sample data to verify the reader works end-to-end
-        was_data_path = data_path / "was"
+        """Test WASReader with actual sample data from the test dataset or real data location."""
+        # Data is always in inet-macro-dev/data/raw_data/was/stata relative to project root
+        # Test file is at: tests/test_macro_data/unit/test_readers/test_population_data/test_was_reader.py
+        # So project root is 6 levels up
+        test_file_path = Path(__file__).resolve()
+        project_root = test_file_path.parent.parent.parent.parent.parent.parent
+        actual_data_path = project_root / "inet-macro-dev" / "data" / "raw_data" / "was" / "stata"
         
-        # Check if sample data exists
-        person_files = list(was_data_path.glob("was_round_7_person_eul_*.dta"))
-        household_files = list(was_data_path.glob("was_round_7_hhold_eul_*.dta"))
+        # Fall back to test sample data location
+        test_sample_data_path = data_path / "was"
         
-        if person_files and household_files:
-            # Test reading the actual sample data
-            was_reader = WASReader.from_stata(
-                country_name="United Kingdom",
-                country_name_short="GB",
-                year=2022,
-                was_data_path=was_data_path,
-                round_number=7,
-            )
+        # Determine which path to use and what round number
+        was_data_path = None
+        round_number = None
+        
+        # Check actual data location first (data is in stata subdirectory)
+        if actual_data_path.exists() and actual_data_path.is_dir():
+            # Check for any round files (rounds 6-8) or wave files (waves 1-5)
+            for r in range(8, 0, -1):  # Check from most recent (8) to oldest (1)
+                person_files = list(actual_data_path.glob(f"was_round_{r}_person*.dta")) + \
+                              list(actual_data_path.glob(f"was_wave_{r}_person*.dta"))
+                household_files = list(actual_data_path.glob(f"was_round_{r}_hhold*.dta")) + \
+                                 list(actual_data_path.glob(f"was_wave_{r}_hhold*.dta"))
+                
+                if person_files and household_files:
+                    was_data_path = actual_data_path
+                    round_number = r
+                    break
+        
+        # If not found in actual data location, try test sample data location
+        if was_data_path is None and test_sample_data_path.exists() and test_sample_data_path.is_dir():
+            # Check for round 7 files in test sample location (original test expectation)
+            person_files = list(test_sample_data_path.glob("was_round_7_person*.dta")) + \
+                          list(test_sample_data_path.glob("was_wave_7_person*.dta"))
+            household_files = list(test_sample_data_path.glob("was_round_7_hhold*.dta")) + \
+                             list(test_sample_data_path.glob("was_wave_7_hhold*.dta"))
             
-            # Verify the reader was created successfully
-            assert isinstance(was_reader, WASReader)
-            assert was_reader.country_name_short == "GB"
-            
-            # Verify we have some data
-            assert len(was_reader.individuals_df) > 0
-            assert len(was_reader.households_df) > 0
-            
-            # Verify that the data has been processed (variable names mapped)
-            # The original WAS variable names should not be present
-            original_was_vars = ['pidno', 'sexr7', 'DVAge17r7', 'dvgrspayannualr7']
-            for var in original_was_vars:
-                if var in was_reader.individuals_df.columns:
-                    # If the original variable is still there, it means it wasn't mapped
-                    # This is okay if the variable doesn't exist in the sample data
-                    pass
-            
-            # Verify that some mapped variables are present
-            mapped_vars = ['Sex', 'Grouped age (17 categories)', 'Gross annual income employee main job (including bonuses and commission received)', 'Total gross regular household annual income']
-            found_mapped_vars = [var for var in mapped_vars if var in was_reader.individuals_df.columns]
-            assert len(found_mapped_vars) > 0, "No mapped variables found in individuals data"
-            
-            # Verify that Personal identifier is set as index (if pidno column exists in the data)
-            if 'Personal identifier' in was_reader.individuals_df.columns:
-                # If Personal identifier column exists, it should be the index
-                assert was_reader.individuals_df.index.name == 'Personal identifier'
-            else:
-                # If no Personal identifier column, the index should be the default RangeIndex
-                assert was_reader.individuals_df.index.name is None
-            
+            if person_files and household_files:
+                was_data_path = test_sample_data_path
+                round_number = 7
+        
+        if was_data_path is None or round_number is None:
+            pytest.skip("WAS data files not found in either actual data location "
+                       f"({actual_data_path}) or test sample location ({test_sample_data_path})")
+        
+        # Test reading the actual data
+        was_reader = WASReader.from_stata(
+            country_name="United Kingdom",
+            country_name_short="GB",
+            year=2022,
+            was_data_path=was_data_path,
+            round_number=round_number,
+        )
+        
+        # Verify the reader was created successfully
+        assert isinstance(was_reader, WASReader)
+        assert was_reader.country_name_short == "GB"
+        
+        # Verify we have some data
+        assert len(was_reader.individuals_df) > 0
+        assert len(was_reader.households_df) > 0
+        
+        # Verify that the data has been processed (variable names mapped)
+        # The original WAS variable names should not be present
+        original_was_vars = ['pidno', 'sexr7', 'DVAge17r7', 'dvgrspayannualr7']
+        for var in original_was_vars:
+            if var in was_reader.individuals_df.columns:
+                # If the original variable is still there, it means it wasn't mapped
+                # This is okay if the variable doesn't exist in the sample data
+                pass
+        
+        # Verify that some mapped variables are present
+        mapped_vars = ['Sex', 'Grouped age (17 categories)', 'Gross annual income employee main job (including bonuses and commission received)', 'Total gross regular household annual income']
+        found_mapped_vars = [var for var in mapped_vars if var in was_reader.individuals_df.columns]
+        assert len(found_mapped_vars) > 0, "No mapped variables found in individuals data"
+        
+        # Verify that Personal identifier is set as index (if pidno column exists in the data)
+        if 'Personal identifier' in was_reader.individuals_df.columns:
+            # If Personal identifier column exists, it should be the index
+            assert was_reader.individuals_df.index.name == 'Personal identifier'
         else:
-            pytest.skip("Sample WAS data files not found")
+            # If no Personal identifier column, the index should be the default RangeIndex
+            assert was_reader.individuals_df.index.name is None

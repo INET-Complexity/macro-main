@@ -177,7 +177,7 @@ class SyntheticWASPopulation(SyntheticPopulation):
         consumption_weights_by_income: np.ndarray,
         investment: np.ndarray,
     ):
-        # WAS data is UK-specific, so we hardcode UK values regardless of input
+        # WAS data is UK-specific, so UK values hardcodedregardless of input
         # This maintains interface compatibility while ensuring UK-only usage
         uk_country_name = "GBR"
         uk_country_name_short = "GB"
@@ -253,14 +253,54 @@ class SyntheticWASPopulation(SyntheticPopulation):
         uk_country = Country.UNITED_KINGDOM  # Use UNITED_KINGDOM enum value for UK
         
         # Get WAS data for UK (regardless of input country_name)
-        # Try looking up by Country object first, then by string "GBR" if needed
-        was_reader = readers.was.get(uk_country) or readers.was.get("GBR")
+        # Try looking up by Country object first
+        was_reader = readers.was.get(uk_country)
+        
+        # If not found, try to find any Country object in the dictionary that represents UK
+        if was_reader is None:
+            for country_key in readers.was.keys():
+                if (hasattr(country_key, 'value') and country_key.value == "GBR") or \
+                   (hasattr(country_key, 'to_two_letter_code') and country_key.to_two_letter_code() == "GB"):
+                    was_reader = readers.was[country_key]
+                    break
+        
         if was_reader is None:
             raise ValueError(f"No WAS data available for UK (WAS is UK-specific)")
 
         # Get household and individual data from WAS
         households_df = was_reader.households_df.copy()
         individuals_df = was_reader.individuals_df.copy()
+        
+        # Debug: Check raw WAS data values
+        print(f"\nDEBUG WAS: Raw household data shape: {households_df.shape}")
+        print(f"DEBUG WAS: ALL raw household columns: {list(households_df.columns)}")
+        key_cols_check = [
+            "Value of main residence",
+            "Total value of savings accounts", 
+            "Total mortgage on main residence",
+            "Total gross regular household annual income"
+        ]
+        for col in key_cols_check:
+            if col in households_df.columns:
+                non_zero = (households_df[col] != 0).sum()
+                non_na = households_df[col].notna().sum()
+                mean_val = households_df[col].mean() if non_na > 0 else 0
+                print(f"DEBUG WAS: {col}: {non_na} non-NA, {non_zero} non-zero, mean={mean_val:,.0f}")
+            else:
+                print(f"DEBUG WAS: {col}: COLUMN NOT FOUND")
+        
+        # Debug: Check for savings-related columns (case-insensitive)
+        all_cols_lower = [c.lower() for c in households_df.columns]
+        savings_cols = [c for c in households_df.columns if any(term in c.lower() for term in ['sav', 'deposit', 'saval', 'bank', 'cash', 'liquid'])]
+        if savings_cols:
+            print(f"DEBUG WAS: Found savings-related columns: {savings_cols}")
+            for col in savings_cols:
+                non_zero = (households_df[col] != 0).sum()
+                non_na = households_df[col].notna().sum()
+                mean_val = households_df[col].mean() if non_na > 0 else 0
+                print(f"DEBUG WAS:   {col}: {non_na} non-NA, {non_zero} non-zero, mean={mean_val:,.0f}")
+        else:
+            print(f"DEBUG WAS: No savings-related columns found. Searched for: sav, deposit, saval, bank, cash, liquid")
 
         # Get unemployment and participation rates from labour stats
         unemployment_rate = exogenous_data.labour_stats.loc[f"{year}-Q{quarter}", "Unemployment Rate (Value)"].iloc[0]
@@ -467,16 +507,26 @@ class SyntheticWASPopulation(SyntheticPopulation):
         if "Rent Paid" not in households_df.columns:
             if "How much is usual household rent" in households_df.columns:
                 households_df["Rent Paid"] = households_df["How much is usual household rent"]
+            # Also check for original WAS column name variations
+            elif "dvrentpaid" in households_df.columns.str.lower().str[:9].any():
+                rent_col = [c for c in households_df.columns if c.lower().startswith("dvrentpaid")][0]
+                households_df["Rent Paid"] = households_df[rent_col]
         
         # Ensure "Value of the Main Residence" exists (standard name, mapped from "Value of main residence")
         if "Value of the Main Residence" not in households_df.columns:
             if "Value of main residence" in households_df.columns:
                 households_df["Value of the Main Residence"] = households_df["Value of main residence"]
+            # Also check for "Current value of main residence" (alternative WAS mapping)
+            elif "Current value of main residence" in households_df.columns:
+                households_df["Value of the Main Residence"] = households_df["Current value of main residence"]
         
         # Ensure "Value of other Properties" exists (standard name, mapped from "Total value of other houses")
         if "Value of other Properties" not in households_df.columns:
             if "Total value of other houses" in households_df.columns:
                 households_df["Value of other Properties"] = households_df["Total value of other houses"]
+            # Also check for alternative WAS column names
+            elif "Total value of other property excluding main property" in households_df.columns:
+                households_df["Value of other Properties"] = households_df["Total value of other property excluding main property"]
         
         # Ensure "Rental Income from Real Estate" exists (standard name, mapped from WAS column)
         if "Rental Income from Real Estate" not in households_df.columns:
@@ -553,6 +603,15 @@ class SyntheticWASPopulation(SyntheticPopulation):
             hfcs_individuals_data=individuals_df,
             n_households=scale,
         )
+        
+        # Debug: Check values after sampling
+        print(f"\nDEBUG WAS: After sampling, household data shape: {households_df.shape}")
+        for col in ["Value of the Main Residence", "Wealth in Deposits", "Total value of savings accounts"]:
+            if col in households_df.columns:
+                non_zero = (households_df[col] != 0).sum()
+                non_na = households_df[col].notna().sum()
+                mean_val = households_df[col].mean() if non_na > 0 else 0
+                print(f"DEBUG WAS: After sampling - {col}: {non_na} non-NA, {non_zero} non-zero, mean={mean_val:,.0f}")
 
         # Set initial values
         set_initial_values(households_df, scale)
@@ -677,9 +736,28 @@ class SyntheticWASPopulation(SyntheticPopulation):
 
     def set_household_deposits(self) -> None:
         """Set deposits wealth from WAS data."""
+        # Check if column exists, if not try to find it or create with 0
         if "Total value of savings accounts" not in self.household_data.columns:
+            # Check if it already exists as "Wealth in Deposits" (might have been set earlier)
+            if "Wealth in Deposits" in self.household_data.columns:
+                # Use existing value, don't overwrite
+                return
+            # Savings data not available in this WAS wave/round - set to 0
+            # Note: Some WAS waves (e.g., Wave 4) may not include savings account data at household level
+            logging.warning(
+                f"WAS data does not contain 'Total value of savings accounts' column. "
+                f"Setting 'Wealth in Deposits' to 0.0 for all households. "
+                f"This may be expected for certain WAS waves/rounds."
+            )
             self.household_data["Total value of savings accounts"] = 0.0
-        self.household_data["Wealth in Deposits"] = self.household_data["Total value of savings accounts"].fillna(0)
+        # Only fillna if the column has actual data, preserve existing values
+        if "Wealth in Deposits" not in self.household_data.columns:
+            self.household_data["Wealth in Deposits"] = self.household_data["Total value of savings accounts"].fillna(0)
+        else:
+            # If column exists, update only NaN values, preserve existing data
+            self.household_data["Wealth in Deposits"] = self.household_data["Wealth in Deposits"].fillna(
+                self.household_data["Total value of savings accounts"].fillna(0)
+            )
 
     def set_household_other_financial_assets(self) -> None:
         """Set other financial assets wealth from WAS data."""

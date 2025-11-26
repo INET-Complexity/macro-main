@@ -123,8 +123,8 @@ def set_household_housing_data(
     household_data["Number of Properties other than Household Main Residence"] = household_data[
         "Number of Properties other than Household Main Residence"
     ].astype(int)
-    # Value of other properties
-    household_data.loc[:, "Value of other Properties"] *= scale
+    # DO NOT scale "Value of other Properties" - it's already in correct monetary units
+    # The scale factor is for population size, not monetary values
     household_without_additional_properties = (
         household_data["Number of Properties other than Household Main Residence"] == 0
     )
@@ -217,8 +217,10 @@ def fill_rent(
     Returns:
         pd.DataFrame: Updated household data with filled-in values for rent paid and value of the main residence.
     """
+    # Scale rent by scale factor (rent is per household, so scaling makes sense for aggregate)
     household_data.loc[:, "Rent Paid"] *= scale
-    household_data.loc[:, "Value of the Main Residence"] *= scale
+    # DO NOT scale "Value of the Main Residence" - it's already in correct monetary units
+    # The scale factor is for population size, not monetary values
     household_data.loc[households_renting & (household_data["Rent Paid"] == 0.0), "Rent Paid"] = np.nan
     household_data.loc[
         households_owning & (household_data["Value of the Main Residence"] == 0.0), "Value of the Main Residence"
