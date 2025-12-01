@@ -473,7 +473,7 @@ class EuroStatReader:
                 return float(res) * 1e6 * ratio
 
     # historic domestic
-    def get_total_bank_equity(self, country: str, year: int, proxy_country: str = "FRA", ratio: float = 1.0) -> float:
+    def get_total_bank_equity(self, country: str | Country, year: int, proxy_country: str | Country = "FRA", ratio: float = 1.0) -> float:
         """
         Get total bank equity for a specific country and year.
 
@@ -491,8 +491,28 @@ class EuroStatReader:
         if isinstance(country, Region):
             ratio = country.va_ratio
             country = country.parent_country
+        
+        # Convert Country enum to string if needed
+        if isinstance(country, Country):
+            country = country.value  # Get the 3-letter code
+        if isinstance(proxy_country, Country):
+            proxy_country = proxy_country.value
+        
         df = self.data["financial_balance_sheets"]
-        country_name_short = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"].values[0]
+        # Check if country is in the mapping, if not use proxy
+        country_mapping = self.c_map.loc[self.c_map["Alpha-3 code"] == country, "Alpha-2 code"]
+        if len(country_mapping) == 0:
+            # Country not in mapping (e.g., GBR), use proxy country
+            if proxy_country in self.total_output:
+                return (
+                    self.total_output[country]
+                    / self.total_output[proxy_country]
+                    * self.get_total_bank_equity(proxy_country, year)
+                )
+            else:
+                return self.get_total_bank_equity(proxy_country, year) * ratio
+        
+        country_name_short = country_mapping.values[0]
         df = df.loc[
             df[r"unit,co_nco,sector,finpos,na_item,geo\time"] == "MIO_NAC,NCO,S122_S123,ASS,F5," + country_name_short
         ]

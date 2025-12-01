@@ -12,6 +12,7 @@ The module supports:
 
 Key features:
 - Support for both EU countries and non-EU countries (via proxy mechanism)
+- UK-specific method using WAS (Wealth and Assets Survey) data
 - Integration of various economic markets and agents
 - Handling of financial flows and relationships between agents
 - Calculation of key economic indicators (GDP by different methods)
@@ -31,6 +32,20 @@ Example:
         industries=industries,
         readers=data_readers,
         exogenous_country_data=france_data,
+        country_industry_data=industry_data,
+        year_range=1,
+        goods_criticality_matrix=criticality_matrix
+    )
+
+    # Create a synthetic UK country (uses WAS data)
+    uk = SyntheticCountry.uk_synthetic_country(
+        country=Country.UNITED_KINGDOM,
+        year=2023,
+        quarter=1,
+        country_configuration=country_config,
+        industries=industries,
+        readers=data_readers,
+        exogenous_country_data=uk_data,
         country_industry_data=industry_data,
         year_range=1,
         goods_criticality_matrix=criticality_matrix
@@ -103,6 +118,9 @@ from macro_data.processing.synthetic_matching.matching_individuals_with_firms im
 )
 from macro_data.processing.synthetic_population.hfcs_synthetic_population import (
     SyntheticHFCSPopulation,
+)
+from macro_data.processing.synthetic_population.was_synthetic_population import (
+    SyntheticWASPopulation,
 )
 from macro_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
@@ -212,8 +230,9 @@ class SyntheticCountry:
             SyntheticCountry: Initialized synthetic country instance
 
         Note:
-            This method should only be used for EU member countries. For non-EU
-            countries, use proxied_synthetic_country instead.
+            This method should only be used for EU member countries. For the UK,
+            use uk_synthetic_country instead. For other non-EU countries,
+            use proxied_synthetic_country instead.
         """
         central_government = DefaultSyntheticCGovernment.from_readers(readers, country, year, year_range=year_range)
 
@@ -268,6 +287,221 @@ class SyntheticCountry:
             banks_data_configuration=country_configuration.banks_configuration,
             quarter=quarter,
             inflation_data=exogenous_country_data.inflation,
+            proxy_eu_country=None,
+        )
+
+        synthetic_goods_market = SyntheticGoodsMarket.from_readers(
+            country_name=country, year=year, quarter=quarter, readers=readers, exogenous_data=exogenous_country_data
+        )
+
+        tax_data = TaxData.from_readers(readers, country, year)
+
+        total_imputed_rent = readers.icio[year].imputed_rents[country]
+
+        dividend_payout_ratio = readers.eurostat.dividend_payout_ratio(country=country, year=year)
+        long_term_interest_rate = readers.oecd_econ.read_long_term_interest_rates(country=country, year=year)
+        policy_rate_markup = readers.eurostat.firm_risk_premium(country=country, year=year)
+
+        if set(industries).issubset(ALL_INDUSTRIES):
+            weights_by_income = readers.expand_weights_by_income(year=year, country=country)
+        else:
+            weights_by_income = readers.oecd_econ.get_household_consumption_by_income_quantile(
+                country=country, year=year
+            )
+
+        cls.match_households_firms_banks(banks, firms, industries, population, tax_data)
+
+        housing_data = set_housing_df(
+            synthetic_population=population,
+            rental_income_taxes=tax_data.income_tax,
+            social_housing_rent=population.social_housing_rent,
+            total_imputed_rent=total_imputed_rent,
+        )
+
+        housing_market = DefaultSyntheticHousingMarket(country, housing_data)
+
+        if emission_factors is not None:
+            emitting_industry_indices = np.array(
+                [list(industries).index(industry) for industry in ["B05a", "B05b", "B05c", "C19"]]
+            )
+            emission_factors_array = emission_factors.emissions_array
+        else:
+            emitting_industry_indices = None
+            emission_factors_array = None
+
+        credit_market = cls.set_wealth_and_credit(
+            banks=banks,
+            central_government=central_government,
+            country_configuration=country_configuration,
+            country_industry_data=country_industry_data,
+            firms=firms,
+            population=population,
+            tax_data=tax_data,
+            central_bank=central_bank,
+            weights_by_income=weights_by_income,
+            emitting_indices=emitting_industry_indices,
+            emission_factors_array=emission_factors_array,
+        )
+
+        return cls(
+            population=population,
+            firms=firms,
+            credit_market=credit_market,
+            banks=banks,
+            central_bank=central_bank,
+            central_government=central_government,
+            government_entities=government_entities,
+            housing_market=housing_market,
+            dividend_payout_ratio=dividend_payout_ratio,
+            long_term_interest_rate=long_term_interest_rate,
+            policy_rate_markup=policy_rate_markup,
+            industry_data=country_industry_data,
+            goods_criticality_matrix=goods_criticality_matrix,
+            tax_data=tax_data,
+            exogenous_data=exogenous_country_data,
+            scale=country_configuration.scale,
+            country_name=country,
+            country_configuration=country_configuration,
+            industries=industries,
+            consumption_weights_by_income=weights_by_income,
+            synthetic_goods_market=synthetic_goods_market,
+            emission_factors=emission_factors,
+        )
+
+    @classmethod
+    def uk_synthetic_country(
+        cls,
+        country: Country,
+        year: int,
+        quarter: int,
+        country_configuration: CountryDataConfiguration,
+        industries: list[str],
+        readers: DataReaders,
+        exogenous_country_data: ExogenousCountryData,
+        country_industry_data: dict[str, pd.DataFrame],
+        year_range: int,
+        goods_criticality_matrix: pd.DataFrame,
+        emission_factors: Optional[EmissionsData] = None,
+    ) -> "SyntheticCountry":
+        """
+        Create a synthetic country object for the United Kingdom.
+
+        This method initializes all economic agents and markets for the UK using
+        UK-specific data sources. It prioritizes WAS (Wealth and Assets Survey) data
+        for population, falling back to HFCS if WAS is not available. It sets up the
+        complete economic structure including:
+        - Government institutions (central bank, government entities)
+        - Financial system (banks, credit markets)
+        - Real economy (firms, households, goods market)
+        - Environmental factors (if emission data provided)
+
+        Args:
+            country (Country): The UK country identifier (should be Country.UNITED_KINGDOM)
+            year (int): Base year for data generation
+            quarter (int): Base quarter for data generation
+            country_configuration (CountryDataConfiguration): Country-specific settings
+            industries (list[str]): List of industry sectors to model
+            readers (DataReaders): Data source readers
+            exogenous_country_data (ExogenousCountryData): External economic factors
+            country_industry_data (dict[str, pd.DataFrame]): Industry-level data
+            year_range (int): Number of years of historical data to consider
+            goods_criticality_matrix (pd.DataFrame): Matrix of goods dependencies
+            emission_factors (Optional[EmissionsData]): Environmental impact factors
+
+        Returns:
+            SyntheticCountry: Initialized synthetic country instance
+
+        Note:
+            This method is specifically designed for the UK and uses WAS data when available.
+            For other EU countries, use eu_synthetic_country instead.
+        """
+        central_government = DefaultSyntheticCGovernment.from_readers(readers, country, year, year_range=year_range)
+
+        total_unemployment_benefits = central_government.central_gov_data["Total Unemployment Benefits"].values[0]
+
+        government_entities = DefaultSyntheticGovernmentEntities.from_readers(
+            readers=readers,
+            country_name=country,
+            year=year,
+            quarter=quarter,
+            exogenous_country_data=exogenous_country_data,
+            industry_data=country_industry_data,
+            single_government_entity=country_configuration.single_government_entity,
+            emission_factors=emission_factors,
+        )
+
+        central_bank = DefaultSyntheticCentralBank.from_readers(
+            country, year, quarter, readers, exogenous_country_data, country_configuration.central_bank_configuration
+        )
+
+        # Try to find WAS data for UK population
+        was_reader = readers.was.get(country)
+        # If not found, try to find any Country object in the dictionary that represents UK
+        if was_reader is None:
+            for country_key in readers.was.keys():
+                if (hasattr(country_key, 'value') and country_key.value == "GBR") or \
+                   (hasattr(country_key, 'to_two_letter_code') and country_key.to_two_letter_code() == "GB"):
+                    was_reader = readers.was[country_key]
+                    break
+        
+        # Use WAS population if available, otherwise fall back to HFCS
+        if was_reader is not None:
+            population: SyntheticWASPopulation = SyntheticWASPopulation.from_readers(
+                readers=readers,
+                country_name=country,
+                year=year,
+                quarter=quarter,
+                industry_data=country_industry_data,
+                industries=industries,
+                scale=country_configuration.scale,
+                total_unemployment_benefits=total_unemployment_benefits,
+                country_name_short=country.to_two_letter_code(),
+                exogenous_data=exogenous_country_data,
+            )
+        else:
+            population: SyntheticHFCSPopulation = SyntheticHFCSPopulation.from_readers(
+                readers=readers,
+                country_name=country,
+                year=year,
+                quarter=quarter,
+                industry_data=country_industry_data,
+                industries=industries,
+                scale=country_configuration.scale,
+                total_unemployment_benefits=total_unemployment_benefits,
+                country_name_short=country.to_two_letter_code(),
+                exogenous_data=exogenous_country_data,
+            )
+
+        firms = DefaultSyntheticFirms.from_readers(
+            readers=readers,
+            country_name=country,
+            year=year,
+            industry_data=country_industry_data,
+            industries=industries,
+            scale=country_configuration.scale,
+            n_employees_per_industry=population.number_employees_by_industry,
+            firm_configuration=country_configuration.firms_configuration,
+            emission_factors=emission_factors,
+        )
+
+        # For UK (non-EU country), use a proxy EU country for Eurostat data
+        proxy_eu_country = None
+        if country_configuration.eu_proxy_country:
+            proxy_eu_country = country_configuration.eu_proxy_country
+        else:
+            # Default to France if no proxy specified
+            proxy_eu_country = Country.FRANCE
+        
+        banks = DefaultSyntheticBanks.from_readers(
+            readers=readers,
+            country_name=country,
+            year=year,
+            scale=country_configuration.scale,
+            single_bank=country_configuration.single_bank,
+            banks_data_configuration=country_configuration.banks_configuration,
+            quarter=quarter,
+            inflation_data=exogenous_country_data.inflation,
+            proxy_eu_country=proxy_eu_country,
         )
 
         synthetic_goods_market = SyntheticGoodsMarket.from_readers(
@@ -393,6 +627,9 @@ class SyntheticCountry:
 
         Returns:
             SyntheticCountry: Initialized synthetic country instance
+
+        Note:
+            This method should not be used for the UK. For the UK, use uk_synthetic_country instead.
         """
         central_government = DefaultSyntheticCGovernment.from_readers(readers, country, year, year_range=year_range)
 

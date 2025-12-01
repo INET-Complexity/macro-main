@@ -42,6 +42,11 @@ def configuration2():
     return PARENT / "default_data_config.yaml"
 
 
+@pytest.fixture(scope="module", name="gbr_data_config_path")
+def gbr_data_config_path():
+    return PARENT / "gbr_data_config.yaml"
+
+
 @pytest.fixture(scope="module", name="gen_data_config_path")
 def configuration3():
     return PARENT / "data_config_gen.yaml"

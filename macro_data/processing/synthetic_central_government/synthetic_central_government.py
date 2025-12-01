@@ -133,7 +133,12 @@ class SyntheticCentralGovernment(ABC):
             synthetic_banks (SyntheticBanks): Bank data container
             industry_data (dict[str, pd.DataFrame]): Industry-level economic data
         """
-        in_social_housing = synthetic_population.household_data["Tenure Status of the Main Residence"] == -1
+        # Use Tenure column if available, otherwise fall back to original column name
+        tenure_col = "Tenure" if "Tenure" in synthetic_population.household_data.columns else "Tenure Status of the Main Residence"
+        if tenure_col not in synthetic_population.household_data.columns:
+            in_social_housing = pd.Series(False, index=synthetic_population.household_data.index)
+        else:
+            in_social_housing = synthetic_population.household_data[tenure_col] == -1
         total_social_housing_rent = synthetic_population.social_housing_rent * in_social_housing.sum()
         firm_taxes_and_subsidies = float(synthetic_firms.firm_data["Taxes paid on Production"].sum())
         firm_corporate_taxes = float(synthetic_firms.firm_data["Corporate Taxes Paid"].sum())
