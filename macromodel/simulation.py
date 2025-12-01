@@ -99,8 +99,8 @@ class Simulation:
                     zero_initial_debt=False,
                     zero_initial_deposits=False,
                 )
-
-        countries_without_row = [c for c in datawrapper.all_country_names if c != "ROW"]
+        
+        countries_without_row = [c for c in datawrapper.all_country_names if c != 'ROW']
         countries_with_row = datawrapper.all_country_names
 
         running_multi_country = len(countries_without_row) > 1
@@ -431,16 +431,16 @@ class Simulation:
         """
         return self.countries[country].shallow_output()
 
-    def get_country_gdp_debug_output(self, country: str):
-        """Get detailed GDP breakdown for a specific country.
+    def get_country_headlines(self, country: str):
+        """Get headlines for a specific country.
 
         Args:
             country (str): Country code to get data for
 
         Returns:
-            pd.DataFrame: DataFrame containing detailed GDP breakdown for the country
+            pd.DataFrame: DataFrame containing headlines for the country
         """
-        return self.countries[country].gdp_debug_output()
+        return self.countries[country].headlines()
 
     def get_country_gdp_components_df(self, country: str):
         """Get detailed GDP breakdown for a specific country.
