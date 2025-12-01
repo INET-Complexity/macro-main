@@ -269,7 +269,6 @@ class Simulation:
             self.regional_aggregator.sync_central_banks(self.countries)
 
         for ind, country in enumerate(self.countries.values()):
-
             # Clearing the housing and the credit market
             logging.info("Clearing the housing and the credit market")
             country.prepare_housing_market_clearing()
