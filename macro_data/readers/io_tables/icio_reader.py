@@ -236,12 +236,8 @@ class ICIOReader:
         for c in considered_countries:
             if c in imputed_rent_fraction.keys():
                 new_rent_fraction[c] = imputed_rent_fraction[c]
-            elif c.has_microdata:
-                # Countries with microdata but no direct rent data - use average as fallback
-                new_rent_fraction[c] = avg_imputed_rent_fraction
             else:
-                # Countries without microdata - use proxy country's data if available
-                new_rent_fraction[c] = imputed_rent_fraction.get(proxy_country_dict.get(c), avg_imputed_rent_fraction)
+                new_rent_fraction[c] = imputed_rent_fraction.get(proxy_country_dict[c], avg_imputed_rent_fraction)
 
         imputed_rents = {}
         for country_name in considered_countries:

@@ -167,13 +167,13 @@ class DataWrapper:
             np.random.seed(int(time.time()))
 
         for country, country_config in configuration.country_configs.items():
-            if country_config.eu_proxy_country is None and not country.has_microdata:
-                raise ValueError(f"{country} has no household microdata: please set a proxy country with microdata.")
+            if country_config.eu_proxy_country is None and not country.is_eu_country:
+                raise ValueError(f"{country} is not in EU: please set an EU proxy country.")
 
         proxy_country_dict = {
             country: configuration.country_configs[country].eu_proxy_country
             for country in configuration.countries
-            if configuration.country_configs[country].eu_proxy_country is not None
+            if not country.is_eu_country
         }
 
         country_names = configuration.countries
@@ -261,14 +261,10 @@ class DataWrapper:
 
         proxy_inflation = {}
 
-        # Only process countries that need proxies (no microdata)
-        countries_needing_proxy = [
-            country for country in country_names 
-            if not country.has_microdata
-        ]
+        non_eu_countries = [country for country in country_names if not country.is_eu_country]
 
-        for country in countries_needing_proxy:
-            if proxy_country_dict.get(country) is not None:
+        for country in non_eu_countries:
+            if proxy_country_dict[country] is not None:
                 proxy_country = proxy_country_dict[country]
                 inflation = readers.imf_reader.get_inflation(proxy_country)
                 if inflation is None:
@@ -288,57 +284,34 @@ class DataWrapper:
             quarter=quarter,
         )
 
-        synthetic_countries = {}
+        # currently only EU countries implemented
 
-        # UK uses uk_synthetic_country (WAS data)
-        for country in country_names:
-            if country == Country.UNITED_KINGDOM:
-                synthetic_countries[country] = SyntheticCountry.uk_synthetic_country(
-                    country=country,
-                    year=year,
-                    quarter=quarter,
-                    country_configuration=configuration.country_configs[country],
-                    industries=industries,
-                    readers=readers,
-                    exogenous_country_data=exogenous_data[country],
-                    country_industry_data=industry_data[country],
-                    year_range=year_range,
-                    goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
-                    emission_factors=(
-                        EmissionsData.from_readers(
-                            emission_factors, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country, year)
-                        )
-                        if add_emissions
-                        else None
-                    ),
-                )
+        synthetic_countries = {
+            country: SyntheticCountry.eu_synthetic_country(
+                country=country,
+                year=year,
+                quarter=quarter,
+                country_configuration=configuration.country_configs[country],
+                industries=industries,
+                readers=readers,
+                exogenous_country_data=exogenous_data[country],
+                country_industry_data=industry_data[country],
+                year_range=year_range,
+                goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
+                emission_factors=(
+                    EmissionsData.from_readers(
+                        emission_factors, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country, year)
+                    )
+                    if add_emissions
+                    else None
+                ),
+            )
+            for country in country_names
+            if country.is_eu_country
+        }
 
-        # Other countries with microdata use eu_synthetic_country
         for country in country_names:
-            if country.has_microdata and country != Country.UNITED_KINGDOM:
-                synthetic_countries[country] = SyntheticCountry.eu_synthetic_country(
-                    country=country,
-                    year=year,
-                    quarter=quarter,
-                    country_configuration=configuration.country_configs[country],
-                    industries=industries,
-                    readers=readers,
-                    exogenous_country_data=exogenous_data[country],
-                    country_industry_data=industry_data[country],
-                    year_range=year_range,
-                    goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
-                    emission_factors=(
-                        EmissionsData.from_readers(
-                            emission_factors, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country, year)
-                        )
-                        if add_emissions
-                        else None
-                    ),
-                )
-
-        # Countries without microdata that need proxies
-        for country in country_names:
-            if not country.has_microdata:
+            if not country.is_eu_country:
                 synthetic_countries[country] = SyntheticCountry.proxied_synthetic_country(
                     country=country,
                     proxy_country=configuration.country_configs[country].eu_proxy_country,
@@ -351,7 +324,7 @@ class DataWrapper:
                     year_range=year_range,
                     goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
                     quarter=quarter,
-                    proxy_inflation_data=proxy_inflation.get(country, None),
+                    proxy_inflation_data=proxy_inflation[country],
                     emission_factors=(
                         EmissionsData.from_readers(
                             emission_factors, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country, year)

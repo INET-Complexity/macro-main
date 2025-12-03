@@ -131,48 +131,27 @@ def set_housing_df(
     synthetic_population.household_data["Corresponding Additionally Owned Houses ID"] = additionnally_owned_house_ids
 
     housing_df = pd.concat([owners_df, rental_df], ignore_index=True)
-    # Reset index to ensure sequential indexing
-    housing_df = housing_df.reset_index(drop=True)
 
-    # Only process if there's data
-    if len(housing_df) > 0:
-        invalid_values = housing_df["Value"] < 60 * housing_df["Rent"]
-        housing_df.loc[invalid_values, "Value"] = np.nan
-        
-        # Remove outliers only if there's sufficient data and no NaN/Inf values
-        if len(housing_df) > 1 and housing_df[["Rent", "Value"]].notna().all().all():
-            try:
-                housing_df = remove_outliers(housing_df, cols=["Rent", "Value"], quantile=0.2, use_logpdf=False)
-            except (ValueError, RuntimeWarning):
-                # If outlier removal fails, just fill NaNs
-                pass
-        
-        # Only apply imputer if there's data and columns exist
-        if len(housing_df) > 0 and all(col in housing_df.columns for col in ["Rent", "Value"]):
-            try:
-                housing_df = apply_iterative_imputer(housing_df, ["Rent", "Value"])
-            except (ValueError, IndexError):
-                # If imputation fails, just fill NaNs with 0
-                housing_df[["Rent", "Value"]] = housing_df[["Rent", "Value"]].fillna(0)
+    invalid_values = housing_df["Value"] < 60 * housing_df["Rent"]
+    housing_df.loc[invalid_values, "Value"] = np.nan
+
+    housing_df = remove_outliers(housing_df, cols=["Rent", "Value"], quantile=0.2, use_logpdf=False)
+
+    housing_df = apply_iterative_imputer(housing_df, ["Rent", "Value"])
 
     rent_under_social_housing = housing_df["Rent"] < social_housing_rent
     housing_df.loc[rent_under_social_housing, "Rent"] = social_housing_rent
 
-    # Only restate values if there are landlords
-    if len(landlord_ids) > 0:
-        restate_values = np.concatenate(
-            [
-                [property_values[landlord_id] / num_additional_properties[landlord_id]]
-                * num_additional_properties[landlord_id]
-                for landlord_id in landlord_ids
-            ]
-        )
-    else:
-        restate_values = np.array([])
+    restate_values = np.concatenate(
+        [
+            [property_values[landlord_id] / num_additional_properties[landlord_id]]
+            * num_additional_properties[landlord_id]
+            for landlord_id in landlord_ids
+        ]
+    )
     # rented house values stay the same, but I am not sure why this is needed
     # TODO check with Sam
-    if len(restate_values) > 0 and owners_df.shape[0] < len(housing_df):
-        housing_df.loc[owners_df.shape[0] :, "Value"] = restate_values
+    housing_df.loc[owners_df.shape[0] :, "Value"] = restate_values
 
     # owner occupied homes have imputed rents that match the total imputed rent
     owned_houses = housing_df["Is Owner-Occupied"]
@@ -181,11 +160,7 @@ def set_housing_df(
     housing_df.loc[owned_houses, "Rent"] *= rescale_factor
 
     # List of households that own ('1'), part own ('2') or have free use of their home ('4')
-    tenure_col = "Tenure" if "Tenure" in synthetic_population.household_data.columns else "Tenure Status of the Main Residence"
-    if tenure_col not in synthetic_population.household_data.columns:
-        owner_indices = np.ones(len(synthetic_population.household_data), dtype=bool)
-    else:
-        owner_indices = np.isin(synthetic_population.household_data[tenure_col], [1, 2, 4])
+    owner_indices = np.isin(synthetic_population.household_data["Tenure Status of the Main Residence"], [1, 2, 4])
     synthetic_population.household_data.loc[owner_indices, "Rent Imputed"] = housing_df.loc[owned_houses, "Rent"].values
 
     match_renters_to_properties(
@@ -221,13 +196,7 @@ def create_owners_df(synthetic_population: SyntheticPopulation) -> pd.DataFrame:
             - Rent: NaN (filled later with imputed rent)
     """
     # List of households that own ('1'), part own ('2') or have free use of their home ('4')
-    # Use Tenure column if available, otherwise fall back to original column name
-    tenure_col = "Tenure" if "Tenure" in synthetic_population.household_data.columns else "Tenure Status of the Main Residence"
-    if tenure_col not in synthetic_population.household_data.columns:
-        # Default to owning if column doesn't exist
-        households_owning = np.ones(len(synthetic_population.household_data), dtype=bool)
-    else:
-        households_owning = np.isin(synthetic_population.household_data[tenure_col], [1, 2, 4])
+    households_owning = np.isin(synthetic_population.household_data["Tenure Status of the Main Residence"], [1, 2, 4])
     owners_df = pd.DataFrame(index=range(households_owning.sum()))
     owners_df["House ID"] = owners_df.index
 
@@ -293,10 +262,6 @@ def create_rental_df(
     rental_df = pd.DataFrame(index=range(number_available_properties))
     rental_df["House ID"] = rental_df.index + id_start
     rental_df["Is Owner-Occupied"] = False
-    if len(landlord_ids) == 0:
-        # No landlords, return empty DataFrame
-        return pd.DataFrame(columns=["House ID", "Is Owner-Occupied", "Value", "Rent", "Corresponding Owner Household ID"])
-    
     ownership_array = np.concatenate(
         [[landlord_id] * num_additional_properties[landlord_id] for landlord_id in landlord_ids]
     )
@@ -351,11 +316,7 @@ def housing_info_from_population(rental_income_taxes: float, synthetic_populatio
             - landlord_ids (np.ndarray): Unique landlord identifiers
             - num_additional_properties (np.ndarray): Properties per landlord
     """
-    tenure_col = "Tenure" if "Tenure" in synthetic_population.household_data.columns else "Tenure Status of the Main Residence"
-    if tenure_col not in synthetic_population.household_data.columns:
-        num_renters = 0
-    else:
-        num_renters = int(np.sum(synthetic_population.household_data[tenure_col] == 3))
+    num_renters = int(np.sum(synthetic_population.household_data["Tenure Status of the Main Residence"] == 3))
     num_other_properties_owned = int(
         np.sum(synthetic_population.household_data["Number of Properties other than Household Main Residence"])
     )
@@ -401,27 +362,12 @@ def set_social_housing_renters(
         num_renters (int): Total number of renters
         synthetic_population (SyntheticPopulation): Household survey data
     """
-    tenure_col = "Tenure" if "Tenure" in synthetic_population.household_data.columns else "Tenure Status of the Main Residence"
-    if tenure_col not in synthetic_population.household_data.columns:
-        ind_curr_renting = np.array([], dtype=int)
-    else:
-        ind_curr_renting = np.flatnonzero(synthetic_population.household_data[tenure_col] == 3)
-    # Ensure Income column exists
-    if "Income" not in synthetic_population.household_data.columns:
-        # Initialize Income with 0 if not computed yet
-        synthetic_population.household_data["Income"] = 0.0
-    
-    if len(ind_curr_renting) > 0:
-        renters_now_in_sh_rel = np.argsort(synthetic_population.household_data["Income"].values[ind_curr_renting])[
-            0 : num_renters - num_other_properties_owned
-        ]
-    else:
-        renters_now_in_sh_rel = np.array([], dtype=int)
+    ind_curr_renting = np.flatnonzero(synthetic_population.household_data["Tenure Status of the Main Residence"] == 3)
+    renters_now_in_sh_rel = np.argsort(synthetic_population.household_data["Income"].values[ind_curr_renting])[
+        0 : num_renters - num_other_properties_owned
+    ]
     renters_now_in_sh = ind_curr_renting[renters_now_in_sh_rel]
-    tenure_col = "Tenure" if "Tenure" in synthetic_population.household_data.columns else "Tenure Status of the Main Residence"
-    if tenure_col not in synthetic_population.household_data.columns:
-        synthetic_population.household_data[tenure_col] = 1  # Default to owning
-    synthetic_population.household_data.loc[renters_now_in_sh, tenure_col] = -1
+    synthetic_population.household_data.loc[renters_now_in_sh, "Tenure Status of the Main Residence"] = -1
     synthetic_population.household_data.loc[renters_now_in_sh, "Rent Paid"] = synthetic_population.social_housing_rent
 
 
@@ -449,22 +395,12 @@ def match_renters_to_properties(
         max_matching_size (int, optional): Maximum chunk size for processing.
             Defaults to 1000.
     """
-    # Ensure Is Owner-Occupied is boolean, then create boolean mask
-    is_owner = pd.Series(housing_market_df["Is Owner-Occupied"].fillna(False), dtype=bool)
-    rented = ~is_owner
-    # Use iloc with boolean array to avoid index alignment issues
-    if rented.any():
-        rent_rec = housing_market_df.iloc[rented.values, housing_market_df.columns.get_loc("Rent")].values
-    else:
-        rent_rec = np.array([])
+    rented = ~housing_market_df["Is Owner-Occupied"]
+    rent_rec = housing_market_df.loc[rented, "Rent"].values
 
-    tenure_col = "Tenure" if "Tenure" in synthetic_population.household_data.columns else "Tenure Status of the Main Residence"
-    if tenure_col not in synthetic_population.household_data.columns:
-        renters_ind = np.array([], dtype=int)
-        renters = pd.Series(False, index=synthetic_population.household_data.index)
-    else:
-        renters_ind = np.flatnonzero(synthetic_population.household_data[tenure_col] == 3)
-        renters = synthetic_population.household_data[tenure_col] == 3
+    renters_ind = np.flatnonzero(synthetic_population.household_data["Tenure Status of the Main Residence"] == 3)
+
+    renters = synthetic_population.household_data["Tenure Status of the Main Residence"] == 3
     rent_paid = synthetic_population.household_data.loc[renters, "Rent Paid"].values
 
     n_split = int(len(rent_rec) / max_matching_size) if len(rent_rec) > max_matching_size else 1
@@ -527,18 +463,12 @@ def match_renters_to_properties(
 
     # Only reset rent for households that own ('1'), part own ('2') or have free use of their home ('4')
     # Preserve the processed HFCS rent data for renters
-    tenure_col = "Tenure" if "Tenure" in synthetic_population.household_data.columns else "Tenure Status of the Main Residence"
-    if tenure_col not in synthetic_population.household_data.columns:
-        owners = pd.Series(True, index=synthetic_population.household_data.index)
-    else:
-        owners = synthetic_population.household_data[tenure_col].isin([1, 2, 4])
+    owners = synthetic_population.household_data["Tenure Status of the Main Residence"].isin([1, 2, 4])
     synthetic_population.household_data.loc[owners, "Rent Paid"] = 0
 
     # Update rent for renting households using housing market data where available
     # This preserves HFCS-processed rent for households not mapped to specific houses
-    # Ensure Is Owner-Occupied is boolean
-    is_owner_renters = pd.Series(mapped_df["Is Owner-Occupied"].fillna(False), dtype=bool)
-    renter_mapping = mapped_df.loc[~is_owner_renters].dropna()
+    renter_mapping = mapped_df.loc[~mapped_df["Is Owner-Occupied"]].dropna()
     if len(renter_mapping) > 0:
         renter_house_ids = renter_mapping.index
         synthetic_population.household_data.loc[renter_house_ids, "Rent Paid"] = renter_mapping["Rent"]

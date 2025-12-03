@@ -61,52 +61,6 @@ class TestCreator:
 
         assert True
 
-    def test__create_gbr(self, gbr_data_config_path):
-        with open(gbr_data_config_path, "r") as f:
-            config_dict = yaml.safe_load(f)
-        # not necessary to do the country splitting here
-        # since the fixture used only has one country key
-        configuration = DataConfiguration(**config_dict)
-        configuration.prune_date = None
-        configuration.seed = 0
-        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
-        # Check if there is a file in raw data path
-        creator = DataWrapper.from_config(
-            configuration=configuration,
-            raw_data_path=raw_data_path,
-            single_hfcs_survey=True,
-        )
-
-        check_country_credit(creator.synthetic_countries["GBR"])
-
-        check_country_gdp(creator.synthetic_countries["GBR"])
-
-        check_country_rent_consistency(creator.synthetic_countries["GBR"])
-
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp = Path(tmp)
-            tmp_file = tmp / "creator.pkl"
-            creator.save(tmp_file)
-            new_creator = DataWrapper.init_from_pickle(tmp_file)
-
-        assert creator.synthetic_countries.keys() == {"GBR"}
-
-        assert new_creator.synthetic_countries.keys() == {"GBR"}
-
-        new_creator.synthetic_countries["GBR"].reset_firm_function_dependent(
-            capital_inputs_utilisation_rate=0.1,
-            initial_inventory_to_input_fraction=0.1,
-            intermediate_inputs_utilisation_rate=0.2,
-            zero_initial_debt=False,
-            zero_initial_deposits=False,
-        )
-
-        assert new_creator.emission_factors["coal"] > 0
-        assert new_creator.emission_factors["oil"] > 0
-        assert new_creator.emission_factors["gas"] > 0
-
-        assert True
-
     def test__create_all_industries(self, data_config_path):
         with open(data_config_path, "r") as f:
             config_dict = yaml.safe_load(f)
@@ -128,27 +82,6 @@ class TestCreator:
 
         check_country_gdp(creator.synthetic_countries["FRA"])
 
-    def test__create_all_industries_gbr(self, gbr_data_config_path):
-        with open(gbr_data_config_path, "r") as f:
-            config_dict = yaml.safe_load(f)
-        # not necessary to do the country splitting here
-        # since the fixture used only has one country key
-        configuration = DataConfiguration(**config_dict)
-        configuration.prune_date = None
-        configuration.seed = 0
-        configuration.aggregate_industries = False
-        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
-        # Check if there is a file in raw data path
-        creator = DataWrapper.from_config(
-            configuration=configuration,
-            raw_data_path=raw_data_path,
-            single_hfcs_survey=True,
-        )
-
-        check_country_credit(creator.synthetic_countries["GBR"])
-
-        check_country_gdp(creator.synthetic_countries["GBR"])
-
     def test__default_banks_firms(self, data_config_path):
         with open(data_config_path, "r") as f:
             config_dict = yaml.safe_load(f)
@@ -169,26 +102,6 @@ class TestCreator:
         )
         assert creator.synthetic_countries.keys() == {"FRA"}
 
-    def test__default_banks_firms_gbr(self, gbr_data_config_path):
-        with open(gbr_data_config_path, "r") as f:
-            config_dict = yaml.safe_load(f)
-        # not necessary to do the country splitting here
-        # since the fixture used only has one country key
-        configuration = DataConfiguration(**config_dict)
-        configuration.country_configs[Country("GBR")].firms_configuration.constructor = "Default"
-        configuration.country_configs[Country("GBR")].banks_configuration.constructor = "Default"
-        configuration.country_configs[Country("GBR")].single_bank = False
-        configuration.country_configs[Country("GBR")].firms_configuration.zero_initial_deposits = False
-        configuration.country_configs[Country("GBR")].firms_configuration.zero_initial_debt = False
-        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
-        configuration.prune_date = None
-        creator = DataWrapper.from_config(
-            configuration=configuration,
-            raw_data_path=raw_data_path,
-            single_hfcs_survey=True,
-        )
-        assert creator.synthetic_countries.keys() == {"GBR"}
-
     def test__single_banks(self, data_config_path):
         with open(data_config_path, "r") as f:
             config_dict = yaml.safe_load(f)
@@ -204,22 +117,6 @@ class TestCreator:
             single_hfcs_survey=True,
         )
         assert creator.synthetic_countries.keys() == {"FRA"}
-
-    def test__single_banks_gbr(self, gbr_data_config_path):
-        with open(gbr_data_config_path, "r") as f:
-            config_dict = yaml.safe_load(f)
-        # not necessary to do the country splitting here
-        # since the fixture used only has one country key
-        configuration = DataConfiguration(**config_dict)
-        configuration.country_configs[Country("GBR")].single_bank = True
-        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
-        configuration.prune_date = None
-        creator = DataWrapper.from_config(
-            configuration=configuration,
-            raw_data_path=raw_data_path,
-            single_hfcs_survey=True,
-        )
-        assert creator.synthetic_countries.keys() == {"GBR"}
 
     def test_no_deposits_debt(self, data_config_path):
         with open(data_config_path, "r") as f:
@@ -237,23 +134,6 @@ class TestCreator:
             single_hfcs_survey=True,
         )
         assert creator.synthetic_countries.keys() == {"FRA"}
-
-    def test_no_deposits_debt_gbr(self, gbr_data_config_path):
-        with open(gbr_data_config_path, "r") as f:
-            config_dict = yaml.safe_load(f)
-        # not necessary to do the country splitting here
-        # since the fixture used only has one country key
-        configuration = DataConfiguration(**config_dict)
-        configuration.country_configs[Country("GBR")].firms_configuration.zero_initial_deposits = True
-        configuration.country_configs[Country("GBR")].firms_configuration.zero_initial_debt = True
-        raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
-        configuration.prune_date = None
-        creator = DataWrapper.from_config(
-            configuration=configuration,
-            raw_data_path=raw_data_path,
-            single_hfcs_survey=True,
-        )
-        assert creator.synthetic_countries.keys() == {"GBR"}
 
     def test__create_us_can(self, data_config_path, multic_readers):
         with open(data_config_path, "r") as f:

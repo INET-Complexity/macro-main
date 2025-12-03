@@ -248,10 +248,10 @@ class DataConfiguration(BaseModel):
         Raises:
             ValueError: If validation fails
         """
-        # Check proxy countries for countries without microdata
+        # Check EU proxy countries
         for country, country_config in self.country_configs.items():
-            if country_config.eu_proxy_country is None and not country.has_microdata:
-                raise ValueError(f"{country} has no household microdata: please set a proxy country with microdata.")
+            if country_config.eu_proxy_country is None and not country.is_eu_country:
+                raise ValueError(f"{country} is not in EU: please set an EU proxy country.")
 
         # Validate aggregation structure if present
         if self.aggregation_structure:

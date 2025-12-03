@@ -34,7 +34,6 @@ dependencies = [
     "torch",
     "joblib",
     "sbi",
-    "pytest>=8.4.1",
 ]
 
 [project.optional-dependencies]

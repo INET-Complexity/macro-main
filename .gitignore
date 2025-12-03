@@ -153,9 +153,6 @@ spoof_data/original_compustat/
 # Only track README.md in spoof_data, ignore other markdown files
 spoof_data/*.md
 !spoof_data/README.md
-#Wealth and Assets Survey data
-*.dta 
-
 # Model runs
 /inet-macro-dev/
 /dev/

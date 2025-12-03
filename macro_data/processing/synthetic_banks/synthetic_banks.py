@@ -168,15 +168,9 @@ class SyntheticBanks(ABC):
         self.set_deposits_from_households(household_deposits=household_deposits)
 
         # Set initial household loans
-        # Use Outstanding Balance of Mortgages on other Properties if available, otherwise 0
-        if "Outstanding Balance of Mortgages on other Properties" in synthetic_population.household_data.columns:
-            other_mortgages = synthetic_population.household_data["Outstanding Balance of Mortgages on other Properties"].values
-        else:
-            other_mortgages = np.zeros(len(synthetic_population.household_data))
-        
         household_mortgage_debt = (
             synthetic_population.household_data["Outstanding Balance of HMR Mortgages"].values
-            + other_mortgages
+            + synthetic_population.household_data["Outstanding Balance of Mortgages on other Properties"].values
         )
         household_other_debt = synthetic_population.household_data[
             "Outstanding Balance of other Non-Mortgage Loans"
