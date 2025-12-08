@@ -14,6 +14,8 @@ import numpy as np
 from dataclasses import dataclass, field
 from typing import Optional
 
+from macromodel.agents.individuals.individual_properties import ActivityStatus
+
 
 @dataclass
 class TFPLaborSnapshot:
@@ -134,8 +136,9 @@ def capture_tfp_labor_snapshot(simulation, t: int) -> TFPLaborSnapshot:
     # Group TFP by industry (average across firms in each industry)
     n_industries = firms.n_industries
     tfp_by_industry = np.zeros(n_industries)
+    industry_indices = firms.states["Industry"]  # Industry index for each firm
     for ind in range(n_industries):
-        industry_mask = firms.industry_index == ind
+        industry_mask = industry_indices == ind
         if industry_mask.sum() > 0:
             tfp_by_industry[ind] = tfp_multipliers[industry_mask].mean()
 
@@ -167,23 +170,24 @@ def capture_tfp_labor_snapshot(simulation, t: int) -> TFPLaborSnapshot:
         avg_growth = 0.0
 
     # Labor metrics
-    desired_labour = firms.ts.current("desired_labour")
+    desired_labour = firms.ts.current("desired_labour_inputs")
     actual_labour = firms.ts.current("labour_inputs")
     total_desired = desired_labour.sum()
     total_actual = actual_labour.sum()
 
     # Employment from individuals
-    employment_status = individuals.states["employment_status"]
-    total_employed = np.sum(employment_status == 1)  # Assuming 1 = employed
-    total_individuals = len(employment_status)
-    unemployment_rate = 1.0 - (total_employed / total_individuals) if total_individuals > 0 else 0.0
+    activity_status = individuals.states["Activity Status"]
+    total_employed = np.sum(activity_status == ActivityStatus.EMPLOYED)
+    total_unemployed = np.sum(activity_status == ActivityStatus.UNEMPLOYED)
+    labor_force = total_employed + total_unemployed
+    unemployment_rate = (total_unemployed / labor_force) if labor_force > 0 else 0.0
 
     labor_shortage = total_desired - total_actual
 
     # Wages and income
-    wages_paid = firms.ts.current("wages_paid")
-    total_wages = wages_paid.sum()
-    avg_wage = wages_paid.mean()
+    total_wage = firms.ts.current("total_wage")
+    total_wages = total_wage.sum()
+    avg_wage = total_wage.mean()
 
     # Household income
     household_income = households.ts.current("income")
