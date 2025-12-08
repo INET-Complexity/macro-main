@@ -64,6 +64,7 @@ class Simulation:
     aggregate_country_price_index: float = 1.0
     regional_aggregator: Optional[RegionalAggregator] = None
     prehooks: list[Callable] = field(default_factory=list)
+    posthooks: list[Callable] = field(default_factory=list)
 
     @classmethod
     def from_datawrapper(
@@ -255,7 +256,21 @@ class Simulation:
                 )
             hook(self, year, month)
 
-    def iterate(self):
+    def run_posthooks(self, t: int, year: int, month: int) -> None:
+        """Execute all registered post-hooks after iteration logic.
+
+        Post-hooks are called after all markets have cleared and metrics are updated,
+        allowing inspection of the realized state of the simulation.
+
+        Args:
+            t (int): Current timestep index (0-indexed)
+            year (int): Current year of the simulation
+            month (int): Current month of the simulation
+        """
+        for hook in self.posthooks:
+            hook(self, t, year, month)
+
+    def iterate(self, t: int = 0):
         """Execute one timestep of the simulation.
 
         Performs a complete iteration of the economic model, including:
@@ -266,6 +281,10 @@ class Simulation:
         5. Housing and credit market clearing
         6. Goods market clearing
         7. Metric updates and recording
+        8. Post-hook execution
+
+        Args:
+            t (int): Current timestep index (0-indexed), used for logging/debugging
         """
         # Execute pre-hooks before any iteration logic
         self.run_prehooks(self.timestep.year, self.timestep.month)
@@ -330,6 +349,9 @@ class Simulation:
             country.update_realised_metrics()
             country.update_population_structure()
 
+        # Execute post-hooks after all metrics are updated
+        self.run_posthooks(t, self.timestep.year, self.timestep.month)
+
         # Next month
         self.timestep.step()
 
@@ -370,8 +392,8 @@ class Simulation:
         Executes the simulation from the current state until t_max iterations
         have been completed. Each iteration represents one time period in the model.
         """
-        for _ in range(self.t_max):
-            self.iterate()
+        for t in range(self.t_max):
+            self.iterate(t)
 
     def save_random_seed(self, h5_file: h5py.File) -> None:
         """Save the random seed to the HDF5 file metadata.
