@@ -877,6 +877,7 @@ class Firms(Agent):
             employee_social_insurance_tax=employee_social_insurance_tax,
             employer_social_insurance_tax=employer_social_insurance_tax,
             unemployment_benefits_by_individual=unemployment_benefits_by_individual,
+            current_tfp_multiplier=self.states["tfp_multiplier"],
         )
 
     def set_employee_income(
@@ -938,6 +939,7 @@ class Firms(Agent):
             income_taxes=income_taxes,
             employee_social_insurance_tax=employee_social_insurance_tax,
             employer_social_insurance_tax=employer_social_insurance_tax,
+            current_tfp_multiplier=self.states["tfp_multiplier"],
         )
 
     def update_total_wages_paid(
