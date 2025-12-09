@@ -91,6 +91,7 @@ class FirmWageSetter(ABC):
         income_taxes: float,
         employee_social_insurance_tax: float,
         employer_social_insurance_tax: float,
+        current_tfp_multiplier: np.ndarray = None,
     ) -> np.ndarray:
         """Set employee incomes considering all relevant factors.
 
@@ -146,6 +147,7 @@ class FirmWageSetter(ABC):
         employee_social_insurance_tax: float,
         employer_social_insurance_tax: float,
         unemployment_benefits_by_individual: float,
+        current_tfp_multiplier: np.ndarray = None,
     ) -> Callable[[int, float | np.ndarray], float | np.ndarray]:
         """Create a function that calculates offered wages based on labor inputs.
 
@@ -258,17 +260,20 @@ class WorkEffortFirmWageSetter(FirmWageSetter):
         income_taxes: float,
         employee_social_insurance_tax: float,
         employer_social_insurance_tax: float,
+        current_tfp_multiplier: np.ndarray = None,
     ) -> np.ndarray:
         """Set employee incomes based on work effort and market conditions.
 
         Calculates wages considering:
         1. Base wages adjusted for productivity changes
         2. Market tightness markup
-        3. Tax implications for gross/net conversion
-        4. Different treatment for new vs. existing employees
+        3. TFP multiplier (technological productivity)
+        4. Tax implications for gross/net conversion
+        5. Different treatment for new vs. existing employees
 
         Args:
             [same as parent class]
+            current_tfp_multiplier (np.ndarray): TFP multiplier by firm (for linking wages to tech progress)
 
         Returns:
             np.ndarray: Updated employee incomes adjusted for all factors
@@ -295,8 +300,18 @@ class WorkEffortFirmWageSetter(FirmWageSetter):
         """
         scaled_real_wages_by_individual = np.zeros_like(current_employee_income)
         emp_ind = corresponding_firm >= 0
+
+        # Include TFP multiplier in wage calculation if provided
+        if current_tfp_multiplier is not None:
+            tfp_factor = current_tfp_multiplier
+        else:
+            tfp_factor = np.ones_like(current_wage_tightness_markup)
+
         scaled_real_wages = (
-            (1 + current_wage_tightness_markup) * current_labour_productivity_factor * initial_wage_per_capita
+            (1 + current_wage_tightness_markup)
+            * tfp_factor  # Link wages to technological productivity
+            * current_labour_productivity_factor
+            * initial_wage_per_capita
         )
         scaled_real_wages_by_individual[emp_ind] = scaled_real_wages[corresponding_firm[emp_ind]]
         return scaled_real_wages_by_individual / tax
@@ -319,17 +334,20 @@ class WorkEffortFirmWageSetter(FirmWageSetter):
         employee_social_insurance_tax: float,
         employer_social_insurance_tax: float,
         unemployment_benefits_by_individual: float,
+        current_tfp_multiplier: np.ndarray = None,
     ) -> Callable[[int, float | np.ndarray], float | np.ndarray]:
         """Create a function for calculating wage offers based on work effort.
 
         Returns a callable that:
         1. Calculates base wage from historical averages
         2. Adjusts for productivity changes
-        3. Applies market tightness markup
-        4. Ensures wages exceed unemployment benefits
+        3. Applies TFP multiplier (technological productivity)
+        4. Applies market tightness markup
+        5. Ensures wages exceed unemployment benefits
 
         Args:
             [same as parent class]
+            current_tfp_multiplier (np.ndarray): TFP multiplier by firm
 
         Returns:
             Callable[[int, float | np.ndarray], float | np.ndarray]: Function that
@@ -345,8 +363,16 @@ class WorkEffortFirmWageSetter(FirmWageSetter):
             weights=current_individual_labour_inputs,
             minlength=current_target_production.shape[0],
         )
+
+        # Include TFP multiplier if provided
+        if current_tfp_multiplier is not None:
+            tfp_factor = current_tfp_multiplier
+        else:
+            tfp_factor = np.ones_like(current_wage_tightness_markup)
+
         new_individual_wages = (
             (1 + current_wage_tightness_markup)
+            * tfp_factor  # Link wages to technological productivity
             * current_labour_productivity_factor
             / prev_labour_productivity_factor
             * total_real_wages
