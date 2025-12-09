@@ -2,8 +2,7 @@ name: Build and test data package
 
 on:
   pull_request:
-    branches:
-      - main
+    # Run on PRs to any branch
   push:
     branches:
       - main
