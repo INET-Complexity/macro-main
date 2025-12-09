@@ -13,7 +13,6 @@ PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 
 class TestSyntheticCentralBanks:
     def test__create(self, readers, exogenous_data):
-
         central_bank_config = CentralBankDataConfiguration()
 
         central_banks = DefaultSyntheticCentralBank.from_readers(

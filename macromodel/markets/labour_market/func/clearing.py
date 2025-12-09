@@ -711,7 +711,6 @@ def random_firing(
         # don't fire if the firm has only one employee
 
         if len(firm_employments[firm_id]) > 1:
-
             firing_costs[individuals_corresponding_firm[ind_id]] += (
                 firing_cost_fraction * current_individual_wages[ind_id]
             )

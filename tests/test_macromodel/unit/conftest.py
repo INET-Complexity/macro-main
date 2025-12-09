@@ -455,7 +455,6 @@ def instantiate_can_provincial_datawrapper() -> DataWrapper:
             data_wrapper = pkl.load(f)
         return data_wrapper
     else:
-
         data_config = default_data_configuration(
             countries=["CAN"],
             aggregate_industries=False,
