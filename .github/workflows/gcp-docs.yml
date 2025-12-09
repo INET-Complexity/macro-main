@@ -1,36 +1,37 @@
-name: Deploy docs to Google Storage
+# DISABLED: This workflow is temporarily disabled to prevent automatic documentation uploads to GCP.
+# To re-enable, uncomment the job below and comment out the disabled-placeholder job.
+
+name: Deploy docs to Google Storage (DISABLED)
 
 on:
-  push:
-    branches:
-      - gh-pages
-      - docs
-      - main
-
-  workflow_dispatch:
-
-env:
-  GCS_BUCKET: macromodel-docs
+  workflow_dispatch:  # Only manual trigger
 
 jobs:
-  deploy:
+  disabled-placeholder:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: gh-pages
+      - name: Workflow Disabled
+        run: echo "This workflow is currently disabled. See comments in file to re-enable."
 
-      - name: Auth GCP
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-      - name: Ignore .git
-        run: echo ".git" > .gcloudignore
-        
-      - name: Upload to GCS
-        uses: google-github-actions/upload-cloud-storage@v2
-        with:
-          path: .
-          destination: ${{ env.GCS_BUCKET }}
-          parent: false
+  # Uncomment below to re-enable GCP documentation deployment:
+  # deploy:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         ref: gh-pages
+  #
+  #     - name: Auth GCP
+  #       uses: google-github-actions/auth@v2
+  #       with:
+  #         credentials_json: ${{ secrets.GCP_SA_KEY }}
+  #     - name: Ignore .git
+  #       run: echo ".git" > .gcloudignore
+  #
+  #     - name: Upload to GCS
+  #       uses: google-github-actions/upload-cloud-storage@v2
+  #       with:
+  #         path: .
+  #         destination: macromodel-docs
+  #         parent: false

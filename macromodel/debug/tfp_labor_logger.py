@@ -10,9 +10,10 @@ Key mechanism being tested:
     → target_production stays same → desired_labour↓ → unemployment↑ → income↓
 """
 
-import numpy as np
 from dataclasses import dataclass, field
 from typing import Optional
+
+import numpy as np
 
 from macromodel.agents.individuals.individual_properties import ActivityStatus
 
