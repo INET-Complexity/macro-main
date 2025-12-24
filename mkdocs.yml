@@ -1,5 +1,6 @@
 # mkdocs.yml
 site_name: INET/Macrocosm's Macromodel
+site_url: https://macrodocs.macrocosm.group
 use_directory_urls: false
 
 theme:
