@@ -16,7 +16,7 @@ The framework supports multi-country simulations with:
 - Environmental impact tracking
 
 
-The documentation can be found in [this URL.](macrodocs.macrocosm.group)
+The documentation can be found in [this URL.](http://macrodocs.macrocosm.group)
 
 ## Installation
 
@@ -444,7 +444,7 @@ The calibration package provides tools for sampling from the macromodel and runn
 
 Contributions are welcome! By submitting a pull request or patch, you agree to license your contribution under the Apache License 2.0, consistent with this project's license.
 
-Please ensure any contributions follow the guidelines in [the documentation](macrodocs.macrocosm.group).
+Please ensure any contributions follow the guidelines in [the documentation](http://macrodocs.macrocosm.group).
 
 For significant changes, please open an issue first to discuss the proposed changes.  
 
