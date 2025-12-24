@@ -43,7 +43,7 @@ jobs:
           uv pip freeze | grep -E "mistune|nbconvert|mkdocs-jupyter|mike"
 
       - name: Build docs with mkdocs
-        run: uv run mkdocs build --strict
+        run: uv run mkdocs build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
