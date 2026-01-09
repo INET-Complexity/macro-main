@@ -1163,7 +1163,9 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 / banks.parameters.firm_loans_return_on_equity_ratio
             )
             # Calculate ROA safely to avoid division by zero
-            firm_expected_profits = firms.ts.current("expected_profits")[agents_with_demand]
+            firm_expected_profits = firms.ts.current("expected_profits")[
+                agents_with_demand
+            ]
             firm_capital_stock = firms.ts.current("capital_inputs_stock_value")[
                 agents_with_demand
             ]
