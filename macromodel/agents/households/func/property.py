@@ -299,9 +299,7 @@ class DefaultHouseholdDemandForProperty(HouseholdDemandForProperty):
             diff_exp = np.exp(-self.cost_comparison_temperature * diff)
             prob_buying = 1.0 / (1.0 + diff_exp)
             prob_buying = np.clip(prob_buying, 0.0, 1.0)
-        ind_deciding_to_buy_rel = (
-            np.random.random(prob_buying.shape) < prob_buying
-        )
+        ind_deciding_to_buy_rel = np.random.random(prob_buying.shape) < prob_buying
         ind_deciding_to_rent_rel = ~ind_deciding_to_buy_rel
         ind_deciding_to_buy = np.where(ind_dec)[0][ind_deciding_to_buy_rel]
         ind_deciding_to_rent = np.where(ind_dec)[0][ind_deciding_to_rent_rel]
