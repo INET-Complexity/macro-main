@@ -4,7 +4,12 @@ This test demonstrates Bug #2:
 - OLD CODE: Division by zero when capital stock = 0 produces inf, causing incorrect loan decisions
 - NEW CODE: Uses np.divide() with where parameter to handle zero capital safely (ROA = 0)
 
-The bug is in clearing.py lines 1165-1170 (GitHub version)
+The bug is in clearing.py lines 1165-1178 (WaterBucketCreditMarketClearer.clear method).
+
+Note: This test documents the expected behavior and serves as regression protection.
+The ROA logic is embedded in the clearing algorithm, so this test replicates the
+calculation logic to verify correctness. Changes to clearing.py that break the ROA
+calculation will be caught by integration tests that exercise the full clearing flow.
 """
 
 import numpy as np
