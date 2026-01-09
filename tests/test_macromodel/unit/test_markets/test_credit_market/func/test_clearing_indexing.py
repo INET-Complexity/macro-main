@@ -43,9 +43,7 @@ class TestCreditMarketClearingIndexing:
         # Verify the old pattern would fail
         with pytest.raises(ValueError, match="shape mismatch|could not be broadcast"):
             # This is what the old code tried to do:
-            new_loans[0, :, agents_with_demand] = np.outer(
-                granted_loans_by_banks, capacities_weights
-            )
+            new_loans[0, :, agents_with_demand] = np.outer(granted_loans_by_banks, capacities_weights)
 
     def test_numpy_indexing_fix_works(self):
         """Test that the fixed code works correctly.
@@ -79,16 +77,12 @@ class TestCreditMarketClearingIndexing:
 
         # 2. Sum should equal total granted
         assert np.isclose(
-            allocated_loans.sum(),
-            granted_loans_by_banks[0]
+            allocated_loans.sum(), granted_loans_by_banks[0]
         ), "Total allocated loans should equal granted amount"
 
         # 3. Each agent should get their weighted share
         expected_loans = granted_loans_by_banks[0] * capacities_weights
-        assert np.allclose(
-            allocated_loans,
-            expected_loans
-        ), "Each agent should receive their weighted share"
+        assert np.allclose(allocated_loans, expected_loans), "Each agent should receive their weighted share"
 
     def test_numpy_indexing_fix_with_multiple_banks(self):
         """Test the fix works with multiple banks (more realistic scenario)."""
@@ -115,16 +109,12 @@ class TestCreditMarketClearingIndexing:
 
             # Each bank should allocate its full amount
             assert np.isclose(
-                bank_loans.sum(),
-                granted_loans_by_banks[bank_idx]
+                bank_loans.sum(), granted_loans_by_banks[bank_idx]
             ), f"Bank {bank_idx} should allocate its full granted amount"
 
             # Each agent should get their weighted share from this bank
             expected = granted_loans_by_banks[bank_idx] * capacities_weights
-            assert np.allclose(
-                bank_loans,
-                expected
-            ), f"Bank {bank_idx} agents should receive correct weighted shares"
+            assert np.allclose(bank_loans, expected), f"Bank {bank_idx} agents should receive correct weighted shares"
 
     def test_numpy_indexing_second_branch_fix(self):
         """Test the fix for the second branch (supply_weights case).
@@ -153,16 +143,12 @@ class TestCreditMarketClearingIndexing:
             agent_total = new_loans[0, :, agent_id].sum()
             expected = received_loans_by_debtors[agent_idx]
 
-            assert np.isclose(
-                agent_total,
-                expected
-            ), f"Agent {agent_id} should receive correct total loan amount"
+            assert np.isclose(agent_total, expected), f"Agent {agent_id} should receive correct total loan amount"
 
             # Each bank should contribute their weighted share
             for bank_idx in range(n_banks):
                 expected_share = supply_weights[bank_idx] * received_loans_by_debtors[agent_idx]
                 actual_share = new_loans[0, bank_idx, agent_id]
                 assert np.isclose(
-                    actual_share,
-                    expected_share
+                    actual_share, expected_share
                 ), f"Bank {bank_idx} should provide correct share to agent {agent_id}"
