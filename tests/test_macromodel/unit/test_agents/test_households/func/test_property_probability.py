@@ -80,18 +80,26 @@ class TestHouseholdProbabilityBuying:
             prob_buying = np.clip(prob_buying, 0.0, 1.0)
 
             # Check validity
-            assert 0.0 <= prob_buying <= 1.0, f"Probability must be in [0,1], got {prob_buying}"
+            assert (
+                0.0 <= prob_buying <= 1.0
+            ), f"Probability must be in [0,1], got {prob_buying}"
 
             # Check correctness
             if rent_cost > buy_cost:
                 # Renting more expensive -> should favor buying
-                assert prob_buying > 0.5, f"Should favor buying when renting costs more"
+                assert (
+                    prob_buying > 0.5
+                ), f"Should favor buying when renting costs more"
             elif rent_cost < buy_cost:
                 # Buying more expensive -> should favor renting
-                assert prob_buying < 0.5, f"Should favor renting when buying costs more"
+                assert (
+                    prob_buying < 0.5
+                ), f"Should favor renting when buying costs more"
             else:
                 # Equal cost -> should be 50/50
-                assert 0.45 <= prob_buying <= 0.55, f"Should be ~50% for equal cost"
+                assert (
+                    0.45 <= prob_buying <= 0.55
+                ), f"Should be ~50% for equal cost"
 
             print(
                 f"[OK] Rent: ${rent_cost:>6,.0f}, Buy: ${buy_cost:>6,.0f} "
