@@ -291,16 +291,14 @@ class DefaultHouseholdDemandForProperty(HouseholdDemandForProperty):
             4 * np.maximum(0, max_amount_pay - household_financial_wealth[ind_dec]) / assumed_mortgage_maturity
             - ((1 + expected_hpi_growth) ** 4 - 1) * max_value_affordable
         )
+        # Use logistic function to calculate probability of buying
+        # Normalize cost difference for numerical stability
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            diff_exp = np.exp(self.cost_comparison_temperature * (annual_cost_of_renting - annual_cost_of_purchasing))
-            diff_exp[
-                np.logical_and(
-                    np.isinf(diff_exp),
-                    annual_cost_of_renting - annual_cost_of_purchasing < 0,
-                )
-            ] *= -1
-            prob_buying = 1.0 / diff_exp
+            diff = (annual_cost_of_renting - annual_cost_of_purchasing) / 10000
+            diff_exp = np.exp(-self.cost_comparison_temperature * diff)
+            prob_buying = 1.0 / (1.0 + diff_exp)
+            prob_buying = np.clip(prob_buying, 0.0, 1.0)
         ind_deciding_to_buy_rel = np.random.random(prob_buying.shape) < prob_buying
         ind_deciding_to_rent_rel = ~ind_deciding_to_buy_rel
         ind_deciding_to_buy = np.where(ind_dec)[0][ind_deciding_to_buy_rel]
