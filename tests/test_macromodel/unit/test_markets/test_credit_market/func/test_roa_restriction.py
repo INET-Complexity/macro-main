@@ -65,7 +65,7 @@ class TestROARestrictionLogic:
             expected_profits,
             capital_stock,
             out=np.zeros_like(expected_profits),
-            where=capital_stock != 0
+            where=capital_stock != 0,
         )
 
         return_on_assets_restrictions = np.full(n_firms, np.inf)
@@ -107,7 +107,7 @@ class TestROARestrictionLogic:
             expected_profits,
             capital_stock,
             out=np.zeros_like(expected_profits),
-            where=capital_stock != 0
+            where=capital_stock != 0,
         )
 
         return_on_assets_restrictions = np.full(n_firms, np.inf)
@@ -165,7 +165,7 @@ class TestROARestrictionLogic:
             expected_profits,
             capital_stock,
             out=np.zeros_like(expected_profits),
-            where=capital_stock != 0
+            where=capital_stock != 0,
         )
 
         # Verify ROA calculation
