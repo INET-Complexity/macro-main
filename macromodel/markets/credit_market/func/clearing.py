@@ -1162,12 +1162,24 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 - firms.ts.current("expected_profits")[agents_with_demand]
                 / banks.parameters.firm_loans_return_on_equity_ratio
             )
-            return_on_assets_restrictions = np.zeros(agents_with_demand.shape)
+            # Calculate ROA safely to avoid division by zero
+            firm_expected_profits = firms.ts.current("expected_profits")[agents_with_demand]
+            firm_capital_stock = firms.ts.current("capital_inputs_stock_value")[
+                agents_with_demand
+            ]
+
+            firm_roa = np.divide(
+                firm_expected_profits,
+                firm_capital_stock,
+                out=np.zeros_like(firm_expected_profits),
+                where=firm_capital_stock != 0,
+            )
+
+            # Start permissive (allow all), block only firms that fail ROA check
+            return_on_assets_restrictions = np.full(agents_with_demand.shape, np.inf)
             return_on_assets_restrictions[
-                firms.ts.current("expected_profits")[agents_with_demand]
-                / firms.ts.current("capital_inputs_stock_value")[agents_with_demand]
-                >= banks.parameters.firm_loans_return_on_assets_ratio
-            ] = np.inf
+                firm_roa < banks.parameters.firm_loans_return_on_assets_ratio
+            ] = 0.0
             credit_restrictions = np.minimum(
                 np.minimum(debt_to_equity_restrictions, return_on_equity_restrictions),
                 return_on_assets_restrictions,
