@@ -140,9 +140,9 @@ class TestCreditMarketClearingIndexingLogic:
         allocated_loans = new_loans[0, 0, agents_with_demand]
 
         assert np.all(allocated_loans >= 0), "All loans should be non-negative"
-        assert np.isclose(allocated_loans.sum(), granted_loans_by_banks[0]), (
-            "Total allocated should equal granted amount"
-        )
+        assert np.isclose(
+            allocated_loans.sum(), granted_loans_by_banks[0]
+        ), "Total allocated should equal granted amount"
 
         expected_loans = granted_loans_by_banks[0] * capacities_weights
         assert np.allclose(allocated_loans, expected_loans), "Each agent should receive weighted share"
@@ -167,9 +167,9 @@ class TestCreditMarketClearingIndexingLogic:
         # Verify each bank's allocation
         for bank_idx in range(n_banks):
             bank_loans = new_loans[0, bank_idx, agents_with_demand]
-            assert np.isclose(bank_loans.sum(), granted_loans_by_banks[bank_idx]), (
-                f"Bank {bank_idx} should allocate its full granted amount"
-            )
+            assert np.isclose(
+                bank_loans.sum(), granted_loans_by_banks[bank_idx]
+            ), f"Bank {bank_idx} should allocate its full granted amount"
 
     def test_second_branch_supply_weights(self):
         """Test the fix for the second branch using supply_weights.
@@ -197,6 +197,4 @@ class TestCreditMarketClearingIndexingLogic:
         for agent_idx, agent_id in enumerate(agents_with_demand):
             agent_total = new_loans[0, :, agent_id].sum()
             expected = received_loans_by_debtors[agent_idx]
-            assert np.isclose(agent_total, expected), (
-                f"Agent {agent_id} should receive correct total loan amount"
-            )
+            assert np.isclose(agent_total, expected), f"Agent {agent_id} should receive correct total loan amount"
