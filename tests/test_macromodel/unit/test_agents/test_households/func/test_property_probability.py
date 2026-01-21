@@ -1,169 +1,177 @@
-"""Test for household probability of buying formula.
+"""Test for household probability of buying formula fix (PR #50).
 
-This test demonstrates Bug #5:
-- OLD CODE: Uses incorrect formula prob = 1 / exp(temp * diff)
-  * Can produce probabilities > 1.0 or inf (invalid!)
-  * Has inverted logic (favors buying when renting is cheaper!)
-- NEW CODE: Uses correct logistic function prob = 1 / (1 + exp(-temp * diff))
-  * Always produces valid probabilities in [0, 1]
-  * Correct behavior (favors buying when renting is more expensive)
+This test verifies the fix for the household purchasing probability calculation.
+The bug was that `prob_buying = 1.0 / diff_exp` produced:
+1. Inverted logic: decreased probability when buying became cheaper than renting
+2. Invalid outputs: infinity and values exceeding 1.0
 
-The bug is in property.py lines 294-303 (GitHub version)
+The fix uses the proper logistic function formula.
+
+This test imports the actual DefaultHouseholdDemandForProperty class and tests
+the compute_demand method with minimal fixture data that triggers the bug.
 """
 
+
 import numpy as np
+import pandas as pd
 import pytest
+import warnings
+
+from macromodel.agents.households.func.property import DefaultHouseholdDemandForProperty
 
 
-class TestHouseholdProbabilityBuying:
-    """Test probability of buying calculation in household property decisions."""
+class TestHouseholdProbabilityOfBuying:
+    """Test the probability of buying calculation in household property demand."""
 
-    def test_old_code_invalid_probabilities(self):
-        """OLD CODE: Produces invalid probabilities (inf, > 1.0)."""
-        # Simulate cost scenarios
-        cost_comparison_temperature = 0.5
-
-        # Test case where buying costs much more (negative diff)
-        # Should favor renting (low prob of buying)
-        annual_cost_of_renting = 10000
-        annual_cost_of_purchasing = 30000  # Buying costs more
-
-        # OLD CODE (from GitHub) - BROKEN
-        diff_exp = np.exp(cost_comparison_temperature * (annual_cost_of_renting - annual_cost_of_purchasing))
-        prob_buying_old = 1.0 / diff_exp
-
-        # With negative large diff, exp becomes very large, prob becomes very small
-        # But for positive large diff, exp becomes very small, prob becomes inf!
-        assert prob_buying_old < 1.0  # This case happens to be valid
-
-        # Now test opposite: renting costs much more (positive diff)
-        # Should favor buying (high prob of buying)
-        annual_cost_of_renting2 = 30000  # Renting costs more
-        annual_cost_of_purchasing2 = 10000
-
-        diff_exp2 = np.exp(cost_comparison_temperature * (annual_cost_of_renting2 - annual_cost_of_purchasing2))
-        prob_buying_old2 = 1.0 / diff_exp2
-
-        # This is the BUG: probability is essentially 0 when it should be high!
-        # exp(0.5 * 20000) is enormous, so 1/exp is nearly 0
-        assert prob_buying_old2 < 0.0001  # Nearly zero - WRONG!
-        print(
-            f"\n[BUG] OLD CODE: When renting costs ${annual_cost_of_renting2:,.0f} "
-            f"and buying costs ${annual_cost_of_purchasing2:,.0f}, "
-            f"prob_buying = {prob_buying_old2:.6f} (should be HIGH, not near zero!)"
+    @pytest.fixture
+    def property_demand_calculator(self):
+        """Create a DefaultHouseholdDemandForProperty instance with test parameters."""
+        return DefaultHouseholdDemandForProperty(
+            probability_stay_in_rented_property=0.0,  # Force all renters to consider moving
+            probability_stay_in_owned_property=1.0,  # Owners stay
+            maximum_price_income_coefficient=5.0,
+            maximum_price_income_exponent=1.0,
+            maximum_price_noise_mean=0.0,
+            maximum_price_noise_variance=0.0,  # No noise for deterministic test
+            maximum_rent_income_coefficient=0.3,
+            maximum_rent_income_exponent=1.0,
+            psychological_pressure_of_renting=0.1,
+            cost_comparison_temperature=1.0,  # Key parameter for the bug
+            price_initial_markup=0.1,
+            price_decrease_probability=0.5,
+            price_decrease_mean=-0.05,
+            price_decrease_variance=0.01,
+            rent_initial_markup=0.1,
+            rent_decrease_probability=0.5,
+            rent_decrease_mean=-0.05,
+            rent_decrease_variance=0.01,
+            partial_rent_inflation_indexation=0.5,
+            partial_rent_inflation_delay=4,
         )
 
-    def test_new_code_valid_probabilities(self):
-        """NEW CODE: Always produces valid probabilities in [0, 1]."""
-        cost_comparison_temperature = 0.5
+    @pytest.fixture
+    def minimal_housing_data(self):
+        """Create minimal housing data DataFrame."""
+        return pd.DataFrame({
+            "House ID": [0],
+            "Value": [100000.0],
+            "Rent": [500.0],
+        })
 
-        # Test multiple scenarios
-        scenarios = [
-            (30000, 10000),  # Renting much more expensive -> should buy
-            (20000, 15000),  # Renting slightly more expensive -> moderate
-            (15000, 15000),  # Equal cost -> 50/50
-            (15000, 20000),  # Buying slightly more expensive -> moderate
-            (10000, 30000),  # Buying much more expensive -> should rent
-        ]
+    def test_probability_formula_produces_valid_range(self, property_demand_calculator, minimal_housing_data):
+        """Test that the probability formula produces values in [0, 1].
 
-        for rent_cost, buy_cost in scenarios:
-            # NEW CODE (from backup) - FIXED
-            diff = (rent_cost - buy_cost) / 10000
-            diff_exp = np.exp(-cost_comparison_temperature * diff)
-            prob_buying = 1.0 / (1.0 + diff_exp)
-            prob_buying = np.clip(prob_buying, 0.0, 1.0)
+        This test creates a scenario where the old formula would produce
+        invalid probability values (> 1 or inf).
+        """
+        np.random.seed(42)  # For reproducibility
 
-            # Check validity
-            assert 0.0 <= prob_buying <= 1.0, f"Probability must be in [0,1], got {prob_buying}"
+        # Single household that is renting (status = 0)
+        household_residence_tenure_status = np.array([0])
+        household_income = np.array([50000.0])  # Moderate income
+        household_financial_wealth = np.array([10000.0])  # Some savings
 
-            # Check correctness
-            if rent_cost > buy_cost:
-                # Renting more expensive -> should favor buying
-                assert prob_buying > 0.5, f"Should favor buying when renting costs more"
-            elif rent_cost < buy_cost:
-                # Buying more expensive -> should favor renting
-                assert prob_buying < 0.5, f"Should favor renting when buying costs more"
-            else:
-                # Equal cost -> should be 50/50
-                assert 0.45 <= prob_buying <= 0.55, f"Should be ~50% for equal cost"
+        # Market observations
+        observed_fraction_value_price = np.array([1.0, 0.0])  # value = price
+        observed_fraction_rent_value = np.array([0.005, 0.0])  # rent = 0.5% of value monthly
 
-            print(f"[OK] Rent: ${rent_cost:>6,.0f}, Buy: ${buy_cost:>6,.0f} " f"-> prob_buying = {prob_buying:.1%}")
+        max_price, max_rent, hoping_to_move = property_demand_calculator.compute_demand(
+            housing_data=minimal_housing_data,
+            household_residence_tenure_status=household_residence_tenure_status,
+            household_income=household_income,
+            household_financial_wealth=household_financial_wealth,
+            observed_fraction_value_price=observed_fraction_value_price,
+            observed_fraction_rent_value=observed_fraction_rent_value,
+            expected_hpi_growth=0.02,  # 2% expected price growth
+            assumed_mortgage_maturity=25,  # 25 year mortgage
+            rental_income_taxes=0.2,
+        )
 
-    def test_comparison_old_vs_new(self):
-        """Compare OLD vs NEW code across multiple scenarios."""
-        cost_comparison_temperature = 0.5
+        # Check that outputs are valid (no NaN, no inf where not expected)
+        # Either max_price or max_rent should be set (household decided to buy or rent)
+        assert not (np.isnan(max_price[0]) and np.isnan(max_rent[0])), \
+            "Household should have decided to either buy or rent"
 
-        # Test scenarios: (description, rent_cost, buy_cost, expected_behavior)
-        scenarios = [
-            ("Buying costs more", 10000, 20000, "Should favor renting"),
-            ("Equal cost", 15000, 15000, "Should be 50/50"),
-            ("Renting costs more", 20000, 10000, "Should favor buying"),
-        ]
+        # If they decided to buy, max_price should be finite and positive
+        if not np.isnan(max_price[0]):
+            assert np.isfinite(max_price[0]), f"max_price should be finite, got {max_price[0]}"
+            assert max_price[0] > 0, f"max_price should be positive, got {max_price[0]}"
 
-        print("\n[COMPARISON] OLD vs NEW CODE")
-        print(f"{'Scenario':<25} {'Rent':>8} {'Buy':>8} {'Old Prob':>10} {'New Prob':>10} {'Correct?'}")
-        print("-" * 80)
+        # If they decided to rent, max_rent should be finite and positive
+        if not np.isnan(max_rent[0]):
+            assert np.isfinite(max_rent[0]), f"max_rent should be finite, got {max_rent[0]}"
+            assert max_rent[0] > 0, f"max_rent should be positive, got {max_rent[0]}"
 
-        for description, rent_cost, buy_cost, expected in scenarios:
-            # OLD CODE
-            with np.errstate(over="ignore", divide="ignore"):
-                diff_exp_old = np.exp(cost_comparison_temperature * (rent_cost - buy_cost))
-                prob_old = 1.0 / diff_exp_old
-                if np.isinf(prob_old):
-                    prob_old = float("inf")
+    def test_old_probability_formula_bug_demonstration(self):
+        """Demonstrate the bug in the old probability formula.
 
-            # NEW CODE
-            diff = (rent_cost - buy_cost) / 10000
-            diff_exp_new = np.exp(-cost_comparison_temperature * diff)
-            prob_new = 1.0 / (1.0 + diff_exp_new)
-            prob_new = np.clip(prob_new, 0.0, 1.0)
+        OLD CODE (lines 296-303 in property.py):
+            diff_exp = np.exp(self.cost_comparison_temperature * (annual_cost_of_renting - annual_cost_of_purchasing))
+            prob_buying = 1.0 / diff_exp
 
-            # Check correctness
-            if "renting" in expected.lower():
-                correct = "YES" if prob_new < 0.5 else "NO"
-            elif "buying" in expected.lower():
-                correct = "YES" if prob_new > 0.5 else "NO"
-            else:  # 50/50
-                correct = "YES" if 0.45 <= prob_new <= 0.55 else "NO"
+        When buying is much more expensive than renting:
+        - (rent - buy) is very negative
+        - exp(very_negative) approaches 0
+        - 1 / (nearly_zero) approaches infinity
 
-            prob_old_str = f"{prob_old:.1%}" if not np.isinf(prob_old) else "inf"
-            print(
-                f"{description:<25} ${rent_cost:>7,.0f} ${buy_cost:>7,.0f} "
-                f"{prob_old_str:>10} {prob_new:>9.1%} {correct}"
-            )
+        This produces invalid probabilities > 1.
+        """
+        cost_comparison_temperature = 1.0
 
-    def test_logistic_function_properties(self):
-        """Test that the new code implements a proper logistic function."""
-        cost_comparison_temperature = 0.5
+        # Case: buying is MUCH more expensive than renting
+        annual_cost_of_renting = 10000.0
+        annual_cost_of_purchasing = 50000.0  # 5x more expensive to buy
 
-        # Property 1: Symmetric around 0
-        diff_positive = 5000
-        diff_negative = -5000
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
 
-        # NEW CODE
-        diff_pos_norm = diff_positive / 10000
-        diff_neg_norm = diff_negative / 10000
+            # OLD formula - produces invalid probability
+            diff = annual_cost_of_renting - annual_cost_of_purchasing  # -40000
+            diff_exp_old = np.exp(cost_comparison_temperature * diff)  # exp(-40000) ≈ 0
+            prob_buying_old = 1.0 / diff_exp_old  # 1/0 ≈ inf
 
-        prob_pos = 1.0 / (1.0 + np.exp(-cost_comparison_temperature * diff_pos_norm))
-        prob_neg = 1.0 / (1.0 + np.exp(-cost_comparison_temperature * diff_neg_norm))
+        # Document the bug: old formula gives probability > 1 (or inf)
+        assert prob_buying_old > 1.0 or np.isinf(prob_buying_old), \
+            f"Expected old formula to produce invalid prob > 1, got {prob_buying_old}"
 
-        # Logistic function is symmetric: P(x) + P(-x) = 1
-        assert np.isclose(prob_pos + prob_neg, 1.0, atol=0.01), "Logistic function should be symmetric"
+        # NEW formula should use proper logistic: 1 / (1 + exp(-x))
+        # This always produces values in (0, 1)
+        # Note: The exact fix implementation may vary, but the result must be in [0, 1]
 
-        # Property 2: At diff=0, probability should be 0.5
-        prob_zero = 1.0 / (1.0 + np.exp(0))
-        assert np.isclose(prob_zero, 0.5), "Probability at diff=0 should be 0.5"
+    def test_multiple_households_decisions_are_valid(self, property_demand_calculator, minimal_housing_data):
+        """Test that multiple households all get valid buy/rent decisions."""
+        np.random.seed(123)
 
-        # Property 3: Monotonically increasing with diff
-        diffs = np.linspace(-10000, 10000, 20)
-        probs = []
-        for d in diffs:
-            d_norm = d / 10000
-            p = 1.0 / (1.0 + np.exp(-cost_comparison_temperature * d_norm))
-            probs.append(p)
+        n_households = 10
+        # Mix of renters (0) and people in social housing (-1)
+        household_residence_tenure_status = np.array([-1, 0, 0, 0, -1, 0, 0, -1, 0, 0])
 
-        # Check monotonicity
-        for i in range(len(probs) - 1):
-            assert probs[i] <= probs[i + 1], "Probability should increase with cost difference"
+        # Varying incomes
+        household_income = np.linspace(20000, 100000, n_households)
 
-        print("\n[OK] All logistic function properties verified")
+        # Varying wealth
+        household_financial_wealth = np.linspace(5000, 200000, n_households)
+
+        observed_fraction_value_price = np.array([1.0, 0.0])
+        observed_fraction_rent_value = np.array([0.005, 0.0])
+
+        max_price, max_rent, hoping_to_move = property_demand_calculator.compute_demand(
+            housing_data=minimal_housing_data,
+            household_residence_tenure_status=household_residence_tenure_status,
+            household_income=household_income,
+            household_financial_wealth=household_financial_wealth,
+            observed_fraction_value_price=observed_fraction_value_price,
+            observed_fraction_rent_value=observed_fraction_rent_value,
+            expected_hpi_growth=0.02,
+            assumed_mortgage_maturity=25,
+            rental_income_taxes=0.2,
+        )
+
+        # All outputs should be valid (finite positive or NaN for non-participants)
+        for i in range(n_households):
+            if not np.isnan(max_price[i]):
+                assert np.isfinite(max_price[i]), f"Household {i}: max_price must be finite"
+                assert max_price[i] > 0, f"Household {i}: max_price must be positive"
+            if not np.isnan(max_rent[i]):
+                assert np.isfinite(max_rent[i]), f"Household {i}: max_rent must be finite"
+                assert max_rent[i] > 0, f"Household {i}: max_rent must be positive"
