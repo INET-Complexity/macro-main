@@ -11,11 +11,11 @@ This test imports the actual DefaultHouseholdDemandForProperty class and tests
 the compute_demand method with minimal fixture data that triggers the bug.
 """
 
+import warnings
 
 import numpy as np
 import pandas as pd
 import pytest
-import warnings
 
 from macromodel.agents.households.func.property import DefaultHouseholdDemandForProperty
 
@@ -52,11 +52,13 @@ class TestHouseholdProbabilityOfBuying:
     @pytest.fixture
     def minimal_housing_data(self):
         """Create minimal housing data DataFrame."""
-        return pd.DataFrame({
-            "House ID": [0],
-            "Value": [100000.0],
-            "Rent": [500.0],
-        })
+        return pd.DataFrame(
+            {
+                "House ID": [0],
+                "Value": [100000.0],
+                "Rent": [500.0],
+            }
+        )
 
     def test_probability_formula_produces_valid_range(self, property_demand_calculator, minimal_housing_data):
         """Test that the probability formula produces values in [0, 1].
@@ -89,8 +91,9 @@ class TestHouseholdProbabilityOfBuying:
 
         # Check that outputs are valid (no NaN, no inf where not expected)
         # Either max_price or max_rent should be set (household decided to buy or rent)
-        assert not (np.isnan(max_price[0]) and np.isnan(max_rent[0])), \
-            "Household should have decided to either buy or rent"
+        assert not (
+            np.isnan(max_price[0]) and np.isnan(max_rent[0])
+        ), "Household should have decided to either buy or rent"
 
         # If they decided to buy, max_price should be finite and positive
         if not np.isnan(max_price[0]):
@@ -131,8 +134,9 @@ class TestHouseholdProbabilityOfBuying:
             prob_buying_old = 1.0 / diff_exp_old  # 1/0 ≈ inf
 
         # Document the bug: old formula gives probability > 1 (or inf)
-        assert prob_buying_old > 1.0 or np.isinf(prob_buying_old), \
-            f"Expected old formula to produce invalid prob > 1, got {prob_buying_old}"
+        assert prob_buying_old > 1.0 or np.isinf(
+            prob_buying_old
+        ), f"Expected old formula to produce invalid prob > 1, got {prob_buying_old}"
 
         # NEW formula should use proper logistic: 1 / (1 + exp(-x))
         # This always produces values in (0, 1)
