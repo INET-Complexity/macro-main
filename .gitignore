@@ -125,8 +125,6 @@ venv.bak/
 #MacOS
 **/.DS_Store
 
-
-
 # mypy
 .mypy_cache/
 .dmypy.json
@@ -157,3 +155,8 @@ spoof_data/*.md
 
 # Debugging experiments (local only)
 debugging_experiments/
+
+# Dev folders where large data files are stored
+dev/
+inet-macro-dev/
+macro-dev/
