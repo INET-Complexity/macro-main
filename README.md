@@ -15,6 +15,9 @@ The framework supports multi-country simulations with:
 - Detailed industry-level interactions
 - Environmental impact tracking
 
+
+The documentation can be found in [this URL.](http://macrodocs.macrocosm.group)
+
 ## Installation
 
 ### Requirements
@@ -435,3 +438,23 @@ This flag helps resolve build issues with some of the dependencies, particularly
 ### Using the Calibration Package
 
 The calibration package provides tools for sampling from the macromodel and running simulations in parallel. For more details, refer to the `macrocalib` module documentation.
+
+
+## Contributing
+
+Contributions are welcome! By submitting a pull request or patch, you agree to license your contribution under the Apache License 2.0, consistent with this project's license.
+
+Please ensure any contributions follow the guidelines in [the documentation](http://macrodocs.macrocosm.group).
+
+For significant changes, please open an issue first to discuss the proposed changes.  
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+This software includes technology developed at the University of Oxford and licensed from Oxford University Innovation Limited.
+
+Copyright © 2025 Oxford University Innovation Limited  
+Copyright © 2025 Macrocosm Limited
+
+
