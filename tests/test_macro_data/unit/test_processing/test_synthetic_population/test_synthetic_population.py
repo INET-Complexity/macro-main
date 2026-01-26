@@ -15,7 +15,6 @@ PARENT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 
 class TestSyntheticPopulation:
     def test__init(self, readers, configuration, industry_data, exogenous_data):
-
         france = Country("FRA")
 
         population = SyntheticHFCSPopulation.from_readers(

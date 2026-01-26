@@ -1,6 +1,6 @@
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 def create_good_bundle(n_industries: int, bundles: Optional[list[list[int]]] = None) -> list:
@@ -283,6 +283,64 @@ class TargetProduction(BaseModel):
     }
 
 
+class ProductivityGrowth(BaseModel):
+    """
+    The function for computing TFP growth.
+    Options: NoOpTFPGrowth, SimpleTFPGrowth, StochasticTFPGrowth, SectoralTFPGrowth
+    """
+
+    name: Literal["NoOpTFPGrowth", "SimpleTFPGrowth", "StochasticTFPGrowth", "SectoralTFPGrowth"] = "NoOpTFPGrowth"
+    path_name: str = "productivity_growth"
+    parameters: dict[str, Any] = {}
+
+
+class ProductivityInvestmentPlanner(BaseModel):
+    """
+    The function for planning productivity investments.
+    Options: NoProductivityInvestmentPlanner, SimpleProductivityInvestmentPlanner, OptimalProductivityInvestmentPlanner
+
+    All parameters can be specified as either:
+    - float: uniform value applied to all firms
+    - list[float]: heterogeneous values, one per firm (length must match n_firms)
+
+    Note: n_firms is automatically injected during instantiation and does not need to be specified here.
+    """
+
+    name: Literal[
+        "NoProductivityInvestmentPlanner", "SimpleProductivityInvestmentPlanner", "OptimalProductivityInvestmentPlanner"
+    ] = "NoProductivityInvestmentPlanner"
+    path_name: str = "productivity_investment_planner"
+    parameters: dict[str, Any] = {
+        "n_firms": 18,  # Number of firms (default for aggregate model)
+        # TFP parameters (existing)
+        "hurdle_rate": 0.15,  # Can be float or list[float]
+        "max_investment_fraction": 0.1,  # Can be float or list[float]
+        "investment_effectiveness": 0.1,  # Can be float or list[float]
+        "investment_elasticity": 0.3,  # Can be float or list[float]
+        # Technical coefficient parameters (new)
+        "tfp_investment_share": 0.4,  # Can be float or list[float]
+        "technical_investment_effectiveness": 0.15,  # Can be float or list[float]
+        "technical_diminishing_returns": 0.5,  # Can be float or list[float]
+        "price_weight": 0.4,  # Can be float or list[float]
+        "usage_weight": 0.3,  # Can be float or list[float]
+        "potential_weight": 0.3,  # Can be float or list[float]
+    }
+
+
+class TechnicalCoefficientsGrowth(BaseModel):
+    """
+    The function for computing technical coefficients growth.
+    Options: NoOpTechnicalGrowth, SimpleTechnicalGrowth
+    """
+
+    name: Literal["NoOpTechnicalGrowth", "SimpleTechnicalGrowth"] = "NoOpTechnicalGrowth"
+    path_name: str = "technical_coefficients_growth"
+    parameters: dict[str, Any] = {
+        "investment_effectiveness": 0.15,
+        "diminishing_returns_factor": 0.5,
+    }
+
+
 class FirmsFunctions(BaseModel):
     bought_goods_distributor: BoughtGoodsDistributor = BoughtGoodsDistributor()
     demand_estimator: DemandEstimator = DemandEstimator()
@@ -293,6 +351,10 @@ class FirmsFunctions(BaseModel):
     offered_wage_setter: OfferedWageSetter = OfferedWageSetter()
     prices: Prices = Prices()
     production: Production = Production()
+    productivity_growth: ProductivityGrowth = ProductivityGrowth()  # Defaults to NoOpTFPGrowth
+    productivity_investment_planner: ProductivityInvestmentPlanner = (
+        ProductivityInvestmentPlanner()
+    )  # Defaults to NoProductivityInvestmentPlanner
     target_capital_inputs: TargetCapitalInputs = TargetCapitalInputs()
     target_credit: TargetCredit = TargetCredit()
     target_intermediate_inputs: TargetIntermediateInputs = TargetIntermediateInputs()
@@ -301,6 +363,7 @@ class FirmsFunctions(BaseModel):
     excess_demand: ExcessDemand = ExcessDemand()
     labour_productivity: LabourProductivity = LabourProductivity()
     profit_estimator: ProfitEstimator = ProfitEstimator()
+    technical_coefficients_growth: TechnicalCoefficientsGrowth = TechnicalCoefficientsGrowth()
 
 
 class FirmsParameters(BaseModel):
@@ -313,25 +376,95 @@ class FirmsParameters(BaseModel):
     - Investment behavior settings
 
     Attributes:
-        capital_inputs_delay (list[int]): Delays in capital input availability by industry
-        depreciation_rates (list[float]): Asset depreciation rates by industry
+        capital_inputs_delay (list[int]): Delays in capital input availability by firm
+        depreciation_rates (list[float]): Asset depreciation rates by firm
         capital_inputs_utilisation_rate (float): Capacity utilization for capital
         intermediate_inputs_utilisation_rate (float): Capacity utilization for inputs
+
+    Note:
+        The length of capital_inputs_delay and depreciation_rates determines n_firms.
     """
 
     capital_inputs_delay: list[int] = [0 for _ in range(18)]
     depreciation_rates: list[float] = [0.0 for _ in range(18)]
     capital_inputs_utilisation_rate: float = Field(1.0, ge=0.0, le=1.0)
     intermediate_inputs_utilisation_rate: float = Field(1.0, ge=0.0, le=1.0)
+    tfp_base_growth_rate: float = Field(0.0025, ge=0.0, le=0.1, description="Base TFP growth rate (quarterly)")
+    tfp_investment_elasticity: float = Field(0.3, ge=0.0, le=1.0, description="Returns to scale for TFP investment")
+
+    # Productivity investment allocation parameters
+    max_productivity_investment_fraction: float = Field(
+        0.15, ge=0.0, le=1.0, description="Max productivity investment as fraction of output value"
+    )
+    max_productivity_cash_fraction: float = Field(
+        0.3, ge=0.0, le=1.0, description="Max productivity investment as fraction of available cash"
+    )
+    tfp_investment_share: float = Field(
+        0.4, ge=0.0, le=1.0, description="Share of productivity budget allocated to TFP (vs technical)"
+    )
+
+    # Technical coefficient investment parameters
+    technical_investment_effectiveness: float = Field(
+        0.15, ge=0.0, le=1.0, description="Effectiveness of technical coefficient investment"
+    )
+    technical_diminishing_returns: float = Field(
+        0.5, ge=0.0, le=2.0, description="Diminishing returns factor for technical improvements"
+    )
+
+    # Investment targeting weights
+    price_weight: float = Field(
+        0.4, ge=0.0, le=1.0, description="Weight for price-based targeting in technical investment"
+    )
+    usage_weight: float = Field(
+        0.3, ge=0.0, le=1.0, description="Weight for usage-based targeting in technical investment"
+    )
+    potential_weight: float = Field(
+        0.3, ge=0.0, le=1.0, description="Weight for improvement potential in technical investment"
+    )
+
+    # Bundle arbitrage parameters
+    enable_bundle_arbitrage: bool = Field(True, description="Enable bundle-aware arbitrage in technical investment")
+    bundle_significance_threshold: float = Field(
+        0.1, ge=0.0, le=1.0, description="Min fraction of spending for bundle arbitrage to apply"
+    )
+    arbitrage_intensity: float = Field(2.0, ge=0.0, le=5.0, description="Intensity of bundle arbitrage effects")
 
     @classmethod
-    def disaggregated_industries_default(cls, n_industries: int) -> "FirmsParameters":
+    def disaggregated_industries_default(
+        cls,
+        n_industries: int,
+        tfp_base_growth_rate: float = 0.0025,
+        tfp_investment_elasticity: float = 0.3,
+        max_productivity_investment_fraction: float = 0.15,
+        max_productivity_cash_fraction: float = 0.3,
+        tfp_investment_share: float = 0.4,
+        technical_investment_effectiveness: float = 0.15,
+        technical_diminishing_returns: float = 0.5,
+        price_weight: float = 0.4,
+        usage_weight: float = 0.3,
+        potential_weight: float = 0.3,
+        enable_bundle_arbitrage: bool = False,
+        arbitrage_intensity: float = 2.0,
+    ) -> "FirmsParameters":
         return cls(
             **{
                 "capital_inputs_delay": [0 for _ in range(n_industries)],
                 "depreciation_rates": [0.0 for _ in range(n_industries)],
                 "capital_inputs_utilisation_rate": 1.0,
                 "intermediate_inputs_utilisation_rate": 1.0,
+                "tfp_base_growth_rate": tfp_base_growth_rate,
+                "tfp_investment_elasticity": tfp_investment_elasticity,
+                # Use defaults for new productivity investment parameters
+                "max_productivity_investment_fraction": max_productivity_investment_fraction,
+                "max_productivity_cash_fraction": max_productivity_cash_fraction,
+                "tfp_investment_share": tfp_investment_share,
+                "technical_investment_effectiveness": technical_investment_effectiveness,
+                "technical_diminishing_returns": technical_diminishing_returns,
+                "price_weight": price_weight,
+                "usage_weight": usage_weight,
+                "potential_weight": potential_weight,
+                "enable_bundle_arbitrage": enable_bundle_arbitrage,
+                "arbitrage_intensity": arbitrage_intensity,
             }
         )
 
@@ -350,10 +483,58 @@ class FirmsConfiguration(BaseModel):
         calculate_hill_exponent (bool): Whether to calculate Hill exponent
     """
 
-    parameters: FirmsParameters = FirmsParameters()
+    parameters: FirmsParameters = FirmsParameters.disaggregated_industries_default(n_industries=18)
     functions: FirmsFunctions = FirmsFunctions()
     calculate_hill_exponent: bool = True
     substitution_bundles: list = DEFAULT_BUNDLE
+
+    @property
+    def n_firms(self) -> int:
+        """Get number of firms from parameters.
+
+        The number of firms is inferred from the length of capital_inputs_delay
+        or depreciation_rates lists in FirmsParameters.
+
+        Returns:
+            int: Number of firms configured
+        """
+        return len(self.parameters.capital_inputs_delay)
+
+    @model_validator(mode="after")
+    def validate_n_firms_consistency(self) -> "FirmsConfiguration":
+        """Validate that n_firms is consistent across all parameters that use it."""
+        # Get n_firms from parameters
+        n_firms_from_delay = len(self.parameters.capital_inputs_delay)
+        n_firms_from_depreciation = len(self.parameters.depreciation_rates)
+
+        # Ensure capital_inputs_delay and depreciation_rates have same length
+        if n_firms_from_delay != n_firms_from_depreciation:
+            raise ValueError(
+                f"capital_inputs_delay length ({n_firms_from_delay}) must match "
+                f"depreciation_rates length ({n_firms_from_depreciation})"
+            )
+
+        n_firms = n_firms_from_delay
+
+        # Always set n_firms in productivity investment planner (even if not currently active)
+        # This ensures it's correct if the user later activates the planner
+        self.functions.productivity_investment_planner.parameters["n_firms"] = n_firms
+
+        # Only validate list parameter lengths if planner is active
+        if self.functions.productivity_investment_planner.name != "NoProductivityInvestmentPlanner":
+            # Validate that list parameters in productivity investment planner have correct length
+            for param_name, param_value in self.functions.productivity_investment_planner.parameters.items():
+                if param_name == "n_firms":
+                    continue
+                if isinstance(param_value, list):
+                    if len(param_value) != n_firms:
+                        raise ValueError(
+                            f"Productivity investment parameter '{param_name}' has length {len(param_value)} "
+                            f"but n_firms is {n_firms}. "
+                            f"When using list parameters, they must match the number of firms."
+                        )
+
+        return self
 
     @property
     def reset_params(self):
@@ -366,9 +547,19 @@ class FirmsConfiguration(BaseModel):
         return values
 
     @classmethod
-    def n_industries_default(cls, n_industries: int, bundles: Optional[list[list[int]]] = None):
+    def n_industries_default(
+        cls,
+        n_industries: int,
+        bundles: Optional[list[list[int]]] = None,
+        tfp_base_growth_rate: float = 0.0025,
+        tfp_investment_elasticity: float = 0.3,
+        enable_bundle_arbitrage: bool = False,
+    ) -> "FirmsConfiguration":
         if bundles is None:
             bundles = []
+
+        if len(bundles) == 0 and enable_bundle_arbitrage:
+            raise ValueError("Bundle arbitrage cannot be enabled without defining bundles.")
 
         if len(bundles) > 0:
             functions = FirmsFunctions(
@@ -383,7 +574,11 @@ class FirmsConfiguration(BaseModel):
 
         bundles_grouped = create_good_bundle(n_industries=n_industries, bundles=bundles)
         return cls(
-            parameters=FirmsParameters.disaggregated_industries_default(n_industries),
+            parameters=FirmsParameters.disaggregated_industries_default(
+                n_industries,
+                tfp_base_growth_rate=tfp_base_growth_rate,
+                tfp_investment_elasticity=tfp_investment_elasticity,
+            ),
             functions=functions,
             calculate_hill_exponent=True,
             substitution_bundles=bundles_grouped,

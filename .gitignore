@@ -77,6 +77,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb
 
 # IPython
 profile_default/
@@ -153,3 +154,6 @@ spoof_data/original_compustat/
 # Only track README.md in spoof_data, ignore other markdown files
 spoof_data/*.md
 !spoof_data/README.md
+
+# Debugging experiments (local only)
+debugging_experiments/

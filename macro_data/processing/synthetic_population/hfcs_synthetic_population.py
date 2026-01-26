@@ -987,7 +987,6 @@ def reassign_industries(individuals_df: pd.DataFrame, output_shares: dict[str, p
     aggregate_industries = individuals_df["Employment Industry"].dropna().unique()
 
     for agg_sector in aggregate_industries:
-
         # don't do anything if the shape of the output shares is not >=2
 
         indices = individuals_df[individuals_df["Employment Industry"] == agg_sector].index

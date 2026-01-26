@@ -79,7 +79,6 @@ class TestICIOAggReader:
 
 
 class TestICIODisagg:
-
     def test__output(self, all_readers):
         icio = all_readers.icio[2014]
         output = icio.get_total_output("FRA")

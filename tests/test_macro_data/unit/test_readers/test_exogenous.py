@@ -3,7 +3,6 @@ from macro_data.readers.exogenous_data import ExogenousCountryData
 
 
 class TestExogenous:
-
     def test__exogenous(self, readers, industry_data):
         country = Country("FRA")
         data = ExogenousCountryData.from_data_readers(

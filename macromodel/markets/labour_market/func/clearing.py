@@ -711,7 +711,6 @@ def random_firing(
         # don't fire if the firm has only one employee
 
         if len(firm_employments[firm_id]) > 1:
-
             firing_costs[individuals_corresponding_firm[ind_id]] += (
                 firing_cost_fraction * current_individual_wages[ind_id]
             )
@@ -987,13 +986,14 @@ class PolednaLabourMarketClearer(LabourMarketClearer):
             current_individuals_activity[hires] = ActivityStatus.EMPLOYED
 
         # Sanity check
-        assert np.all(
+        no_zero_employees = np.all(
             np.bincount(
                 individuals_corresponding_firm[individuals_corresponding_firm >= 0],
                 minlength=firms.ts.current("n_firms"),
             )
             > 0
         )
+        assert no_zero_employees
 
         # Update individuals activity status
         current_individuals_activity[

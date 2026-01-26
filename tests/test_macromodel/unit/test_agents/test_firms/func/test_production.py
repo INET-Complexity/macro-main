@@ -20,6 +20,60 @@ class TestProductionSetter:
             np.array([6.0, 8.0]),
         )
 
+    def test__compute_production_with_tfp_none(self):
+        """Test backward compatibility when TFP is not provided."""
+        assert np.allclose(
+            PureLeontief().compute_production(
+                desired_production=np.array([10.0, 10.0]),
+                current_labour_inputs=np.array([9.0, 11.0]),
+                current_limiting_intermediate_inputs=np.array([9.0, 11.0]),
+                current_limiting_capital_inputs=np.array([6.0, 8.0]),
+                tfp_multiplier=None,  # Explicitly None
+            ),
+            np.array([6.0, 8.0]),
+        )
+
+    def test__compute_production_with_tfp_unity(self):
+        """Test that TFP=1.0 gives same result as no TFP."""
+        tfp_unity = np.array([1.0, 1.0])
+        assert np.allclose(
+            PureLeontief().compute_production(
+                desired_production=np.array([10.0, 10.0]),
+                current_labour_inputs=np.array([9.0, 11.0]),
+                current_limiting_intermediate_inputs=np.array([9.0, 11.0]),
+                current_limiting_capital_inputs=np.array([6.0, 8.0]),
+                tfp_multiplier=tfp_unity,
+            ),
+            np.array([6.0, 8.0]),
+        )
+
+    def test__compute_production_with_tfp_boost(self):
+        """Test that TFP>1.0 increases effective capacity."""
+        tfp_boost = np.array([1.5, 1.2])  # 50% and 20% productivity boost
+        result = PureLeontief().compute_production(
+            desired_production=np.array([10.0, 10.0]),
+            current_labour_inputs=np.array([9.0, 11.0]),
+            current_limiting_intermediate_inputs=np.array([9.0, 11.0]),
+            current_limiting_capital_inputs=np.array([6.0, 8.0]),
+            tfp_multiplier=tfp_boost,
+        )
+        # TFP scales inputs: min([10, 9*1.5, 9*1.5, 6*1.5]) = min([10, 13.5, 13.5, 9]) = 9
+        # TFP scales inputs: min([10, 11*1.2, 11*1.2, 8*1.2]) = min([10, 13.2, 13.2, 9.6]) = 9.6
+        assert np.allclose(result, np.array([9.0, 9.6]))
+
+    def test__compute_production_tfp_respects_target(self):
+        """Test that TFP doesn't allow production above target."""
+        tfp_high = np.array([2.0, 2.0])  # Double productivity
+        result = PureLeontief().compute_production(
+            desired_production=np.array([5.0, 7.0]),  # Low targets
+            current_labour_inputs=np.array([9.0, 11.0]),
+            current_limiting_intermediate_inputs=np.array([9.0, 11.0]),
+            current_limiting_capital_inputs=np.array([6.0, 8.0]),
+            tfp_multiplier=tfp_high,
+        )
+        # Despite high TFP, production is limited by desired_production
+        assert np.allclose(result, np.array([5.0, 7.0]))
+
     def test__compute_limiting_intermediate_inputs_stock(self):
         intermediate_inputs_productivity_matrix = np.array(
             [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [np.inf, np.inf, np.inf, np.inf], [1.0, 1.0, 1.0, 1.0]]
