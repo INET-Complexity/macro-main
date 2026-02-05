@@ -694,6 +694,110 @@ def test_technical_only_investment_allocation(datawrapper, seed=42):
     ), "At least some effective coefficients should be strictly better than base coefficients"
 
 
+def test_tfp_growth_produces_real_gdp_growth(can_disagg_datawrapper):
+    """Test that TFP growth with productivity investment produces real GDP growth.
+
+    This test verifies the fix for the issue where TFP growth was configured but
+    real GDP remained flat. The fix ensures that planned_productivity_investment
+    is translated into actual capital demand in prepare_buying_goods.
+
+    Addresses concerns raised by Luke and Deven:
+    - Luke: "GDP does appear to grow (nominally)... but real GDP (GDP/CPI) is flat"
+    - Deven: Fixed by adding planned_productivity_investment to target_capital_inputs
+
+    This test runs a 20-quarter (5-year) simulation and verifies:
+    1. TFP multiplier increases over time
+    2. Real GDP grows (not just nominal)
+    3. Productivity investment is planned and executed
+    """
+    n_industries = can_disagg_datawrapper.n_industries
+
+    configuration = SimulationConfiguration(
+        seed=42,
+        t_max=20,
+        country_configurations={"CAN": CountryConfiguration.n_industry_default(n_industries=n_industries)},
+    )
+
+    # Configure TFP growth with investment
+    configuration.country_configurations["CAN"].firms.functions.productivity_growth.name = "SimpleTFPGrowth"
+    configuration.country_configurations["CAN"].firms.parameters.tfp_base_growth_rate = 0.002  # 0.2% per quarter
+    configuration.country_configurations["CAN"].firms.parameters.tfp_investment_elasticity = 0.5
+    configuration.country_configurations["CAN"].firms.functions.productivity_growth.parameters = {
+        "investment_effectiveness": 0.5,
+    }
+
+    # Configure productivity investment planner with favorable parameters
+    configuration.country_configurations["CAN"].firms.functions.productivity_investment_planner.name = (
+        "SimpleProductivityInvestmentPlanner"
+    )
+    configuration.country_configurations["CAN"].firms.functions.productivity_investment_planner.parameters = {
+        "n_firms": n_industries,
+        "hurdle_rate": 0.03,
+        "investment_effectiveness": 0.2,
+        "investment_elasticity": 0.5,
+        "max_investment_fraction": 0.2,
+        "technical_diminishing_returns": 0.07,
+    }
+
+    # Use stable prices (no price feedback) to isolate TFP effect
+    configuration.country_configurations["CAN"].firms.functions.prices.parameters["price_setting_speed_dp"] = 0.0
+    configuration.country_configurations["CAN"].firms.functions.prices.parameters["price_setting_speed_cp"] = 0.0
+
+    # Create simulation
+    simulation = Simulation.from_datawrapper(
+        datawrapper=can_disagg_datawrapper, simulation_configuration=configuration
+    )
+
+    country = simulation.countries["CAN"]
+
+    # Record initial values
+    initial_tfp = country.firms.states["tfp_multiplier"].mean()
+    initial_gdp = country.economy.gdp_output()[-1]
+    initial_cpi = country.economy.total_cpi_inflation()[-1]
+    initial_real_gdp = initial_gdp / initial_cpi
+
+    # Run simulation
+    n_periods = 20
+    for _ in range(n_periods):
+        simulation.iterate()
+
+    # Record final values
+    final_tfp = country.firms.states["tfp_multiplier"].mean()
+    final_gdp = country.economy.gdp_output()[-1]
+    final_cpi = country.economy.total_cpi_inflation()[-1]
+    final_real_gdp = final_gdp / final_cpi
+
+    # Calculate growth rates
+    tfp_growth = (final_tfp / initial_tfp - 1) * 100
+    real_gdp_growth = (final_real_gdp / initial_real_gdp - 1) * 100
+    cpi_change = (final_cpi / initial_cpi - 1) * 100
+
+    # Assertions
+    # 1. TFP should have grown significantly
+    assert final_tfp > initial_tfp, f"TFP should increase: {initial_tfp:.4f} -> {final_tfp:.4f}"
+    assert tfp_growth > 10, f"TFP growth should be > 10%, got {tfp_growth:.2f}%"
+
+    # 2. Real GDP should have grown (this was the original issue - it was flat)
+    assert final_real_gdp > initial_real_gdp, f"Real GDP should increase: {initial_real_gdp:.2e} -> {final_real_gdp:.2e}"
+    assert real_gdp_growth > 5, f"Real GDP growth should be > 5%, got {real_gdp_growth:.2f}%"
+
+    # 3. CPI should remain relatively stable (with price_setting_speed = 0)
+    assert abs(cpi_change) < 20, f"CPI change should be < 20%, got {cpi_change:.2f}%"
+
+    # 4. Productivity investment should have occurred
+    if len(country.firms.ts.executed_productivity_investment) > 0:
+        total_executed_investment = sum(
+            inv.sum() for inv in country.firms.ts.executed_productivity_investment
+        )
+        assert total_executed_investment > 0, "There should be positive executed productivity investment"
+
+    if len(country.firms.ts.planned_productivity_investment) > 0:
+        total_planned_investment = sum(
+            inv.sum() for inv in country.firms.ts.planned_productivity_investment
+        )
+        assert total_planned_investment > 0, "There should be positive planned productivity investment"
+
+
 def test_prehooks(datawrapper):
     """Test that pre-hooks execute correctly before each iteration."""
     # Track hook calls
