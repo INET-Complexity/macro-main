@@ -50,7 +50,9 @@ def test_simulation(datawrapper, seed):
     france_datawrapper_firms = france_datawrapper.firms
 
     firm_data = france_datawrapper_firms.firm_data
-    firms_output_lcu = firm_data.groupby("Industry").apply(lambda x: (x["Production"] * x["Price"]).sum())
+    firms_output_lcu = firm_data.groupby("Industry").apply(
+        lambda x: (x["Production"] * x["Price"]).sum(), include_groups=False
+    )
 
     assert gross_output.loc[0] == pytest.approx(firms_output_lcu.sum(), rel=1e-4)
 
