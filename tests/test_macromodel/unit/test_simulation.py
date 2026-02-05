@@ -744,9 +744,7 @@ def test_tfp_growth_produces_real_gdp_growth(can_disagg_datawrapper):
     configuration.country_configurations["CAN"].firms.functions.prices.parameters["price_setting_speed_cp"] = 0.0
 
     # Create simulation
-    simulation = Simulation.from_datawrapper(
-        datawrapper=can_disagg_datawrapper, simulation_configuration=configuration
-    )
+    simulation = Simulation.from_datawrapper(datawrapper=can_disagg_datawrapper, simulation_configuration=configuration)
 
     country = simulation.countries["CAN"]
 
@@ -778,7 +776,9 @@ def test_tfp_growth_produces_real_gdp_growth(can_disagg_datawrapper):
     assert tfp_growth > 10, f"TFP growth should be > 10%, got {tfp_growth:.2f}%"
 
     # 2. Real GDP should have grown (this was the original issue - it was flat)
-    assert final_real_gdp > initial_real_gdp, f"Real GDP should increase: {initial_real_gdp:.2e} -> {final_real_gdp:.2e}"
+    assert (
+        final_real_gdp > initial_real_gdp
+    ), f"Real GDP should increase: {initial_real_gdp:.2e} -> {final_real_gdp:.2e}"
     assert real_gdp_growth > 5, f"Real GDP growth should be > 5%, got {real_gdp_growth:.2f}%"
 
     # 3. CPI should remain relatively stable (with price_setting_speed = 0)
@@ -786,15 +786,11 @@ def test_tfp_growth_produces_real_gdp_growth(can_disagg_datawrapper):
 
     # 4. Productivity investment should have occurred
     if len(country.firms.ts.executed_productivity_investment) > 0:
-        total_executed_investment = sum(
-            inv.sum() for inv in country.firms.ts.executed_productivity_investment
-        )
+        total_executed_investment = sum(inv.sum() for inv in country.firms.ts.executed_productivity_investment)
         assert total_executed_investment > 0, "There should be positive executed productivity investment"
 
     if len(country.firms.ts.planned_productivity_investment) > 0:
-        total_planned_investment = sum(
-            inv.sum() for inv in country.firms.ts.planned_productivity_investment
-        )
+        total_planned_investment = sum(inv.sum() for inv in country.firms.ts.planned_productivity_investment)
         assert total_planned_investment > 0, "There should be positive planned productivity investment"
 
 

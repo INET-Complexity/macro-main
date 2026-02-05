@@ -2,9 +2,11 @@ name: Build and test calibration package
 
 on:
   pull_request:
-    # Run on PRs to any branch
+    branches:
+      - main
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
