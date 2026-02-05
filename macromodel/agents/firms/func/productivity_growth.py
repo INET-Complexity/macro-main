@@ -1,6 +1,9 @@
+import logging
 from abc import ABC, abstractmethod
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 class ProductivityGrowth(ABC):
@@ -134,6 +137,15 @@ class SimpleTFPGrowth(ProductivityGrowth):
         # Base growth applies to all firms
         tfp_growth = np.full_like(current_tfp, base_growth_rate)
 
+        # [TFP_DEBUG] Log input parameters
+        logger.debug(
+            "[TFP_DEBUG] SimpleTFPGrowth.compute_tfp_growth called: "
+            f"base_growth_rate={base_growth_rate}, investment_elasticity={investment_elasticity}, "
+            f"investment_effectiveness={self.investment_effectiveness}, "
+            f"current_tfp(mean)={np.mean(current_tfp):.6f}, production(sum)={np.sum(production):.2e}, "
+            f"productivity_investment(sum)={np.sum(productivity_investment):.2e}"
+        )
+
         # Add investment-driven growth where production > 0
         positive_production = production > 0
         if np.any(positive_production):
@@ -146,6 +158,12 @@ class SimpleTFPGrowth(ProductivityGrowth):
             positive_investment = productivity_investment > 0
             valid_firms = positive_production & positive_investment
 
+            # [TFP_DEBUG] Log firm counts
+            logger.debug(
+                f"[TFP_DEBUG] Firms with positive_production={np.sum(positive_production)}, "
+                f"positive_investment={np.sum(positive_investment)}, valid_firms={np.sum(valid_firms)}"
+            )
+
             if np.any(valid_firms):
                 investment_intensity[valid_firms] = productivity_investment[valid_firms] / production[valid_firms]
 
@@ -155,6 +173,18 @@ class SimpleTFPGrowth(ProductivityGrowth):
                 )
 
                 tfp_growth += investment_contribution
+
+                # [TFP_DEBUG] Log investment contribution
+                logger.debug(
+                    f"[TFP_DEBUG] investment_intensity(mean of valid)={np.mean(investment_intensity[valid_firms]):.6f}, "
+                    f"investment_contribution(mean)={np.mean(investment_contribution):.6f}, "
+                    f"tfp_growth(mean)={np.mean(tfp_growth):.6f}"
+                )
+
+        # [TFP_DEBUG] Log final result
+        logger.debug(
+            f"[TFP_DEBUG] Final tfp_growth: mean={np.mean(tfp_growth):.6f}, min={np.min(tfp_growth):.6f}, max={np.max(tfp_growth):.6f}"
+        )
 
         return tfp_growth
 
