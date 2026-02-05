@@ -137,6 +137,10 @@ class SimpleTFPGrowth(ProductivityGrowth):
         # Base growth applies to all firms
         tfp_growth = np.full_like(current_tfp, base_growth_rate)
 
+        # Handle empty arrays early
+        if len(current_tfp) == 0:
+            return tfp_growth
+
         # [TFP_DEBUG] Log input parameters
         logger.debug(
             "[TFP_DEBUG] SimpleTFPGrowth.compute_tfp_growth called: "
