@@ -93,15 +93,15 @@ def get_industry_vectors(
         data={
             "Output in USD": current_icio_reader.get_total_output(country_name),
             "Output in LCU": current_icio_reader.get_total_output(country_name) * exchange_rate,
-            "Intermediate Inputs Supply": current_icio_reader.get_intermediate_inputs_use(country_name).sum(axis=0),
-            "Intermediate Inputs Use in USD": current_icio_reader.get_intermediate_inputs_use(country_name).sum(axis=1),
+            "Intermediate Inputs Supply": current_icio_reader.get_intermediate_inputs_use(country_name).sum(axis=1),
+            "Intermediate Inputs Use in USD": current_icio_reader.get_intermediate_inputs_use(country_name).sum(axis=0),
             "Intermediate Inputs Use in LCU": exchange_rate
-            * current_icio_reader.get_intermediate_inputs_use(country_name).sum(axis=1),
+            * current_icio_reader.get_intermediate_inputs_use(country_name).sum(axis=0),
             "Intermediate Inputs Domestic Use in USD": current_icio_reader.get_intermediate_inputs_domestic(
                 country_name
-            ).sum(axis=1),
+            ).sum(axis=0),
             "Intermediate Inputs Domestic Use in LCU": exchange_rate
-            * current_icio_reader.get_intermediate_inputs_domestic(country_name).sum(axis=1),
+            * current_icio_reader.get_intermediate_inputs_domestic(country_name).sum(axis=0),
             "Firm Capital Inputs in USD": current_icio_reader.get_firm_capital_inputs(country_name),
             "Firm Capital Inputs in LCU": exchange_rate * current_icio_reader.get_firm_capital_inputs(country_name),
             "Household Capital Inputs in USD": current_icio_reader.get_household_capital_inputs(country_name),

@@ -27,7 +27,7 @@ style:
   - if: $CI_COMMIT_BRANCH == "main"
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
-test:
+test_macro_data:
   stage: test
   script:
   - pytest --cov=data tests/test_macro_data --cov-report xml
@@ -37,6 +37,23 @@ test:
         coverage_format: cobertura
         path: coverage.xml
     when: always
+  rules:
+  - if: $CI_COMMIT_BRANCH == "main"
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+test_macromodel:
+  stage: test
+  script:
+  - pytest --cov=macromodel tests/test_macromodel --cov-report xml
+  rules:
+  - if: $CI_COMMIT_BRANCH == "main"
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+test_macrocalib:
+  stage: test
+  script:
+  - pip install -e ".[dev,calibration]"
+  - pytest --cov=macrocalib tests/test_macrocalib --cov-report xml
   rules:
   - if: $CI_COMMIT_BRANCH == "main"
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"

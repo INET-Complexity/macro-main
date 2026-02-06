@@ -11,9 +11,9 @@ exchange rates, and rest-of-world effects. It provides functionality to:
 
 import logging
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 import h5py
 import numpy as np
@@ -63,6 +63,8 @@ class Simulation:
     initial_year: int
     aggregate_country_price_index: float = 1.0
     regional_aggregator: Optional[RegionalAggregator] = None
+    prehooks: list[Callable] = field(default_factory=list)
+    posthooks: list[Callable] = field(default_factory=list)
 
     @classmethod
     def from_datawrapper(
@@ -100,7 +102,7 @@ class Simulation:
                     zero_initial_deposits=False,
                 )
 
-        countries_without_row = list(set(datawrapper.all_country_names) - {"ROW"})
+        countries_without_row = [c for c in datawrapper.all_country_names if c != "ROW"]
         countries_with_row = datawrapper.all_country_names
 
         running_multi_country = len(countries_without_row) > 1
@@ -237,17 +239,56 @@ class Simulation:
         """Optional[int]: Random seed used for reproducible simulations."""
         return self.configuration.seed
 
-    def iterate(self):
+    def run_prehooks(self, year: int, month: int) -> None:
+        """Execute all registered pre-hooks before iteration logic.
+
+        Args:
+            year (int): Current year of the simulation
+            month (int): Current month of the simulation
+        """
+        for hook in self.prehooks:
+            # Warn if month is not a quarter start (1, 4, 7, 10)
+            if month not in [1, 4, 7, 10]:
+                hook_name = getattr(hook, "__name__", "unknown_hook")
+                logging.warning(
+                    f"Pre-hook '{hook_name}' called at month {month}, which is not a quarter start. "
+                    "The simulation frequency may be quarterly."
+                )
+            hook(self, year, month)
+
+    def run_posthooks(self, t: int, year: int, month: int) -> None:
+        """Execute all registered post-hooks after iteration logic.
+
+        Post-hooks are called after all markets have cleared and metrics are updated,
+        allowing inspection of the realized state of the simulation.
+
+        Args:
+            t (int): Current timestep index (0-indexed)
+            year (int): Current year of the simulation
+            month (int): Current month of the simulation
+        """
+        for hook in self.posthooks:
+            hook(self, t, year, month)
+
+    def iterate(self, t: int = 0):
         """Execute one timestep of the simulation.
 
         Performs a complete iteration of the economic model, including:
-        1. Exchange rate updates
-        2. Country-level economic processes
-        3. Labor market clearing
-        4. Housing and credit market clearing
-        5. Goods market clearing
-        6. Metric updates and recording
+        1. Pre-hook execution
+        2. Exchange rate updates
+        3. Country-level economic processes
+        4. Labor market clearing
+        5. Housing and credit market clearing
+        6. Goods market clearing
+        7. Metric updates and recording
+        8. Post-hook execution
+
+        Args:
+            t (int): Current timestep index (0-indexed), used for logging/debugging
         """
+        # Execute pre-hooks before any iteration logic
+        self.run_prehooks(self.timestep.year, self.timestep.month)
+
         # self.exchange_rates.set_current_exchange_rates(current_year=self.timestep.year)
 
         for ind, country in enumerate(self.countries.values()):
@@ -269,7 +310,6 @@ class Simulation:
             self.regional_aggregator.sync_central_banks(self.countries)
 
         for ind, country in enumerate(self.countries.values()):
-
             # Clearing the housing and the credit market
             logging.info("Clearing the housing and the credit market")
             country.prepare_housing_market_clearing()
@@ -308,6 +348,9 @@ class Simulation:
         for country in self.countries.values():
             country.update_realised_metrics()
             country.update_population_structure()
+
+        # Execute post-hooks after all metrics are updated
+        self.run_posthooks(t, self.timestep.year, self.timestep.month)
 
         # Next month
         self.timestep.step()
@@ -349,8 +392,8 @@ class Simulation:
         Executes the simulation from the current state until t_max iterations
         have been completed. Each iteration represents one time period in the model.
         """
-        for _ in range(self.t_max):
-            self.iterate()
+        for t in range(self.t_max):
+            self.iterate(t)
 
     def save_random_seed(self, h5_file: h5py.File) -> None:
         """Save the random seed to the HDF5 file metadata.
@@ -431,6 +474,28 @@ class Simulation:
             pd.DataFrame: DataFrame containing summary statistics for the country
         """
         return self.countries[country].shallow_output()
+
+    def get_country_gdp_debug_output(self, country: str):
+        """Get detailed GDP breakdown for a specific country.
+
+        Args:
+            country (str): Country code to get data for
+
+        Returns:
+            pd.DataFrame: DataFrame containing detailed GDP breakdown for the country
+        """
+        return self.countries[country].gdp_debug_output()
+
+    def get_country_gdp_components_df(self, country: str):
+        """Get detailed GDP breakdown for a specific country.
+
+        Args:
+            country (str): Country code to get data for
+
+        Returns:
+            pd.DataFrame: DataFrame containing detailed GDP breakdown for the country
+        """
+        return self.countries[country].gdp_components_df
 
 
 def check_compatibility(

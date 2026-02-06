@@ -109,10 +109,9 @@ def set_household_housing_data(
         pd.DataFrame: The updated DataFrame with the housing data set for each household.
     """
     # Whether the household owns or rents
-    # household_data["Tenure Status of the Main Residence"].replace({2: 1, 4: 1, 3: 0}, inplace=True)
-    household_data.replace("Tenure Status of the Main Residence", {2: 1, 4: 1, 3: 0}, inplace=True)
-    households_renting = household_data["Tenure Status of the Main Residence"] == 0
-    households_owning = household_data["Tenure Status of the Main Residence"] == 1
+    # This maintains codes used in HFCS. 1, 2 and 4 are owning, part owning or free use. 3 is renting.
+    households_renting = household_data["Tenure Status of the Main Residence"] == 3
+    households_owning = household_data["Tenure Status of the Main Residence"].isin([1, 2, 4])
 
     # Rent paid and value of the household main residence
     social_housing_rent = rent_as_fraction_of_unemployment_rate * unemployment_benefits_by_capita

@@ -949,6 +949,7 @@ class Economy:
         operating_surplus: float,
         wages: float,
         rent_received: float,
+        central_government_rent_received: float,
         running_multiple_countries: bool,
         always_adjust: bool = True,
     ) -> None:
@@ -985,6 +986,7 @@ class Economy:
             operating_surplus (float): Operating surplus and mixed income
             wages (float): Compensation of employees
             rent_received (float): Rental income received
+            central_government_rent_received (float): Central government rental income received
             running_multiple_countries (bool): Multi-country simulation flag
             always_adjust (bool, optional): Force trade adjustments. Defaults to True.
         """
@@ -1166,8 +1168,8 @@ class Economy:
             + gov_consumption
             + exports
             - imports
-            # + rent_paid
-            # + rent_imputed
+            + rent_paid
+            + rent_imputed
         )
         self.ts.total_household_fce.append([hh_consumption])
         if self.ts.prev("total_household_fce")[0] == 0.0:
@@ -1209,8 +1211,9 @@ class Economy:
                 operating_surplus
                 + wages
                 + taxes_on_products
-                # + rent_received
-                # + rent_imputed
+                + rent_received
+                + central_government_rent_received
+                + rent_imputed
             ]
         )
         if self.ts.prev("gdp_income")[0] == 0.0:
@@ -1270,8 +1273,8 @@ class Economy:
                 + gov_consumption
                 + exports
                 - imports
-                # + rent_paid
-                # + rent_imputed
+                + rent_paid
+                + rent_imputed
             ]
         )
         if self.ts.prev("gdp_expenditure")[0] == 0.0:

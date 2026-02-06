@@ -480,6 +480,9 @@ class Country:
         # Firms set production targets
         self.firms.set_targets(
             bank_overdraft_rate_on_firm_deposits=self.banks.ts.current("overdraft_rate_on_firm_deposits"),
+            estimated_growth=self.economy.ts.current("estimated_growth")[0],
+            estimated_inflation=self.economy.ts.current("estimated_ppi_inflation")[0],
+            current_good_prices=self.economy.ts.current("good_prices"),
         )
 
         # Changes in labour productivity
@@ -623,6 +626,12 @@ class Country:
             get_histogram(self.individuals.ts.current("employee_income"), self.scale)
         )
 
+        # Update TFP before production (only if TFP growth is configured)
+        if not self.assume_zero_growth:
+            self.firms.update_tfp()
+            # Update technical coefficient multipliers
+            self.firms.update_technical_coefficients()
+
         # Firm production
         if self.assume_zero_growth:
             self.firms.ts.production.append(self.firms.ts.initial("production"))
@@ -642,7 +651,9 @@ class Country:
 
         # Firm demand for goods
         self.firms.ts.unconstrained_target_intermediate_inputs.append(
-            self.firms.compute_unconstrained_demand_for_intermediate_inputs()
+            self.firms.compute_unconstrained_demand_for_intermediate_inputs(
+                good_prices=self.economy.ts.current("good_prices")
+            )
         )
         self.firms.ts.unconstrained_target_intermediate_inputs_costs.append(
             self.firms.compute_unconstrained_demand_for_intermediate_inputs_value(
@@ -650,7 +661,9 @@ class Country:
             )
         )
         self.firms.ts.unconstrained_target_capital_inputs.append(
-            self.firms.compute_unconstrained_demand_for_capital_inputs()
+            self.firms.compute_unconstrained_demand_for_capital_inputs(
+                good_prices=self.economy.ts.current("good_prices")
+            )
         )
         self.firms.ts.unconstrained_target_capital_inputs_costs.append(
             self.firms.compute_unconstrained_demand_for_capital_inputs_value(
@@ -697,6 +710,12 @@ class Country:
         self.households.ts.expected_income.append(self.households.compute_expected_income())
 
         # Household target consumption
+        # Note: For CES substitution, we track additional taxes (like carbon tax) similar to firms
+        # Currently no additional taxes are implemented, so both initial and current are zero
+        # This will be updated when carbon tax or other additional taxes are added
+        current_additional_taxes = np.zeros(len(self.firms.ts.current("price")))
+        initial_additional_taxes = np.zeros(len(self.firms.ts.current("price")))
+
         self.households.ts.target_consumption.append(
             self.households.compute_target_consumption(
                 expected_inflation=self.economy.ts.current("estimated_cpi_inflation")[0],
@@ -710,6 +729,10 @@ class Country:
                 )[0],
                 tau_vat=self.central_government.states["Value-added Tax"],
                 assume_zero_growth=self.assume_zero_growth,
+                prices=self.firms.ts.current("price"),
+                initial_prices=self.firms.ts.initial("price"),
+                taxes=current_additional_taxes,
+                initial_taxes=initial_additional_taxes,
             )
         )
 
@@ -1055,6 +1078,9 @@ class Country:
             current_good_prices=self.economy.ts.current("good_prices"),
         )
 
+        # Execute and record productivity investment after capital purchases are known
+        self.firms.execute_productivity_investment()
+
         self.firms.ts.demand.append(self.firms.compute_demand())
 
         self.firms.ts.production_nominal.append(
@@ -1168,9 +1194,17 @@ class Country:
         self.individuals.ts.income_histogram.append(get_histogram(self.individuals.ts.current("income"), self.scale))
 
         # E2. HOUSEHOLD INCOME COMPONENTS
+        # Recalculate rental income with final housing market data and overwrite the planned value
+        final_income_rental = self.households.compute_rental_income(
+            housing_data=self.housing_market.states["properties"],
+            income_taxes=self.central_government.states["Income Tax"],
+        )
+        self.households.ts.dicts["income_rental"][-1] = final_income_rental
+        self.households.ts.dicts["total_income_rental"][-1] = [final_income_rental.sum()]
+
         self.households.ts.income_employee.append(
             self.households.compute_employee_income(
-                individual_income=self.individuals.ts.current("income"),
+                individual_income=self.individuals.ts.current("employee_income"),
                 corr_households=self.individuals.states["Corresponding Household ID"],
             )
         )
@@ -1281,10 +1315,11 @@ class Country:
         self.economy.ts.bank_insolvency_rate.append([self.banks.compute_insolvency_rate()])
 
         # G5. GOVERNMENT REVENUE
+        # General government fields
         self.central_government.compute_taxes(
             current_ind_employee_income=self.individuals.ts.current("employee_income"),
             current_total_rent_paid=self.households.ts.current("rent")[
-                self.households.states["Tenure Status of the Main Residence"] == 0
+                self.households.states["Tenure Status of the Main Residence"] == 3
             ].sum(),
             current_income_financial_assets=self.households.ts.current("income_financial_assets"),
             current_ind_activity=self.individuals.states["Activity Status"],
@@ -1350,8 +1385,8 @@ class Country:
             operating_surplus=self.firms.ts.current("gross_operating_surplus_mixed_income").sum(),
             wages=self.firms.ts.current("total_wage").sum(),
             rent_received=self.economy.ts.current("total_real_rent_rec")[0]
-            + self.central_government.ts.current("total_rent_received")[0]
             + self.central_government.ts.current("taxes_rental_income")[0],
+            central_government_rent_received=self.central_government.ts.current("total_rent_received")[0],
             running_multiple_countries=self.running_multiple_countries,
         )
 
@@ -1456,6 +1491,121 @@ class Country:
                 data_dict[f"Government Emissions {input_name}"] = self.government_entities.disaggregated_emissions(
                     input_rename
                 )
+
+        return pd.DataFrame(data_dict)
+
+    def gdp_debug_output(self) -> pd.DataFrame:
+        """Create detailed DataFrame of GDP components for debugging.
+
+        This method creates a comprehensive DataFrame containing all three GDP measures
+        (output, expenditure, and income approaches) along with their constituent components.
+        This is useful for debugging when the three measures don't match.
+
+        Returns:
+            pd.DataFrame: DataFrame containing GDP measures and their components
+        """
+        data_dict = {
+            # GDP Output Approach Components
+            "GDP_Output": self.economy.ts.get_aggregate("gdp_output"),
+            "+Total_Output": self.economy.ts.get_aggregate("total_output"),
+            "-Total_Intermediate_Consumption": self.economy.ts.get_aggregate("total_intermediate_consumption"),
+            "+Taxes_on_Products": self.central_government.ts.get_aggregate("taxes_on_products"),
+            "-Taxes_on_Production": self.central_government.ts.get_aggregate("taxes_production"),
+            "+Total_Real_Rent_Paid": self.economy.ts.get_aggregate("total_real_rent_paid"),
+            "+Total_Imputed_Rent_Paid": self.economy.ts.get_aggregate("total_imp_rent_paid"),
+            # GDP Expenditure Approach Components
+            "GDP_Expenditure": self.economy.ts.get_aggregate("gdp_expenditure"),
+            "+Household_Consumption": self.households.ts.get_aggregate("total_consumption"),
+            "+Government_Consumption": self.government_entities.ts.get_aggregate("total_consumption"),
+            "+Changes_in_Inventories": self.firms.ts.get_aggregate("total_inventory_change"),
+            "+Gross_Fixed_Capital_Formation": self.economy.ts.get_aggregate("total_gross_fixed_capital_formation"),
+            "+Exports": self.economy.ts.get_aggregate("total_exports"),
+            "-Imports": self.economy.ts.get_aggregate("total_imports"),
+            "+Rent_Paid": self.economy.ts.get_aggregate("total_real_rent_paid"),
+            "+Rent_Imputed": self.economy.ts.get_aggregate("total_imp_rent_paid"),
+            # GDP Income Approach Components
+            "GDP_Income": self.economy.ts.get_aggregate("gdp_income"),
+            "+Operating_Surplus": self.firms.ts.get_aggregate("gross_operating_surplus_mixed_income"),
+            "+Wages": self.firms.ts.get_aggregate("total_wage"),
+            "+Rent_Received": self.economy.ts.get_aggregate("total_real_rent_rec"),
+            "+Central_Government_Rent_Received": self.central_government.ts.get_aggregate("total_rent_received"),
+            "+Central_Government_Rental_Taxes": self.central_government.ts.get_aggregate("taxes_rental_income"),
+            "+Central_Government_Product_Taxes": self.central_government.ts.get_aggregate("taxes_on_products"),
+            # Additional Value Added Components
+            "Total_Gross_Value_Added": self.economy.ts.get_aggregate("total_gross_value_added"),
+            "Total_Gross_Value_Added_A": self.economy.ts.get_aggregate("total_gross_value_added_a"),
+            "Total_Gross_Value_Added_BCDE": self.economy.ts.get_aggregate("total_gross_value_added_bcde"),
+            "Total_Gross_Value_Added_C": self.economy.ts.get_aggregate("total_gross_value_added_c"),
+            "Total_Gross_Value_Added_F": self.economy.ts.get_aggregate("total_gross_value_added_f"),
+            "Total_Gross_Value_Added_GHIJKLMNOPQRSTU": self.economy.ts.get_aggregate(
+                "total_gross_value_added_ghijklmnopqrstu"
+            ),
+            "Total_Gross_Value_Added_GHI": self.economy.ts.get_aggregate("total_gross_value_added_ghi"),
+            "Total_Gross_Value_Added_J": self.economy.ts.get_aggregate("total_gross_value_added_j"),
+            "Total_Gross_Value_Added_K": self.economy.ts.get_aggregate("total_gross_value_added_k"),
+            "Total_Gross_Value_Added_L": self.economy.ts.get_aggregate("total_gross_value_added_l"),
+            "Total_Gross_Value_Added_MN": self.economy.ts.get_aggregate("total_gross_value_added_mn"),
+            "Total_Gross_Value_Added_OPQ": self.economy.ts.get_aggregate("total_gross_value_added_opq"),
+            "Total_Gross_Value_Added_RSTU": self.economy.ts.get_aggregate("total_gross_value_added_rstu"),
+        }
+
+        return pd.DataFrame(data_dict)
+
+    @property
+    def gdp_components_df(self) -> pd.DataFrame:
+        """Create detailed DataFrame of GDP components for debugging.
+
+        This property creates a comprehensive DataFrame containing all three GDP measures
+        (output, expenditure, and income approaches) along with their constituent components.
+        This is useful for debugging when the three measures don't match.
+
+        Returns:
+            pd.DataFrame: DataFrame containing GDP measures and their components
+        """
+        data_dict = {
+            # GDP Output Approach Components
+            "GDP_Output": self.economy.ts.get_aggregate("gdp_output"),
+            "+Total_Output": self.economy.ts.get_aggregate("total_output"),
+            "-Total_Intermediate_Consumption": self.economy.ts.get_aggregate("total_intermediate_consumption"),
+            "+Taxes_on_Products": self.central_government.ts.get_aggregate("taxes_on_products"),
+            "-Taxes_on_Production": self.central_government.ts.get_aggregate("taxes_production"),
+            "+Total_Real_Rent_Paid": self.economy.ts.get_aggregate("total_real_rent_paid"),
+            "+Total_Imputed_Rent_Paid": self.economy.ts.get_aggregate("total_imp_rent_paid"),
+            # GDP Expenditure Approach Components
+            "GDP_Expenditure": self.economy.ts.get_aggregate("gdp_expenditure"),
+            "+Household_Consumption": self.households.ts.get_aggregate("total_consumption"),
+            "+Government_Consumption": self.government_entities.ts.get_aggregate("total_consumption"),
+            "+Changes_in_Inventories": self.firms.ts.get_aggregate("total_inventory_change"),
+            "+Gross_Fixed_Capital_Formation": self.economy.ts.get_aggregate("total_gross_fixed_capital_formation"),
+            "+Exports": self.economy.ts.get_aggregate("total_exports"),
+            "-Imports": self.economy.ts.get_aggregate("total_imports"),
+            "+Rent_Paid": self.economy.ts.get_aggregate("total_real_rent_paid"),
+            "+Rent_Imputed": self.economy.ts.get_aggregate("total_imp_rent_paid"),
+            # GDP Income Approach Components
+            "GDP_Income": self.economy.ts.get_aggregate("gdp_income"),
+            "+Operating_Surplus": self.firms.ts.get_aggregate("gross_operating_surplus_mixed_income"),
+            "+Wages": self.firms.ts.get_aggregate("total_wage"),
+            "+Rent_Received": self.economy.ts.get_aggregate("total_real_rent_rec"),
+            "+Central_Government_Rent_Received": self.central_government.ts.get_aggregate("total_rent_received"),
+            "+Central_Government_Rental_Taxes": self.central_government.ts.get_aggregate("taxes_rental_income"),
+            "+Central_Government_Product_Taxes": self.central_government.ts.get_aggregate("taxes_on_products"),
+            # Additional Value Added Components
+            "Total_Gross_Value_Added": self.economy.ts.get_aggregate("total_gross_value_added"),
+            "Total_Gross_Value_Added_A": self.economy.ts.get_aggregate("total_gross_value_added_a"),
+            "Total_Gross_Value_Added_BCDE": self.economy.ts.get_aggregate("total_gross_value_added_bcde"),
+            "Total_Gross_Value_Added_C": self.economy.ts.get_aggregate("total_gross_value_added_c"),
+            "Total_Gross_Value_Added_F": self.economy.ts.get_aggregate("total_gross_value_added_f"),
+            "Total_Gross_Value_Added_GHIJKLMNOPQRSTU": self.economy.ts.get_aggregate(
+                "total_gross_value_added_ghijklmnopqrstu"
+            ),
+            "Total_Gross_Value_Added_GHI": self.economy.ts.get_aggregate("total_gross_value_added_ghi"),
+            "Total_Gross_Value_Added_J": self.economy.ts.get_aggregate("total_gross_value_added_j"),
+            "Total_Gross_Value_Added_K": self.economy.ts.get_aggregate("total_gross_value_added_k"),
+            "Total_Gross_Value_Added_L": self.economy.ts.get_aggregate("total_gross_value_added_l"),
+            "Total_Gross_Value_Added_MN": self.economy.ts.get_aggregate("total_gross_value_added_mn"),
+            "Total_Gross_Value_Added_OPQ": self.economy.ts.get_aggregate("total_gross_value_added_opq"),
+            "Total_Gross_Value_Added_RSTU": self.economy.ts.get_aggregate("total_gross_value_added_rstu"),
+        }
 
         return pd.DataFrame(data_dict)
 

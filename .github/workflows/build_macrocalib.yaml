@@ -1,0 +1,37 @@
+name: Build and test calibration package
+
+on:
+  pull_request:
+    # Run on PRs to any branch
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ "3.12" ]
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install h5py dependencies
+        run: sudo apt-get install libhdf5-dev
+
+      - name: Install calibration dependencies
+        run: |
+          uv sync --python ${{ matrix.python-version }} --extra dev
+
+      - name: Test calibration pipeline
+        run: |
+          uv run pytest --cov=macrocalib tests/test_macrocalib --cov-report xml

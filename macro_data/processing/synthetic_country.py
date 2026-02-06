@@ -466,8 +466,7 @@ class SyntheticCountry:
 
         tax_data = TaxData.from_readers(readers, country, year)
 
-        imputation_country = country.parent_country if isinstance(country, Region) else country
-        total_imputed_rent = readers.icio[year].imputed_rents[imputation_country]
+        total_imputed_rent = readers.icio[year].imputed_rents[country]
 
         dividend_payout_ratio = readers.eurostat.dividend_payout_ratio(country=country, year=year)
         long_term_interest_rate = readers.oecd_econ.read_long_term_interest_rates(country=country, year=year)

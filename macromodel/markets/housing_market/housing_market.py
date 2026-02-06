@@ -465,7 +465,7 @@ class HousingMarket:
                         "Corresponding Inhabitant Household ID",
                     ] = -1
                 household_states["Corresponding Inhabited House ID"][buyer_id] = property_id
-                household_states["Tenure Status of the Main Residence"][buyer_id] = 0
+                household_states["Tenure Status of the Main Residence"][buyer_id] = 3
                 household_states["corr_renters"][seller_id].append(buyer_id)
                 total_number_of_newly_rented_houses += 1
             elif sale["sales_types"] == "Sell":

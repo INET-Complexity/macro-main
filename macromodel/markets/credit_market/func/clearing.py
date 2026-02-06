@@ -1162,12 +1162,20 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 - firms.ts.current("expected_profits")[agents_with_demand]
                 / banks.parameters.firm_loans_return_on_equity_ratio
             )
-            return_on_assets_restrictions = np.zeros(agents_with_demand.shape)
-            return_on_assets_restrictions[
-                firms.ts.current("expected_profits")[agents_with_demand]
-                / firms.ts.current("capital_inputs_stock_value")[agents_with_demand]
-                >= banks.parameters.firm_loans_return_on_assets_ratio
-            ] = np.inf
+            # Calculate ROA safely to avoid division by zero
+            firm_expected_profits = firms.ts.current("expected_profits")[agents_with_demand]
+            firm_capital_stock = firms.ts.current("capital_inputs_stock_value")[agents_with_demand]
+
+            firm_roa = np.divide(
+                firm_expected_profits,
+                firm_capital_stock,
+                out=np.zeros_like(firm_expected_profits),
+                where=firm_capital_stock != 0,
+            )
+
+            # Start permissive (allow all), block only firms that fail ROA check
+            return_on_assets_restrictions = np.full(agents_with_demand.shape, np.inf)
+            return_on_assets_restrictions[firm_roa < banks.parameters.firm_loans_return_on_assets_ratio] = 0.0
             credit_restrictions = np.minimum(
                 np.minimum(debt_to_equity_restrictions, return_on_equity_restrictions),
                 return_on_assets_restrictions,
@@ -1246,7 +1254,10 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 priorities=creditor_priorities,
                 minimum_fill=self.creditor_minimum_fill,
             )
-            new_loans[0, :, agents_with_demand] = np.outer(granted_loans_by_banks, capacities_weights)
+            # Fix NumPy advanced indexing dimension mismatch by assigning row-by-row
+            loan_matrix = np.outer(granted_loans_by_banks, capacities_weights)
+            for bank_idx in range(len(granted_loans_by_banks)):
+                new_loans[0, bank_idx, agents_with_demand] = loan_matrix[bank_idx, :]
         else:
             received_loans_by_debtors = self.fill_buckets(
                 capacities=capacities,
@@ -1254,7 +1265,10 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 priorities=debtor_priorities,
                 minimum_fill=self.debtor_minimum_fill,
             )
-            new_loans[0, :, agents_with_demand] = np.outer(received_loans_by_debtors, supply_weights)
+            # Fix NumPy advanced indexing dimension mismatch by assigning row-by-row
+            loan_matrix = np.outer(supply_weights, received_loans_by_debtors)
+            for bank_idx in range(len(supply_weights)):
+                new_loans[0, bank_idx, agents_with_demand] = loan_matrix[bank_idx, :]
         new_loans[1, :, agents_with_demand] = banks_ir[:, np.newaxis] * new_loans[0, :, agents_with_demand]
         new_loans[2, :, agents_with_demand] = 1.0 / loan_maturity * new_loans[0, :, agents_with_demand]
 

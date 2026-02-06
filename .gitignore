@@ -77,6 +77,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb
 
 # IPython
 profile_default/
@@ -124,8 +125,6 @@ venv.bak/
 #MacOS
 **/.DS_Store
 
-
-
 # mypy
 .mypy_cache/
 .dmypy.json
@@ -145,3 +144,19 @@ dmypy.json
 /dataSources.local.xml
 # IDE files
 .idea/
+
+# Confidential data backups (keep locally, do not commit)
+spoof_data/original_hfcs/
+spoof_data/original_compustat/
+
+# Only track README.md in spoof_data, ignore other markdown files
+spoof_data/*.md
+!spoof_data/README.md
+
+# Debugging experiments (local only)
+debugging_experiments/
+
+# Dev folders where large data files are stored
+dev/
+inet-macro-dev/
+macro-dev/

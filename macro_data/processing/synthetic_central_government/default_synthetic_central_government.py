@@ -204,7 +204,10 @@ def build_unemployment_model(benefits_inflation_data: pd.DataFrame, regression_w
     benefits_inflation_data["Unemployment benefits growth ratio"] = (
         1 + benefits_inflation_data["Unemployment Benefits"].pct_change()
     )
-    selection = benefits_inflation_data.last(f"{regression_window}M").dropna()
+    # Select last N months of data using loc with date filtering
+    end_date = benefits_inflation_data.index.max()
+    start_date = end_date - pd.DateOffset(months=regression_window)
+    selection = benefits_inflation_data.loc[start_date:end_date].dropna()
     if selection.shape[0] > 0:
         model = LinearRegression()
         model.fit(

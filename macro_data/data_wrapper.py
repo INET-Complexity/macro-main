@@ -510,7 +510,7 @@ def add_row_to_calibration(
     calibration_data[("ROW", "Imports (Growth)")] = calibration_data[("ROW", "Imports (Value)")].pct_change()
 
     calibration_data[("ROW", "PPI (Value)")] = row_ppi
-    calibration_data[("ROW", "PPI (Growth)")] = calibration_data[("ROW", "PPI (Value)")].pct_change()
+    calibration_data[("ROW", "PPI (Growth)")] = calibration_data[("ROW", "PPI (Value)")].pct_change(fill_method=None)
 
     # real imports are imports over ppi
     calibration_data[("ROW", "Real Imports (Value)")] = (
