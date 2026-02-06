@@ -85,10 +85,10 @@ def process_individual_data(
             "Income",
             "Corresponding Household ID",
         ]
-    ]
+    ].copy()
 
-    individual_data.loc[:, "Corresponding Invested Firm"] = np.nan
-    individual_data.loc[:, "Corresponding Invested Bank"] = np.nan
+    individual_data["Corresponding Invested Firm"] = np.nan
+    individual_data["Corresponding Invested Bank"] = np.nan
 
     return individual_data
 
@@ -413,7 +413,7 @@ def fill_individual_nace(
     individual_data.loc[individual_data["Activity Status"] == 3, "Employment Industry"] = np.nan
 
     n_employees_by_sector_series = individual_data.groupby("Employment Industry").apply(
-        lambda x: (x["Activity Status"] == 1).sum()
+        lambda x: (x["Activity Status"] == 1).sum(), include_groups=False
     )
     n_employees_by_sector_series = n_employees_by_sector_series.reindex(range(n_industries)).fillna(0).astype("int")
 
@@ -440,7 +440,9 @@ def fill_individual_nace(
     # ).astype(float)
     # frequencies /= np.sum(frequencies)
     frequencies = (
-        individual_data.groupby("Employment Industry").apply(lambda x: (x["Activity Status"] < 3).sum()).values
+        individual_data.groupby("Employment Industry")
+        .apply(lambda x: (x["Activity Status"] < 3).sum(), include_groups=False)
+        .values
     )
     frequencies = frequencies / np.sum(frequencies)
 
