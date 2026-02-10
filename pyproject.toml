@@ -18,7 +18,7 @@ dependencies = [
     "matplotlib",
     "numba",
     "numpy",
-    "pandas",
+    "pandas<3.0",
     "pyarrow",
     "pydantic",
     "pyyaml",
