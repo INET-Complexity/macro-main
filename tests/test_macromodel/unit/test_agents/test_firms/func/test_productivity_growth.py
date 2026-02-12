@@ -298,9 +298,9 @@ class TestPlannedVsExecutedInvestment:
         )
 
         # They should be different (this is why the bug matters)
-        assert not np.allclose(tfp_growth_planned, tfp_growth_executed), (
-            "Planned and executed should produce different growth rates"
-        )
+        assert not np.allclose(
+            tfp_growth_planned, tfp_growth_executed
+        ), "Planned and executed should produce different growth rates"
 
         # Firm A: executed < planned → executed gives LESS growth
         assert tfp_growth_executed[0] < tfp_growth_planned[0]
