@@ -650,9 +650,7 @@ class SimpleProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
 
         # Check if investment is profitable using the correct formula from investment_decision.md
         # The condition is: (I/V)^(1-α) ≤ φ * (1+r_h)/r_h, where V = nominal production
-        profitable = self.is_investment_profitable(
-            candidate_investment, nominal_production, current_unit_costs
-        )
+        profitable = self.is_investment_profitable(candidate_investment, nominal_production, current_unit_costs)
 
         # Only invest where profitable
         total_investment = np.where(profitable, candidate_investment, 0)
