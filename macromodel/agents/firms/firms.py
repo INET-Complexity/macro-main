@@ -495,24 +495,29 @@ class Firms(Agent):
             estimated_inflation: Expected inflation rate
             current_good_prices (np.ndarray): Industry-level average prices
         """
-        self.ts.limiting_intermediate_inputs.append(
-            self.functions["production"].compute_limiting_intermediate_inputs_stock(
-                intermediate_inputs_productivity_matrix=self.get_effective_intermediate_coefficients(),
-                intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
-                intermediate_inputs_utilisation_rate=self.intermediate_inputs_utilisation_rate,
-                goods_criticality_matrix=self.goods_criticality_matrix,
-                substitution_bundle_matrix=self.substitution_bundles,
-            )
+        # Calculate limiting inputs and apply TFP multiplier.
+        # TFP scales effective capacity from inputs, so limits should also scale with TFP.
+        # This ensures target-setting accounts for TFP-enhanced production capacity.
+        # Without this, production targets are capped at initial levels even when TFP grows.
+        tfp_multiplier = self.states["tfp_multiplier"]
+
+        limiting_intermediate = self.functions["production"].compute_limiting_intermediate_inputs_stock(
+            intermediate_inputs_productivity_matrix=self.get_effective_intermediate_coefficients(),
+            intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
+            intermediate_inputs_utilisation_rate=self.intermediate_inputs_utilisation_rate,
+            goods_criticality_matrix=self.goods_criticality_matrix,
+            substitution_bundle_matrix=self.substitution_bundles,
         )
-        self.ts.limiting_capital_inputs.append(
-            self.functions["production"].compute_limiting_capital_inputs_stock(
-                capital_inputs_productivity_matrix=self.get_effective_capital_coefficients(),
-                capital_inputs_stock=self.ts.current("capital_inputs_stock"),
-                capital_inputs_utilisation_rate=self.capital_inputs_utilisation_rate,
-                goods_criticality_matrix=self.goods_criticality_matrix,
-                substitution_bundle_matrix=self.substitution_bundles,
-            )
+        self.ts.limiting_intermediate_inputs.append(limiting_intermediate * tfp_multiplier)
+
+        limiting_capital = self.functions["production"].compute_limiting_capital_inputs_stock(
+            capital_inputs_productivity_matrix=self.get_effective_capital_coefficients(),
+            capital_inputs_stock=self.ts.current("capital_inputs_stock"),
+            capital_inputs_utilisation_rate=self.capital_inputs_utilisation_rate,
+            goods_criticality_matrix=self.goods_criticality_matrix,
+            substitution_bundle_matrix=self.substitution_bundles,
         )
+        self.ts.limiting_capital_inputs.append(limiting_capital * tfp_multiplier)
         self.ts.target_production.append(
             self.compute_target_production(
                 bank_overdraft_rate_on_firm_deposits=bank_overdraft_rate_on_firm_deposits,
