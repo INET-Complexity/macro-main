@@ -2125,18 +2125,30 @@ class Firms(Agent):
         TFP growth based on:
         - Current TFP levels
         - Current production
-        - Executed productivity investment (if available, otherwise computed)
+        - Planned TFP investment (forward-looking, from set_targets)
         - Configuration parameters
+
+        Note: We use planned_tfp_investment (set in set_targets) rather than
+        executed_productivity_investment (computed from actual purchases minus
+        replacement). This ensures alignment between what firms intend to invest
+        and the resulting TFP growth. See bug #59.
 
         Returns:
             np.ndarray: TFP growth rates for each firm
         """
-        # Use executed productivity investment if available (from time series),
-        # otherwise fall back to computing it
-        if len(self.ts.executed_productivity_investment) > 0:
+        # Use planned TFP investment if available (from set_targets),
+        # falling back to total planned investment, then to executed
+        if len(self.ts.planned_tfp_investment) > 0:
+            # Preferred: use the TFP-specific portion of planned investment
+            productivity_investment = self.ts.current("planned_tfp_investment")
+        elif len(self.ts.planned_productivity_investment) > 0:
+            # Fallback: use total planned productivity investment
+            productivity_investment = self.ts.current("planned_productivity_investment")
+        elif len(self.ts.executed_productivity_investment) > 0:
+            # Legacy fallback: use executed investment
             productivity_investment = self.ts.current("executed_productivity_investment")
         else:
-            # Fallback for initial period or if execute_productivity_investment wasn't called
+            # Final fallback for initial period
             productivity_investment = self.compute_productivity_investment()
 
         # Get configuration parameters, using defaults if not specified

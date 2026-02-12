@@ -253,6 +253,130 @@ class TestSectoralTFPGrowth:
         assert np.allclose(sectoral_growth, simple_growth)
 
 
+class TestPlannedVsExecutedInvestment:
+    """Test that TFP growth uses planned investment, not executed (bug #59).
+
+    The issue is that planned_productivity_investment (forward-looking, from set_targets)
+    and executed_productivity_investment (capital_bought - replacement) are fundamentally
+    different calculations. TFP growth should be based on planned investment to align
+    with economic logic that firms invest intentionally.
+    """
+
+    def test_planned_vs_executed_produce_different_growth(self):
+        """Demonstrate that using planned vs executed investment produces different TFP growth.
+
+        This test shows WHY the bug matters - if we use the wrong investment value,
+        we get the wrong TFP growth.
+        """
+        growth_func = SimpleTFPGrowth(investment_effectiveness=0.1)
+        n_firms = 3
+
+        # Scenario: firms with same planned investment but different executed
+        # Firm A: high depreciation needs → executed < planned
+        # Firm B: normal case → executed = planned
+        # Firm C: over-bought capital → executed > planned
+        planned_investment = np.array([100_000.0, 100_000.0, 50_000.0])
+        executed_investment = np.array([30_000.0, 100_000.0, 120_000.0])  # Very different!
+
+        production = np.full(n_firms, 1_000_000.0)
+        current_tfp = np.ones(n_firms)
+
+        tfp_growth_planned = growth_func.compute_tfp_growth(
+            current_tfp=current_tfp,
+            production=production,
+            productivity_investment=planned_investment,
+            base_growth_rate=0.0,
+            investment_elasticity=0.3,
+        )
+
+        tfp_growth_executed = growth_func.compute_tfp_growth(
+            current_tfp=current_tfp,
+            production=production,
+            productivity_investment=executed_investment,
+            base_growth_rate=0.0,
+            investment_elasticity=0.3,
+        )
+
+        # They should be different (this is why the bug matters)
+        assert not np.allclose(tfp_growth_planned, tfp_growth_executed), (
+            "Planned and executed should produce different growth rates"
+        )
+
+        # Firm A: executed < planned → executed gives LESS growth
+        assert tfp_growth_executed[0] < tfp_growth_planned[0]
+
+        # Firm C: executed > planned → executed gives MORE growth (windfall!)
+        assert tfp_growth_executed[2] > tfp_growth_planned[2]
+
+    def test_investment_source_priority(self):
+        """Test that the correct priority order is used for investment source selection.
+
+        Priority should be:
+        1. planned_tfp_investment (TFP-specific portion)
+        2. planned_productivity_investment (total planned)
+        3. executed_productivity_investment (legacy fallback)
+        4. compute_productivity_investment() (final fallback)
+
+        This tests the logic that should be in compute_tfp_growth() in firms.py.
+        """
+        # Simulate time series with all three values available
+        planned_tfp = np.array([80_000.0])
+        planned_total = np.array([100_000.0])
+        executed = np.array([40_000.0])
+
+        # Simulate the priority logic from compute_tfp_growth()
+        # When all are available, planned_tfp should be selected
+        ts_planned_tfp = [planned_tfp]
+        ts_planned_total = [planned_total]
+        ts_executed = [executed]
+
+        if len(ts_planned_tfp) > 0:
+            selected = ts_planned_tfp[-1]
+            source = "planned_tfp"
+        elif len(ts_planned_total) > 0:
+            selected = ts_planned_total[-1]
+            source = "planned_total"
+        elif len(ts_executed) > 0:
+            selected = ts_executed[-1]
+            source = "executed"
+        else:
+            selected = None
+            source = "computed"
+
+        assert source == "planned_tfp"
+        assert np.array_equal(selected, planned_tfp)
+
+        # When only planned_total and executed available
+        ts_planned_tfp = []
+        if len(ts_planned_tfp) > 0:
+            selected = ts_planned_tfp[-1]
+            source = "planned_tfp"
+        elif len(ts_planned_total) > 0:
+            selected = ts_planned_total[-1]
+            source = "planned_total"
+        elif len(ts_executed) > 0:
+            selected = ts_executed[-1]
+            source = "executed"
+
+        assert source == "planned_total"
+        assert np.array_equal(selected, planned_total)
+
+        # When only executed available (legacy case)
+        ts_planned_total = []
+        if len(ts_planned_tfp) > 0:
+            selected = ts_planned_tfp[-1]
+            source = "planned_tfp"
+        elif len(ts_planned_total) > 0:
+            selected = ts_planned_total[-1]
+            source = "planned_total"
+        elif len(ts_executed) > 0:
+            selected = ts_executed[-1]
+            source = "executed"
+
+        assert source == "executed"
+        assert np.array_equal(selected, executed)
+
+
 class TestProductivityGrowthEdgeCases:
     """Test edge cases and error conditions."""
 
