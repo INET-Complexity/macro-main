@@ -595,6 +595,7 @@ class Firms(Agent):
             input_usage=self.ts.current("used_intermediate_inputs"),
             current_tech_multipliers=self.states["intermediate_tech_multipliers"],
             substitution_bundle_matrix=self.substitution_bundles,
+            firm_industries=self.states["Industry"],
         )
 
         return total_investment, tfp_investment, technical_investment
