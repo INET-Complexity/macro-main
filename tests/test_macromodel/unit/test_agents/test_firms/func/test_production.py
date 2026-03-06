@@ -162,20 +162,24 @@ class TestBundledLeontiefUsage:
 
         # Firm 0 has substituted toward good 0 (3x stock vs good 1)
         # Firm 1 has equal stock
-        stock = np.array([
-            [3.0, 1.0, 2.0],  # firm 0: 3x more of good 0 than good 1
-            [2.0, 2.0, 2.0],  # firm 1: equal stock
-        ])
+        stock = np.array(
+            [
+                [3.0, 1.0, 2.0],  # firm 0: 3x more of good 0 than good 1
+                [2.0, 2.0, 2.0],  # firm 1: equal stock
+            ]
+        )
 
         production = np.array([2.0, 2.0])
 
         # Bundle matrix: goods 0,1 in bundle 0; good 2 in bundle 1
         # Shape (n_goods, n_bundles) = (3, 2)
-        bundle_matrix = np.array([
-            [0.5, 0.0],  # good 0 in bundle 0
-            [0.5, 0.0],  # good 1 in bundle 0
-            [0.0, 1.0],  # good 2 in bundle 1 (singleton)
-        ])
+        bundle_matrix = np.array(
+            [
+                [0.5, 0.0],  # good 0 in bundle 0
+                [0.5, 0.0],  # good 1 in bundle 0
+                [0.0, 1.0],  # good 2 in bundle 1 (singleton)
+            ]
+        )
 
         criticality = np.ones((n_firms, n_goods))
 
@@ -192,10 +196,12 @@ class TestBundledLeontiefUsage:
         # Firm 0: stock shares are 3/4 and 1/4 → used = [3.0, 1.0]
         # Firm 1: stock shares are 2/4 and 2/4 → used = [2.0, 2.0]
         # Good 2 (singleton): unchanged at production/coeff = 2.0
-        expected = np.array([
-            [3.0, 1.0, 2.0],
-            [2.0, 2.0, 2.0],
-        ])
+        expected = np.array(
+            [
+                [3.0, 1.0, 2.0],
+                [2.0, 2.0, 2.0],
+            ]
+        )
         assert np.allclose(used, expected)
 
     def test_usage_total_preserved_within_bundle(self):
@@ -204,26 +210,32 @@ class TestBundledLeontiefUsage:
         n_firms = 3
         n_goods = 4  # goods 0,1,2 in a bundle, good 3 singleton
 
-        productivity = np.array([
-            [2.0, 4.0, 5.0, 3.0],
-            [2.0, 4.0, 5.0, 3.0],
-            [2.0, 4.0, 5.0, 3.0],
-        ])
+        productivity = np.array(
+            [
+                [2.0, 4.0, 5.0, 3.0],
+                [2.0, 4.0, 5.0, 3.0],
+                [2.0, 4.0, 5.0, 3.0],
+            ]
+        )
 
-        stock = np.array([
-            [10.0, 5.0, 5.0, 8.0],
-            [1.0, 1.0, 18.0, 8.0],
-            [0.0, 0.0, 0.0, 8.0],  # no stock at all
-        ])
+        stock = np.array(
+            [
+                [10.0, 5.0, 5.0, 8.0],
+                [1.0, 1.0, 18.0, 8.0],
+                [0.0, 0.0, 0.0, 8.0],  # no stock at all
+            ]
+        )
 
         production = np.array([10.0, 10.0, 10.0])
 
-        bundle_matrix = np.array([
-            [1 / 3, 0.0],
-            [1 / 3, 0.0],
-            [1 / 3, 0.0],
-            [0.0, 1.0],
-        ])
+        bundle_matrix = np.array(
+            [
+                [1 / 3, 0.0],
+                [1 / 3, 0.0],
+                [1 / 3, 0.0],
+                [0.0, 1.0],
+            ]
+        )
 
         criticality = np.ones((n_firms, n_goods))
 
