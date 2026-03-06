@@ -945,8 +945,10 @@ class BundledLeontief(ProductionSetter):
     ) -> np.ndarray:
         """Calculate intermediate inputs used under bundled Leontief technology.
 
-        Input usage is proportional to production with fixed input-output coefficients,
-        adjusted by the substitution bundle matrix.
+        Input usage is proportional to production with fixed input-output coefficients.
+        Within substitution bundles, the total bundle usage is distributed
+        proportionally to available stock, reflecting that firms use more of
+        whichever substitute they have on hand.
 
         Args:
             realised_production (np.ndarray): Actual production achieved
@@ -960,7 +962,7 @@ class BundledLeontief(ProductionSetter):
         Returns:
             np.ndarray: Intermediate inputs used in production
         """
-        # Calculate base input usage
+        # Calculate base input usage per good (Leontief coefficients)
         used_inputs = np.divide(
             realised_production[:, None],
             intermediate_inputs_productivity_matrix,
@@ -968,9 +970,27 @@ class BundledLeontief(ProductionSetter):
             where=intermediate_inputs_productivity_matrix != 0.0,
         )
 
-        # Apply substitution bundles to determine actual input usage
-        # This is a simplified approach - in a full implementation,
-        # you might want to optimize input usage across bundles
+        # For multi-member bundles, distribute total bundle usage
+        # proportionally to stock within the bundle
+        bundle_members_per_col = (substitution_bundle_matrix > 0).sum(axis=0)
+        multi_member_bundles = np.where(bundle_members_per_col > 1)[0]
+
+        for b in multi_member_bundles:
+            member_indices = np.where(substitution_bundle_matrix[:, b] > 0)[0]
+            # Total usage for this bundle = sum of Leontief usage across member goods
+            total_bundle_usage = used_inputs[:, member_indices].sum(axis=1, keepdims=True)
+            # Stock of member goods
+            member_stock = intermediate_inputs_stock[:, member_indices]
+            member_stock_sum = member_stock.sum(axis=1, keepdims=True)
+            # Distribute proportionally to stock; if no stock, distribute equally
+            has_stock = member_stock_sum > 0
+            stock_share = np.where(
+                has_stock,
+                member_stock / np.maximum(member_stock_sum, 1e-30),
+                1.0 / len(member_indices),
+            )
+            used_inputs[:, member_indices] = total_bundle_usage * stock_share
+
         return used_inputs
 
     def compute_capital_inputs_used(
@@ -984,7 +1004,8 @@ class BundledLeontief(ProductionSetter):
         """Calculate capital depreciation under bundled Leontief technology.
 
         Capital depreciation is proportional to production with fixed
-        depreciation rates, adjusted by the substitution bundle matrix.
+        depreciation rates. Within substitution bundles, the total bundle
+        depreciation is distributed proportionally to available stock.
 
         Args:
             realised_production (np.ndarray): Actual production achieved
@@ -1003,7 +1024,22 @@ class BundledLeontief(ProductionSetter):
         used_capital_inputs[used_capital_inputs == np.inf] = 0.0
         used_capital_inputs[used_capital_inputs == -np.inf] = 0.0
 
-        # Apply substitution bundles to determine actual capital usage
-        # This is a simplified approach - in a full implementation,
-        # you might want to optimize capital usage across bundles
+        # For multi-member bundles, distribute total bundle depreciation
+        # proportionally to stock within the bundle
+        bundle_members_per_col = (substitution_bundle_matrix > 0).sum(axis=0)
+        multi_member_bundles = np.where(bundle_members_per_col > 1)[0]
+
+        for b in multi_member_bundles:
+            member_indices = np.where(substitution_bundle_matrix[:, b] > 0)[0]
+            total_bundle_usage = used_capital_inputs[:, member_indices].sum(axis=1, keepdims=True)
+            member_stock = capital_inputs_stock[:, member_indices]
+            member_stock_sum = member_stock.sum(axis=1, keepdims=True)
+            has_stock = member_stock_sum > 0
+            stock_share = np.where(
+                has_stock,
+                member_stock / np.maximum(member_stock_sum, 1e-30),
+                1.0 / len(member_indices),
+            )
+            used_capital_inputs[:, member_indices] = total_bundle_usage * stock_share
+
         return used_capital_inputs

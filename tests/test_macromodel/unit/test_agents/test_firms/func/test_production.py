@@ -131,3 +131,104 @@ class TestProductionSetter:
 
         expected = np.full((n_industries, n_industries), 1)
         assert np.array_equal(result, expected)
+
+
+class TestBundledLeontiefUsage:
+    """Test that BundledLeontief distributes input usage within bundles
+    proportionally to stock, not at fixed Leontief rates."""
+
+    def test_usage_distributed_by_stock_within_bundle(self):
+        """If two goods are in a bundle and one has 3x the stock,
+        it should bear 3x the usage. Before the fix, both goods
+        were used at the same fixed Leontief rate regardless of stock."""
+        n_firms = 2
+        n_goods = 3  # goods 0 and 1 in a bundle, good 2 is singleton
+
+        # Leontief coefficients: each firm needs 1 unit of each good per unit of output
+        productivity = np.full((n_firms, n_goods), 1.0)
+
+        # Firm 0 has substituted toward good 0 (3x stock vs good 1)
+        # Firm 1 has equal stock
+        stock = np.array([
+            [3.0, 1.0, 2.0],  # firm 0: 3x more of good 0 than good 1
+            [2.0, 2.0, 2.0],  # firm 1: equal stock
+        ])
+
+        production = np.array([2.0, 2.0])
+
+        # Bundle matrix: goods 0,1 in bundle 0; good 2 in bundle 1
+        # Shape (n_goods, n_bundles) = (3, 2)
+        bundle_matrix = np.array([
+            [0.5, 0.0],  # good 0 in bundle 0
+            [0.5, 0.0],  # good 1 in bundle 0
+            [0.0, 1.0],  # good 2 in bundle 1 (singleton)
+        ])
+
+        criticality = np.ones((n_firms, n_goods))
+
+        bundled = BundledLeontief()
+        used = bundled.compute_intermediate_inputs_used(
+            realised_production=production,
+            intermediate_inputs_productivity_matrix=productivity,
+            intermediate_inputs_stock=stock,
+            goods_criticality_matrix=criticality,
+            substitution_bundle_matrix=bundle_matrix,
+        )
+
+        # Total bundle usage for bundle 0: production/coeff[0] + production/coeff[1] = 2+2 = 4
+        # Firm 0: stock shares are 3/4 and 1/4 → used = [3.0, 1.0]
+        # Firm 1: stock shares are 2/4 and 2/4 → used = [2.0, 2.0]
+        # Good 2 (singleton): unchanged at production/coeff = 2.0
+        expected = np.array([
+            [3.0, 1.0, 2.0],
+            [2.0, 2.0, 2.0],
+        ])
+        assert np.allclose(used, expected)
+
+    def test_usage_total_preserved_within_bundle(self):
+        """Total usage across bundle members should equal the sum of
+        individual Leontief requirements, just redistributed."""
+        n_firms = 3
+        n_goods = 4  # goods 0,1,2 in a bundle, good 3 singleton
+
+        productivity = np.array([
+            [2.0, 4.0, 5.0, 3.0],
+            [2.0, 4.0, 5.0, 3.0],
+            [2.0, 4.0, 5.0, 3.0],
+        ])
+
+        stock = np.array([
+            [10.0, 5.0, 5.0, 8.0],
+            [1.0, 1.0, 18.0, 8.0],
+            [0.0, 0.0, 0.0, 8.0],  # no stock at all
+        ])
+
+        production = np.array([10.0, 10.0, 10.0])
+
+        bundle_matrix = np.array([
+            [1 / 3, 0.0],
+            [1 / 3, 0.0],
+            [1 / 3, 0.0],
+            [0.0, 1.0],
+        ])
+
+        criticality = np.ones((n_firms, n_goods))
+
+        bundled = BundledLeontief()
+        used = bundled.compute_intermediate_inputs_used(
+            realised_production=production,
+            intermediate_inputs_productivity_matrix=productivity,
+            intermediate_inputs_stock=stock,
+            goods_criticality_matrix=criticality,
+            substitution_bundle_matrix=bundle_matrix,
+        )
+
+        # Total Leontief usage per firm for bundle goods: 10/2 + 10/4 + 10/5 = 5+2.5+2 = 9.5
+        bundle_total = used[:, :3].sum(axis=1)
+        assert np.allclose(bundle_total, 9.5)
+
+        # Singleton good 3 unchanged: 10/3
+        assert np.allclose(used[:, 3], 10.0 / 3.0)
+
+        # Firm 2 has zero stock → equal distribution: 9.5/3 each
+        assert np.allclose(used[2, :3], 9.5 / 3.0)
