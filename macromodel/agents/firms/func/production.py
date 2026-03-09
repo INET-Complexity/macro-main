@@ -945,13 +945,18 @@ class BundledLeontief(ProductionSetter):
     ) -> np.ndarray:
         """Calculate intermediate inputs used under bundled Leontief technology.
 
-        Input usage is proportional to production with fixed input-output coefficients,
-        adjusted by the substitution bundle matrix.
+        For singleton goods, usage follows the standard Leontief formula:
+        used = production / coefficient.
+
+        Within multi-member substitution bundles, total usage is set so that
+        the effective input consumed (sum of weight * coefficient * used)
+        equals production, and is distributed proportionally to stock:
+        used[j] = production * stock[j] / bundle_capacity.
 
         Args:
             realised_production (np.ndarray): Actual production achieved
             intermediate_inputs_productivity_matrix (np.ndarray): Input-output
-                coefficients
+                coefficients (productivity: output per unit of input)
             intermediate_inputs_stock (np.ndarray): Available input stocks
             goods_criticality_matrix (np.ndarray): Input criticality levels
             substitution_bundle_matrix (np.ndarray): Matrix defining substitution
@@ -960,7 +965,7 @@ class BundledLeontief(ProductionSetter):
         Returns:
             np.ndarray: Intermediate inputs used in production
         """
-        # Calculate base input usage
+        # Base Leontief usage for singleton goods: used = production / coefficient
         used_inputs = np.divide(
             realised_production[:, None],
             intermediate_inputs_productivity_matrix,
@@ -968,9 +973,31 @@ class BundledLeontief(ProductionSetter):
             where=intermediate_inputs_productivity_matrix != 0.0,
         )
 
-        # Apply substitution bundles to determine actual input usage
-        # This is a simplified approach - in a full implementation,
-        # you might want to optimize input usage across bundles
+        # For multi-member bundles, distribute usage proportionally to stock
+        # such that the effective bundle contribution equals production
+        bundle_members_per_col = (substitution_bundle_matrix > 0).sum(axis=0)
+        multi_member_bundles = np.where(bundle_members_per_col > 1)[0]
+
+        for b in multi_member_bundles:
+            member_indices = np.where(substitution_bundle_matrix[:, b] > 0)[0]
+            member_stock = intermediate_inputs_stock[:, member_indices]
+            member_coeff = intermediate_inputs_productivity_matrix[:, member_indices]
+            member_weights = substitution_bundle_matrix[member_indices, b]
+
+            # Only include goods with finite positive coefficients in bundle capacity.
+            # inf coefficient means the firm doesn't use that input at all.
+            finite_mask = np.isfinite(member_coeff) & (member_coeff > 0)
+            effective = np.where(finite_mask, member_weights * member_coeff * member_stock, 0.0)
+            bundle_cap = effective.sum(axis=1, keepdims=True)
+
+            # used[j] = production * stock[j] / bundle_capacity
+            # Only for goods the firm actually uses (finite coefficient)
+            used_inputs[:, member_indices] = np.where(
+                finite_mask & (bundle_cap > 0),
+                realised_production[:, None] * member_stock / np.maximum(bundle_cap, 1e-30),
+                0.0,
+            )
+
         return used_inputs
 
     def compute_capital_inputs_used(
@@ -984,7 +1011,9 @@ class BundledLeontief(ProductionSetter):
         """Calculate capital depreciation under bundled Leontief technology.
 
         Capital depreciation is proportional to production with fixed
-        depreciation rates, adjusted by the substitution bundle matrix.
+        depreciation rates. Bundle adjustment is not applied here because
+        depreciation (production * rate) does not have the same
+        overconsumption issue as intermediate inputs (production / coefficient).
 
         Args:
             realised_production (np.ndarray): Actual production achieved
@@ -998,12 +1027,7 @@ class BundledLeontief(ProductionSetter):
         Returns:
             np.ndarray: Capital inputs depreciated in production
         """
-        # Calculate base capital depreciation
         used_capital_inputs = realised_production[:, None] * capital_inputs_depreciation_matrix
         used_capital_inputs[used_capital_inputs == np.inf] = 0.0
         used_capital_inputs[used_capital_inputs == -np.inf] = 0.0
-
-        # Apply substitution bundles to determine actual capital usage
-        # This is a simplified approach - in a full implementation,
-        # you might want to optimize capital usage across bundles
         return used_capital_inputs
