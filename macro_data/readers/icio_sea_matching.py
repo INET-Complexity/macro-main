@@ -150,11 +150,11 @@ def _match_country_iot_with_sea(
         "Labour Compensation",
         get_sea(country_name, "Value Added", sea_reader) - get_sea(country_name, "Capital Compensation", sea_reader),
     )
-    # sea_reader.df.loc[
-    #     sea_reader.df.index.get_level_values(0) == country_name,
-    #     "Capital Stock",
-    # ] *= va_factor
-    sea_reader.df.loc[country_name].loc[sea_reader.industries, "Capital Stock"] *= va_factor
+    # Update Capital Stock values using proper indexing to avoid chained assignment
+    mask = (sea_reader.df.index.get_level_values(0) == country_name) & (
+        sea_reader.df.index.get_level_values(1).isin(sea_reader.industries)
+    )
+    sea_reader.df.loc[mask, "Capital Stock"] *= va_factor
 
     sea_reader.df.loc[sea_reader.df["Value Added"] == 0] = 0
 
@@ -190,11 +190,13 @@ def _reconcile_value_added(
 
     sea_reader.df.loc[country_name, "Value Added"] = new_va.loc[old_va.index].values
 
-    sea_reader.df.loc[country_name].loc[sea_reader.industries, "Labour Compensation"] *= va_factor
-
-    sea_reader.df.loc[country_name].loc[sea_reader.industries, "Capital Compensation"] *= va_factor
-
-    sea_reader.df.loc[country_name].loc[sea_reader.industries, "Capital Stock"] *= va_factor * va_factor
+    # Use proper indexing to avoid chained assignment warnings
+    mask = (sea_reader.df.index.get_level_values(0) == country_name) & (
+        sea_reader.df.index.get_level_values(1).isin(sea_reader.industries)
+    )
+    sea_reader.df.loc[mask, "Labour Compensation"] *= va_factor
+    sea_reader.df.loc[mask, "Capital Compensation"] *= va_factor
+    sea_reader.df.loc[mask, "Capital Stock"] *= va_factor * va_factor
 
 
 def _match_country_iot_with_sea2(

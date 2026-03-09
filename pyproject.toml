@@ -73,3 +73,15 @@ line-length = 120
 [tool.isort]
 profile = "black"
 known_first_party = ["macro_data", "macromodel"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    # Ignore numpy matmul warnings (overflow, invalid, divide by zero)
+    "ignore:overflow encountered in matmul:RuntimeWarning",
+    "ignore:invalid value encountered in matmul:RuntimeWarning",
+    "ignore:divide by zero encountered in matmul:RuntimeWarning",
+    # Ignore osqp deprecation warning about raise_error default
+    "ignore:The default value of raise_error will change:PendingDeprecationWarning",
+    # Ignore sklearn version mismatch when unpickling models
+    "ignore:Trying to unpickle estimator.*:sklearn.exceptions.InconsistentVersionWarning",
+]
