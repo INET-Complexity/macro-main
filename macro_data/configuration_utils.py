@@ -138,7 +138,7 @@ def create_country_configurations(
         scale = {country: scale for country in countries}
     for country in countries:
         if country.is_eu_country:
-            country_configs[country] = read_country_conf().copy(update={"scale": scale[country]})
+            country_configs[country] = read_country_conf().model_copy(update={"scale": scale[country]})
         else:
             proxy_country = proxy_country_dict.get(country, None)
             if proxy_country is None:
@@ -150,7 +150,7 @@ def create_country_configurations(
                     f"{proxy_country} is not in EU, but was set as a proxy country for {country}."
                     f"Please set an EU country as a proxy country."
                 )
-            country_configs[country] = read_country_conf().copy(
+            country_configs[country] = read_country_conf().model_copy(
                 update={"eu_proxy_country": proxy_country, "scale": scale[country]}
             )
         if not use_compustat:

@@ -190,7 +190,11 @@ class WIODSEAReader:
             field (str): The name of the field.
             values (np.ndarray): An array of values in USD.
         """
-        self.df.loc[country].loc[self.industries, field] = values
+        # Use proper indexing to avoid chained assignment warning
+        mask = (self.df.index.get_level_values(0) == country) & (
+            self.df.index.get_level_values(1).isin(self.industries)
+        )
+        self.df.loc[mask, field] = values
 
     #
     # def get_values_in_lcu(self, country: str, field: str) -> np.ndarray:
