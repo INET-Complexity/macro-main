@@ -1,4 +1,4 @@
-# Makes sure that the code is properly formatted with black and isort.
+# Makes sure that the code is properly formatted and linted with ruff.
 
 name: Style Check
 
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    
+
     - name: Install uv
       uses: astral-sh/setup-uv@v3
       with:
@@ -32,9 +32,9 @@ jobs:
     - name: Install dependencies
       run: |
         uv sync --python 3.12 --extra dev
-    - name: Check code formatting with black
+    - name: Check code formatting with ruff
       run: |
-        uv run black --check --config="pyproject.toml" .
-    - name: Check code formatting with isort
+        uv run ruff format --check .
+    - name: Check code linting with ruff
       run: |
-        uv run isort . --check-only --settings-path pyproject.toml
+        uv run ruff check .

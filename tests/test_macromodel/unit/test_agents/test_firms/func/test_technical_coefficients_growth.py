@@ -105,7 +105,8 @@ class TestSimpleTechnicalGrowth:
     def test_intermediate_growth_calculation(self):
         """Test intermediate input growth calculation."""
         growth_func = SimpleTechnicalGrowth(
-            investment_effectiveness=0.1, diminishing_returns_factor=0.0  # No diminishing returns for simplicity
+            investment_effectiveness=0.1,
+            diminishing_returns_factor=0.0,  # No diminishing returns for simplicity
         )
 
         n_firms = 2

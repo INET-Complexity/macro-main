@@ -839,10 +839,8 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         # set up optimisation
 
         homogeneous_weights = np.outer(iot_hh_consumption_norm, np.ones(n_quantiles))
-        consumption_difference = (
-            lambda alpha: np.dot(
-                homogeneous_weights * alpha + weights_by_income * (1 - alpha), disposable_income_by_quantile
-            )
+        consumption_difference = lambda alpha: (
+            np.dot(homogeneous_weights * alpha + weights_by_income * (1 - alpha), disposable_income_by_quantile)
             / (1 + vat)
             - iot_hh_consumption
         )

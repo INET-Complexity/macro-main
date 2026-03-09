@@ -180,9 +180,9 @@ class TestBundleArbitrageInvestmentAllocation:
 
         # With singleton bundles, arbitrage intensity should make no difference
         # since there are no substitution opportunities
-        assert np.allclose(
-            tech_low, tech_high, rtol=1e-10
-        ), "Singleton bundles should be unaffected by arbitrage intensity"
+        assert np.allclose(tech_low, tech_high, rtol=1e-10), (
+            "Singleton bundles should be unaffected by arbitrage intensity"
+        )
 
         # Investment should follow base priority logic (expensive inputs get higher priority)
         investments = tech_low[0]
@@ -227,14 +227,14 @@ class TestBundleArbitrageInvestmentAllocation:
         investments = technical_investment[0]
 
         # Within energy bundle: electricity (1) should beat oil (0)
-        assert (
-            investments[1] > investments[0]
-        ), f"Energy bundle: Electricity ({investments[1]:.2f}) should beat oil ({investments[0]:.2f})"
+        assert investments[1] > investments[0], (
+            f"Energy bundle: Electricity ({investments[1]:.2f}) should beat oil ({investments[0]:.2f})"
+        )
 
         # Within transport bundle: bike (3) should beat car (2)
-        assert (
-            investments[3] > investments[2]
-        ), f"Transport bundle: Bike ({investments[3]:.2f}) should beat car ({investments[2]:.2f})"
+        assert investments[3] > investments[2], (
+            f"Transport bundle: Bike ({investments[3]:.2f}) should beat car ({investments[2]:.2f})"
+        )
 
         # Verify arbitrage strength based on price ratios
         energy_arbitrage = investments[1] / (investments[0] + 1e-10)
@@ -295,9 +295,9 @@ class TestBundleArbitrageInvestmentAllocation:
 
         # Verify that base factors are still working outside the bundle
         # Industries 2,3 should follow standard priority logic
-        assert (
-            investments[2] > 0 and investments[3] > 0
-        ), "Non-bundle industries should still receive investment based on base factors"
+        assert investments[2] > 0 and investments[3] > 0, (
+            "Non-bundle industries should still receive investment based on base factors"
+        )
 
     def test_zero_investment_budget(self):
         """Test handling of zero investment budgets."""

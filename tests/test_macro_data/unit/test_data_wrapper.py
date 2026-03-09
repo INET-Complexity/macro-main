@@ -8,8 +8,6 @@ import yaml
 from macro_data import DataWrapper, SyntheticCountry
 from macro_data.configuration import DataConfiguration
 from macro_data.configuration.countries import Country
-from macro_data.configuration.region import Region
-from macro_data.readers import ALL_INDUSTRIES
 
 TEST_PATH = Path(__file__).parent.parent.resolve()
 
@@ -401,9 +399,9 @@ class TestCreator:
             check_country_gdp(country)
             check_country_credit(country)
 
-            assert np.all(
-                country.population.individual_data["Employee Income"] >= 0
-            ), f"Negative employee income for {country_name}"
+            assert np.all(country.population.individual_data["Employee Income"] >= 0), (
+                f"Negative employee income for {country_name}"
+            )
 
 
 def check_country_credit(country: SyntheticCountry):
@@ -467,9 +465,9 @@ def check_country_rent_consistency(country: SyntheticCountry):
     non_zero_rent_renters = (renter_rent_paid > 0).sum()
     total_renters = renters.sum()
 
-    assert (
-        non_zero_rent_renters / total_renters > 0.5
-    ), f"Too many renters with zero rent: {total_renters - non_zero_rent_renters}/{total_renters}"
+    assert non_zero_rent_renters / total_renters > 0.5, (
+        f"Too many renters with zero rent: {total_renters - non_zero_rent_renters}/{total_renters}"
+    )
 
     # Test 3: Check owners should have zero rent paid (they don't pay rent)
     owner_rent_paid = household_data.loc[owners, "Rent Paid"]
@@ -505,6 +503,6 @@ def check_country_rent_consistency(country: SyntheticCountry):
 
     # Rent should be between 0.5% and 40% of total income (generous bounds)
     # Lower bound relaxed for spoofed test data which may have altered distributions
-    assert (
-        0.005 <= rent_to_income_ratio <= 0.40
-    ), f"Rent-to-income ratio {rent_to_income_ratio:.3f} is outside reasonable bounds [0.005, 0.40]"
+    assert 0.005 <= rent_to_income_ratio <= 0.40, (
+        f"Rent-to-income ratio {rent_to_income_ratio:.3f} is outside reasonable bounds [0.005, 0.40]"
+    )

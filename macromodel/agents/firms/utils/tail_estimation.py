@@ -1,10 +1,7 @@
 import logging
-import os
 import sys
-import time
 
 import numpy as np
-from matplotlib import pyplot as plt
 
 # =========================================
 # ========== Auxiliary Functions ==========
@@ -622,7 +619,7 @@ def moments_dbs(
         sample = np.random.choice(ordered_data, n1, replace=True)
         sample[::-1].sort()
         M1, M2, M3 = get_moments_estimates_3(sample)
-        xi_2 = M1 + 1.0 - 0.5 * ((1.0 - (M1 * M1) / M2)) ** (-1.0)
+        xi_2 = M1 + 1.0 - 0.5 * (1.0 - (M1 * M1) / M2) ** (-1.0)
         xi_3 = np.sqrt(0.5 * M2) + 1.0 - (2.0 / 3.0) * (1.0 / (1.0 - M1 * M2 / M3))
         samples_n1 += (xi_2 - xi_3) ** 2
         good_counts1[np.where((xi_2 - xi_3) ** 2 != np.nan)] += 1

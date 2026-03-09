@@ -11,14 +11,9 @@ including:
 import pathlib
 
 import numpy as np
-import pytest
 
 from macro_data.configuration.countries import Country
-from macro_data.processing.synthetic_housing_market.default_synthetic_housing_market import (
-    DefaultSyntheticHousingMarket,
-)
 from macro_data.processing.synthetic_matching.matching_households_with_houses import (
-    match_renters_to_properties,
     set_housing_df,
 )
 from macro_data.processing.synthetic_population.hfcs_synthetic_population import (

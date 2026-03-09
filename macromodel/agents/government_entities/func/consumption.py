@@ -19,8 +19,10 @@ from typing import Any, Optional
 
 import numpy as np
 
-from macromodel.forecaster.forecaster import ImplementedAutoregForecaster  # noqa
-from macromodel.forecaster.forecaster import ManualAutoregForecaster
+from macromodel.forecaster.forecaster import (
+    ImplementedAutoregForecaster,  # noqa
+    ManualAutoregForecaster,
+)
 
 
 class GovernmentConsumptionSetter(ABC):

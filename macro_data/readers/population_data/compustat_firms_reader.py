@@ -45,7 +45,6 @@ Note:
     Missing values are imputed using scikit-learn's IterativeImputer.
 """
 
-import warnings
 from pathlib import Path
 from warnings import simplefilter
 
@@ -57,7 +56,6 @@ from sklearn.impute import IterativeImputer  # noqa
 
 from macro_data.configuration.countries import Country
 from macro_data.configuration.region import Region
-from macro_data.readers.economic_data.exchange_rates import ExchangeRatesReader
 
 # Mapping of Compustat variable codes to descriptive names
 var_mapping = {

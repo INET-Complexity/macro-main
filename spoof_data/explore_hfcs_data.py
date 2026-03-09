@@ -12,7 +12,7 @@ This information guides the spoofing strategy.
 
 import json
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -251,13 +251,13 @@ class HFCSExplorer:
 
         # Check household size vs number of individuals
         hh_sizes = self.p_df.groupby("hid").size()
-        print(f"\n📊 Household size distribution:")
+        print("\n📊 Household size distribution:")
         print(hh_sizes.describe())
 
         # Check if D columns are derived from H columns
         # For example, check if DA columns (assets) might be sums
         if "DA1000" in self.d_df.columns:  # Total real assets
-            print(f"\n💰 Checking if derived columns are aggregations from household data...")
+            print("\n💰 Checking if derived columns are aggregations from household data...")
             print("  Note: D file contains derived variables that may be calculated from H and P")
             print("  Strategy: Regenerate D file after spoofing H and P")
 
