@@ -242,7 +242,7 @@ def hill_dbs(
     k2 = None
     min_index1 = 1
     min_index2 = 1
-    while k2 == None:
+    while k2 is None:
         # first bootstrap with n1 sample size
         for i in range(r_bootstrap):
             sample = np.random.choice(ordered_data, n1, replace=True)
@@ -397,7 +397,7 @@ def hill_estimator(
             k2,
             max_index2,
         ) = results
-        while k_star == None:
+        while k_star is None:
             logging.info("Resampling...")
             results = hill_dbs(
                 ordered_data,
@@ -744,7 +744,7 @@ def moments_estimator(
             diagn_plots=diagn_plots,
             eps_stop=eps_stop,
         )
-        while results[0] == None:
+        while results[0] is None:
             logging.info("Resampling...")
             results = moments_dbs(
                 ordered_data,
@@ -1142,7 +1142,7 @@ def kernel_type_estimator(
             h2,
             max_index2,
         ) = results
-        while h_star == None:
+        while h_star is None:
             print("Resampling...")
             results = kernel_type_dbs(
                 ordered_data,
@@ -1299,7 +1299,6 @@ def make_plots(
 
     # add noise if needed
     if noise_flag:
-        original_discrete_data = ordered_data
         discrete_ordered_data = ordered_data
         discrete_ordered_data[::-1].sort()
         ordered_data = add_uniform_noise(ordered_data, p=p_noise)

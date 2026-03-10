@@ -148,7 +148,7 @@ def test_can_provincial(can_provincial_datawrapper):
     for _ in range(3):
         simulation.iterate()
 
-    shallow_output = simulation.countries["CAN_AB"].shallow_output()
+    simulation.countries["CAN_AB"].shallow_output()
 
     assert True
 

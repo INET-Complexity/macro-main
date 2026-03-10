@@ -70,7 +70,8 @@ line-length = 120
 extend-exclude = ["debug_scripts"]
 
 [tool.ruff.lint]
-select = ["I"]
+select = ["E", "F", "I"]
+ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]

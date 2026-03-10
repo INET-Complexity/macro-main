@@ -157,12 +157,6 @@ class LabourMarket:
         Returns:
             LabourMarket: New market instance initialized with the data
         """
-        # Parameters
-        if "parameters" in config.keys():
-            parameters = config["parameters"].copy()
-        else:
-            parameters = {}
-
         # Get corresponding functions
         functions = get_functions(
             config["functions"],

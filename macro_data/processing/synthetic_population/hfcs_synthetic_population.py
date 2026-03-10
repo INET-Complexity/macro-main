@@ -839,11 +839,13 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         # set up optimisation
 
         homogeneous_weights = np.outer(iot_hh_consumption_norm, np.ones(n_quantiles))
-        consumption_difference = lambda alpha: (
-            np.dot(homogeneous_weights * alpha + weights_by_income * (1 - alpha), disposable_income_by_quantile)
-            / (1 + vat)
-            - iot_hh_consumption
-        )
+
+        def consumption_difference(alpha):
+            return (
+                np.dot(homogeneous_weights * alpha + weights_by_income * (1 - alpha), disposable_income_by_quantile)
+                / (1 + vat)
+                - iot_hh_consumption
+            )
 
         # cost_fct = lambda alpha: np.sum((consumption_difference(alpha) / iot_hh_consumption.sum()) ** 2)
         def cost_fct(alpha):
@@ -999,7 +1001,6 @@ def reassign_industries(individuals_df: pd.DataFrame, output_shares: dict[str, p
 
         subsector_codes = subsectors.index.to_list()
         subsector_weights = subsectors.values
-        num_sub_sectors = len(subsector_codes)
         expected_counts = subsector_weights * N
 
         # Step 2.2: Initial integer counts by rounding expected counts

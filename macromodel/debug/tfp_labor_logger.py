@@ -164,7 +164,7 @@ def capture_tfp_labor_snapshot(simulation, t: int) -> TFPLaborSnapshot:
         try:
             growth_estimates = firms.ts.current("estimated_growth")
             avg_growth = np.mean(growth_estimates)
-        except:
+        except Exception:
             avg_growth = 0.0
     else:
         avg_growth = 0.0

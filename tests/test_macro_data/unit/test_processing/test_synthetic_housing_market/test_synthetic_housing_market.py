@@ -81,7 +81,7 @@ class TestSyntheticHousingMarket:
         total_imputed_rent = 50000.0  # Total imputed rent for owner-occupied properties
 
         # Create housing market and perform household-property matching
-        housing_df = set_housing_df(
+        set_housing_df(
             synthetic_population=population,
             rental_income_taxes=rental_income_taxes,
             social_housing_rent=social_housing_rent,
@@ -92,7 +92,6 @@ class TestSyntheticHousingMarket:
         # Tenure status: 1 = owner-occupied, 3 = private rental, -1 = social housing
         owners = population.household_data["Tenure Status of the Main Residence"] == 1
         renters = population.household_data["Tenure Status of the Main Residence"] == 3
-        social_housing = population.household_data["Tenure Status of the Main Residence"] == -1
 
         assert owners.sum() > 0, "No owner-occupied households found"
         assert renters.sum() > 0, "No private renters found"

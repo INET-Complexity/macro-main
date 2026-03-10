@@ -1,6 +1,6 @@
 class TestCentralBank:
     def test__init(self, test_central_bank, datawrapper):
-        synthetic_central_bank = datawrapper.synthetic_countries["FRA"].central_bank
+        datawrapper.synthetic_countries["FRA"].central_bank
 
         ts_keys = [
             "policy_rate",
