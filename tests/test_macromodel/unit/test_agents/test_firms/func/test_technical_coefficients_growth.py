@@ -262,9 +262,6 @@ class TestSimpleTechnicalGrowth:
 
     def test_update_multipliers(self):
         """Test multiplier update with growth rates."""
-        n_firms = 2
-        n_industries = 3
-
         current_multipliers = np.array([[1.0, 1.2, 0.8], [0.9, 1.1, 1.0]])
 
         growth_rates = np.array(

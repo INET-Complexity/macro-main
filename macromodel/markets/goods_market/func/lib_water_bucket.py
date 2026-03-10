@@ -693,9 +693,6 @@ def clear_water_bucket(
                             # Process each seller country
                             for sell_country in total_real_supply.keys():
                                 # Calculate and update bilateral trade amounts
-                                bilateral_amount = (
-                                    real_prop_rem * total_real_supply[sell_country][g] / aggr_real_supply[g]
-                                )
                                 transactor.transactor_buyer_states[
                                     "Nominal Amount spent on Goods from " + sell_country
                                 ][:, g] += (

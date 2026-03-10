@@ -190,9 +190,7 @@ class HFCSSpoofGenerator:
                 return spoofed
 
         # Determine spoofing method based on data characteristics
-        has_zeros = (non_missing == 0).any()
         has_negatives = (non_missing < 0).any()
-        all_positive = (non_missing > 0).all()
 
         if method == "lognormal_with_zeros" and not has_negatives:
             # Two-stage model: Bernoulli for non-zero + lognormal for positive values
@@ -509,7 +507,6 @@ class HFCSSpoofGenerator:
 
         # Renters should have NaN or 0
         # Preserve the missingness pattern from original data
-        original_renter_missing = original_vals[is_renter].isna()
         self.d_spoofed.loc[is_renter, col] = np.nan
         # Some renters might have 0 instead of NaN (check original pattern)
         if (original_vals[is_renter] == 0).any():

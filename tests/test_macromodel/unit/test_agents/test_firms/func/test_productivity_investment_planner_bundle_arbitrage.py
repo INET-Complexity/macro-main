@@ -255,7 +255,7 @@ class TestBundleArbitrageInvestmentAllocation:
             n_firms=1,
         )
 
-        n_firms, n_industries = 1, 4
+        _, n_industries = 1, 4
         bundles = [[0, 1]]  # Bundle with industries 0 and 1
         good_bundle = create_good_bundle(n_industries, bundles)
         bundle_matrix = create_bundle_matrix(np.array(good_bundle))

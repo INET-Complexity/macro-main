@@ -450,7 +450,6 @@ def check_country_rent_consistency(country: SyntheticCountry):
     # Test 1: Check tenure status codes are being used correctly
     renters = household_data["Tenure Status of the Main Residence"] == 3
     owners = household_data["Tenure Status of the Main Residence"].isin([1, 2, 4])
-    social_housing = household_data["Tenure Status of the Main Residence"] == -1
 
     # Ensure we have renters identified
     assert renters.sum() > 0, "No households identified as renters (tenure code 3)"
