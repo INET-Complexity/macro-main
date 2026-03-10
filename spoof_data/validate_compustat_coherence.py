@@ -28,7 +28,7 @@ def validate_firms_data(annual: pd.DataFrame, quarterly: pd.DataFrame) -> tuple[
     quarterly_conm = set(quarterly["conm"].dropna().unique())
     overlap = annual_conm & quarterly_conm
 
-    print(f"\n1. Company name (conm) overlap:")
+    print("\n1. Company name (conm) overlap:")
     print(f"   Annual companies: {len(annual_conm)}")
     print(f"   Quarterly companies: {len(quarterly_conm)}")
     print(f"   Overlap: {len(overlap)}")
@@ -45,12 +45,12 @@ def validate_firms_data(annual: pd.DataFrame, quarterly: pd.DataFrame) -> tuple[
         if annual_gvkey_dups > 0:
             errors.append(f"Annual data has {annual_gvkey_dups} duplicate gvkey values")
     else:
-        print(f"\n2. gvkey column removed (spoofed data) - skipping uniqueness check")
+        print("\n2. gvkey column removed (spoofed data) - skipping uniqueness check")
 
     # Check 3: Time period consistency
     annual_years = annual["fyear"].unique()
     quarterly_years = quarterly["fyearq"].unique()
-    print(f"\n3. Time periods:")
+    print("\n3. Time periods:")
     print(f"   Annual years: {sorted(annual_years)}")
     print(f"   Quarterly years: {sorted(quarterly_years)}")
 
@@ -60,7 +60,7 @@ def validate_firms_data(annual: pd.DataFrame, quarterly: pd.DataFrame) -> tuple[
     # Check 4: Country consistency
     annual_countries = set(annual["loc"].unique())
     quarterly_countries = set(quarterly["loc"].unique())
-    print(f"\n4. Countries:")
+    print("\n4. Countries:")
     print(f"   Annual: {sorted(annual_countries)}")
     print(f"   Quarterly: {sorted(quarterly_countries)}")
 
@@ -88,7 +88,7 @@ def validate_firms_data(annual: pd.DataFrame, quarterly: pd.DataFrame) -> tuple[
         "loc",
     ]
 
-    print(f"\n5. Required columns:")
+    print("\n5. Required columns:")
     annual_missing = set(annual_required) - set(annual.columns)
     quarterly_missing = set(quarterly_required) - set(quarterly.columns)
 
@@ -96,40 +96,40 @@ def validate_firms_data(annual: pd.DataFrame, quarterly: pd.DataFrame) -> tuple[
         errors.append(f"Annual missing columns: {annual_missing}")
         print(f"   ❌ Annual missing: {annual_missing}")
     else:
-        print(f"   ✓ Annual has all required columns")
+        print("   ✓ Annual has all required columns")
 
     if quarterly_missing:
         errors.append(f"Quarterly missing columns: {quarterly_missing}")
         print(f"   ❌ Quarterly missing: {quarterly_missing}")
     else:
-        print(f"   ✓ Quarterly has all required columns")
+        print("   ✓ Quarterly has all required columns")
 
     # Check 6: Financial values are reasonable
-    print(f"\n6. Financial data sanity checks:")
+    print("\n6. Financial data sanity checks:")
 
     # Employment should be >= 0
     if (annual["emp"].dropna() < 0).any():
         errors.append("Annual data has negative employment values")
-        print(f"   ❌ Negative employment in annual")
+        print("   ❌ Negative employment in annual")
     else:
-        print(f"   ✓ Employment is non-negative")
+        print("   ✓ Employment is non-negative")
 
     # Assets should be >= 0
     if (quarterly["atq"].dropna() < 0).any():
         errors.append("Quarterly data has negative assets")
-        print(f"   ❌ Negative assets in quarterly")
+        print("   ❌ Negative assets in quarterly")
     else:
-        print(f"   ✓ Assets are non-negative")
+        print("   ✓ Assets are non-negative")
 
     # Liabilities should be >= 0
     if (quarterly["ltq"].dropna() < 0).any():
         errors.append("Quarterly data has negative liabilities")
-        print(f"   ❌ Negative liabilities in quarterly")
+        print("   ❌ Negative liabilities in quarterly")
     else:
-        print(f"   ✓ Liabilities are non-negative")
+        print("   ✓ Liabilities are non-negative")
 
     # Check 7: Currency codes match countries
-    print(f"\n7. Currency-country consistency:")
+    print("\n7. Currency-country consistency:")
     loc_currency_map = quarterly.groupby("loc")["curcdq"].unique()
     for loc, currencies in loc_currency_map.items():
         print(f"   {loc}: {list(currencies)}")
@@ -152,7 +152,7 @@ def validate_banks_data(banks: pd.DataFrame) -> tuple[bool, list[str]]:
 
     # Check 1: gvkey uniqueness per time period (skip if removed for spoofing)
     if "gvkey" in banks.columns:
-        print(f"\n1. gvkey duplicates per quarter:")
+        print("\n1. gvkey duplicates per quarter:")
         for quarter in sorted(banks["fqtr"].unique()):
             quarter_data = banks[banks["fqtr"] == quarter]
             dups = quarter_data["gvkey"].duplicated().sum()
@@ -160,23 +160,23 @@ def validate_banks_data(banks: pd.DataFrame) -> tuple[bool, list[str]]:
             if dups > 0:
                 errors.append(f"Quarter {quarter} has {dups} duplicate gvkey values")
     else:
-        print(f"\n1. gvkey column removed (spoofed data) - skipping uniqueness check")
+        print("\n1. gvkey column removed (spoofed data) - skipping uniqueness check")
 
     # Check 2: Required columns exist (flexible for spoofed data)
     required_cols = ["curcdq", "fqtr", "fyearq", "datadate", "atq", "dlttq", "dptcq", "ltq", "teqq", "loc"]
 
-    print(f"\n2. Required columns:")
+    print("\n2. Required columns:")
     missing = set(required_cols) - set(banks.columns)
     if missing:
         errors.append(f"Banks missing columns: {missing}")
         print(f"   ❌ Missing: {missing}")
     else:
-        print(f"   ✓ All required columns present")
+        print("   ✓ All required columns present")
 
     # Check 3: Time periods
     years = banks["fyearq"].unique()
     quarters = sorted(banks["fqtr"].unique())
-    print(f"\n3. Time periods:")
+    print("\n3. Time periods:")
     print(f"   Years: {sorted(years)}")
     print(f"   Quarters: {quarters}")
 
@@ -185,25 +185,25 @@ def validate_banks_data(banks: pd.DataFrame) -> tuple[bool, list[str]]:
 
     # Check 4: Country distribution
     country_counts = banks["loc"].value_counts()
-    print(f"\n4. Country distribution:")
+    print("\n4. Country distribution:")
     print(country_counts)
 
     # Check 5: Financial values are reasonable
-    print(f"\n5. Financial data sanity checks:")
+    print("\n5. Financial data sanity checks:")
 
     # Assets should be >= 0
     if (banks["atq"].dropna() < 0).any():
         errors.append("Banks data has negative assets")
-        print(f"   ❌ Negative assets")
+        print("   ❌ Negative assets")
     else:
-        print(f"   ✓ Assets are non-negative")
+        print("   ✓ Assets are non-negative")
 
     # Deposits should be >= 0
     if (banks["dptcq"].dropna() < 0).any():
         errors.append("Banks data has negative deposits")
-        print(f"   ❌ Negative deposits")
+        print("   ❌ Negative deposits")
     else:
-        print(f"   ✓ Deposits are non-negative")
+        print("   ✓ Deposits are non-negative")
 
     # Equity should be positive (usually)
     negative_equity = (banks["teqq"].dropna() < 0).sum()
@@ -215,10 +215,10 @@ def validate_banks_data(banks: pd.DataFrame) -> tuple[bool, list[str]]:
 
     # Check 6: Ticker symbols (tic) if present
     if "tic" in banks.columns:
-        print(f"\n6. Ticker symbols:")
+        print("\n6. Ticker symbols:")
         tic_missing = banks["tic"].isna().sum()
         tic_unique = banks["tic"].nunique()
-        print(f"   Missing: {tic_missing}/{len(banks)} ({tic_missing/len(banks)*100:.1f}%)")
+        print(f"   Missing: {tic_missing}/{len(banks)} ({tic_missing / len(banks) * 100:.1f}%)")
         print(f"   Unique: {tic_unique}")
 
     return len(errors) == 0, errors
@@ -246,7 +246,7 @@ def validate_cross_file_consistency(
         bank_gvkeys = set(banks["gvkey"].unique())
         overlap = firm_gvkeys & bank_gvkeys
 
-        print(f"\n1. gvkey overlap between firms and banks:")
+        print("\n1. gvkey overlap between firms and banks:")
         print(f"   Firms: {len(firm_gvkeys)} unique gvkeys")
         print(f"   Banks: {len(bank_gvkeys)} unique gvkeys")
         print(f"   Overlap: {len(overlap)}")
@@ -254,14 +254,14 @@ def validate_cross_file_consistency(
         if len(overlap) > len(bank_gvkeys) * 0.1:
             errors.append(f"Large overlap ({len(overlap)}) between firm and bank gvkeys - may indicate data issues")
     else:
-        print(f"\n1. gvkey column removed (spoofed data) - skipping overlap check")
+        print("\n1. gvkey column removed (spoofed data) - skipping overlap check")
 
     # Check 2: Time period consistency
     annual_years = set(annual["fyear"].unique())
     quarterly_years = set(quarterly["fyearq"].unique())
     bank_years = set(banks["fyearq"].unique())
 
-    print(f"\n2. Time period consistency:")
+    print("\n2. Time period consistency:")
     print(f"   Annual: {sorted(annual_years)}")
     print(f"   Quarterly (firms): {sorted(quarterly_years)}")
     print(f"   Quarterly (banks): {sorted(bank_years)}")
@@ -274,7 +274,7 @@ def validate_cross_file_consistency(
     quarterly_countries = set(quarterly["loc"].unique())
     bank_countries = set(banks["loc"].unique())
 
-    print(f"\n3. Country coverage:")
+    print("\n3. Country coverage:")
     print(f"   Annual: {sorted(annual_countries)}")
     print(f"   Quarterly: {sorted(quarterly_countries)}")
     print(f"   Banks: {sorted(bank_countries)}")

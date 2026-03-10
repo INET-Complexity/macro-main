@@ -105,7 +105,8 @@ class TestSimpleTechnicalGrowth:
     def test_intermediate_growth_calculation(self):
         """Test intermediate input growth calculation."""
         growth_func = SimpleTechnicalGrowth(
-            investment_effectiveness=0.1, diminishing_returns_factor=0.0  # No diminishing returns for simplicity
+            investment_effectiveness=0.1,
+            diminishing_returns_factor=0.0,  # No diminishing returns for simplicity
         )
 
         n_firms = 2
@@ -261,9 +262,6 @@ class TestSimpleTechnicalGrowth:
 
     def test_update_multipliers(self):
         """Test multiplier update with growth rates."""
-        n_firms = 2
-        n_industries = 3
-
         current_multipliers = np.array([[1.0, 1.2, 0.8], [0.9, 1.1, 1.0]])
 
         growth_rates = np.array(

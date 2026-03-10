@@ -143,7 +143,7 @@ class SyntheticGoodsMarket:
         merged = merged.dropna()
 
         # select only data up to the current quarter
-        merged = merged.loc[:f"{year}-Q{quarter}"]
+        merged = merged.loc[: f"{year}-Q{quarter}"]
         # drop current quarter observation (ie last row)
         merged = merged.iloc[:-1]
 

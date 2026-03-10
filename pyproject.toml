@@ -40,9 +40,7 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-cov",
-    "black",
-    "black[jupyter]",
-    "isort",
+    "ruff",
 ]
 docs = [
     "mkdocs",
@@ -67,12 +65,19 @@ package-data = {"*" = ["*.yaml"]}
 where = ["."]
 include = ["macro_data*", "macromodel*", "macrocalib*"]
 
-[tool.black]
+[tool.ruff]
 line-length = 120
+extend-exclude = ["debug_scripts"]
 
-[tool.isort]
-profile = "black"
-known_first_party = ["macro_data", "macromodel"]
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["macro_data", "macromodel"]
 
 [tool.pytest.ini_options]
 filterwarnings = [

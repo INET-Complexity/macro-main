@@ -95,8 +95,7 @@ def create_productivity_subsidy_hook(
 
         if n_target_firms == 0:
             logging.warning(
-                f"Productivity subsidy hook: No firms found in industry '{industry_code}' "
-                f"for country '{country_code}'"
+                f"Productivity subsidy hook: No firms found in industry '{industry_code}' for country '{country_code}'"
             )
             return
 

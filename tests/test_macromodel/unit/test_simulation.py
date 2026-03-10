@@ -148,7 +148,7 @@ def test_can_provincial(can_provincial_datawrapper):
     for _ in range(3):
         simulation.iterate()
 
-    shallow_output = simulation.countries["CAN_AB"].shallow_output()
+    simulation.countries["CAN_AB"].shallow_output()
 
     assert True
 
@@ -178,9 +178,9 @@ def test_tfp_growth_with_investment(datawrapper):
     config_with_growth.country_configurations["FRA"].firms.parameters.tfp_investment_elasticity = 0.5  # High elasticity
 
     # Set productivity investment planner parameters
-    config_with_growth.country_configurations["FRA"].firms.functions.productivity_investment_planner.name = (
-        "SimpleProductivityInvestmentPlanner"
-    )
+    config_with_growth.country_configurations[
+        "FRA"
+    ].firms.functions.productivity_investment_planner.name = "SimpleProductivityInvestmentPlanner"
     config_with_growth.country_configurations["FRA"].firms.functions.productivity_investment_planner.parameters = {
         "n_firms": config_with_growth.country_configurations["FRA"].firms.n_firms,
         "hurdle_rate": 1e-5,  # Very low hurdle rate (almost no discounting)
@@ -234,9 +234,9 @@ def test_tfp_growth_with_investment(datawrapper):
         total_investment = sum(
             inv.sum() for inv in sim_with_growth.countries["FRA"].firms.ts.executed_productivity_investment
         )
-        assert (
-            total_investment > 0
-        ), f"There should be positive productivity investment, first 5 elements: {total_investment[:5]}"
+        assert total_investment > 0, (
+            f"There should be positive productivity investment, first 5 elements: {total_investment[:5]}"
+        )
 
 
 def test_check_compatibility(datawrapper):
@@ -590,12 +590,12 @@ def test_tfp_only_investment_allocation(datawrapper, seed=42):
     assert np.all(final_tfp >= 1.0), "TFP multipliers should be >= 1.0"
 
     # Technical coefficients should remain at 1.0 (no technical investment)
-    assert np.allclose(
-        final_intermediate_tech, initial_intermediate_tech
-    ), "Intermediate tech multipliers should not change with TFP-only investment"
-    assert np.allclose(
-        final_capital_tech, initial_capital_tech
-    ), "Capital tech multipliers should not change with TFP-only investment"
+    assert np.allclose(final_intermediate_tech, initial_intermediate_tech), (
+        "Intermediate tech multipliers should not change with TFP-only investment"
+    )
+    assert np.allclose(final_capital_tech, initial_capital_tech), (
+        "Capital tech multipliers should not change with TFP-only investment"
+    )
     assert np.allclose(final_intermediate_tech, 1.0), "Intermediate tech multipliers should stay at 1.0"
     assert np.allclose(final_capital_tech, 1.0), "Capital tech multipliers should stay at 1.0"
 
@@ -661,9 +661,9 @@ def test_technical_only_investment_allocation(datawrapper, seed=42):
     capital_improved = np.any(final_capital_tech > initial_capital_tech)
 
     # At least one type should have improved
-    assert (
-        intermediate_improved or capital_improved
-    ), "At least some technical multipliers should improve with technical-only investment"
+    assert intermediate_improved or capital_improved, (
+        "At least some technical multipliers should improve with technical-only investment"
+    )
 
     # All multipliers should be >= 1.0 (productivity improvements)
     assert np.all(final_intermediate_tech >= 1.0), "Intermediate tech multipliers should be >= 1.0"
@@ -691,9 +691,9 @@ def test_technical_only_investment_allocation(datawrapper, seed=42):
     intermediate_some_better = (effective_intermediate > base_intermediate_for_firms).sum() > 0
     capital_some_better = (effective_capital > base_capital_for_firms).sum() > 0
 
-    assert (
-        intermediate_some_better or capital_some_better
-    ), "At least some effective coefficients should be strictly better than base coefficients"
+    assert intermediate_some_better or capital_some_better, (
+        "At least some effective coefficients should be strictly better than base coefficients"
+    )
 
 
 def test_prehooks(datawrapper):
@@ -753,9 +753,9 @@ def test_heterogeneous_investment_effectiveness(datawrapper):
             investment_effectiveness_list.append(0.15)  # High
 
     # Configure productivity investment planner with heterogeneous parameters
-    configuration.country_configurations["FRA"].firms.functions.productivity_investment_planner.name = (
-        "SimpleProductivityInvestmentPlanner"
-    )
+    configuration.country_configurations[
+        "FRA"
+    ].firms.functions.productivity_investment_planner.name = "SimpleProductivityInvestmentPlanner"
     configuration.country_configurations["FRA"].firms.functions.productivity_investment_planner.parameters = {
         "n_firms": n_firms,
         "hurdle_rate": 0.10,  # Uniform

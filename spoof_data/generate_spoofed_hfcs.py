@@ -14,11 +14,10 @@ Usage:
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 
 class HFCSSpoofGenerator:
@@ -191,9 +190,7 @@ class HFCSSpoofGenerator:
                 return spoofed
 
         # Determine spoofing method based on data characteristics
-        has_zeros = (non_missing == 0).any()
         has_negatives = (non_missing < 0).any()
-        all_positive = (non_missing > 0).all()
 
         if method == "lognormal_with_zeros" and not has_negatives:
             # Two-stage model: Bernoulli for non-zero + lognormal for positive values
@@ -392,7 +389,7 @@ class HFCSSpoofGenerator:
             if col in self.h_spoofed.columns:
                 self.spoof_categorical_column(self.h_spoofed, col)
             if (i + 1) % 50 == 0:
-                print(f"  Progress: {i+1}/{len(categorical_cols)} categorical columns")
+                print(f"  Progress: {i + 1}/{len(categorical_cols)} categorical columns")
 
         # Spoof numerical columns (HB0300 will determine constraints for some)
         print(f"Spoofing {len(numerical_cols)} numerical columns...")
@@ -405,7 +402,7 @@ class HFCSSpoofGenerator:
                     self.spoof_numerical_column(self.h_spoofed, col, method="quantile")
 
             if (i + 1) % 50 == 0:
-                print(f"  Progress: {i+1}/{len(numerical_cols)} numerical columns")
+                print(f"  Progress: {i + 1}/{len(numerical_cols)} numerical columns")
 
         # Handle HB0300 (Tenure Status) specially - keep as-is to maintain relationships
         # This is critical because it determines ownership in matching_households_with_houses.py
@@ -470,7 +467,7 @@ class HFCSSpoofGenerator:
                 self.spoof_numerical_column(self.d_spoofed, col, method="quantile")
 
             if (i + 1) % 50 == 0:
-                print(f"  Progress: {i+1}/{len(key_derived)} numerical columns")
+                print(f"  Progress: {i + 1}/{len(key_derived)} numerical columns")
 
         print("✓ D1 spoofing complete")
 
@@ -510,7 +507,6 @@ class HFCSSpoofGenerator:
 
         # Renters should have NaN or 0
         # Preserve the missingness pattern from original data
-        original_renter_missing = original_vals[is_renter].isna()
         self.d_spoofed.loc[is_renter, col] = np.nan
         # Some renters might have 0 instead of NaN (check original pattern)
         if (original_vals[is_renter] == 0).any():

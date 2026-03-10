@@ -8,7 +8,6 @@ spoofed data.
 """
 
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -203,7 +202,6 @@ class HFCSValidator:
             self.errors.append("HW0010 (weight) missing in D file")
             passed = False
         else:
-            d_weights = pd.to_numeric(self.d_df["HW0010"], errors="coerce")
             # Weights should match between H and D for same IDs
             merged = pd.merge(
                 self.h_df[["id", "HW0010"]],

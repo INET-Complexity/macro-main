@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from macromodel.agents.firms.func.productivity_growth import (
     SectoralTFPGrowth,

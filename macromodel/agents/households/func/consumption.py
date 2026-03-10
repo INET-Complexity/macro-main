@@ -18,7 +18,7 @@ The implementation handles:
 from abc import ABC, abstractmethod
 
 import numpy as np
-from numba import boolean, float64, int64, njit
+from numba import njit
 
 
 class HouseholdConsumption(ABC):

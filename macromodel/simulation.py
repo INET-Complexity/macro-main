@@ -93,7 +93,7 @@ class Simulation:
         for country, country_sim_conf in simulation_configuration.country_configurations.items():
             if country not in data_configuration.country_configs:
                 raise ValueError(
-                    f"Country {country} not found in the data configuration. " "Please use a valid data configuration."
+                    f"Country {country} not found in the data configuration. Please use a valid data configuration."
                 )
             if not check_compatibility(data_configuration.country_configs[country], country_sim_conf):  # type: ignore
                 datawrapper.synthetic_countries[country].reset_firm_function_dependent(
