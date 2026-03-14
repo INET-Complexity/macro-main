@@ -495,24 +495,29 @@ class Firms(Agent):
             estimated_inflation: Expected inflation rate
             current_good_prices (np.ndarray): Industry-level average prices
         """
-        self.ts.limiting_intermediate_inputs.append(
-            self.functions["production"].compute_limiting_intermediate_inputs_stock(
-                intermediate_inputs_productivity_matrix=self.get_effective_intermediate_coefficients(),
-                intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
-                intermediate_inputs_utilisation_rate=self.intermediate_inputs_utilisation_rate,
-                goods_criticality_matrix=self.goods_criticality_matrix,
-                substitution_bundle_matrix=self.substitution_bundles,
-            )
+        # Calculate limiting inputs and apply TFP multiplier.
+        # TFP scales effective capacity from inputs, so limits should also scale with TFP.
+        # This ensures target-setting accounts for TFP-enhanced production capacity.
+        # Without this, production targets are capped at initial levels even when TFP grows.
+        tfp_multiplier = self.states["tfp_multiplier"]
+
+        limiting_intermediate = self.functions["production"].compute_limiting_intermediate_inputs_stock(
+            intermediate_inputs_productivity_matrix=self.get_effective_intermediate_coefficients(),
+            intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
+            intermediate_inputs_utilisation_rate=self.intermediate_inputs_utilisation_rate,
+            goods_criticality_matrix=self.goods_criticality_matrix,
+            substitution_bundle_matrix=self.substitution_bundles,
         )
-        self.ts.limiting_capital_inputs.append(
-            self.functions["production"].compute_limiting_capital_inputs_stock(
-                capital_inputs_productivity_matrix=self.get_effective_capital_coefficients(),
-                capital_inputs_stock=self.ts.current("capital_inputs_stock"),
-                capital_inputs_utilisation_rate=self.capital_inputs_utilisation_rate,
-                goods_criticality_matrix=self.goods_criticality_matrix,
-                substitution_bundle_matrix=self.substitution_bundles,
-            )
+        self.ts.limiting_intermediate_inputs.append(limiting_intermediate * tfp_multiplier)
+
+        limiting_capital = self.functions["production"].compute_limiting_capital_inputs_stock(
+            capital_inputs_productivity_matrix=self.get_effective_capital_coefficients(),
+            capital_inputs_stock=self.ts.current("capital_inputs_stock"),
+            capital_inputs_utilisation_rate=self.capital_inputs_utilisation_rate,
+            goods_criticality_matrix=self.goods_criticality_matrix,
+            substitution_bundle_matrix=self.substitution_bundles,
         )
+        self.ts.limiting_capital_inputs.append(limiting_capital * tfp_multiplier)
         self.ts.target_production.append(
             self.compute_target_production(
                 bank_overdraft_rate_on_firm_deposits=bank_overdraft_rate_on_firm_deposits,
@@ -590,6 +595,7 @@ class Firms(Agent):
             input_usage=self.ts.current("used_intermediate_inputs"),
             current_tech_multipliers=self.states["intermediate_tech_multipliers"],
             substitution_bundle_matrix=self.substitution_bundles,
+            firm_industries=self.states["Industry"],
         )
 
         return total_investment, tfp_investment, technical_investment
@@ -1267,17 +1273,59 @@ class Firms(Agent):
 
         # Target capital inputs
         if assume_zero_growth:
-            self.ts.target_capital_inputs.append(self.ts.initial("target_capital_inputs"))
+            target_capital_inputs = self.ts.initial("target_capital_inputs")
         else:
-            self.ts.target_capital_inputs.append(
-                self.functions["target_capital_inputs"].compute_target_capital_inputs(
-                    unconstrained_target_capital_inputs=self.ts.current("unconstrained_target_capital_inputs"),
-                    target_long_term_credit=self.ts.current("target_long_term_credit"),
-                    received_long_term_credit=self.ts.current("received_long_term_credit"),
-                    previous_good_prices=previous_good_prices,
-                    expected_inflation=expected_inflation,
-                )
+            target_capital_inputs = self.functions["target_capital_inputs"].compute_target_capital_inputs(
+                unconstrained_target_capital_inputs=self.ts.current("unconstrained_target_capital_inputs"),
+                target_long_term_credit=self.ts.current("target_long_term_credit"),
+                received_long_term_credit=self.ts.current("received_long_term_credit"),
+                previous_good_prices=previous_good_prices,
+                expected_inflation=expected_inflation,
             )
+
+        # [TFP_DEBUG] Add planned productivity investment as additional capital demand.
+        # This makes productivity investment a forward-looking target rather than a residual.
+        if len(self.ts.planned_productivity_investment) > 0:
+            planned_investment = self.ts.current("planned_productivity_investment")
+            if planned_investment is not None and np.any(planned_investment > 0):
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.debug(
+                    f"[TFP_DEBUG] prepare_buying_goods: Adding planned_productivity_investment "
+                    f"(sum={np.sum(planned_investment):.2e}) to capital demand"
+                )
+
+                target_capital_inputs = target_capital_inputs.copy()
+                expected_prices = (1 + expected_inflation) * previous_good_prices
+                safe_prices = np.maximum(expected_prices, 1e-12)
+
+                # Distribute productivity investment across industries based on existing capital weights
+                target_totals = target_capital_inputs.sum(axis=1, keepdims=True)
+                weights = np.divide(
+                    target_capital_inputs,
+                    target_totals,
+                    out=np.zeros_like(target_capital_inputs),
+                    where=target_totals > 0,
+                )
+                # For firms with no existing capital targets, distribute evenly
+                if np.any(target_totals == 0):
+                    weights = np.where(
+                        target_totals == 0,
+                        1.0 / self.n_industries,
+                        weights,
+                    )
+
+                # Convert monetary investment to real quantities at expected prices
+                extra_capital_qty = (planned_investment[:, None] * weights) / safe_prices
+                target_capital_inputs += extra_capital_qty
+
+                logger.debug(
+                    f"[TFP_DEBUG] prepare_buying_goods: Added {np.sum(extra_capital_qty):.2e} "
+                    f"real units of capital from productivity investment"
+                )
+
+        self.ts.target_capital_inputs.append(target_capital_inputs)
 
         # Setting total real amount of goods to buy
         self.set_goods_to_buy(self.ts.current("target_intermediate_inputs") + self.ts.current("target_capital_inputs"))
