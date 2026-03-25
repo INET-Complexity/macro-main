@@ -197,6 +197,7 @@ class FinancialTargetCapitalInputsSetter(TargetCapitalInputsSetter):
         received_long_term_credit: np.ndarray,
         previous_good_prices: np.ndarray,
         expected_inflation: float,
+        extra_taxes: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Calculate financially constrained capital input targets.
 
@@ -212,6 +213,8 @@ class FinancialTargetCapitalInputsSetter(TargetCapitalInputsSetter):
             received_long_term_credit (np.ndarray): Actually received credit
             previous_good_prices (np.ndarray): Previous period's prices
             expected_inflation (float): Expected inflation rate
+            extra_taxes (Optional[np.ndarray], optional): Additional taxes on inputs
+                that may affect input decisions. Defaults to None.
 
         Returns:
             np.ndarray: Financially constrained target capital inputs,
@@ -222,7 +225,7 @@ class FinancialTargetCapitalInputsSetter(TargetCapitalInputsSetter):
             unconstrained_target_capital_inputs
             - self.credit_gap_fraction
             * (target_long_term_credit - received_long_term_credit)[:, None]
-            / ((1 + expected_inflation) * previous_good_prices),
+            / ((1 + expected_inflation) * (previous_good_prices + extra_taxes)),
         )
 
 

@@ -74,7 +74,9 @@ class GovernmentConsumptionSetter(ABC):
         current_time: int,
         exogenous_total_consumption: Optional[np.ndarray],
         forecasting_window: int,
+        extra_marginal_taxes: np.ndarray,  # add to docstring
         assume_zero_noise: bool = False,
+        log_it: bool = True,
     ) -> np.ndarray:
         """Calculate target government consumption.
 
@@ -98,7 +100,52 @@ class GovernmentConsumptionSetter(ABC):
         Returns:
             np.ndarray: Target consumption by industry
         """
-        pass
+        if historic_total_consumption[-1] == 0.0:
+            return np.zeros(previous_desired_government_consumption.shape)
+
+        # Fitting based on target consumption
+        if self.consistency == 1.0:
+            if (
+                self.fixed_total_government_consumption is None
+                or len(self.fixed_total_government_consumption) < current_time
+            ):
+                if log_it:
+                    self.fixed_total_government_consumption = np.exp(
+                        ManualAutoregForecaster().forecast(
+                            data=np.log(historic_total_consumption),
+                            t=max(current_time + self.buffer, current_time),
+                            assume_zero_noise=assume_zero_noise,
+                        )
+                    )
+                else:
+                    self.fixed_total_government_consumption = ManualAutoregForecaster().forecast(
+                        data=historic_total_consumption,
+                        t=max(current_time + self.buffer, current_time),
+                        assume_zero_noise=assume_zero_noise,
+                    )
+            consumption = self.fixed_total_government_consumption[current_time - 1]
+
+        # Fitting based on historic consumption
+        else:
+            consumption = np.exp(
+                ManualAutoregForecaster().forecast(
+                    data=np.log(historic_total_consumption),
+                    t=1,
+                    assume_zero_noise=assume_zero_noise,
+                )[0]
+            )
+
+        # Weighted by prices
+        return np.maximum(
+            0.0,
+            (1 + expected_inflation)
+            * (current_good_prices + extra_marginal_taxes)
+            / initial_good_prices
+            * consumption
+            * previous_desired_government_consumption
+            / previous_desired_government_consumption.sum(),
+        )
+
 
 
 class AutoregressiveGovernmentConsumptionSetter(GovernmentConsumptionSetter):
@@ -129,6 +176,7 @@ class AutoregressiveGovernmentConsumptionSetter(GovernmentConsumptionSetter):
         current_time: int,
         exogenous_total_consumption: Optional[np.ndarray],
         forecasting_window: int,
+        extra_marginal_taxes: np.ndarray,  # add to docstring
         assume_zero_noise: bool = False,
         log_it: bool = True,
     ) -> np.ndarray:
@@ -154,6 +202,7 @@ class AutoregressiveGovernmentConsumptionSetter(GovernmentConsumptionSetter):
             exogenous_total_consumption (np.ndarray, optional):
                 Pre-specified consumption path
             forecasting_window (int): Window for consumption forecasting
+            extra_marginal_taxes (np.ndarray): Additional taxes to be
             assume_zero_noise (bool, optional): Whether to assume
                 deterministic consumption paths
             log_it (bool, optional): Whether to use log transformation
@@ -201,7 +250,7 @@ class AutoregressiveGovernmentConsumptionSetter(GovernmentConsumptionSetter):
         return np.maximum(
             0.0,
             (1 + expected_inflation)
-            * current_good_prices
+            * (current_good_prices + extra_marginal_taxes)
             / initial_good_prices
             * consumption
             * previous_desired_government_consumption

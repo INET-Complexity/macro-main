@@ -63,21 +63,27 @@ GAS_KWH_PER_TCO2 = GAS_KWH_PER_MBTU / GAS_TCO2_PER_MBTU
 @dataclass
 class EmissionsReader:
     """
-    Reader class for emissions-related price data.
+    Reader class for emissions-related price and historical data.
 
     This class handles reading and processing price data for different fuel types
-    (coal, oil, gas) and calculates emissions factors based on these prices.
+    (coal, oil, gas), calculates emissions factors based on these prices, and
+    provides access to historical emissions data by industry.
 
     Args:
         prices_df (pd.DataFrame): DataFrame containing fuel prices with columns
             'coal_price', 'oil_price', and 'gas_price'
+        historical_emissions_df (pd.DataFrame): DataFrame containing historical emissions
+            by industry with 'index' column and year_gas columns (e.g., '2014_CH4')
 
     Attributes:
         prices_df (pd.DataFrame): DataFrame containing historical fuel prices,
             indexed by date with columns for each fuel type
+        historical_emissions_df (pd.DataFrame): DataFrame containing historical emissions
+            data by industry from Statistics Canada
     """
 
     prices_df: pd.DataFrame
+    historical_emissions_df: pd.DataFrame | None = None
 
     @classmethod
     def read_price_data(cls, data_path: Path | str):
@@ -123,7 +129,13 @@ class EmissionsReader:
         prices_df = pd.merge(coal, oil, left_index=True, right_index=True)
         prices_df = pd.merge(prices_df, gas, left_index=True, right_index=True)
 
-        return cls(prices_df=prices_df)
+        # Load historical emissions data if available
+        historical_emissions_df = None
+        historical_emissions_file = data_path.parent / "EN-GHG_EconSectByGas-CA_Emissions_2014_2023_v4.csv"
+        if historical_emissions_file.exists():
+            historical_emissions_df = pd.read_csv(historical_emissions_file)
+
+        return cls(prices_df=prices_df, historical_emissions_df=historical_emissions_df)
 
     def get_emissions_factors(self, year: int) -> dict[str, float]:
         """
@@ -149,6 +161,45 @@ class EmissionsReader:
             "oil": oil_tco2_per_usd,
             "gas": gas_tco2_per_usd,
         }
+
+    def get_historical_emissions(self, year: int, gas: str, n_industries: int) -> np.ndarray | None:
+        """
+        Get historical emissions data for a specific year and gas type.
+
+        Args:
+            year (int): Year to retrieve emissions for
+            gas (str): Gas type ('CH4' or 'CO2')
+            n_industries (int): Number of industries in the model
+
+        Returns:
+            np.ndarray | None: Emissions array indexed by industry in tCO2e (metric tons),
+                             or None if historical data is not available
+        """
+        if self.historical_emissions_df is None:
+            return None
+
+        column_name = f"{year}_{gas}"
+        emissions = np.zeros(n_industries)
+
+        def is_float(string):
+            if string is not None:
+                try:
+                    float(string)
+                    return True
+                except ValueError:
+                    return False
+            return False
+
+        for i in range(n_industries):
+            temp = self.historical_emissions_df[self.historical_emissions_df["index"] == i]
+            if not temp.empty:
+                element = temp[column_name].to_list()
+                for j in range(len(element)):
+                    if is_float(element[j]):
+                        # Convert from ktCO2e to tCO2e (metric tons)
+                        emissions[i] += float(element[j]) * 1e3
+
+        return emissions
 
 
 @dataclass

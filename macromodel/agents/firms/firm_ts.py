@@ -136,6 +136,8 @@ class FirmTimeSeries(TimeSeries):
         gas_capital_emissions: Optional[np.ndarray] = None,
         oil_capital_emissions: Optional[np.ndarray] = None,
         refined_products_capital_emissions: Optional[np.ndarray] = None,
+        inputs_emissions_CH4: Optional[np.ndarray] = None,
+        capital_emissions_CH4: Optional[np.ndarray] = None,
     ) -> "FirmTimeSeries":
         """Create a FirmTimeSeries instance from initial data.
 
@@ -309,6 +311,8 @@ class FirmTimeSeries(TimeSeries):
             ],
             inputs_emissions=inputs_emissions,
             capital_emissions=capital_emissions,
+            inputs_emissions_CH4=inputs_emissions_CH4,
+            capital_emissions_CH4=capital_emissions_CH4,
             coal_inputs_emissions=coal_inputs_emissions,
             gas_inputs_emissions=gas_inputs_emissions,
             oil_inputs_emissions=oil_inputs_emissions,

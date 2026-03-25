@@ -222,7 +222,7 @@ class DataConfiguration(BaseModel):
 
     year: int
     quarter: int = 1
-    time_unit: int = Field(4, ge=1, le=12)
+    time_unit: int = Field(3, ge=1, le=12)
     prune_date: Optional[date] = None
     country_configs: dict[Country, CountryDataConfiguration]
     row_data_config: ROWDataConfiguration = ROWDataConfiguration()

@@ -181,6 +181,7 @@ class GovernmentEntities(Agent):
         forecasting_window: int,
         assume_zero_growth: bool,
         assume_zero_noise: bool,
+        extra_marginal_taxes: np.ndarray,
     ) -> None:
         """Prepare government entities for goods market participation.
 
@@ -205,6 +206,7 @@ class GovernmentEntities(Agent):
             assume_zero_growth (bool): Whether to assume no growth
             assume_zero_noise (bool): Whether to assume deterministic
                 consumption paths
+            extra_marginal_taxes (np.ndarray): Taxes from policy scenarios
         """
         if exogenous_gov_consumption_before is None:
             historic_total_consumption = np.array(self.ts.historic("total_consumption")).flatten() / historic_ppi
@@ -232,6 +234,7 @@ class GovernmentEntities(Agent):
                         exogenous_total_consumption=exogenous_gov_consumption_during,
                         forecasting_window=forecasting_window,
                         assume_zero_noise=assume_zero_noise,
+                        extra_marginal_taxes=extra_marginal_taxes,
                     )
                 )
             )
@@ -272,6 +275,7 @@ class GovernmentEntities(Agent):
         forecasting_window: int,
         assume_zero_growth: bool,
         assume_zero_noise: bool,
+        extra_marginal_taxes: np.ndarray,
     ) -> None:
         """Prepare for goods market clearing.
 
@@ -284,6 +288,9 @@ class GovernmentEntities(Agent):
             [same as prepare_buying_goods]
             exchange_rate_usd_to_lcu (float): Exchange rate from USD to
                 local currency
+            extra_marginal_taxes (np.ndarray): Additional marginal taxes
+                to be considered
+
         """
         self.set_exchange_rate(exchange_rate_usd_to_lcu)
         self.prepare_buying_goods(
@@ -297,6 +304,7 @@ class GovernmentEntities(Agent):
             forecasting_window=forecasting_window,
             assume_zero_growth=assume_zero_growth,
             assume_zero_noise=assume_zero_noise,
+            extra_marginal_taxes=extra_marginal_taxes,
         )
         self.prepare_selling_goods(n_industries)
 

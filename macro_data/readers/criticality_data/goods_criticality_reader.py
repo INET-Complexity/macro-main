@@ -22,6 +22,8 @@ class GoodsCriticalityReader:
         map_to_nace1["S"] = "R_S"
         df.index = df.index.map(map_to_nace1)
         df.columns = df.columns.map(map_to_nace1)
+        # Group by duplicates before stacking (pandas 3.x compatibility)
+        df = df.groupby(level=0, axis=0).max().groupby(level=0, axis=1).max()
         df = df.stack().reset_index().rename(columns={0: "Value"})
         df = df.groupby(["level_0", "level_1"])["Value"].max().unstack()
         df.index.name = "Demand"

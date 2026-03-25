@@ -86,6 +86,7 @@ class TargetIntermediateInputsSetter(ABC):
         received_short_term_credit: np.ndarray,
         previous_good_prices: np.ndarray,
         expected_inflation: float,
+        extra_taxes: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Calculate financially constrained target intermediate inputs.
 
@@ -193,6 +194,7 @@ class FinancialTargetIntermediateInputsSetter(TargetIntermediateInputsSetter):
         received_short_term_credit: np.ndarray,
         previous_good_prices: np.ndarray,
         expected_inflation: float,
+        extra_taxes: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Calculate financially constrained intermediate input targets.
 

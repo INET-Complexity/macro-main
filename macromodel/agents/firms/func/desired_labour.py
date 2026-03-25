@@ -91,6 +91,8 @@ class DefaultDesiredLabourSetter(DesiredLabourSetter):
             current_target_production (np.ndarray): Initial production targets
             current_limiting_intermediate_inputs (np.ndarray): Intermediate input constraints
             current_limiting_capital_inputs (np.ndarray): Capital input constraints
+            tfp_multiplier (np.ndarray, optional): Total Factor Productivity
+                multiplier for each firm. Defaults to 1.0 (no TFP effect)
 
         Returns:
             np.ndarray: Adjusted labor demand accounting for input complementarities

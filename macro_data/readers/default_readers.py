@@ -39,6 +39,9 @@ from macro_data.readers.economic_data.oecd_economic_data import OECDEconData
 from macro_data.readers.economic_data.ons_reader import ONSReader
 from macro_data.readers.economic_data.policy_rates import PolicyRatesReader
 from macro_data.readers.economic_data.world_bank_reader import WorldBankReader
+from macro_data.readers.emission_fraction.emission_fraction_reader import (
+    EmissionsFractionReader,
+)
 from macro_data.readers.emissions.emissions_reader import EmissionsReader
 from macro_data.readers.icio_sea_matching import (
     add_investment_matrix_to_icio,
@@ -49,6 +52,7 @@ from macro_data.readers.icio_sea_matching import (
 from macro_data.readers.io_tables.icio_reader import ICIOReader, split_gfcf_column
 from macro_data.readers.io_tables.industries import AGGREGATED_INDUSTRIES
 from macro_data.readers.io_tables.mappings import ICIO_AGGREGATE, ICIO_ALL
+from macro_data.readers.policy_data.policy_reader import PolicyReader
 from macro_data.readers.population_data.compustat_banks_reader import (
     CompustatBanksReader,
 )
@@ -69,6 +73,7 @@ class DataPaths:
     indicators, and more.
 
     Attributes:
+        raw_data_path (Path): Base path for raw data
         goods_criticality_path (Path): Path to goods criticality data
         exchange_rates_path (Path): Path to exchange rates data
         eurostat_path (Path): Path to Eurostat data directory
@@ -90,6 +95,7 @@ class DataPaths:
         emissions_path (Path): Path to emissions data
     """
 
+    raw_data_path: Path
     goods_criticality_path: Path
     exchange_rates_path: Path
     eurostat_path: Path
@@ -109,6 +115,7 @@ class DataPaths:
     compustat_firms_quarterly_path: Path
     compustat_banks_path: Path
     emissions_path: Path
+    emissions_fraction_path: Path
 
     @classmethod
     def default_paths(cls, raw_data_path: Path, icio_years: Iterable[int]):
@@ -122,6 +129,7 @@ class DataPaths:
             DataPaths: Configured paths for all data sources
         """
         return cls(
+            raw_data_path=raw_data_path,
             goods_criticality_path=raw_data_path / "ihs_markit_goods_criticality" / "UK_2020.csv",
             exchange_rates_path=raw_data_path / "exchange_rates" / "exchange_rates.csv",
             eurostat_path=raw_data_path / "eurostat",
@@ -141,6 +149,7 @@ class DataPaths:
             compustat_firms_quarterly_path=raw_data_path / "compustat" / "firms_quarterly.csv",
             compustat_banks_path=raw_data_path / "compustat" / "banks.csv",
             emissions_path=raw_data_path / "emissions",
+            emissions_fraction_path=raw_data_path / "emission_factors",
         )
 
     # @classmethod
@@ -175,6 +184,7 @@ class DataReaders:
         compustat_firms (CompustatFirmsReader): Compustat firms data reader
         compustat_banks (CompustatBanksReader): Compustat banks data reader
         emissions (EmissionsReader): Emissions data reader
+        emission_fractions (EmissionsFractionReader): Emission fraction data reader
         regions_dict (Optional[dict[Country, list[Region]]]): Regional disaggregation mapping
     """
 
@@ -193,7 +203,9 @@ class DataReaders:
     compustat_firms: CompustatFirmsReader
     compustat_banks: CompustatBanksReader
     emissions: EmissionsReader
+    emission_fractions: EmissionsFractionReader
     regions_dict: Optional[dict[Country, list[Region]]] = None
+    policy_data: PolicyReader = None
 
     @classmethod
     def from_raw_data(
@@ -293,9 +305,8 @@ class DataReaders:
 
             if simulation_year != 2014:
                 raise ValueError("Only 2014 is supported for this reader.")
-            disagg_path = raw_data_path / "icio" / "icio_can_2014_disagg.csv"
+            disagg_path = raw_data_path / "icio" / "sectoral_disagg_CAN_2014_v2.csv"
             df = pd.read_csv(disagg_path, header=[0, 1], index_col=[0, 1])
-            icio[simulation_year].iot = df
             industries = df.loc["ROW"].index.unique()
             if "Household Fixed Capital Formation" not in df["CAN"].columns:
                 df = split_gfcf_column(
@@ -422,6 +433,9 @@ class DataReaders:
             scale_dict=scale_dict,
         )
 
+        # Use from_data method for PolicyReader (follows macro_data standards)
+        policy_data = PolicyReader.from_data(data_path=datapaths.raw_data_path / "policy")
+
         policy_rates = PolicyRatesReader(
             path=datapaths.policy_rates_path, country_code_path=datapaths.country_codes_path
         )
@@ -460,6 +474,9 @@ class DataReaders:
 
         emissions = EmissionsReader.read_price_data(datapaths.emissions_path)
 
+        emission_fractions = EmissionsFractionReader.read_fraction_data(datapaths.emissions_fraction_path)
+
+
         return cls(
             icio=icio,
             wiod_sea=wiod_sea,
@@ -476,7 +493,9 @@ class DataReaders:
             compustat_firms=compustat_firms,
             compustat_banks=compustat_banks,
             emissions=emissions,
+            emission_fractions=emission_fractions,
             regions_dict=regions_dict,
+            policy_data=policy_data,
         )
 
     @classmethod

@@ -74,6 +74,8 @@ class Firms(Agent):
         configuration: FirmsConfiguration,
         industries: list[str],
         bundle_matrix: np.ndarray,
+        emission_fractions_co2: Optional[np.ndarray] = None,
+        emission_fractions_ch4: Optional[np.ndarray] = None,
     ):
         """Initialize the firms sector.
 
@@ -97,6 +99,8 @@ class Firms(Agent):
             industries (list[str]): Industry sector names
             bundle_matrix (np.ndarray): Matrix to manage bundles for goods (mapping each industry to an
                                                identifier of similar goods for which it can be substituted)
+            emission_fractions_co2 (Optional[np.ndarray]): CO2 emission fractions by industry
+            emission_fractions_ch4 (Optional[np.ndarray]): CH4 emission fractions by industry
         """
         n_transactors = ts.current("n_firms")
         super().__init__(
@@ -132,6 +136,10 @@ class Firms(Agent):
         self.industries = industries
 
         self.substitution_bundles = bundle_matrix
+
+        # Store emission fraction data
+        self.emission_fractions_co2 = emission_fractions_co2
+        self.emission_fractions_ch4 = emission_fractions_ch4
 
     def get_effective_intermediate_coefficients(self) -> np.ndarray:
         """Get the effective intermediate input coefficients for each firm.
@@ -180,6 +188,8 @@ class Firms(Agent):
         average_initial_price: np.ndarray,
         industries: list[str],
         add_emissions: bool = False,
+        emission_fractions_co2: Optional[np.ndarray] = None,
+        emission_fractions_ch4: Optional[np.ndarray] = None,
     ):
         """Create a Firms instance from pickled synthetic data.
 
@@ -195,11 +205,14 @@ class Firms(Agent):
             average_initial_price (np.ndarray): Initial price levels
             industries (list[str]): Industry sector names
             add_emissions (bool, optional): Whether to track emissions. Defaults to False.
+            emission_fractions_co2 (Optional[np.ndarray]): CO2 emission fractions by industry
+            emission_fractions_ch4 (Optional[np.ndarray]): CH4 emission fractions by industry
 
         Returns:
             Firms: Initialized Firms instance
         """
         functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.firms")
+
 
         intermediate_inputs_productivity_matrix = synthetic_firms.intermediate_inputs_productivity_matrix
         capital_inputs_productivity_matrix = synthetic_firms.capital_inputs_productivity_matrix
@@ -216,6 +229,8 @@ class Firms(Agent):
         if add_emissions:
             inputs_emissions = synthetic_firms.firm_data["Input Emissions"].values
             capital_emissions = synthetic_firms.firm_data["Capital Emissions"].values
+            inputs_emissions_CH4 = np.full_like(inputs_emissions, 0)
+            capital_emissions_CH4 = np.full_like(capital_emissions, 0)
             input_dict: dict = {
                 f"{key}_inputs_emissions": synthetic_firms.firm_data[f"{emitting_industry} Input Emissions"]
                 for key, emitting_industry in zip(
@@ -232,6 +247,8 @@ class Firms(Agent):
         else:
             inputs_emissions = None
             capital_emissions = None
+            inputs_emissions_CH4 = None
+            capital_emissions_CH4 = None
             input_dict = {}
             capital_dict = {}
 
@@ -246,6 +263,8 @@ class Firms(Agent):
             calculate_hill_exponent=configuration.calculate_hill_exponent,
             inputs_emissions=inputs_emissions,
             capital_emissions=capital_emissions,
+            inputs_emissions_CH4=inputs_emissions_CH4,
+            capital_emissions_CH4=capital_emissions_CH4,
             **input_dict,
             **capital_dict,
         )
@@ -302,6 +321,8 @@ class Firms(Agent):
             configuration=configuration,
             industries=industries,
             bundle_matrix=bundle_matrix,
+            emission_fractions_co2=emission_fractions_co2,
+            emission_fractions_ch4=emission_fractions_ch4,
         )
 
     @property
@@ -989,6 +1010,7 @@ class Firms(Agent):
         current_estimated_ppi_inflation: np.ndarray,
         previous_average_good_prices: np.ndarray,
         ppi_during: np.ndarray,
+        extra_marginal_taxes: np.ndarray,
     ) -> np.ndarray:
         """Set prices for each firm's output.
 
@@ -1004,6 +1026,7 @@ class Firms(Agent):
             current_estimated_ppi_inflation (np.ndarray): Expected PPI inflation
             previous_average_good_prices (np.ndarray): Previous period prices
             ppi_during (np.ndarray): Producer price indices
+            extra_marginal_taxes (Optional[np.ndarray]): Taxes on goods from policies
 
         Returns:
             np.ndarray: New prices for each firm
@@ -1029,6 +1052,7 @@ class Firms(Agent):
             ),
             ppi_during=ppi_during,
             current_time=len(self.ts.historic("price")),
+            extra_marginal_taxes=extra_marginal_taxes,
         )
 
     def compute_unconstrained_demand_for_intermediate_inputs(
@@ -1062,7 +1086,10 @@ class Firms(Agent):
             extra_taxes=extra_taxes,
         )
 
-    def compute_unconstrained_demand_for_intermediate_inputs_value(self, current_good_prices: np.ndarray) -> np.ndarray:
+    def compute_unconstrained_demand_for_intermediate_inputs_value(
+            self, current_good_prices: np.ndarray,
+            extra_taxes: np.ndarray,
+            ) -> np.ndarray:
         """Calculate value of unconstrained intermediate input demand.
 
         Computes the monetary value of desired intermediate inputs
@@ -1112,7 +1139,10 @@ class Firms(Agent):
             extra_taxes=extra_taxes,
         )
 
-    def compute_unconstrained_demand_for_capital_inputs_value(self, current_good_prices: np.ndarray) -> np.ndarray:
+    def compute_unconstrained_demand_for_capital_inputs_value(
+            self, current_good_prices: np.ndarray,
+            extra_taxes: np.ndarray,
+            ) -> np.ndarray:
         return np.matmul(
             self.ts.current("unconstrained_target_capital_inputs"),
             current_good_prices,
@@ -1232,6 +1262,7 @@ class Firms(Agent):
         self,
         previous_good_prices: np.ndarray,
         expected_inflation: float,
+        extra_marginal_taxes: np.ndarray,
         assume_zero_growth: bool = False,
     ) -> None:
         """Prepare firms' buying plans for goods market.
@@ -1262,6 +1293,7 @@ class Firms(Agent):
                     received_short_term_credit=self.ts.current("received_short_term_credit"),
                     previous_good_prices=previous_good_prices,
                     expected_inflation=expected_inflation,
+                    extra_taxes=extra_marginal_taxes,
                 )
             )
 
@@ -1276,6 +1308,7 @@ class Firms(Agent):
                     received_long_term_credit=self.ts.current("received_long_term_credit"),
                     previous_good_prices=previous_good_prices,
                     expected_inflation=expected_inflation,
+                    extra_taxes=extra_marginal_taxes,
                 )
             )
 
@@ -1303,6 +1336,7 @@ class Firms(Agent):
         exchange_rate_usd_to_lcu: float,
         previous_good_prices: np.ndarray,
         expected_inflation: float,
+        extra_marginal_taxes: np.ndarray,
     ) -> None:
         """Prepare all aspects of goods market participation.
 
@@ -1320,6 +1354,7 @@ class Firms(Agent):
         self.prepare_buying_goods(
             previous_good_prices=previous_good_prices,
             expected_inflation=expected_inflation,
+            extra_marginal_taxes=extra_marginal_taxes,
         )
         self.prepare_selling_goods()
 
@@ -1353,7 +1388,7 @@ class Firms(Agent):
         )
         """
 
-    def compute_gross_fixed_capital_formation(self, current_good_prices: np.ndarray) -> np.ndarray:
+    def compute_gross_fixed_capital_formation(self, current_good_prices: np.ndarray, extra_marginal_taxes: np.ndarray) -> np.ndarray:
         """Calculate gross fixed capital formation.
 
         Computes value of capital goods purchases at current prices.
@@ -1364,9 +1399,9 @@ class Firms(Agent):
         Returns:
             np.ndarray: Value of capital formation by industry
         """
-        return (self.ts.current("real_amount_bought_as_capital_goods") * current_good_prices).sum(axis=0)
+        return (self.ts.current("real_amount_bought_as_capital_goods") * (current_good_prices + extra_marginal_taxes)).sum(axis=0)
 
-    def update_total_newly_bought_costs(self, current_good_prices: np.ndarray) -> None:
+    def update_total_newly_bought_costs(self, current_good_prices: np.ndarray, extra_marginal_taxes: np.ndarray) -> None:
         """Update costs of newly purchased inputs.
 
         Allocates purchase costs between:
@@ -1376,9 +1411,10 @@ class Firms(Agent):
 
         Args:
             current_good_prices (np.ndarray): Current prices for valuation
+            extra_marginal_taxes (Optional[np.ndarray]): Taxes on goods from policies
         """
-        amount_ii = (self.ts.current("real_amount_bought_as_intermediate_inputs") * current_good_prices).sum(axis=1)
-        amount_cap = (self.ts.current("real_amount_bought_as_capital_goods") * current_good_prices).sum(axis=1)
+        amount_ii = (self.ts.current("real_amount_bought_as_intermediate_inputs") * (current_good_prices + extra_marginal_taxes)).sum(axis=1)
+        amount_cap = (self.ts.current("real_amount_bought_as_capital_goods") * (current_good_prices + extra_marginal_taxes)).sum(axis=1)
 
         # Just take fractions
         self.ts.total_intermediate_inputs_bought_costs.append(
@@ -1410,16 +1446,19 @@ class Firms(Agent):
             excess_demand=self.ts.current("real_excess_demand"),
         )
 
-    def compute_nominal_production(self, current_good_prices: np.ndarray) -> np.ndarray:
+    def compute_nominal_production(self, current_good_prices: np.ndarray, extra_marginal_taxes: np.ndarray) -> np.ndarray:
         """Calculate nominal value of production.
 
         Args:
             current_good_prices (np.ndarray): Current prices for valuation
+            extra_marginal_taxes (np.ndarray): Taxes on goods from policies
 
         Returns:
             np.ndarray: Nominal production value for each firm
         """
-        return current_good_prices[self.states["Industry"]] * self.ts.current("production")
+        return (
+            current_good_prices[self.states["Industry"]] + extra_marginal_taxes[self.states["Industry"]]
+        ) * self.ts.current("production")
 
     def compute_inventory(self) -> np.ndarray:
         """Calculate end-of-period inventory levels.
@@ -1438,7 +1477,7 @@ class Firms(Agent):
             self.ts.current("inventory") + self.ts.current("production") - self.ts.current("real_amount_sold"),
         )
 
-    def compute_nominal_inventory(self, current_good_prices: np.ndarray) -> np.ndarray:
+    def compute_nominal_inventory(self, current_good_prices: np.ndarray, extra_marginal_taxes: np.ndarray) -> np.ndarray:
         """Calculate nominal value of inventories.
 
         Args:
@@ -1447,7 +1486,9 @@ class Firms(Agent):
         Returns:
             np.ndarray: Nominal inventory value for each firm
         """
-        return current_good_prices[self.states["Industry"]] * self.ts.current("inventory")
+        return (
+            current_good_prices[self.states["Industry"]] + extra_marginal_taxes[self.states["Industry"]]
+        ) * self.ts.current("inventory")
 
     def compute_used_intermediate_inputs(self):
         """Calculate intermediate inputs used in production.
@@ -1469,16 +1510,17 @@ class Firms(Agent):
             substitution_bundle_matrix=self.substitution_bundles,
         )
 
-    def compute_used_intermediate_inputs_costs(self, current_good_prices: np.ndarray) -> np.ndarray:
+    def compute_used_intermediate_inputs_costs(self, current_good_prices: np.ndarray, extra_marginal_taxes: np.ndarray) -> np.ndarray:
         """Calculate cost of intermediate inputs used in production.
 
         Args:
             current_good_prices (np.ndarray): Current prices for inputs
+            extra_marginal_taxes (np.ndarray): Taxes on goods from policies
 
         Returns:
             np.ndarray: Cost of used intermediate inputs for each firm
         """
-        return (self.ts.current("used_intermediate_inputs") * current_good_prices).sum(axis=1)
+        return (self.ts.current("used_intermediate_inputs") * (current_good_prices + extra_marginal_taxes)).sum(axis=1)
 
     def compute_intermediate_inputs_stock(self) -> np.ndarray:
         """Calculate end-of-period intermediate input stocks.
@@ -1498,16 +1540,19 @@ class Firms(Agent):
             + self.ts.current("real_amount_bought_as_intermediate_inputs"),
         )
 
-    def compute_intermediate_inputs_stock_value(self, current_good_prices: np.ndarray) -> np.ndarray:
+    def compute_intermediate_inputs_stock_value(
+        self, current_good_prices: np.ndarray, extra_marginal_taxes: np.ndarray
+    ) -> np.ndarray:
         """Calculate value of intermediate input stocks.
 
         Args:
             current_good_prices (np.ndarray): Current prices for valuation
+            extra_marginal_taxes (np.ndarray): Taxes on goods from policies
 
         Returns:
             np.ndarray: Value of intermediate input stocks for each firm
         """
-        return (self.ts.current("intermediate_inputs_stock") * current_good_prices).sum(axis=1)
+        return (self.ts.current("intermediate_inputs_stock") * (current_good_prices + extra_marginal_taxes)).sum(axis=1)
 
     def compute_used_capital_inputs(self):
         """Calculate capital inputs used in production.
@@ -1531,21 +1576,23 @@ class Firms(Agent):
             substitution_bundle_matrix=self.substitution_bundles,
         )
 
-    def compute_used_capital_inputs_costs(self, current_good_prices: np.ndarray) -> np.ndarray:
+    def compute_used_capital_inputs_costs(self, current_good_prices: np.ndarray, extra_marginal_taxes: np.ndarray) -> np.ndarray:
         """Calculate cost of capital inputs used in production.
 
         Args:
             current_good_prices (np.ndarray): Current prices for inputs
+            extra_marginal_taxes (np.ndarray): Taxes on goods from policies
 
         Returns:
             np.ndarray: Cost of used capital inputs for each firm
         """
-        return (self.ts.current("used_capital_inputs") * current_good_prices).sum(axis=1)
+        return (self.ts.current("used_capital_inputs") * (current_good_prices + extra_marginal_taxes)).sum(axis=1)
 
     def compute_expected_capital_inputs_stock_value(
         self,
         current_good_prices: np.ndarray,
         estimated_inflation: float,
+        extra_marginal_taxes: np.ndarray,
     ) -> np.ndarray:
         """Calculate expected future value of capital input stocks.
 
@@ -1561,7 +1608,9 @@ class Firms(Agent):
         Returns:
             np.ndarray: Expected value of capital input stocks for each firm
         """
-        return (1 + estimated_inflation) * (self.ts.current("capital_inputs_stock") * current_good_prices).sum(axis=1)
+        return (1 + estimated_inflation) * (self.ts.current("capital_inputs_stock") * current_good_prices).sum(
+            axis=1
+        ) + extra_marginal_taxes
 
     def compute_capital_inputs_stock(self) -> np.ndarray:
         """Calculate end-of-period capital input stocks.
@@ -1587,7 +1636,9 @@ class Firms(Agent):
             self.ts.current("capital_inputs_stock") - self.ts.current("used_capital_inputs") + delayed_bought_capital,
         )
 
-    def compute_capital_inputs_stock_value(self, current_good_prices: np.ndarray) -> np.ndarray:
+    def compute_capital_inputs_stock_value(
+        self, current_good_prices: np.ndarray, extra_marginal_taxes: np.ndarray
+    ) -> np.ndarray:
         """Calculate value of capital input stocks.
 
         Args:
@@ -1596,7 +1647,7 @@ class Firms(Agent):
         Returns:
             np.ndarray: Value of capital input stocks for each firm
         """
-        return (self.ts.current("capital_inputs_stock") * current_good_prices).sum(axis=1)
+        return (self.ts.current("capital_inputs_stock") * (current_good_prices + extra_marginal_taxes)).sum(axis=1)
 
     def compute_total_inventory_change(self) -> np.ndarray:
         """Calculate nominal change in inventory value.
@@ -1606,11 +1657,28 @@ class Firms(Agent):
         """
         return self.ts.current("price") * (self.ts.current("inventory") - self.ts.prev("inventory"))
 
-    def compute_taxes_paid_on_production(self, taxes_less_subsidies_rates: np.ndarray) -> np.ndarray:
+    def compute_taxes_paid_on_production(
+        self,
+        taxes_less_subsidies_rates: np.ndarray,
+        extra_sectoral_taxes: np.ndarray,
+        add_emissions: bool,
+        use_obps_reg: bool,
+    ) -> np.ndarray:
+
+        emissions_tax = np.zeros(len(taxes_less_subsidies_rates))
+        if add_emissions:
+            if use_obps_reg:
+                emissions_tax += extra_sectoral_taxes
+            else:
+                emissions_tax = 0.0
+
         """Calculate taxes paid on production.
 
         Args:
             taxes_less_subsidies_rates (np.ndarray): Net tax rates by industry
+            extra_marginal_taxes (Optional[np.ndarray]): Taxes on goods from policies
+            add_emissions (bool): Toggle whether to calculate emissions
+            use_obps_reg (bool): Toggle whether to use output based pricing system policy
 
         Returns:
             np.ndarray: Production taxes paid by each firm
@@ -1770,7 +1838,7 @@ class Firms(Agent):
         else:
             return bad_firm_loans / total_loans_granted
 
-    def compute_equity(self, current_good_prices: np.ndarray) -> np.ndarray:
+    def compute_equity(self, current_good_prices: np.ndarray, extra_marginal_taxes: np.ndarray) -> np.ndarray:
         """Calculate equity value for each firm.
 
         Computes firm equity as:
@@ -1779,12 +1847,13 @@ class Firms(Agent):
 
         Args:
             current_good_prices (np.ndarray): Current prices for valuation
+            extra_marginal_taxes (np.ndarray): Taxes on goods from policies
 
         Returns:
             np.ndarray: Equity values for each firm
         """
-        material = np.dot(self.ts.current("intermediate_inputs_stock"), current_good_prices)
-        capital = np.dot(self.ts.current("capital_inputs_stock"), current_good_prices)
+        material = np.dot(self.ts.current("intermediate_inputs_stock"), (current_good_prices + extra_marginal_taxes))
+        capital = np.dot(self.ts.current("capital_inputs_stock"), (current_good_prices + extra_marginal_taxes))
         return (
             self.ts.current("inventory") * self.ts.current("price")
             + material
@@ -1814,7 +1883,15 @@ class Firms(Agent):
         """
         return self.ts.current("debt").sum()
 
-    def update_emissions(self, readjusted_factors: np.ndarray, emitting_indices: list | np.ndarray):
+    def update_emissions(
+        self,
+        readjusted_factors: np.ndarray,
+        emitting_indices: list | np.ndarray,
+        readjusted_factors_CH4: np.ndarray,
+        emitting_indices_CH4: list | np.ndarray,
+        use_emission_multiplier: bool = False,
+        CH4_production_emissions_only: bool = False,
+    ):
         """Update emissions from production activities.
 
         Calculates emissions from:
@@ -1826,22 +1903,85 @@ class Firms(Agent):
             readjusted_factors (np.ndarray): Emission factors per unit
             emitting_indices (list | np.ndarray): Indices of emitting sectors
         """
+
         used_intermediate_inputs = self.compute_used_intermediate_inputs()
         used_capital_inputs = self.compute_used_capital_inputs()
-        inputs_emissions = used_intermediate_inputs[:, emitting_indices] @ readjusted_factors
-        capital_emissions = used_capital_inputs[:, emitting_indices] @ readjusted_factors
-        refining_firms = self.states["Industry"] == emitting_indices[-1]
-        inputs_emissions[refining_firms] = 0
-        capital_emissions[refining_firms] = 0
+
+        # CO2
+        if use_emission_multiplier:
+            if self.emission_fractions_co2 is not None:
+                # emission_fractions_co2 has shape (n_emitting_industries, n_industries)
+                # We need to select columns corresponding to each firm's industry
+                firm_industries = self.states["Industry"]
+                # Transpose to get (n_industries, n_emitting_industries) then index by firm industry
+                emitting_fractions = self.emission_fractions_co2.T[firm_industries]
+
+            inputs_emissions = (used_intermediate_inputs[:, emitting_indices] * emitting_fractions) @ readjusted_factors
+            capital_emissions = (used_capital_inputs[:, emitting_indices] * emitting_fractions) @ readjusted_factors
+        else:
+            inputs_emissions = (used_intermediate_inputs[:, emitting_indices]) @ readjusted_factors
+            capital_emissions = (used_capital_inputs[:, emitting_indices]) @ readjusted_factors
+
+        # CH4
+        if use_emission_multiplier:
+            if self.emission_fractions_ch4 is not None:
+                emitting_fractions_CH4 = (
+                    self.emission_fractions_ch4
+                    if self.emission_fractions_ch4.ndim == 1
+                    else self.emission_fractions_ch4[0]
+                )
+
+            inputs_emissions_CH4 = (used_intermediate_inputs[:, emitting_indices_CH4]) @ readjusted_factors_CH4
+            inputs_emissions_CH4 *= emitting_fractions_CH4
+            capital_emissions_CH4 = (used_capital_inputs[:, emitting_indices_CH4]) @ readjusted_factors_CH4
+            capital_emissions_CH4 *= emitting_fractions_CH4
+            for i in range(len(inputs_emissions_CH4)):  # zero out non-methane industries
+                if i not in emitting_indices_CH4:
+                    inputs_emissions_CH4[i] = 0
+                    capital_emissions_CH4[i] = 0
+        else:
+            inputs_emissions_CH4 = (used_intermediate_inputs[:, emitting_indices_CH4]) @ readjusted_factors_CH4
+            capital_emissions_CH4 = (used_capital_inputs[:, emitting_indices_CH4]) @ readjusted_factors_CH4
+            for i in range(len(inputs_emissions_CH4)):  # zero out non-methane industries
+                if i not in emitting_indices_CH4:
+                    inputs_emissions_CH4[i] = 0
+                    capital_emissions_CH4[i] = 0
+
+        # Testing - with only considering emissions from production
+        # if used then total CH4 emissions are all in input
+        if CH4_production_emissions_only:
+            j = 0
+            for i in range(len(inputs_emissions_CH4)):
+                if i in emitting_indices_CH4:
+                    inputs_emissions_CH4[i] = self.ts.production[-1][i] * readjusted_factors_CH4[j]
+                    j += 1
+                else:
+                    inputs_emissions_CH4[i] = 0
+
+            capital_emissions_CH4 = np.zeros(len(inputs_emissions_CH4))
+
+        # refining_firms = self.states["Industry"] == emitting_indices[-1]
+        # inputs_emissions[refining_firms] = 0
+        # capital_emissions[refining_firms] = 0
 
         self.ts.inputs_emissions.append(inputs_emissions)
         self.ts.capital_emissions.append(capital_emissions)
+        self.ts.inputs_emissions_CH4.append(inputs_emissions_CH4)
+        self.ts.capital_emissions_CH4.append(capital_emissions_CH4)
 
         # disaggregate emissions
-        inputs_emissions_disaggregated = used_intermediate_inputs[:, emitting_indices] * readjusted_factors
-        capital_emissions_disaggregated = used_capital_inputs[:, emitting_indices] * readjusted_factors
-        inputs_emissions_disaggregated[refining_firms] = 0
-        capital_emissions_disaggregated[refining_firms] = 0
+        if use_emission_multiplier:
+            inputs_emissions_disaggregated = (
+                used_intermediate_inputs[:, emitting_indices] * emitting_fractions
+            ) * readjusted_factors
+            capital_emissions_disaggregated = (
+                used_capital_inputs[:, emitting_indices] * emitting_fractions
+            ) * readjusted_factors
+        else:
+            inputs_emissions_disaggregated = (used_intermediate_inputs[:, emitting_indices]) * readjusted_factors
+            capital_emissions_disaggregated = (used_capital_inputs[:, emitting_indices]) * readjusted_factors
+        # inputs_emissions_disaggregated[refining_firms] = 0
+        # capital_emissions_disaggregated[refining_firms] = 0
 
         self.ts.coal_inputs_emissions.append(inputs_emissions_disaggregated[:, 0])
         self.ts.gas_inputs_emissions.append(inputs_emissions_disaggregated[:, 1])

@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import numpy as np
+import pandas as pd
+from scipy.interpolate import interp1d
 
 
 class PriceSetter(ABC):
@@ -73,6 +76,7 @@ class PriceSetter(ABC):
         prev_unit_costs: np.ndarray,
         ppi_during: np.ndarray,
         current_time: int,
+        extra_marginal_taxes: np.ndarray,
     ) -> np.ndarray:
         """Calculate prices for each firm based on market conditions.
 
@@ -97,6 +101,7 @@ class PriceSetter(ABC):
             prev_unit_costs (np.ndarray): Previous unit costs
             ppi_during (np.ndarray): PPI time series
             current_time (int): Current period index
+            extra_marginal_taxes (np.ndarray): Additional taxes on goods from policies
 
         Returns:
             np.ndarray: Updated prices by firm
@@ -136,6 +141,7 @@ class DefaultPriceSetter(PriceSetter):
         prev_unit_costs: np.ndarray,
         ppi_during: np.ndarray,
         current_time: int,
+        extra_marginal_taxes: np.ndarray,
         min_inflation: float = -0.1,
         max_inflation: float = 0.1,
     ) -> np.ndarray:
@@ -161,7 +167,9 @@ class DefaultPriceSetter(PriceSetter):
         Returns:
             np.ndarray: Updated prices by firm, guaranteed to be positive
         """
-        average_price_by_firm = prev_average_good_prices[current_firm_sectors]
+        average_price_by_firm = (
+            prev_average_good_prices[current_firm_sectors] + extra_marginal_taxes[current_firm_sectors]
+        )
 
         # Demand-pull inflation
         demand_pull_inflation = np.zeros_like(prev_firm_prices)
@@ -239,6 +247,7 @@ class ExogenousPriceSetter(PriceSetter):
         prev_unit_costs: np.ndarray,
         ppi_during: np.ndarray,
         current_time: int,
+        extra_marginal_taxes: np.ndarray,
         min_inflation: float = -0.1,
         max_inflation: float = 0.1,
     ) -> np.ndarray:

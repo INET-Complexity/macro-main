@@ -949,7 +949,7 @@ class Economy:
         operating_surplus: float,
         wages: float,
         rent_received: float,
-        central_government_rent_received: float,
+        # central_government_rent_received: float,
         running_multiple_countries: bool,
         always_adjust: bool = True,
     ) -> None:
@@ -1211,9 +1211,9 @@ class Economy:
                 operating_surplus
                 + wages
                 + taxes_on_products
-                + rent_received
-                + central_government_rent_received
-                + rent_imputed
+                # + rent_received
+                # + central_government_rent_received
+                # + rent_imputed
             ]
         )
         if self.ts.prev("gdp_income")[0] == 0.0:

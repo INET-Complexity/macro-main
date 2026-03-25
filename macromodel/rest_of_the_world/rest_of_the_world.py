@@ -344,8 +344,10 @@ class RestOfTheWorld(Agent):
         self.ts.price_in_lcu.append(
             self.functions["prices"].compute_price(
                 initial_price=self.ts.initial("price_in_lcu"),
+                prev_price=self.ts.current("price_in_lcu"),
                 aggregate_country_price_index=aggregate_country_price_index,
                 adjustment_speed=self.parameters.adjustment_speed,
+                current_time=len(self.ts.historic("price_in_lcu")),
             )
         )
         self.ts.price_in_usd.append(1.0 / self.exchange_rate_usd_to_lcu * self.ts.current("price_in_lcu"))

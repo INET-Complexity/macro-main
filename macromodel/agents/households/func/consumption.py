@@ -65,6 +65,7 @@ class HouseholdConsumption(ABC):
         current_time: int,
         take_consumption_weights_by_income_quantile: bool,
         tau_vat: float,
+        extra_marginal_taxes: float,
     ) -> np.ndarray:
         """Calculate target consumption levels.
 
@@ -82,7 +83,7 @@ class HouseholdConsumption(ABC):
             current_time (int): Current period
             take_consumption_weights_by_income_quantile (bool): Use income quintiles
             tau_vat (float): Value added tax rate
-
+            extra_marginal_taxes (float): Additional marginal taxes
         Returns:
             np.ndarray: Target consumption by household and industry
         """
@@ -280,6 +281,7 @@ class CESHouseholdConsumption(HouseholdConsumption):
         taxes: np.ndarray = None,
         initial_taxes: np.ndarray = None,
         bundle_matrix: np.ndarray = None,
+        extra_marginal_taxes: np.ndarray = None,
     ) -> np.ndarray:
         """Calculate target consumption using CES substitution within bundles.
 

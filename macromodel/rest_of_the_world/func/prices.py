@@ -20,6 +20,8 @@ price level convergence while maintaining positive prices.
 from abc import ABC, abstractmethod
 
 import numpy as np
+import pandas as pd
+from scipy.interpolate import interp1d
 
 
 class RoWPriceSetter(ABC):
@@ -61,6 +63,8 @@ class InflationRoWPriceSetter(RoWPriceSetter):
         initial_price: np.ndarray,
         aggregate_country_price_index: float,
         adjustment_speed: float,
+        prev_price: np.ndarray = None,
+        current_time: int = None,
     ) -> np.ndarray:
         """Compute prices using inflation adjustment.
 

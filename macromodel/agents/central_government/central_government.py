@@ -60,6 +60,9 @@ class CentralGovernment(Agent):
         functions: dict[str, Any],
         ts: TimeSeries,
         states: dict[str, float | np.ndarray | list[np.ndarray]],
+        use_emissions: bool = False,
+        use_obps_reg: bool = False,
+        use_consumer_carbon_reg: bool = False,
     ):
         """Initialize the Central Government agent.
 
@@ -70,6 +73,9 @@ class CentralGovernment(Agent):
             functions (dict[str, Any]): Function implementations for government operations
             ts (TimeSeries): Time series data for tracking variables
             states (dict[str, float | np.ndarray]): State variables including tax rates
+            use_emissions (bool): Whether to track emissions
+            use_obps_reg (bool): Whether to use OBPS regulation
+            use_consumer_carbon_reg (bool): Whether to use consumer carbon regulation
         """
         super().__init__(
             country_name,
@@ -81,6 +87,9 @@ class CentralGovernment(Agent):
             states,
         )
         self.functions = functions
+        self.use_emissions = use_emissions
+        self.use_obps_reg = use_obps_reg
+        self.use_consumer_carbon_reg = use_consumer_carbon_reg
 
     @classmethod
     def from_pickled_agent(
@@ -93,6 +102,9 @@ class CentralGovernment(Agent):
         tax_data: TaxData,
         number_of_unemployed_individuals: int,
         taxes_net_subsidies: np.ndarray,
+        add_emissions: bool = False,
+        use_obps_reg: bool = False,
+        use_consumer_carbon_reg: bool = False,
     ):
         """Create a Central Government instance from pickled data.
 
@@ -144,6 +156,9 @@ class CentralGovernment(Agent):
             functions,
             ts,
             states,
+            use_emissions=add_emissions,
+            use_obps_reg=use_obps_reg,
+            use_consumer_carbon_reg=use_consumer_carbon_reg,
         )
 
     def reset(self, configuration: CentralGovernmentConfiguration):
@@ -255,6 +270,11 @@ class CentralGovernment(Agent):
         current_household_new_real_wealth: np.ndarray,
         taxes_less_subsidies_rates: np.ndarray,
         current_total_exports: float,
+        household_consumption_emission_tax: float,
+        household_investment_emission_tax: float,
+        firm_input_emissions_tax: float,
+        firm_capital_emissions_tax: float = None,
+        firm_obps_tax: float = None,
     ) -> None:
         """Calculate all tax revenues for the current period.
 
@@ -278,6 +298,9 @@ class CentralGovernment(Agent):
             current_household_new_real_wealth (np.ndarray): New wealth
             taxes_less_subsidies_rates (np.ndarray): Net tax rates
             current_total_exports (float): Total exports
+            household_consumption_emission_tax (float): Total consumer carbon tax from household consumption emissions
+            household_investment_emission_tax (float): Total consumer carbon tax from household investment emissions
+            firm_obps_tax (float): Total output based pricing system taxes collected from firms
         """
         # Taxes on production
         self.ts.taxes_production.append(
@@ -321,6 +344,15 @@ class CentralGovernment(Agent):
 
         # Taxes on employee social insurance
         self.ts.taxes_employee_si.append([self.states["Employee Social Insurance Tax"] * tot_wages_employed_ind])
+
+        # emissions
+        if self.use_emissions:
+            if self.use_consumer_carbon_reg:
+                self.ts.tax_hh_consumption_emissions.append([household_consumption_emission_tax])
+                self.ts.tax_hh_investment_emissions.append([household_investment_emission_tax])
+
+            if self.use_obps_reg:
+                self.ts.tax_firm_obps.append([firm_obps_tax])
 
     def compute_taxes_on_products(self) -> float:
         """Calculate total taxes on products and production.

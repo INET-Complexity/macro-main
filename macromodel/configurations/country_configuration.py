@@ -38,6 +38,12 @@ class CountryConfiguration(BaseModel):
     assume_zero_growth: bool = False
     assume_zero_noise: bool = False
 
+    use_consumer_carbon_reg: bool = False  # check if needs to be added to docs
+    use_obps_reg: bool = False  # check if needs to be added to docs
+
+    use_emission_multiplier: bool = False
+    CH4_production_emissions_only: bool = False
+
     @classmethod
     def n_industry_default(
         cls,

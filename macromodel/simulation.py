@@ -143,6 +143,7 @@ class Simulation:
                 t_max=simulation_configuration.t_max,
                 running_multiple_countries=running_multi_country,
                 emission_factors_usd=emission_factors,
+                policy_data=datawrapper.policy_data,
             )
             for country_name in countries_without_row
         }
@@ -348,10 +349,17 @@ class Simulation:
         for country in self.countries.values():
             country.update_realised_metrics()
             country.update_population_structure()
+            new_month = self.timestep.month + self.timestep.increment
+
+            # is this correct? Should this be an option in the configuration?
+            if country.carbon_price is not None and new_month > 12:
+                country.carbon_price.update()
+            if country.obps is not None and new_month > 12:
+                country.obps.update()
 
         # Execute post-hooks after all metrics are updated
         self.run_posthooks(t, self.timestep.year, self.timestep.month)
-
+        print("Time Step: ", t, self.timestep.year, self.timestep.month)
         # Next month
         self.timestep.step()
 
