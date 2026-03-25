@@ -141,7 +141,7 @@ def compare_distributions(original_dir: Path, spoofed_dir: Path):
             orig_corr = orig_age[orig_mask].corr(orig_income[orig_mask])
             spoof_corr = spoof_age[spoof_mask].corr(spoof_income[spoof_mask])
 
-            print(f"\nAge vs Income (P1):")
+            print("\nAge vs Income (P1):")
             print(f"  Original correlation: {orig_corr:.4f}")
             print(f"  Spoofed correlation:  {spoof_corr:.4f}")
             print(f"  Difference:           {abs(orig_corr - spoof_corr):.4f}")
@@ -160,7 +160,7 @@ def compare_distributions(original_dir: Path, spoofed_dir: Path):
             orig_corr = orig_asset[orig_mask].corr(orig_income[orig_mask])
             spoof_corr = spoof_asset[spoof_mask].corr(spoof_income[spoof_mask])
 
-            print(f"\nHome Value vs Income (D1):")
+            print("\nHome Value vs Income (D1):")
             print(f"  Original correlation: {orig_corr:.4f}")
             print(f"  Spoofed correlation:  {spoof_corr:.4f}")
             print(f"  Difference:           {abs(orig_corr - spoof_corr):.4f}")

@@ -36,7 +36,7 @@ Note:
     ROW (Rest of World) is treated as USA for exchange rate purposes.
 """
 
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 
 import pandas as pd

@@ -1,7 +1,3 @@
-from macromodel.configurations import RestOfTheWorldConfiguration
-from macromodel.rest_of_the_world import RestOfTheWorld
-
-
 class TestRestOfTheWorld:
     def test__init(self, test_row):
         assert test_row is not None

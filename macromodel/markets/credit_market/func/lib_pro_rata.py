@@ -41,7 +41,7 @@ The pro-rata mechanism is particularly useful for:
 from typing import Optional, Tuple
 
 import numpy as np
-from numba import float64, int64, njit, prange
+from numba import njit, prange
 
 from macromodel.agents.agent import Agent
 from macromodel.markets.goods_market.value_type import ValueType

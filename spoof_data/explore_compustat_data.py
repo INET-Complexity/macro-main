@@ -13,15 +13,14 @@ and generates a spoofing strategy.
 import json
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 
 def analyze_dataframe(df: pd.DataFrame, name: str) -> dict:
     """Analyze a single dataframe and return summary statistics."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Analyzing: {name}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Shape: {df.shape}")
     print(f"\nColumns: {list(df.columns)}")
 
@@ -72,7 +71,7 @@ def analyze_dataframe(df: pd.DataFrame, name: str) -> dict:
 
         if col_info.get("type") == "numeric":
             if col_info.get("is_categorical"):
-                print(f"  → Actually categorical (≤20 unique values)")
+                print("  → Actually categorical (≤20 unique values)")
                 print(f"  Unique values: {col_info['unique_values']}")
             else:
                 print(f"  Range: [{col_info['min']:.2f}, {col_info['max']:.2f}]")
@@ -85,9 +84,9 @@ def analyze_dataframe(df: pd.DataFrame, name: str) -> dict:
 
 def analyze_relationships(firms_annual: pd.DataFrame, firms_quarterly: pd.DataFrame, banks: pd.DataFrame) -> dict:
     """Analyze relationships between the three dataframes."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Analyzing Relationships")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     relationships = {}
 
@@ -96,7 +95,7 @@ def analyze_relationships(firms_annual: pd.DataFrame, firms_quarterly: pd.DataFr
     quarterly_gvkeys = set(firms_quarterly["gvkey"].dropna().unique())
     bank_gvkeys = set(banks["gvkey"].dropna().unique())
 
-    print(f"\ngvkey (company identifier) analysis:")
+    print("\ngvkey (company identifier) analysis:")
     print(f"  Annual firms: {len(annual_gvkeys)} unique companies")
     print(f"  Quarterly firms: {len(quarterly_gvkeys)} unique companies")
     print(f"  Banks: {len(bank_gvkeys)} unique companies")
@@ -117,14 +116,14 @@ def analyze_relationships(firms_annual: pd.DataFrame, firms_quarterly: pd.DataFr
         quarterly_conm = set(firms_quarterly["conm"].dropna().unique())
         bank_conm = set(banks["conm"].dropna().unique()) if "conm" in banks.columns else set()
 
-        print(f"\nconm (company name) analysis:")
+        print("\nconm (company name) analysis:")
         print(f"  Annual: {len(annual_conm)} unique names")
         print(f"  Quarterly: {len(quarterly_conm)} unique names")
         print(f"  Banks: {len(bank_conm)} unique names")
         print(f"  Annual ∩ Quarterly: {len(annual_conm & quarterly_conm)} names")
 
         # The code merges on conm, so this is critical
-        print(f"\n  ⚠️  CRITICAL: Firms are merged on 'conm' (company name)")
+        print("\n  ⚠️  CRITICAL: Firms are merged on 'conm' (company name)")
         print(f"  Companies in both annual and quarterly: {len(annual_conm & quarterly_conm)}")
 
         relationships["conm_overlap"] = {
@@ -139,7 +138,7 @@ def analyze_relationships(firms_annual: pd.DataFrame, firms_quarterly: pd.DataFr
     quarterly_countries = firms_quarterly["loc"].value_counts()
     bank_countries = banks["loc"].value_counts()
 
-    print(f"\nCountry distribution:")
+    print("\nCountry distribution:")
     print(f"  Annual:\n{annual_countries}")
     print(f"  Quarterly:\n{quarterly_countries}")
     print(f"  Banks:\n{bank_countries}")
@@ -155,9 +154,9 @@ def analyze_relationships(firms_annual: pd.DataFrame, firms_quarterly: pd.DataFr
 
 def generate_spoofing_strategy(analysis_results: dict) -> dict:
     """Generate a spoofing strategy based on the analysis."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Generating Spoofing Strategy")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     strategy = {
         "overview": (
@@ -249,9 +248,9 @@ def main():
     with open(output_path, "w") as f:
         json.dump(results, f, indent=2)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Results saved to: {output_path}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
 
 if __name__ == "__main__":

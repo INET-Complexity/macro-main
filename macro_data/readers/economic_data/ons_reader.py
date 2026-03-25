@@ -125,7 +125,7 @@ class ONSReader:
 
         # map shape parameters to ISIC sector
         map_df = self.data["uk_sector_map"]
-        map_isic = {l: [] for l in list(string.ascii_uppercase)[:21]}
+        map_isic = {letter: [] for letter in list(string.ascii_uppercase)[:21]}
         for i, row in map_df.iterrows():
             for sec in re.findall(r"[A-Z]", row["SIC07 section letter"]):
                 if row.name in shapes.keys():

@@ -377,9 +377,10 @@ class ICIOReader:
         Returns:
             np.ndarray: Total output values by industry, converted to sub-annual frequency
         """
-        return (self.iot[("TOTAL", "Output")].xs(country_name, axis=0, level=0).loc[self.industries]).fillna(
-            0
-        ).values / self.yearly_factor
+        return (
+            (self.iot[("TOTAL", "Output")].xs(country_name, axis=0, level=0).loc[self.industries]).fillna(0).values
+            / self.yearly_factor
+        )
 
     def get_total_output_series(self, country_name: str) -> pd.Series:
         """Get total output by industry as a pandas Series.

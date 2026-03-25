@@ -693,9 +693,6 @@ def clear_water_bucket(
                             # Process each seller country
                             for sell_country in total_real_supply.keys():
                                 # Calculate and update bilateral trade amounts
-                                bilateral_amount = (
-                                    real_prop_rem * total_real_supply[sell_country][g] / aggr_real_supply[g]
-                                )
                                 transactor.transactor_buyer_states[
                                     "Nominal Amount spent on Goods from " + sell_country
                                 ][:, g] += (
@@ -793,12 +790,12 @@ def clear_water_bucket(
                         real_amount_bought_by_country = (
                             real_amount_bought * total_real_supply[sell_country][g] / aggr_real_supply[g]
                         )
-                        transactor.transactor_buyer_states["Real Amount bought from " + sell_country][
-                            :, g
-                        ] += real_amount_bought_by_country
+                        transactor.transactor_buyer_states["Real Amount bought from " + sell_country][:, g] += (
+                            real_amount_bought_by_country
+                        )
                         transactor.transactor_buyer_states["Nominal Amount spent on Goods from " + sell_country][
                             :, g
-                        ] += (average_goods_price[g] * real_amount_bought_by_country)
+                        ] += average_goods_price[g] * real_amount_bought_by_country
                     if np.isnan(average_goods_price[g]) or np.sum(np.isnan(real_amount_bought)) > 0:
                         # print(average_goods_price[g], real_amount_bought)
                         # exit()

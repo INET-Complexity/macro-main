@@ -83,7 +83,6 @@ def create_households_timeseries(
     Returns:
         TimeSeries: Initialized time series for household variables
     """
-    n_industries = len(initial_consumption_by_industry)
     return TimeSeries(
         n_households=len(data),
         #

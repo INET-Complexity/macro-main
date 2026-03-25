@@ -235,9 +235,7 @@ def _match_country_iot_with_sea2(
     sea_reader.df.loc[
         sea_reader.df.index.get_level_values(0) == country_name,
         "Capital Stock",
-    ] *= (
-        va_factor * ratio
-    )
+    ] *= va_factor * ratio
 
     # icio_capital_columns = icio_reader.iot.columns.get_level_values(1).str.contains("Capital Formation")
     #

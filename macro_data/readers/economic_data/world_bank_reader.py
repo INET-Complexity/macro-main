@@ -270,7 +270,7 @@ class WorldBankReader:
             country = country.parent_country
         df = self.data["tau_vat"]
         if country in forced_vat:
-            return forced_vat[country] * ratio
+            return forced_vat[country]
         df = df.loc[df["Country Code"] == country][str(year)]
         return df.values[0] / 100.0
 

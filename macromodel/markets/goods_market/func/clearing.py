@@ -932,12 +932,12 @@ class WaterBucketGoodsMarketClearer(GoodsMarketClearer):
 
                         # Update ROW seller states
                         ind = goods_market_participants["ROW"][0].transactor_seller_states["Industries"] == g
-                        goods_market_participants["ROW"][0].transactor_seller_states["Real Amount sold"][
-                            ind
-                        ] += real_amount_bought.sum() / np.sum(ind)
+                        goods_market_participants["ROW"][0].transactor_seller_states["Real Amount sold"][ind] += (
+                            real_amount_bought.sum() / np.sum(ind)
+                        )
                         goods_market_participants["ROW"][0].transactor_seller_states[
                             "Real Amount sold to " + country_name
                         ][ind] += real_amount_bought.sum() / np.sum(ind)
-                        goods_market_participants["ROW"][0].transactor_seller_states["Remaining Goods"][
-                            ind
-                        ] -= real_amount_bought.sum() / np.sum(ind)
+                        goods_market_participants["ROW"][0].transactor_seller_states["Remaining Goods"][ind] -= (
+                            real_amount_bought.sum() / np.sum(ind)
+                        )

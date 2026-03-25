@@ -24,7 +24,7 @@ Example:
 
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import yaml
 

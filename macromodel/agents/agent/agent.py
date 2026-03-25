@@ -12,7 +12,7 @@ from copy import deepcopy
 from typing import Any, Optional
 
 import numpy as np
-from numba import float64, int64, njit
+from numba import njit
 
 from macromodel.timeseries import TimeSeries
 

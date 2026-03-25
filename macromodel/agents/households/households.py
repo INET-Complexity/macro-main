@@ -182,8 +182,6 @@ class Households(Agent):
         corr_renters = synthetic_population.household_data["Corresponding Renters"]
         corr_renters = corr_renters.rename_axis("Household ID")
 
-        corr_owned_houses = synthetic_population.household_data["Corresponding Additionally Owned Houses ID"]
-
         functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.households")
 
         hh_data = (

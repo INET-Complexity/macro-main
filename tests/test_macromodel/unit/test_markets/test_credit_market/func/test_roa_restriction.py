@@ -12,7 +12,6 @@ the clear_loans method with fixture data that triggers the bug.
 """
 
 import numpy as np
-import pandas as pd
 import pytest
 
 from macromodel.markets.credit_market.func.clearing import (
@@ -138,9 +137,9 @@ class TestROARestrictionLogic:
         # Document the bug: firm with zero capital gets inf (allowed)
         firm_with_zero_capital_idx = 1
         assert capital_stock[firm_with_zero_capital_idx] == 0
-        assert (
-            return_on_assets_restrictions[firm_with_zero_capital_idx] == np.inf
-        ), "Bug demonstration: old formula allows firm with zero capital"
+        assert return_on_assets_restrictions[firm_with_zero_capital_idx] == np.inf, (
+            "Bug demonstration: old formula allows firm with zero capital"
+        )
 
     def test_new_formula_handles_zero_capital_correctly(self):
         """Test that the new formula handles zero capital safely.
@@ -181,9 +180,9 @@ class TestROARestrictionLogic:
         assert firm_roa[firm_with_zero_capital_idx] == 0.0, "Zero capital should result in ROA = 0"
 
         # With threshold = 5% and ROA = 0%, firm should be BLOCKED
-        assert (
-            return_on_assets_restrictions[firm_with_zero_capital_idx] == 0.0
-        ), "Firm with zero capital should be blocked when threshold > 0"
+        assert return_on_assets_restrictions[firm_with_zero_capital_idx] == 0.0, (
+            "Firm with zero capital should be blocked when threshold > 0"
+        )
 
     def test_all_firm_scenarios(self):
         """Test ROA restriction logic for various firm scenarios."""

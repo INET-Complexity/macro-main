@@ -343,7 +343,5 @@ class HFCSReader:
         df.loc[:, var_numerical_union] = exchange_rates.from_eur_to_lcu(
             country=country_name,
             year=year,
-        ) * df.loc[
-            :, var_numerical_union
-        ].apply(pd.to_numeric, errors="coerce")
+        ) * df.loc[:, var_numerical_union].apply(pd.to_numeric, errors="coerce")
         return df

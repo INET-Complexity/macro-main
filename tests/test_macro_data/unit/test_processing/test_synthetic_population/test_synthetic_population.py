@@ -104,7 +104,7 @@ def test__household_consumption(multic_readers, multic_industry_data, configurat
 
     exch_rate_proxy_to_lcu = multic_readers.exchange_rates.from_eur_to_lcu(country, year)
 
-    population = SyntheticHFCSPopulation.from_readers(
+    SyntheticHFCSPopulation.from_readers(
         readers=multic_readers,
         country_name=proxy_country,
         year=2014,

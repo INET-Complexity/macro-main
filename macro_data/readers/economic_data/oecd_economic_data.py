@@ -40,7 +40,6 @@ Note:
     - Includes forced values for certain tax rates where OECD data is unavailable
 """
 
-import json
 import logging
 import warnings
 from datetime import date

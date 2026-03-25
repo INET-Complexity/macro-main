@@ -413,7 +413,7 @@ def main():
     if len(overlap) > 0:
         print(f"  ✅ Merge will succeed with {len(overlap)} companies")
     else:
-        print(f"  ❌ WARNING: No company overlap - merge will fail!")
+        print("  ❌ WARNING: No company overlap - merge will fail!")
 
     print("\n" + "=" * 60)
     print("Spoofing Complete!")

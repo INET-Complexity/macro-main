@@ -1,10 +1,7 @@
 import logging
-import os
 import sys
-import time
 
 import numpy as np
-from matplotlib import pyplot as plt
 
 # =========================================
 # ========== Auxiliary Functions ==========
@@ -245,7 +242,7 @@ def hill_dbs(
     k2 = None
     min_index1 = 1
     min_index2 = 1
-    while k2 == None:
+    while k2 is None:
         # first bootstrap with n1 sample size
         for i in range(r_bootstrap):
             sample = np.random.choice(ordered_data, n1, replace=True)
@@ -400,7 +397,7 @@ def hill_estimator(
             k2,
             max_index2,
         ) = results
-        while k_star == None:
+        while k_star is None:
             logging.info("Resampling...")
             results = hill_dbs(
                 ordered_data,
@@ -622,7 +619,7 @@ def moments_dbs(
         sample = np.random.choice(ordered_data, n1, replace=True)
         sample[::-1].sort()
         M1, M2, M3 = get_moments_estimates_3(sample)
-        xi_2 = M1 + 1.0 - 0.5 * ((1.0 - (M1 * M1) / M2)) ** (-1.0)
+        xi_2 = M1 + 1.0 - 0.5 * (1.0 - (M1 * M1) / M2) ** (-1.0)
         xi_3 = np.sqrt(0.5 * M2) + 1.0 - (2.0 / 3.0) * (1.0 / (1.0 - M1 * M2 / M3))
         samples_n1 += (xi_2 - xi_3) ** 2
         good_counts1[np.where((xi_2 - xi_3) ** 2 != np.nan)] += 1
@@ -747,7 +744,7 @@ def moments_estimator(
             diagn_plots=diagn_plots,
             eps_stop=eps_stop,
         )
-        while results[0] == None:
+        while results[0] is None:
             logging.info("Resampling...")
             results = moments_dbs(
                 ordered_data,
@@ -1145,7 +1142,7 @@ def kernel_type_estimator(
             h2,
             max_index2,
         ) = results
-        while h_star == None:
+        while h_star is None:
             print("Resampling...")
             results = kernel_type_dbs(
                 ordered_data,
@@ -1302,7 +1299,6 @@ def make_plots(
 
     # add noise if needed
     if noise_flag:
-        original_discrete_data = ordered_data
         discrete_ordered_data = ordered_data
         discrete_ordered_data[::-1].sort()
         ordered_data = add_uniform_noise(ordered_data, p=p_noise)

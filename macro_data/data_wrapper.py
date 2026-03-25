@@ -465,9 +465,6 @@ def add_row_to_calibration(
     """
     countries = list(calibration_data.columns.get_level_values(0).unique())
 
-    total_country_imports_base = sum(
-        [industry_data[country]["industry_vectors"]["Imports in USD"] for country in countries]
-    )
     total_country_exports_base = sum(
         [industry_data[country]["industry_vectors"]["Exports in USD"] for country in countries]
     )  # type: ignore

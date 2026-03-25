@@ -85,4 +85,4 @@ class TestICIODisagg:
         assert np.all(output > 0)
         output_series = icio.get_total_output_series("FRA")
         assert np.all(output_series > 0)
-        output_shares = icio.get_output_shares_dict("FRA")
+        icio.get_output_shares_dict("FRA")

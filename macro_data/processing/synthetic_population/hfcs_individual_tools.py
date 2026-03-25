@@ -3,8 +3,6 @@ import logging
 import numpy as np
 import pandas as pd
 
-from macro_data.configuration.countries import Country
-from macro_data.readers.default_readers import DataReaders
 from macro_data.util.clean_data import remove_outliers
 from macro_data.util.imputation import apply_iterative_imputer
 

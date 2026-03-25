@@ -345,9 +345,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
             self.firm_data["Corresponding Bank ID"].values
         ] * np.maximum(0.0, self.firm_data["Deposits"].values) - overdraft_rate_on_firm_deposits[
             self.firm_data["Corresponding Bank ID"].values
-        ] * np.minimum(
-            0.0, self.firm_data["Deposits"].values
-        )
+        ] * np.minimum(0.0, self.firm_data["Deposits"].values)
 
         # Interest paid on loans
         interest_on_loans = short_term_loan_interest.sum(axis=0) + long_term_loan_interest.sum(axis=0)

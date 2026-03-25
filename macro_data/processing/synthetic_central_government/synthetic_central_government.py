@@ -145,11 +145,6 @@ class SyntheticCentralGovernment(ABC):
 
         # NOTE different to what was previously done, where consumption was computed using industry_data
 
-        hh_saving_rate = synthetic_population.household_data["Saving Rate"]
-        hh_income = synthetic_population.household_data["Income"]
-
-        total_disposable_income = (hh_income * (1 - hh_saving_rate)).sum()
-
         household_vat = (
             tax_data.value_added_tax * industry_data["industry_vectors"]["Household Consumption in LCU"].sum()
         )
