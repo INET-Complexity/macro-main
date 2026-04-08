@@ -16,6 +16,7 @@ The implementation handles:
 """
 
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import numpy as np
 from numba import boolean, float64, int64, njit
@@ -118,9 +119,9 @@ class DefaultHouseholdConsumption(HouseholdConsumption):
         tau_vat: float,
         prices: np.ndarray = None,  # Ignored in default consumption
         initial_prices: np.ndarray = None,  # Ignored in default consumption
-        taxes: np.ndarray = None,  # Ignored in default consumption
         initial_taxes: np.ndarray = None,  # Ignored in default consumption
         bundle_matrix: np.ndarray = None,  # Ignored in default consumption
+        extra_marginal_taxes: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Calculate target consumption using default behavior.
 
@@ -149,6 +150,8 @@ class DefaultHouseholdConsumption(HouseholdConsumption):
         Returns:
             np.ndarray: Target consumption by household and industry
         """
+        if extra_marginal_taxes is None:
+            extra_marginal_taxes = np.zeros(consumption_weights.shape[0])
         return self._compute_target_consumption(
             historic_consumption_sum=historic_consumption_sum,
             saving_rates=saving_rates,
@@ -161,6 +164,7 @@ class DefaultHouseholdConsumption(HouseholdConsumption):
             consumption_smoothing_window=self.consumption_smoothing_window,
             consumption_smoothing_fraction=self.consumption_smoothing_fraction,
             minimum_consumption_fraction=self.minimum_consumption_fraction,
+            extra_marginal_taxes=extra_marginal_taxes,
         )
 
     @staticmethod
@@ -193,6 +197,7 @@ class DefaultHouseholdConsumption(HouseholdConsumption):
         consumption_smoothing_window: int,
         consumption_smoothing_fraction: float,
         minimum_consumption_fraction: float,
+        extra_marginal_taxes: np.ndarray,
     ) -> np.ndarray:
         """Internal method for consumption calculation.
 
@@ -221,14 +226,14 @@ class DefaultHouseholdConsumption(HouseholdConsumption):
         smoothing_window = min(consumption_smoothing_window, len(historic_consumption_sum))
         target_consumption = (
             1.0
-            / (1 + tau_vat)
+            / (1 + tau_vat + extra_marginal_taxes)
             * np.outer(
                 consumption_weights,
                 np.maximum(
                     minimum_consumption_fraction * (1 - saving_rates) * household_benefits,
                     (1 - saving_rates) * income,
                     consumption_smoothing_fraction
-                    * (1 + tau_vat)
+                    * (1 + tau_vat + extra_marginal_taxes)
                     * (1 / smoothing_window)
                     * historic_consumption_sum[1:][-smoothing_window:].sum(axis=0),
                 ),
@@ -278,7 +283,6 @@ class CESHouseholdConsumption(HouseholdConsumption):
         tau_vat: float,
         prices: np.ndarray = None,
         initial_prices: np.ndarray = None,
-        taxes: np.ndarray = None,
         initial_taxes: np.ndarray = None,
         bundle_matrix: np.ndarray = None,
         extra_marginal_taxes: np.ndarray = None,
@@ -295,7 +299,7 @@ class CESHouseholdConsumption(HouseholdConsumption):
             All standard args plus:
             prices (np.ndarray): Current prices by industry
             initial_prices (np.ndarray): Initial prices by industry
-            taxes (np.ndarray): Current tax rates by industry
+            extra_marginal_taxes (np.ndarray): Additional marginal taxes by industry
             initial_taxes (np.ndarray): Initial tax rates by industry
             bundle_matrix (np.ndarray): Bundle weight matrix (n_industries, n_bundles)
 
@@ -303,7 +307,7 @@ class CESHouseholdConsumption(HouseholdConsumption):
             np.ndarray: Target consumption by household and industry
         """
         # If no substitution data provided, fall back to default behavior
-        if any(x is None for x in [prices, initial_prices, taxes, initial_taxes, bundle_matrix]):
+        if any(x is None for x in [prices, initial_prices, extra_marginal_taxes, initial_taxes, bundle_matrix]):
             return self._compute_target_consumption_default(
                 historic_consumption_sum,
                 saving_rates,
@@ -317,7 +321,7 @@ class CESHouseholdConsumption(HouseholdConsumption):
 
         # Compute CES consumption shares with substitution
         ces_weights = self._compute_ces_weights(
-            consumption_weights, prices, initial_prices, taxes, initial_taxes, bundle_matrix
+            consumption_weights, prices, initial_prices, extra_marginal_taxes, initial_taxes, bundle_matrix
         )
 
         return self._compute_target_consumption_ces(
@@ -362,7 +366,7 @@ class CESHouseholdConsumption(HouseholdConsumption):
         initial_weights: np.ndarray,
         prices: np.ndarray,
         initial_prices: np.ndarray,
-        taxes: np.ndarray,
+        extra_marginal_taxes: np.ndarray,
         initial_taxes: np.ndarray,
         bundle_matrix: np.ndarray,
     ) -> np.ndarray:
@@ -375,7 +379,7 @@ class CESHouseholdConsumption(HouseholdConsumption):
 
         # Compute price and tax ratios
         price_ratio = prices / initial_prices
-        tax_ratio = (1 + initial_taxes) / (1 + taxes)
+        tax_ratio = (1 + initial_taxes) / (1 + extra_marginal_taxes)
 
         # Compute individual substitution effects
         substitution_factor = (tax_ratio**sigma) * (price_ratio ** (-sigma))
@@ -468,9 +472,9 @@ class ExogenousHouseholdConsumption(HouseholdConsumption):
         tau_vat: float,
         prices: np.ndarray = None,  # Ignored in exogenous consumption
         initial_prices: np.ndarray = None,  # Ignored in exogenous consumption
-        taxes: np.ndarray = None,  # Ignored in exogenous consumption
         initial_taxes: np.ndarray = None,  # Ignored in exogenous consumption
         bundle_matrix: np.ndarray = None,  # Ignored in exogenous consumption
+        extra_marginal_taxes: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Calculate target consumption using exogenous targets.
 
@@ -498,11 +502,13 @@ class ExogenousHouseholdConsumption(HouseholdConsumption):
         Returns:
             np.ndarray: Target consumption by household and industry
         """
+        if extra_sectoral_taxes is None:
+            extra_sectoral_taxes = np.zeros(consumption_weights.shape[0])
         target_consumption = np.maximum(
             0.0,
             (
                 1.0
-                / (1 + tau_vat)
+                / (1 + tau_vat + extra_marginal_taxes)
                 * np.outer(
                     consumption_weights,
                     (1 - saving_rates) * income,
@@ -514,7 +520,7 @@ class ExogenousHouseholdConsumption(HouseholdConsumption):
             * current_cpi
             / initial_cpi
             * 1.0
-            / (1 + tau_vat)
+            / (1 + tau_vat + extra_marginal_taxes)
             * exogenous_total_consumption[current_time]
             * target_consumption
             / target_consumption.sum()

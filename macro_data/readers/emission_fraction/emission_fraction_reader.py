@@ -49,10 +49,11 @@ class EmissionsFractionReader:
             indexed by date with columns for each fuel type
     """
 
-    emitting_fraction_CO2: pd.DataFrame
-    emitting_fraction_CH4: pd.DataFrame
+    emitting_fraction_co2: pd.DataFrame
+    emitting_fraction_ch4: pd.DataFrame
     emitting_fraction_consumption: pd.DataFrame
     emitting_fraction_investment: pd.DataFrame
+    emission_industries_ch4: list[str]
 
     @classmethod
     def read_fraction_data(cls, data_path: Path | str):
@@ -66,11 +67,35 @@ class EmissionsFractionReader:
         Returns:
             EmissionsFractionReader: New instance with loaded fraction data
         """
+        emission_industries_ch4 = [
+                "A01",
+                "B05a",
+                "B05b",
+                "B05c",
+                "B07",
+                "B09",
+                "C17",
+                "C19",
+                "C20",
+                "C21",
+                "C22",
+                "C23",
+                "C24a",
+                "C24b",
+                "D01b",
+                "D01c",
+                "E",
+                "F",
+                "H49",
+                "H50",
+                "H51",
+            ]
+        
         if isinstance(data_path, str):
             data_path = Path(data_path)
 
-        emitting_fraction_CO2_df = pd.read_csv(data_path / "emitting_fraction_CO2.csv", index_col=0)
-        emitting_fraction_CH4_df = pd.read_csv(data_path / "emitting_fraction_CH4.csv", index_col=0)
+        emitting_fraction_co2_df = pd.read_csv(data_path / "emitting_fraction_CO2.csv", index_col=0)
+        emitting_fraction_ch4_df = pd.read_csv(data_path / "emitting_fraction_CH4.csv", index_col=0)
         emitting_fraction_consumption_df = pd.read_csv(
             data_path / "emitting_fraction_consumption.csv", index_col=0, header=0
         )
@@ -79,8 +104,9 @@ class EmissionsFractionReader:
         )
 
         return cls(
-            emitting_fraction_CO2=emitting_fraction_CO2_df,
-            emitting_fraction_CH4=emitting_fraction_CH4_df,
+            emitting_fraction_co2=emitting_fraction_co2_df,
+            emitting_fraction_ch4=emitting_fraction_ch4_df,
             emitting_fraction_consumption=emitting_fraction_consumption_df,
             emitting_fraction_investment=emitting_fraction_investment_df,
+            emission_industries_ch4=emission_industries_ch4,
         )

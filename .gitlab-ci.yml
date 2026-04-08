@@ -30,7 +30,7 @@ style:
 test_macro_data:
   stage: test
   script:
-  - pytest --cov=data tests/test_macro_data --cov-report xml
+  - pytest --cov=macro_data tests/test_macro_data --cov-report xml
   artifacts:
     reports:
       coverage_report:

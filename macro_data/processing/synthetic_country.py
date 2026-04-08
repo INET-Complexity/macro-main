@@ -175,9 +175,6 @@ class SyntheticCountry:
     emission_fractions_investment: Optional[np.ndarray] = None
     historical_emissions_ch4_2014: Optional[np.ndarray] = None
     historical_emissions_df: Optional[pd.DataFrame] = None
-    exo_fossil_prices_df: Optional[pd.DataFrame] = None
-    exo_elec_prices_df: Optional[pd.DataFrame] = None
-    exo_elec_prices_df_2: Optional[pd.DataFrame] = None
 
     @classmethod
     def eu_synthetic_country(
@@ -338,10 +335,10 @@ class SyntheticCountry:
         emission_fractions_consumption = None
         emission_fractions_investment = None
         if readers.emission_fractions is not None:
-            if hasattr(readers.emission_fractions, "emitting_fraction_CO2"):
-                emission_fractions_co2 = readers.emission_fractions.emitting_fraction_CO2.values
-            if hasattr(readers.emission_fractions, "emitting_fraction_CH4"):
-                emission_fractions_ch4 = readers.emission_fractions.emitting_fraction_CH4.values
+            if hasattr(readers.emission_fractions, "emitting_fraction_co2"):
+                emission_fractions_co2 = readers.emission_fractions.emitting_fraction_co2.values
+            if hasattr(readers.emission_fractions, "emitting_fraction_ch4"):
+                emission_fractions_ch4 = readers.emission_fractions.emitting_fraction_ch4.values
             if hasattr(readers.emission_fractions, "emitting_fraction_consumption"):
                 emission_fractions_consumption = readers.emission_fractions.emitting_fraction_consumption.values
             if hasattr(readers.emission_fractions, "emitting_fraction_investment"):
@@ -351,13 +348,6 @@ class SyntheticCountry:
         historical_emissions_df = None
         if readers.emissions is not None and readers.emissions.historical_emissions_df is not None:
             historical_emissions_df = readers.emissions.historical_emissions_df
-
-        # Extract EXO prices from readers if available
-        exo_fossil_prices_df = None
-        exo_elec_prices_df = None
-        if readers.exo_prices is not None:
-            exo_fossil_prices_df = readers.exo_prices.fossil_prices
-            exo_elec_prices_df = readers.exo_prices.electricity_prices
 
         return cls(
             population=population,
@@ -388,8 +378,6 @@ class SyntheticCountry:
             emission_fractions_investment=emission_fractions_investment,
             historical_emissions_ch4_2014=None,
             historical_emissions_df=historical_emissions_df,
-            exo_fossil_prices_df=exo_fossil_prices_df,
-            exo_elec_prices_df=exo_elec_prices_df,
         )
 
     @classmethod
@@ -563,10 +551,10 @@ class SyntheticCountry:
         emission_fractions_consumption = None
         emission_fractions_investment = None
         if readers.emission_fractions is not None:
-            if hasattr(readers.emission_fractions, "emitting_fraction_CO2"):
-                emission_fractions_co2 = readers.emission_fractions.emitting_fraction_CO2.values
-            if hasattr(readers.emission_fractions, "emitting_fraction_CH4"):
-                emission_fractions_ch4 = readers.emission_fractions.emitting_fraction_CH4.values
+            if hasattr(readers.emission_fractions, "emitting_fraction_co2"):
+                emission_fractions_co2 = readers.emission_fractions.emitting_fraction_co2.values
+            if hasattr(readers.emission_fractions, "emitting_fraction_ch4"):
+                emission_fractions_ch4 = readers.emission_fractions.emitting_fraction_ch4.values
             if hasattr(readers.emission_fractions, "emitting_fraction_consumption"):
                 emission_fractions_consumption = readers.emission_fractions.emitting_fraction_consumption.values
             if hasattr(readers.emission_fractions, "emitting_fraction_investment"):

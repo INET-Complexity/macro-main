@@ -19,6 +19,25 @@ from .labour_market_configuration import LabourMarketConfiguration
 class CountryConfiguration(BaseModel):
     """
     The configuration settings for the country.
+    Attributes:
+        economy: The configuration settings for the economy.
+        individuals: The configuration settings for the individuals.
+        households: The configuration settings for the households.
+        firms: The configuration settings for the firms.
+        government_entities: The configuration settings for the government entities.
+        central_government: The configuration settings for the central government.
+        central_bank: The configuration settings for the central bank.
+        banks: The configuration settings for the banks.
+        exchange_rates: The configuration settings for the exchange rates.
+        labour_market: The configuration settings for the labour market.
+        housing_market: The configuration settings for the housing market.
+        credit_market: The configuration settings for the credit market.
+        forecasting_window: The number of periods to forecast.
+        assume_zero_growth: Whether to assume zero growth in the economy.
+        assume_zero_noise: Whether to assume zero noise in the economy.
+        use_consumer_carbon_reg: Whether to use the consumer carbon regulation.
+        use_obps_reg: Whether to use the OBPS regulation.
+        use_emission_multiplier: Whether to use the emission multiplier.
     """
 
     economy: EconomyConfiguration = EconomyConfiguration()
@@ -38,11 +57,10 @@ class CountryConfiguration(BaseModel):
     assume_zero_growth: bool = False
     assume_zero_noise: bool = False
 
-    use_consumer_carbon_reg: bool = False  # check if needs to be added to docs
-    use_obps_reg: bool = False  # check if needs to be added to docs
+    use_consumer_carbon_reg: bool = False  
+    use_obps_reg: bool = False  
 
     use_emission_multiplier: bool = False
-    CH4_production_emissions_only: bool = False
 
     @classmethod
     def n_industry_default(

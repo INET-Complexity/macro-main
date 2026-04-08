@@ -144,6 +144,8 @@ class Simulation:
                 running_multiple_countries=running_multi_country,
                 emission_factors_usd=emission_factors,
                 policy_data=datawrapper.policy_data,
+                emission_industries_ch4=datawrapper.emission_industries_ch4
+
             )
             for country_name in countries_without_row
         }
@@ -175,7 +177,7 @@ class Simulation:
             row_index=row_index,
         )
 
-        timestep = Timestep(year=datawrapper.configuration.year, month=1, increment=datawrapper.time_unit)
+        timestep = Timestep(year=datawrapper.configuration.year, month=1, increment=12 // datawrapper.time_unit)
 
         if simulation_configuration.seed is not None:
             np.random.seed(simulation_configuration.seed)

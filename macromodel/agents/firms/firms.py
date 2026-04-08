@@ -229,8 +229,8 @@ class Firms(Agent):
         if add_emissions:
             inputs_emissions = synthetic_firms.firm_data["Input Emissions"].values
             capital_emissions = synthetic_firms.firm_data["Capital Emissions"].values
-            inputs_emissions_CH4 = np.full_like(inputs_emissions, 0)
-            capital_emissions_CH4 = np.full_like(capital_emissions, 0)
+            inputs_emissions_ch4 = np.zeros_like(inputs_emissions)
+            capital_emissions_ch4 = np.zeros_like(capital_emissions)
             input_dict: dict = {
                 f"{key}_inputs_emissions": synthetic_firms.firm_data[f"{emitting_industry} Input Emissions"]
                 for key, emitting_industry in zip(
@@ -247,8 +247,8 @@ class Firms(Agent):
         else:
             inputs_emissions = None
             capital_emissions = None
-            inputs_emissions_CH4 = None
-            capital_emissions_CH4 = None
+            inputs_emissions_ch4 = None
+            capital_emissions_ch4 = None
             input_dict = {}
             capital_dict = {}
 
@@ -263,8 +263,8 @@ class Firms(Agent):
             calculate_hill_exponent=configuration.calculate_hill_exponent,
             inputs_emissions=inputs_emissions,
             capital_emissions=capital_emissions,
-            inputs_emissions_CH4=inputs_emissions_CH4,
-            capital_emissions_CH4=capital_emissions_CH4,
+            inputs_emissions_ch4=inputs_emissions_ch4,
+            capital_emissions_ch4=capital_emissions_ch4,
             **input_dict,
             **capital_dict,
         )
@@ -1608,9 +1608,10 @@ class Firms(Agent):
         Returns:
             np.ndarray: Expected value of capital input stocks for each firm
         """
-        return (1 + estimated_inflation) * (self.ts.current("capital_inputs_stock") * current_good_prices).sum(
-            axis=1
-        ) + extra_marginal_taxes
+        return (
+            (1 + estimated_inflation) * (self.ts.current("capital_inputs_stock") * (current_good_prices + extra_marginal_taxes)).sum(axis=1)
+        )
+
 
     def compute_capital_inputs_stock(self) -> np.ndarray:
         """Calculate end-of-period capital input stocks.
@@ -1887,10 +1888,9 @@ class Firms(Agent):
         self,
         readjusted_factors: np.ndarray,
         emitting_indices: list | np.ndarray,
-        readjusted_factors_CH4: np.ndarray,
-        emitting_indices_CH4: list | np.ndarray,
+        readjusted_factors_ch4: np.ndarray,
+        emitting_indices_ch4: list | np.ndarray,
         use_emission_multiplier: bool = False,
-        CH4_production_emissions_only: bool = False,
     ):
         """Update emissions from production activities.
 
@@ -1925,40 +1925,27 @@ class Firms(Agent):
         # CH4
         if use_emission_multiplier:
             if self.emission_fractions_ch4 is not None:
-                emitting_fractions_CH4 = (
+                emitting_fractions_ch4 = (
                     self.emission_fractions_ch4
                     if self.emission_fractions_ch4.ndim == 1
                     else self.emission_fractions_ch4[0]
                 )
 
-            inputs_emissions_CH4 = (used_intermediate_inputs[:, emitting_indices_CH4]) @ readjusted_factors_CH4
-            inputs_emissions_CH4 *= emitting_fractions_CH4
-            capital_emissions_CH4 = (used_capital_inputs[:, emitting_indices_CH4]) @ readjusted_factors_CH4
-            capital_emissions_CH4 *= emitting_fractions_CH4
-            for i in range(len(inputs_emissions_CH4)):  # zero out non-methane industries
-                if i not in emitting_indices_CH4:
-                    inputs_emissions_CH4[i] = 0
-                    capital_emissions_CH4[i] = 0
+            inputs_emissions_ch4 = (used_intermediate_inputs[:, emitting_indices_ch4]) @ readjusted_factors_ch4
+            inputs_emissions_ch4 *= emitting_fractions_ch4
+            capital_emissions_ch4 = (used_capital_inputs[:, emitting_indices_ch4]) @ readjusted_factors_ch4
+            capital_emissions_ch4 *= emitting_fractions_ch4
+            for i in range(len(inputs_emissions_ch4)):  # zero out non-methane industries
+                if i not in emitting_indices_ch4:
+                    inputs_emissions_ch4[i] = 0
+                    capital_emissions_ch4[i] = 0
         else:
-            inputs_emissions_CH4 = (used_intermediate_inputs[:, emitting_indices_CH4]) @ readjusted_factors_CH4
-            capital_emissions_CH4 = (used_capital_inputs[:, emitting_indices_CH4]) @ readjusted_factors_CH4
-            for i in range(len(inputs_emissions_CH4)):  # zero out non-methane industries
-                if i not in emitting_indices_CH4:
-                    inputs_emissions_CH4[i] = 0
-                    capital_emissions_CH4[i] = 0
-
-        # Testing - with only considering emissions from production
-        # if used then total CH4 emissions are all in input
-        if CH4_production_emissions_only:
-            j = 0
-            for i in range(len(inputs_emissions_CH4)):
-                if i in emitting_indices_CH4:
-                    inputs_emissions_CH4[i] = self.ts.production[-1][i] * readjusted_factors_CH4[j]
-                    j += 1
-                else:
-                    inputs_emissions_CH4[i] = 0
-
-            capital_emissions_CH4 = np.zeros(len(inputs_emissions_CH4))
+            inputs_emissions_ch4 = (used_intermediate_inputs[:, emitting_indices_ch4]) @ readjusted_factors_ch4
+            capital_emissions_ch4 = (used_capital_inputs[:, emitting_indices_ch4]) @ readjusted_factors_ch4
+            for i in range(len(emitting_indices_ch4)):  # zero out non-methane industries
+                if i not in emitting_indices_ch4:
+                    inputs_emissions_ch4[i] = 0
+                    capital_emissions_ch4[i] = 0
 
         # refining_firms = self.states["Industry"] == emitting_indices[-1]
         # inputs_emissions[refining_firms] = 0
@@ -1966,8 +1953,8 @@ class Firms(Agent):
 
         self.ts.inputs_emissions.append(inputs_emissions)
         self.ts.capital_emissions.append(capital_emissions)
-        self.ts.inputs_emissions_CH4.append(inputs_emissions_CH4)
-        self.ts.capital_emissions_CH4.append(capital_emissions_CH4)
+        self.ts.inputs_emissions_ch4.append(inputs_emissions_ch4)
+        self.ts.capital_emissions_ch4.append(capital_emissions_ch4)
 
         # disaggregate emissions
         if use_emission_multiplier:

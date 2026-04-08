@@ -272,8 +272,6 @@ class CentralGovernment(Agent):
         current_total_exports: float,
         household_consumption_emission_tax: float,
         household_investment_emission_tax: float,
-        firm_input_emissions_tax: float,
-        firm_capital_emissions_tax: float = None,
         firm_obps_tax: float = None,
     ) -> None:
         """Calculate all tax revenues for the current period.

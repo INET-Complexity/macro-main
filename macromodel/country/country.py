@@ -147,8 +147,8 @@ class Country:
         add_emissions: bool = False,
         emission_factors_lcu: Optional[np.ndarray] = None,
         emitting_indices: Optional[np.ndarray] = None,
-        emission_factors_lcu_CH4: Optional[np.ndarray] = None,
-        emitting_indices_CH4: Optional[np.ndarray] = None,
+        emission_factors_lcu_ch4: Optional[np.ndarray] = None,
+        emitting_indices_ch4: Optional[np.ndarray] = None,
         carbon_price: Optional[CarbonPrice] = None,
         obps: Optional[OutputBasedPriceSystem] = None,
         extra_sectoral_taxes_hh: Optional[np.ndarray] = None,
@@ -183,8 +183,8 @@ class Country:
             add_emissions (bool): If True, track emissions
             emission_factors_lcu (Optional[np.ndarray]): Emission factors
             emitting_indices (Optional[np.ndarray]): Industry indices that emit
-            emission_factors_lcu_CH4 (Optional[np.ndarray]): Emission factors for CH4
-            emitting_indices_CH4 (Optional[np.ndarray]): Industry indices that emit CH4
+            emission_factors_lcu_ch4 (Optional[np.ndarray]): Emission factors for CH4
+            emitting_indices_ch4 (Optional[np.ndarray]): Industry indices that emit CH4
             carbon_price (Optional[CarbonPrice]): Consumer carbon tax policy
             obps (Optional[OutputBasedPriceSystem]): Output based pricing system tax policy
             extra_sectoral_taxes_hh (Optional[np.ndarray]): Household taxes from policies
@@ -232,10 +232,9 @@ class Country:
         self.add_emissions = add_emissions
         self.emission_factors_lcu = emission_factors_lcu
         self.emitting_indices = emitting_indices
-        self.emission_factors_lcu_CH4 = emission_factors_lcu_CH4
-        self.emitting_indices_CH4 = emitting_indices_CH4
+        self.emission_factors_lcu_ch4 = emission_factors_lcu_ch4
+        self.emitting_indices_ch4 = emitting_indices_ch4
         self.use_emission_multiplier = self.configuration.use_emission_multiplier
-        self.CH4_production_emissions_only = self.configuration.CH4_production_emissions_only
 
         self.extra_taxes = extra_taxes
 
@@ -268,6 +267,7 @@ class Country:
         running_multiple_countries: bool,
         emission_factors_usd: np.ndarray,
         policy_data=None,
+        emission_industries_ch4: Optional[pd.DataFrame] = None,
     ) -> "Country":
         """Create a Country instance from preprocessed synthetic data.
 
@@ -447,33 +447,10 @@ class Country:
 
         if add_emissions:
             # add methane emissions
-            emission_industries_CH4 = [
-                "A01",
-                "B05a",
-                "B05b",
-                "B05c",
-                "B07",
-                "B09",
-                "C17",
-                "C19",
-                "C20",
-                "C21",
-                "C22",
-                "C23",
-                "C24a",
-                "C24b",
-                "D01b",
-                "D01c",
-                "E",
-                "F",
-                "H49",
-                "H50",
-                "H51",
-            ]
-            emitting_indices_CH4 = np.array(
+            emitting_indices_ch4 = np.array(
                 [
                     list(industries).index(industry)
-                    for industry in emission_industries_CH4
+                    for industry in emission_industries_ch4
                     if industry in list(industries)
                 ]
             )
@@ -491,7 +468,7 @@ class Country:
                 else:
                     return False
 
-            emissions_CH4_total_2014_StatsCan = np.zeros(n_industries)
+            emissions_ch4_total_2014_StatsCan = np.zeros(n_industries)
             for i in range(n_industries):
                 temp = df_temp[df_temp["index"] == i]
                 if temp.empty == False:
@@ -499,61 +476,59 @@ class Country:
                     time = "2014_CH4"
                     element = temp[time].to_list()
                     for j in range(len(element)):
-                        # print("industry[" + str(i) + "] " + str(industries[i]) + " " + str(time) + " " + str(element[j]))
                         if is_float(element[j]):
-                            emissions_CH4_total_2014_StatsCan[i] += float(element[j]) * 1e3  # convert from ktC02e
+                            emissions_ch4_total_2014_StatsCan[i] += float(element[j]) * 1e3  # convert from ktC02e
                         else:
-                            emissions_CH4_total_2014_StatsCan[i] += 0
-                    # print("industry[" + str(i) + "] " + str(industries[i]) + " " + str(time) + " " + str(em_CO2_CAN[i][t]))
+                            emissions_ch4_total_2014_StatsCan[i] += 0
 
-            ts_copy_CH4 = np.copy(emissions_CH4_total_2014_StatsCan)
+            ts_copy_ch4 = np.copy(emissions_ch4_total_2014_StatsCan)
             # split emissions amongst industries
-            emissions_CH4_total_2014_StatsCan[5] = ts_copy_CH4[5] * (
+            emissions_ch4_total_2014_StatsCan[5] = ts_copy_ch4[5] * (
                 firms.ts.production[0][5] / (firms.ts.production[0][5] + firms.ts.production[0][6])
             )
-            emissions_CH4_total_2014_StatsCan[6] = ts_copy_CH4[5] * (
+            emissions_ch4_total_2014_StatsCan[6] = ts_copy_ch4[5] * (
                 firms.ts.production[0][6] / (firms.ts.production[0][5] + firms.ts.production[0][6])
             )
 
-            emissions_CH4_total_2014_StatsCan[12] = ts_copy_CH4[13] * (
+            emissions_ch4_total_2014_StatsCan[12] = ts_copy_ch4[13] * (
                 firms.ts.production[0][12]
                 / (firms.ts.production[0][12] + firms.ts.production[0][13] + firms.ts.production[0][14])
             )
-            emissions_CH4_total_2014_StatsCan[13] = ts_copy_CH4[13] * (
+            emissions_ch4_total_2014_StatsCan[13] = ts_copy_ch4[13] * (
                 firms.ts.production[0][13]
                 / (firms.ts.production[0][12] + firms.ts.production[0][13] + firms.ts.production[0][14])
             )
-            emissions_CH4_total_2014_StatsCan[14] = ts_copy_CH4[13] * (
+            emissions_ch4_total_2014_StatsCan[14] = ts_copy_ch4[13] * (
                 firms.ts.production[0][14]
                 / (firms.ts.production[0][12] + firms.ts.production[0][13] + firms.ts.production[0][14])
             )
 
-            emissions_CH4_total_2014_StatsCan[26] = ts_copy_CH4[26] * (
+            emissions_ch4_total_2014_StatsCan[26] = ts_copy_ch4[26] * (
                 firms.ts.production[0][26] / (firms.ts.production[0][26] + firms.ts.production[0][27])
             )
-            emissions_CH4_total_2014_StatsCan[27] = ts_copy_CH4[26] * (
+            emissions_ch4_total_2014_StatsCan[27] = ts_copy_ch4[26] * (
                 firms.ts.production[0][27] / (firms.ts.production[0][26] + firms.ts.production[0][27])
             )
 
-            emissions_CH4_total_2014_StatsCan[33] = ts_copy_CH4[33] * (
+            emissions_ch4_total_2014_StatsCan[33] = ts_copy_ch4[33] * (
                 firms.ts.production[0][33]
                 / (firms.ts.production[0][33] + firms.ts.production[0][34] + firms.ts.production[0][35])
             )
-            emissions_CH4_total_2014_StatsCan[34] = ts_copy_CH4[33] * (
+            emissions_ch4_total_2014_StatsCan[34] = ts_copy_ch4[33] * (
                 firms.ts.production[0][34]
                 / (firms.ts.production[0][33] + firms.ts.production[0][34] + firms.ts.production[0][35])
             )
-            emissions_CH4_total_2014_StatsCan[35] = ts_copy_CH4[33] * (
+            emissions_ch4_total_2014_StatsCan[35] = ts_copy_ch4[33] * (
                 firms.ts.production[0][35]
                 / (firms.ts.production[0][33] + firms.ts.production[0][34] + firms.ts.production[0][35])
             )
 
-            emission_factors_lcu_CH4 = (
-                emissions_CH4_total_2014_StatsCan[emitting_indices_CH4] / firms.ts.production[0][emitting_indices_CH4]
+            emission_factors_lcu_ch4 = (
+                emissions_ch4_total_2014_StatsCan[emitting_indices_ch4] / firms.ts.production[0][emitting_indices_ch4]
             )
         else:
-            emitting_indices_CH4 = None
-            emission_factors_lcu_CH4 = None
+            emitting_indices_ch4 = None
+            emission_factors_lcu_ch4 = None
 
         extra_taxes = np.zeros(firms.n_industries)
 
@@ -599,8 +574,8 @@ class Country:
             add_emissions=add_emissions,
             emission_factors_lcu=emission_factors_lcu,
             emitting_indices=emitting_indices,
-            emission_factors_lcu_CH4=emission_factors_lcu_CH4,
-            emitting_indices_CH4=emitting_indices_CH4,
+            emission_factors_lcu_ch4=emission_factors_lcu_ch4,
+            emitting_indices_ch4=emitting_indices_ch4,
             carbon_price=carbon_price,
             obps=obps,
             extra_sectoral_taxes_hh=extra_sectoral_taxes_hh,
@@ -948,8 +923,8 @@ class Country:
                 assume_zero_growth=self.assume_zero_growth,
                 prices=self.firms.ts.current("price"),
                 initial_prices=self.firms.ts.initial("price"),
-                taxes=self.extra_marginal_taxes_hh,
                 initial_taxes=np.zeros(len(self.firms.ts.current("price"))),
+                extra_marginal_taxes = self.extra_marginal_taxes_hh,
             )
         )
 
@@ -998,10 +973,6 @@ class Country:
 
         Updates household and firm tax values before production functions.
         """
-        '''
-            USE DIFF AND CHECK FOR THESE 4 VARS
-            AND CHECK THE PRICE PLOTS AND SEE THE TAX EFFECTS
-        '''
         self.extra_sectoral_taxes_hh = np.zeros(self.firms.n_industries)
         self.extra_marginal_taxes_hh = np.zeros(self.firms.n_industries)
         self.extra_sectoral_taxes_firm = np.zeros(self.firms.n_industries)
@@ -1021,8 +992,8 @@ class Country:
                 use_obps_reg=self.use_obps_reg,
                 record_obps_reference=record_obps_reference,
                 production=self.firms.ts.current("production"),
-                input_em=self.firms.ts.current("inputs_emissions") + self.firms.ts.current("inputs_emissions_CH4"),
-                capital_em=self.firms.ts.current("capital_emissions") + self.firms.ts.current("capital_emissions_CH4"),
+                input_em=self.firms.ts.current("inputs_emissions") + self.firms.ts.current("inputs_emissions_ch4"),
+                capital_em=self.firms.ts.current("capital_emissions") + self.firms.ts.current("capital_emissions_ch4"),
             )
             self.extra_marginal_taxes_firm = np.divide(
                 self.extra_sectoral_taxes_firm,
@@ -1278,22 +1249,18 @@ class Country:
             readjusted_factors = (
                 self.emission_factors_lcu / self.economy.ts.current("good_prices")[self.emitting_indices]
             )
-            readjusted_factors_CH4 = (
-                self.emission_factors_lcu_CH4 / self.economy.ts.current("good_prices")[self.emitting_indices_CH4]
+            readjusted_factors_ch4 = (
+                self.emission_factors_lcu_ch4 / self.economy.ts.current("good_prices")[self.emitting_indices_ch4]
             )
 
             # Update sectoral and marginal taxes
             self.firms.update_emissions(
                 readjusted_factors=readjusted_factors,
                 emitting_indices=self.emitting_indices,
-                readjusted_factors_CH4=readjusted_factors_CH4,
-                emitting_indices_CH4=self.emitting_indices_CH4,
+                readjusted_factors_ch4=readjusted_factors_ch4,
+                emitting_indices_ch4=self.emitting_indices_ch4,
                 use_emission_multiplier=self.use_emission_multiplier,
-                CH4_production_emissions_only=self.configuration.CH4_production_emissions_only,
             )
-
-            record_obps_reference = False       # do NOT update obps_reference during realized phase to avoid double counting
-            self.update_extra_taxes(record_obps_reference)
 
             if self.carbon_price is not None:
                 logging.info("\tConsumer Price: " + str(self.carbon_price.get_price()))
@@ -1386,17 +1353,7 @@ class Country:
             cpi=self.economy.ts.current("cpi")[0],
         )
 
-        # C3. EMISSIONS AND INVENTORY
-        if self.add_emissions:
-            self.firms.update_emissions(
-                readjusted_factors=readjusted_factors,
-                emitting_indices=self.emitting_indices,
-                readjusted_factors_CH4=readjusted_factors_CH4,
-                emitting_indices_CH4=self.emitting_indices_CH4,
-                use_emission_multiplier=self.use_emission_multiplier,
-                CH4_production_emissions_only=self.configuration.CH4_production_emissions_only,
-            )
-
+        # C3. INVENTORY
         self.firms.ts.used_intermediate_inputs.append(self.firms.compute_used_intermediate_inputs())
         self.firms.ts.used_intermediate_inputs_costs.append(
             self.firms.compute_used_intermediate_inputs_costs(
@@ -1540,23 +1497,22 @@ class Country:
             readjusted_factors = (
                 self.emission_factors_lcu / self.economy.ts.current("good_prices")[self.emitting_indices]
             )
-            readjusted_factors_CH4 = (
-                self.emission_factors_lcu_CH4 / self.economy.ts.current("good_prices")[self.emitting_indices_CH4]
+            readjusted_factors_ch4 = (
+                self.emission_factors_lcu_ch4 / self.economy.ts.current("good_prices")[self.emitting_indices_ch4]
             )
         else:
             readjusted_factors = None
-            readjusted_factors_CH4 = None
+            readjusted_factors_ch4 = None
 
         self.households.update_consumption_and_investment(
             tau_vat=self.central_government.states["Value-added Tax"],
             tau_cf=self.central_government.states["Capital Formation Tax"],
             readjusted_factors=readjusted_factors,
             emitting_indices=self.emitting_indices,
-            readjusted_factors_CH4=readjusted_factors_CH4,
-            emitting_indices_CH4=self.emitting_indices_CH4,
+            readjusted_factors_ch4=readjusted_factors_ch4,
+            emitting_indices_ch4=self.emitting_indices_ch4,
             add_emissions=self.add_emissions,
             use_emission_multiplier=self.use_emission_multiplier,
-            CH4_production_emissions_only=self.configuration.CH4_production_emissions_only,
             use_consumer_carbon_reg=self.use_consumer_carbon_reg,
             extra_sectoral_taxes=self.extra_marginal_taxes_hh,
         )
@@ -1662,8 +1618,6 @@ class Country:
             current_total_exports=self.economy.ts.current("exports_before_taxes").sum(),
             household_consumption_emission_tax=household_consumption_emission_tax,
             household_investment_emission_tax=household_investment_emission_tax,
-            firm_input_emissions_tax=firm_inputs_emission_tax,
-            firm_capital_emissions_tax=firm_capital_emission_tax,
             firm_obps_tax=firm_obps_tax,
         )
 

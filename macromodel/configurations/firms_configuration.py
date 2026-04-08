@@ -183,7 +183,7 @@ class OfferedWageSetter(BaseModel):
 class Prices(BaseModel):
     """
     The function used to set prices.
-    Options: ConstantPriceSetter, SupplyDemandPriceSetter, CANVASPriceSetter, CIMSEnergyExogenousPriceSetter
+    Options: ConstantPriceSetter, SupplyDemandPriceSetter, CANVASPriceSetter
     """
 
     name: Literal["DefaultPriceSetter", "ExogenousPriceSetter"] = "DefaultPriceSetter"

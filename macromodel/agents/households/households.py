@@ -263,13 +263,13 @@ class Households(Agent):
         if add_emissions:
             consumption_emissions = synthetic_population.household_data["Consumption Emissions"].values
             investment_emissions = synthetic_population.household_data["Investment Emissions"].values
-            consumption_emissions_CH4 = np.zeros_like(industries, dtype=float)
-            investment_emissions_CH4 = np.zeros_like(industries, dtype=float)
+            consumption_emissions_ch4 = np.zeros_like(industries, dtype=float)
+            investment_emissions_ch4 = np.zeros_like(industries, dtype=float)
 
             consumption_emissions_by_good = np.zeros_like(industries, dtype=float)
             investment_emissions_by_good = np.zeros_like(industries, dtype=float)
-            consumption_emissions_CH4_by_good = np.zeros_like(industries, dtype=float)
-            investment_emissions_CH4_by_good = np.zeros_like(industries, dtype=float)
+            consumption_emissions_ch4_by_good = np.zeros_like(industries, dtype=float)
+            investment_emissions_ch4_by_good = np.zeros_like(industries, dtype=float)
 
             coal_consumption_emissions = synthetic_population.household_data["Coal Consumption Emissions"].values
             gas_consumption_emissions = synthetic_population.household_data["Gas Consumption Emissions"].values
@@ -286,13 +286,13 @@ class Households(Agent):
         else:
             consumption_emissions = None
             investment_emissions = None
-            consumption_emissions_CH4 = None
-            investment_emissions_CH4 = None
+            consumption_emissions_ch4 = None
+            investment_emissions_ch4 = None
 
             consumption_emissions_by_good = None
             investment_emissions_by_good = None
-            consumption_emissions_CH4_by_good = None
-            investment_emissions_CH4_by_good = None
+            consumption_emissions_ch4_by_good = None
+            investment_emissions_ch4_by_good = None
 
             coal_consumption_emissions = None
             gas_consumption_emissions = None
@@ -314,12 +314,12 @@ class Households(Agent):
             tau_cf=tau_cf,
             consumption_emissions=consumption_emissions,
             investment_emissions=investment_emissions,
-            consumption_emissions_CH4=consumption_emissions_CH4,
-            investment_emissions_CH4=investment_emissions_CH4,
+            consumption_emissions_ch4=consumption_emissions_ch4,
+            investment_emissions_ch4=investment_emissions_ch4,
             consumption_emissions_by_good=consumption_emissions_by_good,
             investment_emissions_by_good=investment_emissions_by_good,
-            consumption_emissions_CH4_by_good=consumption_emissions_CH4_by_good,
-            investment_emissions_CH4_by_good=investment_emissions_CH4_by_good,
+            consumption_emissions_ch4_by_good=consumption_emissions_ch4_by_good,
+            investment_emissions_ch4_by_good=investment_emissions_ch4_by_good,
             coal_consumption_emissions=coal_consumption_emissions,
             gas_consumption_emissions=gas_consumption_emissions,
             oil_consumption_emissions=oil_consumption_emissions,
@@ -698,7 +698,6 @@ class Households(Agent):
                 tau_vat=tau_vat,
                 prices=prices,
                 initial_prices=initial_prices,
-                taxes=taxes,
                 initial_taxes=initial_taxes,
                 bundle_matrix=self.bundle_matrix,
                 extra_marginal_taxes=extra_marginal_taxes,
@@ -1102,10 +1101,9 @@ class Households(Agent):
         use_consumer_carbon_reg: bool = False,
         readjusted_factors: Optional[np.ndarray] = None,
         emitting_indices: Optional[np.ndarray] = None,
-        readjusted_factors_CH4: Optional[np.ndarray] = None,
-        emitting_indices_CH4: Optional[np.ndarray] = None,
+        readjusted_factors_ch4: Optional[np.ndarray] = None,
+        emitting_indices_ch4: Optional[np.ndarray] = None,
         use_emission_multiplier: bool = False,
-        CH4_production_emissions_only: bool = False,
         extra_sectoral_taxes: Optional[np.ndarray] = None,
     ) -> None:
         """Update consumption and investment outcomes.
@@ -1159,18 +1157,15 @@ class Households(Agent):
 
             self.ts.consumption_emissions_by_good.append(consumption_emissions_by_good)
 
-            consumption_emissions_CH4 = consumption_by_good[:, emitting_indices_CH4] @ readjusted_factors_CH4
-            self.ts.consumption_emissions_CH4.append(consumption_emissions_CH4)
+            consumption_emissions_ch4 = consumption_by_good[:, emitting_indices_ch4] @ readjusted_factors_ch4
+            self.ts.consumption_emissions_ch4.append(consumption_emissions_ch4)
 
-            consumption_emissions_CH4_by_good = np.zeros(consumption_by_good.shape[1])
-            for i in emitting_indices_CH4:
-                idx = np.where(emitting_indices_CH4 == i)[0]
-                consumption_emissions_CH4_by_good[i] = (consumption_sum[i] * readjusted_factors_CH4[idx]).item()
+            consumption_emissions_ch4_by_good = np.zeros(consumption_by_good.shape[1])
+            for i in emitting_indices_ch4:
+                idx = np.where(emitting_indices_ch4 == i)[0]
+                consumption_emissions_ch4_by_good[i] = (consumption_sum[i] * readjusted_factors_ch4[idx]).item()
 
-            if CH4_production_emissions_only:
-                consumption_emissions_CH4_by_good = np.zeros(consumption_by_good.shape[1])
-
-            self.ts.consumption_emissions_CH4_by_good.append(consumption_emissions_CH4_by_good)
+            self.ts.consumption_emissions_ch4_by_good.append(consumption_emissions_ch4_by_good)
 
             # coal, oil, gas, refined products consumption emissions
             if use_emission_multiplier:
@@ -1220,18 +1215,16 @@ class Households(Agent):
 
             self.ts.investment_emissions_by_good.append(investment_emissions_by_good)
 
-            investment_emissions_CH4 = inv[:, emitting_indices_CH4] @ readjusted_factors_CH4
-            self.ts.investment_emissions_CH4.append(investment_emissions_CH4)
+            investment_emissions_ch4 = inv[:, emitting_indices_ch4] @ readjusted_factors_ch4
+            self.ts.investment_emissions_ch4.append(investment_emissions_ch4)
 
-            investment_emissions_CH4_by_good = np.zeros(inv.shape[1])
-            for i in emitting_indices_CH4:
-                idx = np.where(emitting_indices_CH4 == i)[0]
-                investment_emissions_CH4_by_good[i] = (inv_sum[i] * readjusted_factors_CH4[idx]).item()
+            investment_emissions_ch4_by_good = np.zeros(inv.shape[1])
+            for i in emitting_indices_ch4:
+                idx = np.where(emitting_indices_ch4 == i)[0]
+                investment_emissions_ch4_by_good[i] = (inv_sum[i] * readjusted_factors_ch4[idx]).item()
 
-            if CH4_production_emissions_only:
-                investment_emissions_CH4_by_good = np.zeros(inv.shape[1])
 
-            self.ts.investment_emissions_CH4_by_good.append(investment_emissions_CH4_by_good)
+            self.ts.investment_emissions_ch4_by_good.append(investment_emissions_ch4_by_good)
 
             # coal, oil, gas, refined products investment emissions
             if use_emission_multiplier:

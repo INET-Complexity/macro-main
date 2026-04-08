@@ -93,6 +93,10 @@ class DataWrapper:
         industries (list[str]): List of industry codes
         emission_factors (dict[str, float]): Emission factors by type
         emissions_energy_factors (Optional[EmissionsEnergyFactors]): Energy-related emission factors
+        aggregation_structure (Optional[dict[Country, list[Country | Region]]]): Optional structure for aggregating countries into regions
+        time_unit (int): Time unit for the data (e.g., 4 for quarterly
+        policy_data (Optional[pd.DataFrame]): Data on policies affecting the model
+        emission_industries_ch4 (Optional[pd.DataFrame]): Fraction of ch4 emissions by industry
     """
 
     synthetic_countries: dict[str, SyntheticCountry]
@@ -106,8 +110,9 @@ class DataWrapper:
     emission_factors: dict[str, float]
     emissions_energy_factors: Optional[EmissionsEnergyFactors] = None
     aggregation_structure: Optional[dict[Country, list[Country | Region]]] = None
-    time_unit: int = 3.0
+    time_unit: int = 4.0
     policy_data: Optional[pd.DataFrame] = None
+    emission_industries_ch4: Optional[pd.DataFrame] = None
 
     @property
     def all_country_names(self) -> list[str]:
@@ -375,6 +380,7 @@ class DataWrapper:
             aggregation_structure=configuration.aggregation_structure,
             time_unit=configuration.time_unit,
             policy_data=readers.policy_data,
+            emission_industries_ch4=readers.emission_fractions.emission_industries_ch4,
         )
 
     @classmethod
