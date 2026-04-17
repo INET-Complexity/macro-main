@@ -169,6 +169,7 @@ class TestCESHouseholdConsumption:
         current_prices = np.array([2.0, 1.0, 1.0, 2.0])  # Industry 0 and 3 doubled in price
         initial_taxes = np.array([0.0, 0.0, 0.0, 0.0])
         current_taxes = np.array([0.0, 0.0, 0.0, 0.0])
+        marginal_taxes = np.zeros(n_industries)
 
         test_args = {
             "expected_inflation": 0.0,
@@ -186,7 +187,7 @@ class TestCESHouseholdConsumption:
             "tau_vat": 0.0,
             "prices": current_prices,
             "initial_prices": initial_prices,
-            "taxes": current_taxes,
+            "extra_marginal_taxes": marginal_taxes,
             "initial_taxes": initial_taxes,
             "bundle_matrix": bundle_matrix,
         }
@@ -258,7 +259,7 @@ class TestCESHouseholdConsumption:
             {
                 "prices": current_prices,
                 "initial_prices": initial_prices,
-                "taxes": current_taxes,
+                "extra_marginal_taxes": current_taxes,
                 "initial_taxes": initial_taxes,
                 "bundle_matrix": bundle_matrix,
             }
@@ -309,7 +310,7 @@ class TestCESHouseholdConsumption:
             "tau_vat": 0.0,
             "prices": prices,
             "initial_prices": prices,
-            "taxes": taxes,
+            "extra_marginal_taxes": taxes,
             "initial_taxes": taxes,
             "bundle_matrix": bundle_matrix,
         }
@@ -338,6 +339,7 @@ class TestCESHouseholdConsumption:
         initial_prices = np.array([1.0, 1.0, 1.0])
         current_prices = np.array([10.0, 1.0, 0.1])  # Extreme price changes
         taxes = np.zeros(n_industries)
+        marginal_taxes = np.zeros(n_industries)
 
         test_args = {
             "expected_inflation": 0.0,
@@ -355,7 +357,7 @@ class TestCESHouseholdConsumption:
             "tau_vat": 0.0,
             "prices": current_prices,
             "initial_prices": initial_prices,
-            "taxes": taxes,
+            "extra_marginal_taxes": taxes,
             "initial_taxes": taxes,
             "bundle_matrix": bundle_matrix,
         }

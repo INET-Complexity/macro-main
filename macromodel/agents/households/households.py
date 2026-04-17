@@ -700,6 +700,7 @@ class Households(Agent):
                 initial_prices=initial_prices,
                 initial_taxes=initial_taxes,
                 bundle_matrix=self.bundle_matrix,
+                nominal_amount_spent_in_lcu=self.ts.current("nominal_amount_spent_in_lcu"),
                 extra_marginal_taxes=extra_marginal_taxes,
             )
 
