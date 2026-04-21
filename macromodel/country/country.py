@@ -1346,7 +1346,7 @@ class Country:
         self.central_government.ts.deficit.append(
             self.central_government.compute_deficit(
                 current_ind_activity=self.individuals.states["Activity Status"],
-                current_household_social_transfers=self.households.ts.current("income_social_transfers"),
+                current_cpi=self.economy.ts.current("cpi")[0],
                 current_government_nominal_amount_spent=self.government_entities.ts.current(
                     "nominal_amount_spent_in_lcu"
                 ),
