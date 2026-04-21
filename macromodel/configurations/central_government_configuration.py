@@ -4,9 +4,11 @@ from pydantic import BaseModel
 
 
 class SocialBenefits(BaseModel):
-    name: Literal["ConstantSocialBenefitsSetter", "DefaultSocialBenefitsSetter", "GrowthSocialBenefitsSetter"] = (
-        "GrowthSocialBenefitsSetter"
-    )
+    name: Literal[
+        "ConstantSocialBenefitsSetter",
+        "DefaultSocialBenefitsSetter",
+        "GrowthSocialBenefitsSetter",
+    ] = ("GrowthSocialBenefitsSetter")
     path_name: str = "social_benefits"
     parameters: dict = {}
 
