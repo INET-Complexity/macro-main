@@ -24,6 +24,9 @@ class TestCentralGovernment:
         for ts_key in [
             "unemployment_benefits_by_individual",
             "total_other_benefits",
+            "total_unemployment_benefits",
+            "total_household_social_transfers",
+            "interest_payments_on_debt",
         ]:
             assert ts_key in test_central_government.ts.get_keys()
 
