@@ -427,7 +427,9 @@ class DefaultSyntheticBanks(SyntheticBanks):
             readers.ecb_reader.get_household_consumption_rates(data_country),
             time_unit,
         )
-        household_mortgage_rates = annual_to_period(readers.ecb_reader.get_household_mortgage_rates(data_country), time_unit)
+        household_mortgage_rates = annual_to_period(
+            readers.ecb_reader.get_household_mortgage_rates(data_country), time_unit
+        )
         policy_rates = annual_to_period(readers.policy_rates.get_policy_rates(data_country), time_unit, "Policy Rate")
         npl_rates = readers.world_bank.get_npl_ratios(data_country)
         if any(
