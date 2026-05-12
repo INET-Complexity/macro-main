@@ -40,6 +40,7 @@ from macro_data.processing.synthetic_banks.rates_utils import (
 )
 from macro_data.processing.synthetic_banks.synthetic_banks import SyntheticBanks
 from macro_data.readers.default_readers import DataReaders
+from macro_data.util.frequency import annual_to_period
 
 
 class DefaultSyntheticBanks(SyntheticBanks):
@@ -226,7 +227,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
             hh_mortgage_rate,
         ) = cls.initialise_rates(country_name, inflation_data, proxy_eu_country, quarter, readers, year, time_unit)
 
-        initial_policy_rates = cls._convert_annual_rate_frame_to_period(
+        initial_policy_rates = annual_to_period(
             readers.policy_rates.get_policy_rates(country_name),
             time_unit,
             "Policy Rate",
@@ -344,7 +345,7 @@ class DefaultSyntheticBanks(SyntheticBanks):
             hh_mortgage_rate,
         ) = cls.initialise_rates(country_name, inflation_data, proxy_eu_country, quarter, readers, year, time_unit)
 
-        initial_policy_rates = cls._convert_annual_rate_frame_to_period(
+        initial_policy_rates = annual_to_period(
             readers.policy_rates.get_policy_rates(country_name),
             time_unit,
             "Policy Rate",
@@ -371,40 +372,6 @@ class DefaultSyntheticBanks(SyntheticBanks):
             hh_mortgage_rate=hh_mortgage_rate,
             quarter=quarter,
         )
-
-    @classmethod
-    @staticmethod
-    def _periods_per_year(time_unit: int) -> int:
-        """Return the number of model periods in one calendar year."""
-        if time_unit <= 0 or 12 % time_unit != 0:
-            raise ValueError("Bank-rate preprocessing requires `time_unit` to be a positive divisor of 12.")
-        return 12 // time_unit
-
-    @classmethod
-    def _convert_annual_rate_to_period(cls, annual_rate: float, time_unit: int) -> float:
-        """Convert an annual quoted rate to the model's per-period convention."""
-        return annual_rate / cls._periods_per_year(time_unit)
-
-    @classmethod
-    def _convert_annual_rate_series_to_period(
-        cls, annual_rates: Optional[pd.Series], time_unit: int
-    ) -> Optional[pd.Series]:
-        """Convert a quoted annual rate series to per-period units."""
-        if annual_rates is None:
-            return None
-        return annual_rates.astype(float) / cls._periods_per_year(time_unit)
-
-    @classmethod
-    def _convert_annual_rate_frame_to_period(
-        cls,
-        annual_rates: pd.DataFrame,
-        time_unit: int,
-        column: str,
-    ) -> pd.DataFrame:
-        """Convert a quoted annual-rate column in a DataFrame to per-period units."""
-        period_rates = annual_rates.copy()
-        period_rates[column] = period_rates[column].astype(float) / cls._periods_per_year(time_unit)
-        return period_rates
 
     @staticmethod
     def _initial_policy_rate_quarter_key(year: int, quarter: int) -> str:
@@ -455,22 +422,13 @@ class DefaultSyntheticBanks(SyntheticBanks):
             if proxy_eu_country is None:
                 raise ValueError("Proxy EU country is required for non-EU countries.")
             data_country = proxy_eu_country
-        firm_rate = cls._convert_annual_rate_series_to_period(
-            readers.ecb_reader.get_firm_rates(data_country), time_unit
-        )
-        household_consumption_rate = cls._convert_annual_rate_series_to_period(
+        firm_rate = annual_to_period(readers.ecb_reader.get_firm_rates(data_country), time_unit)
+        household_consumption_rate = annual_to_period(
             readers.ecb_reader.get_household_consumption_rates(data_country),
             time_unit,
         )
-        household_mortgage_rates = cls._convert_annual_rate_series_to_period(
-            readers.ecb_reader.get_household_mortgage_rates(data_country),
-            time_unit,
-        )
-        policy_rates = cls._convert_annual_rate_frame_to_period(
-            readers.policy_rates.get_policy_rates(data_country),
-            time_unit,
-            "Policy Rate",
-        )
+        household_mortgage_rates = annual_to_period(readers.ecb_reader.get_household_mortgage_rates(data_country), time_unit)
+        policy_rates = annual_to_period(readers.policy_rates.get_policy_rates(data_country), time_unit, "Policy Rate")
         npl_rates = readers.world_bank.get_npl_ratios(data_country)
         if any(
             [

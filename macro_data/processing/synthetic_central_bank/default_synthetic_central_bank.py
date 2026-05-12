@@ -34,6 +34,7 @@ from macro_data.processing.synthetic_central_bank.synthetic_central_bank import 
 )
 from macro_data.readers.default_readers import DataReaders
 from macro_data.readers.exogenous_data import ExogenousCountryData
+from macro_data.util.frequency import periods_per_year
 
 
 class DefaultSyntheticCentralBank(SyntheticCentralBank):
@@ -194,26 +195,19 @@ class DefaultSyntheticCentralBank(SyntheticCentralBank):
         central_bank_data = pd.DataFrame(central_bank_data)
         return cls(country_name, year, central_bank_data)
 
-    @staticmethod
-    def _periods_per_year(time_unit: int) -> int:
-        """Return the number of model periods in one calendar year."""
-        if time_unit <= 0 or 12 % time_unit != 0:
-            raise ValueError("SmoothTaylorRule calibration requires `time_unit` to be a positive divisor of 12.")
-        return 12 // time_unit
-
     @classmethod
     def _compute_cpi_yoy_inflation(cls, cpi_inflation: pd.Series, time_unit: int) -> pd.Series:
         """Build a YoY CPI inflation series from per-period CPI inflation."""
-        periods_per_year = cls._periods_per_year(time_unit)
-        compounded = (1.0 + cpi_inflation.astype(float)).rolling(periods_per_year).apply(np.prod, raw=True)
+        periods_per_year_value = periods_per_year(time_unit)
+        compounded = (1.0 + cpi_inflation.astype(float)).rolling(periods_per_year_value).apply(np.prod, raw=True)
         return compounded - 1.0
 
     @classmethod
     def _compute_output_gap(cls, real_gross_output: pd.Series, time_unit: int) -> pd.Series:
         """Build an output-gap series using a one-year EWMA trend."""
-        periods_per_year = cls._periods_per_year(time_unit)
+        periods_per_year_value = periods_per_year(time_unit)
         safe_real_output = real_gross_output.astype(float).clip(lower=1e-12)
-        potential_output = safe_real_output.ewm(span=periods_per_year, adjust=False).mean().clip(lower=1e-12)
+        potential_output = safe_real_output.ewm(span=periods_per_year_value, adjust=False).mean().clip(lower=1e-12)
         return np.log(safe_real_output) - np.log(potential_output)
 
     @classmethod
@@ -273,7 +267,7 @@ class DefaultSyntheticCentralBank(SyntheticCentralBank):
         phi_pi = float(res.params[2] / (1 - rho))
         phi_q = float(res.params[3] / (1 - rho))
         r_star = float(res.params[0] / (1 - rho) - targeted_inflation_rate)
-        periods_per_year = cls._periods_per_year(time_unit)
+        periods_per_year_value = periods_per_year(time_unit)
 
         return {
             "rho": rho,
@@ -281,5 +275,5 @@ class DefaultSyntheticCentralBank(SyntheticCentralBank):
             "phi_pi": phi_pi,
             "phi_q": phi_q,
             # SmoothTaylorRule stores rates in per-period units inside the simulation.
-            "policy_rate": max(0.0, float(merged["Policy Rate"].values[-1]) / periods_per_year),
+            "policy_rate": max(0.0, float(merged["Policy Rate"].values[-1]) / periods_per_year_value),
         }
