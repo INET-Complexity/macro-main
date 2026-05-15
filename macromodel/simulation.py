@@ -142,6 +142,7 @@ class Simulation:
                 initial_year=datawrapper.configuration.year,
                 t_max=simulation_configuration.t_max,
                 running_multiple_countries=running_multi_country,
+                time_unit=datawrapper.configuration.time_unit,
                 emission_factors_usd=emission_factors,
             )
             for country_name in countries_without_row

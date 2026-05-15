@@ -331,6 +331,7 @@ class DataWrapper:
                 country=country,
                 year=year,
                 quarter=quarter,
+                time_unit=configuration.time_unit,
                 country_configuration=configuration.country_configs[country],
                 industries=industries,
                 readers=readers,
@@ -356,6 +357,8 @@ class DataWrapper:
                     country=country,
                     proxy_country=configuration.country_configs[country].eu_proxy_country,
                     year=year,
+                    quarter=quarter,
+                    time_unit=configuration.time_unit,
                     country_configuration=configuration.country_configs[country],
                     industries=industries,
                     readers=readers,
@@ -363,7 +366,6 @@ class DataWrapper:
                     country_industry_data=industry_data[country],
                     year_range=year_range,
                     goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
-                    quarter=quarter,
                     proxy_inflation_data=proxy_inflation[country],
                     emission_factors=(
                         EmissionsData.from_readers(

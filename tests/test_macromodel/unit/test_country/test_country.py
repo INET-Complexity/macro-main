@@ -40,6 +40,7 @@ class TestCountry:
             initial_year=datawrapper.configuration.year,
             t_max=12,
             running_multiple_countries=False,
+            time_unit=datawrapper.configuration.time_unit,
             emission_factors_usd=emission_factors,
         )
 

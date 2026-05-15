@@ -220,6 +220,7 @@ class Country:
         initial_year: int,
         t_max: int,
         running_multiple_countries: bool,
+        time_unit: int,
         emission_factors_usd: np.ndarray,
     ) -> "Country":
         """Create a Country instance from preprocessed synthetic data.
