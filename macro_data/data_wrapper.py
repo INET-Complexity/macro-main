@@ -246,7 +246,6 @@ class DataWrapper:
             use_disagg_can_2014_reader=configuration.can_disaggregation,
             use_provincial_can_reader=use_provincial_can_reader,
             regions_dict=regions_dict,
-            allow_missing_emissions=allow_missing_emissions,
             yearly_factor=yearly_factor,
             simulation_quarter=quarter,
         )
