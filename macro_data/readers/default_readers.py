@@ -628,9 +628,9 @@ class DataReaders:
         Returns:
             float: Total benefits in local currency units
         """
-        return self.oecd_econ.all_benefits_gdp_pct(
-            country_name, year
-        ) * self.world_bank.get_current_scaled_gdp(country_name, year, rescale_factor=yearly_factor)
+        return self.oecd_econ.all_benefits_gdp_pct(country_name, year) * self.world_bank.get_current_scaled_gdp(
+            country_name, year, rescale_factor=yearly_factor
+        )
 
     def get_total_unemployment_benefits_lcu(
         self, country_name: Country, year: int, yearly_factor: float = 4.0

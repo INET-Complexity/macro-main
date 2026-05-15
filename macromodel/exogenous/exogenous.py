@@ -138,12 +138,8 @@ class Exogenous:
             start_date = self.national_accounts.index[
                 _period_start_index(self.national_accounts.index, initial_year, initial_quarter)
             ]
-            self.national_accounts_before = self.national_accounts.loc[
-                self.national_accounts.index < start_date
-            ]
-            self.national_accounts_during = self.national_accounts.loc[
-                self.national_accounts.index >= start_date
-            ]
+            self.national_accounts_before = self.national_accounts.loc[self.national_accounts.index < start_date]
+            self.national_accounts_during = self.national_accounts.loc[self.national_accounts.index >= start_date]
         else:
             self.national_accounts_before = pd.DataFrame()
             self.national_accounts_during = pd.DataFrame()
