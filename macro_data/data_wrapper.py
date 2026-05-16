@@ -215,7 +215,10 @@ class DataWrapper:
 
         year = configuration.year
         quarter = configuration.quarter
-        yearly_factor = 12 / configuration.time_unit
+        # Backward compatibility: legacy configs omitted `time_unit` and implicitly used quarterly scaling.
+        fields_set = getattr(configuration, "model_fields_set", set())
+        effective_time_unit = configuration.time_unit if "time_unit" in fields_set else 3
+        yearly_factor = 12 / effective_time_unit
 
         scale_dict = {country: configuration.country_configs[country].scale for country in country_names}
 
@@ -293,7 +296,7 @@ class DataWrapper:
                 quarter=quarter,
                 industry_vectors=industry_data[country]["industry_vectors"],
                 proxy_country=proxy_country_dict.get(country, None),
-                time_unit=configuration.time_unit,
+                time_unit=effective_time_unit,
             )
             for country in country_names
         }
@@ -308,7 +311,7 @@ class DataWrapper:
                 inflation = readers.imf_reader.get_inflation(proxy_country)
                 if inflation is None:
                     inflation = readers.world_bank.get_inflation(proxy_country)
-                inflation = convert_growth_rates_to_model_period(inflation, configuration.time_unit)
+                inflation = convert_growth_rates_to_model_period(inflation, effective_time_unit)
                 proxy_inflation[country] = inflation
             else:
                 proxy_inflation[country] = None
@@ -331,7 +334,7 @@ class DataWrapper:
                 country=country,
                 year=year,
                 quarter=quarter,
-                time_unit=configuration.time_unit,
+                time_unit=effective_time_unit,
                 country_configuration=configuration.country_configs[country],
                 industries=industries,
                 readers=readers,
@@ -358,7 +361,7 @@ class DataWrapper:
                     proxy_country=configuration.country_configs[country].eu_proxy_country,
                     year=year,
                     quarter=quarter,
-                    time_unit=configuration.time_unit,
+                    time_unit=effective_time_unit,
                     country_configuration=configuration.country_configs[country],
                     industries=industries,
                     readers=readers,
@@ -414,7 +417,7 @@ class DataWrapper:
                 EmissionsEnergyFactors.from_readers(readers.icio[year], country_names) if add_emissions else None
             ),
             aggregation_structure=configuration.aggregation_structure,
-            time_unit=configuration.time_unit,
+            time_unit=effective_time_unit,
         )
 
     @classmethod
