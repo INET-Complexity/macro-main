@@ -151,6 +151,8 @@ class DefaultHousingMarketClearer(HousingMarketClearer):
             max_willing_to_pay=max_price_willing_to_pay,
             is_rental_market=False,
         )
+        sold_property_ids = matching_sales["property_id"].astype(int).values
+        housing_data.loc[sold_property_ids, "Up for Rent"] = False
 
         # Rental market
         matching_rental = self.perform_matching(
@@ -301,6 +303,8 @@ class AutomaticHousingMarketClearer(HousingMarketClearer):
             max_willing_to_pay=max_price_willing_to_pay,
             is_rental_market=False,
         )
+        sold_property_ids = matching_sales["property_id"].astype(int).values
+        housing_data.loc[sold_property_ids, "Up for Rent"] = False
 
         # Rental market
         matching_rental = self.perform_matching(
