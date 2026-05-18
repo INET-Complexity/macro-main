@@ -15,7 +15,6 @@ import h5py
 import numpy as np
 import pandas as pd
 
-import macromodel.util.get_histogram
 from macro_data import SyntheticHousingMarket
 from macromodel.configurations import HousingMarketConfiguration
 from macromodel.markets.housing_market.housing_market_ts import (
@@ -158,16 +157,13 @@ class HousingMarket:
         property_data["Up for Rent"] = None
         property_data["Temporarily for Sale"] = False
 
-        # property_data["Corresponding Inhabitant Household ID"].loc[
-        #     :, np.isnan(property_data["Corresponding Inhabitant Household ID"])
-        # ] = -1
-        property_data["Corresponding Inhabitant Household ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
-        property_data["House ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
-        property_data["Is Owner-Occupied"] = macromodel.util.get_histogram.fillna(-1).astype(int)
-        property_data["Corresponding Owner Household ID"] = property_data["Corresponding Owner Household ID"].astype(
-            int
-        )
-        property_data["Corresponding Inhabitant Household ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
+        for column in [
+            "Corresponding Inhabitant Household ID",
+            "House ID",
+            "Is Owner-Occupied",
+            "Corresponding Owner Household ID",
+        ]:
+            property_data[column] = property_data[column].fillna(-1).astype(int)
 
         ts = create_housing_market_timeseries(
             data=property_data,
@@ -248,11 +244,13 @@ class HousingMarket:
 
         # Recording the states of all homes
         states = data.copy()
-        states["Corresponding Inhabitant Household ID"][np.isnan(states["Corresponding Inhabitant Household ID"])] = -1
-        states["House ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
-        states["Is Owner-Occupied"] = macromodel.util.get_histogram.fillna(-1).astype(int)
-        states["Corresponding Owner Household ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
-        states["Corresponding Inhabitant Household ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
+        for column in [
+            "Corresponding Inhabitant Household ID",
+            "House ID",
+            "Is Owner-Occupied",
+            "Corresponding Owner Household ID",
+        ]:
+            states[column] = states[column].fillna(-1).astype(int)
 
         # Create the corresponding time series object
         ts = create_housing_market_timeseries(
