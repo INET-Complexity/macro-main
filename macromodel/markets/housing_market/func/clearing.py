@@ -376,6 +376,17 @@ class AutomaticHousingMarketClearer(HousingMarketClearer):
         # Collect properties
         property_open_ind = np.where(housing_data[status_field])[0]
         property_prices = housing_data.loc[property_open_ind, price_field].values
+        if len(households_with_demand) == 0 or len(property_open_ind) == 0:
+            return pd.DataFrame(
+                data={
+                    "sales_types": [],
+                    "property_id": [],
+                    "property_value": [],
+                    "price_or_rent": [],
+                    "seller_id": [],
+                    "buyer_id": [],
+                }
+            )
 
         # Create a cost matrix
         cost = sp.spatial.distance_matrix(

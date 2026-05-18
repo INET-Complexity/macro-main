@@ -86,3 +86,39 @@ def test_property_sold_this_period_is_not_also_rented():
 
         assert current_sales["sales_types"].tolist() == ["Sell"]
         assert current_sales["property_id"].tolist() == [0]
+
+
+def test_automatic_clearer_returns_empty_transactions_without_matches():
+    """Regression: automatic matching handles empty demand and empty supply."""
+    clearer = AutomaticHousingMarketClearer(random_assignment_shock_variance=0.0)
+
+    housing_data = pd.DataFrame(
+        {
+            "House ID": [0],
+            "Value": [100.0],
+            "Rent": [1.0],
+            "Sale Price": [100.0],
+            "Corresponding Inhabitant Household ID": [-1],
+            "Corresponding Owner Household ID": [0],
+            "Is Owner-Occupied": [0],
+            "Temporarily for Sale": [False],
+            "Up for Rent": [False],
+        }
+    )
+
+    current_sales = clearer.clear(
+        housing_data=housing_data,
+        household_main_residence_tenure_status=np.array([1]),
+        max_price_willing_to_pay=np.array([np.nan]),
+        max_rent_willing_to_pay=np.array([np.nan]),
+    )
+
+    assert current_sales.empty
+    assert current_sales.columns.tolist() == [
+        "sales_types",
+        "property_id",
+        "property_value",
+        "price_or_rent",
+        "seller_id",
+        "buyer_id",
+    ]
