@@ -811,9 +811,10 @@ class Households(Agent):
         )
 
         # Set what's up for rent
-        prev_up_for_rent = housing_data["Up for Rent"].values
-        now_up_for_rent = np.where(np.isnan(housing_data["Corresponding Inhabitant Household ID"].values))[0]
-        newly_up_for_rent = [ind for ind in now_up_for_rent if ind not in prev_up_for_rent]
+        prev_up_for_rent = np.flatnonzero(housing_data["Up for Rent"].eq(True).values)
+        inhabitant_ids = housing_data["Corresponding Inhabitant Household ID"].values
+        now_up_for_rent = np.where(np.logical_or(np.isnan(inhabitant_ids), inhabitant_ids == -1))[0]
+        newly_up_for_rent = np.setdiff1d(now_up_for_rent, prev_up_for_rent)
         housing_data["Up for Rent"] = False
         housing_data.loc[now_up_for_rent, "Up for Rent"] = True
         housing_data["Newly on the Rental Market"] = False

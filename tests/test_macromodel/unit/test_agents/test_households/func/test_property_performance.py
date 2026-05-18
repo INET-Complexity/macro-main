@@ -132,3 +132,38 @@ class TestHouseholdPropertyPerformance:
         assert housing_data.loc[2, "Sale Price"] == 330.0
         assert np.isnan(housing_data.loc[3, "Sale Price"])
         assert housing_data.loc[4, "Sale Price"] == 550.0
+
+    def test_vacant_negative_one_homes_are_listed_for_rent(self):
+        """Regression: vacant homes marked with -1 enter the rental market."""
+        households = object.__new__(Households)
+        households.functions = {"property": _PropertyDemand()}
+        households.states = {"Tenure Status of the Main Residence": np.ones(5)}
+        households.ts = _HouseholdTimeseries()
+
+        housing_data = pd.DataFrame(
+            {
+                "House ID": [0, 1, 2, 3, 4],
+                "Value": [100.0, 200.0, 300.0, 400.0, 500.0],
+                "Rent": [9.0, 9.0, 3.0, 4.0, 5.0],
+                "Corresponding Inhabitant Household ID": [np.nan, -1.0, 2.0, 3.0, 4.0],
+                "Corresponding Owner Household ID": [0, 1, 2, 3, 4],
+                "Is Owner-Occupied": [0, 0, 1, 1, 1],
+                "Sale Price": [np.nan, np.nan, np.nan, np.nan, np.nan],
+                "Temporarily for Sale": [False, False, False, False, False],
+                "Up for Rent": [False, False, False, False, False],
+                "Newly on the Rental Market": [False, False, False, False, False],
+            }
+        )
+
+        households.prepare_housing_market_clearing(
+            housing_data=housing_data,
+            observed_fraction_value_price=np.array([1.0, 0.0]),
+            observed_fraction_rent_value=np.array([0.01, 0.0]),
+            expected_hpi_growth=0.0,
+            assumed_mortgage_maturity=120,
+            rental_income_taxes=0.0,
+        )
+
+        assert housing_data["Up for Rent"].tolist() == [True, True, False, False, False]
+        assert housing_data["Newly on the Rental Market"].tolist() == [True, True, False, False, False]
+        assert housing_data["Rent"].tolist() == [1.0, 2.0, 3.0, 4.0, 5.0]
