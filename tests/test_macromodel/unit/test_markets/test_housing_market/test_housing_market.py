@@ -122,3 +122,56 @@ def test_automatic_clearer_returns_empty_transactions_without_matches():
         "seller_id",
         "buyer_id",
     ]
+
+
+def test_sale_does_not_displace_inhabitant_without_completed_move():
+    """Regression: a sale cannot overwrite an inhabitant who has not moved."""
+    market = object.__new__(HousingMarket)
+    market.states = {
+        "properties": pd.DataFrame(
+            {
+                "House ID": [0, 1],
+                "Value": [100.0, 200.0],
+                "Rent": [1.0, 2.0],
+                "Corresponding Inhabitant Household ID": [0, 1],
+                "Corresponding Owner Household ID": [0, 1],
+                "Is Owner-Occupied": [1, 1],
+            }
+        ),
+        "current_sales": pd.DataFrame(
+            {
+                "sales_types": ["Sell"],
+                "property_id": [0],
+                "seller_id": [0],
+                "buyer_id": [1],
+                "property_value": [100.0],
+                "price_or_rent": [100.0],
+            }
+        ),
+    }
+    market.ts = SimpleNamespace(
+        total_number_of_houses_rented=[],
+        total_number_of_houses_owner_occupied=[],
+        total_number_of_houses_unoccupied=[],
+        total_number_of_bought_houses=[],
+        total_number_of_newly_rented_houses=[],
+    )
+    household_states = {
+        "Corresponding Inhabited House ID": np.array([0, 1]),
+        "Corresponding Property Owner": np.array([0, 1]),
+        "Tenure Status of the Main Residence": np.array([1, 1]),
+        "corr_renters": [[], []],
+    }
+
+    market.process_housing_market_clearing(
+        household_states=household_states,
+        household_received_mortgages=np.array([0.0, 100.0]),
+        household_financial_wealth=np.array([0.0, 0.0]),
+    )
+
+    properties = market.states["properties"]
+    assert market.states["current_sales"].empty
+    assert properties["Corresponding Owner Household ID"].tolist() == [0, 1]
+    assert properties["Corresponding Inhabitant Household ID"].tolist() == [0, 1]
+    assert household_states["Corresponding Inhabited House ID"].tolist() == [0, 1]
+    assert market.ts.total_number_of_bought_houses == [[0]]

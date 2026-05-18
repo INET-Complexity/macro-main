@@ -326,6 +326,47 @@ class HousingMarket:
             max_rent_willing_to_pay=max_rent_willing_to_pay,
         )
 
+    def _filter_feasible_current_sales(
+        self,
+        household_received_mortgages: np.ndarray,
+        household_financial_wealth: np.ndarray,
+    ) -> pd.DataFrame:
+        current_sales = self.states["current_sales"]
+        if len(current_sales) == 0:
+            return current_sales.copy()
+
+        feasible_sales = current_sales.copy()
+        sell_positions = np.flatnonzero(feasible_sales["sales_types"].eq("Sell").to_numpy())
+        if len(sell_positions) > 0:
+            buyer_ids = feasible_sales["buyer_id"].astype(int).to_numpy()
+            prices = feasible_sales["price_or_rent"].to_numpy(dtype=float)
+            financing_ok = np.ones(len(feasible_sales), dtype=bool)
+            sell_buyers = buyer_ids[sell_positions]
+            financing_ok[sell_positions] = np.logical_or(
+                household_received_mortgages[sell_buyers] > 0,
+                household_financial_wealth[sell_buyers] >= prices[sell_positions],
+            )
+            feasible_sales = feasible_sales.loc[financing_ok].copy()
+
+        initial_inhabitants = self.states["properties"]["Corresponding Inhabitant Household ID"].fillna(-1).astype(int)
+        while len(feasible_sales) > 0:
+            moving_households = set(feasible_sales["buyer_id"].astype(int).tolist())
+            keep_transaction = []
+            for _, sale in feasible_sales.iterrows():
+                buyer_id = int(sale["buyer_id"])
+                property_id = int(sale["property_id"])
+                inhabitant_id = int(initial_inhabitants.at[property_id])
+                keep_transaction.append(
+                    inhabitant_id == -1 or inhabitant_id == buyer_id or inhabitant_id in moving_households
+                )
+
+            keep_transaction = np.array(keep_transaction, dtype=bool)
+            if keep_transaction.all():
+                break
+            feasible_sales = feasible_sales.loc[keep_transaction].copy()
+
+        return feasible_sales.reset_index(drop=True)
+
     @staticmethod
     def _perform_linear_regression(x: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Perform linear regression with error handling.
@@ -446,6 +487,11 @@ class HousingMarket:
             This method ensures all market clearing outcomes are properly
             reflected in the system state.
         """
+        self.states["current_sales"] = self._filter_feasible_current_sales(
+            household_received_mortgages=household_received_mortgages,
+            household_financial_wealth=household_financial_wealth,
+        )
+
         total_number_of_bought_houses = 0
         total_number_of_newly_rented_houses = 0
         for index, sale in self.states["current_sales"].iterrows():
