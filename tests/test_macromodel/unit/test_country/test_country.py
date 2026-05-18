@@ -99,3 +99,86 @@ class TestCountry:
 
         assert country.households.current_sales["sales_types"].tolist() == ["Sell"]
         assert country.households.current_sales["price_or_rent"].tolist() == [100.0]
+
+    def test_housing_market_ratios_are_recorded_after_clearing(self):
+        """Regression: observed housing ratios use post-clearing market state."""
+
+        class DummyObservedSeries(list):
+            def __init__(self, events, name):
+                super().__init__()
+                self.events = events
+                self.name = name
+
+            def append(self, value):
+                self.events.append(self.name)
+                super().append(value)
+
+        class DummyHouseholdTimeSeries:
+            def current(self, key):
+                if key == "received_mortgages":
+                    return np.array([100.0])
+                if key == "wealth_financial_assets":
+                    return np.array([0.0])
+                raise KeyError(key)
+
+        class DummyHouseholds:
+            def __init__(self, events):
+                self.events = events
+                self.states = {}
+                self.ts = DummyHouseholdTimeSeries()
+
+            def process_housing_market_clearing(self, **kwargs):
+                self.events.append("households")
+
+        class DummyGovernmentTimeSeries:
+            def current(self, key):
+                return [np.array([])]
+
+        class DummyHousingMarket:
+            def __init__(self):
+                self.events = []
+                self.states = {
+                    "properties": pd.DataFrame(),
+                    "current_sales": pd.DataFrame(
+                        {
+                            "sales_types": ["Sell"],
+                            "buyer_id": [0],
+                            "price_or_rent": [100.0],
+                        }
+                    ),
+                }
+                self.ts = type(
+                    "DummyHousingTimeSeries",
+                    (),
+                    {
+                        "observed_fraction_value_price": DummyObservedSeries(self.events, "value"),
+                        "observed_fraction_rent_value": DummyObservedSeries(self.events, "rent"),
+                    },
+                )()
+
+            def process_housing_market_clearing(self, **kwargs):
+                self.events.append("housing")
+
+            def compute_observed_fraction_value_price(self):
+                assert self.events == ["housing"]
+                return np.array([1.0, 0.0])
+
+            def compute_observed_fraction_rent_value(self):
+                assert self.events == ["housing", "value"]
+                return np.array([0.01, 0.0])
+
+        country = object.__new__(Country)
+        country.housing_market = DummyHousingMarket()
+        country.households = DummyHouseholds(country.housing_market.events)
+        country.central_government = type(
+            "DummyGovernment",
+            (),
+            {
+                "functions": {"social_housing": object()},
+                "ts": DummyGovernmentTimeSeries(),
+            },
+        )()
+
+        country.process_housing_market_clearing()
+
+        assert country.housing_market.events == ["housing", "value", "rent", "households"]

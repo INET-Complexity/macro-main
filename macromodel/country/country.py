@@ -843,16 +843,16 @@ class Country:
         Updates property ownership, rents, and related financial positions
         after market clearing.
         """
+        self.housing_market.process_housing_market_clearing(
+            household_states=self.households.states,
+            household_received_mortgages=self.households.ts.current("received_mortgages"),
+            household_financial_wealth=self.households.ts.current("wealth_financial_assets"),
+        )
         self.housing_market.ts.observed_fraction_value_price.append(
             self.housing_market.compute_observed_fraction_value_price()
         )
         self.housing_market.ts.observed_fraction_rent_value.append(
             self.housing_market.compute_observed_fraction_rent_value()
-        )
-        self.housing_market.process_housing_market_clearing(
-            household_states=self.households.states,
-            household_received_mortgages=self.households.ts.current("received_mortgages"),
-            household_financial_wealth=self.households.ts.current("wealth_financial_assets"),
         )
         self.households.process_housing_market_clearing(
             housing_data=self.housing_market.states["properties"],
