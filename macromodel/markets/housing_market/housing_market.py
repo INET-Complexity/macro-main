@@ -492,6 +492,20 @@ class HousingMarket:
             household_financial_wealth=household_financial_wealth,
         )
 
+        def clear_previous_residence(household_id: int, property_id: int) -> None:
+            if property_id == -1:
+                return
+            current_inhabitant = self.states["properties"].at[
+                property_id,
+                "Corresponding Inhabitant Household ID",
+            ]
+            if not pd.isna(current_inhabitant) and int(current_inhabitant) == household_id:
+                self.states["properties"].loc[
+                    property_id,
+                    "Corresponding Inhabitant Household ID",
+                ] = -1
+                self.states["properties"].loc[property_id, "Is Owner-Occupied"] = 0
+
         total_number_of_bought_houses = 0
         total_number_of_newly_rented_houses = 0
         for index, sale in self.states["current_sales"].iterrows():
@@ -503,11 +517,7 @@ class HousingMarket:
             prev_property_id = household_states["Corresponding Inhabited House ID"][buyer_id]
             if sale["sales_types"] == "Rental":
                 self.states["properties"].loc[property_id, "Corresponding Inhabitant Household ID"] = buyer_id
-                if prev_property_id != -1:
-                    self.states["properties"].loc[
-                        prev_property_id,
-                        "Corresponding Inhabitant Household ID",
-                    ] = -1
+                clear_previous_residence(buyer_id, prev_property_id)
                 household_states["Corresponding Inhabited House ID"][buyer_id] = property_id
                 household_states["Tenure Status of the Main Residence"][buyer_id] = 3
                 household_states["corr_renters"][seller_id].append(buyer_id)
@@ -525,11 +535,7 @@ class HousingMarket:
 
                     # Corresponding inhabitant households
                     self.states["properties"].loc[property_id, "Corresponding Inhabitant Household ID"] = buyer_id
-                    if prev_property_id != -1:
-                        self.states["properties"].loc[
-                            prev_property_id,
-                            "Corresponding Inhabitant Household ID",
-                        ] = -1
+                    clear_previous_residence(buyer_id, prev_property_id)
 
                     # Corresponding inhabited house ID
                     household_states["Corresponding Inhabited House ID"][buyer_id] = property_id
