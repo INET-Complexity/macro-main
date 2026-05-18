@@ -817,7 +817,7 @@ class Country:
         )
         self.households.compute_target_credit(
             current_sales=self.housing_market.states["current_sales"].loc[
-                self.housing_market.states["current_sales"]["sales_types"] == "Rental"
+                self.housing_market.states["current_sales"]["sales_types"] == "Sell"
             ],
         )
         self.banks.set_interest_rates(central_bank_policy_rate=self.central_bank.ts.current("policy_rate")[0])
