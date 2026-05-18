@@ -157,6 +157,7 @@ class HousingMarket:
         property_data["Up for Rent"] = None
         property_data["Temporarily for Sale"] = False
 
+        # Preserve existing IDs; only missing IDs are normalized to -1.
         for column in [
             "Corresponding Inhabitant Household ID",
             "House ID",
@@ -244,6 +245,7 @@ class HousingMarket:
 
         # Recording the states of all homes
         states = data.copy()
+        # Preserve existing IDs; only missing IDs are normalized to -1.
         for column in [
             "Corresponding Inhabitant Household ID",
             "House ID",
@@ -331,6 +333,7 @@ class HousingMarket:
         household_received_mortgages: np.ndarray,
         household_financial_wealth: np.ndarray,
     ) -> pd.DataFrame:
+        """Keep only transactions that can be safely applied to property states."""
         current_sales = self.states["current_sales"]
         if len(current_sales) == 0:
             return current_sales.copy()
@@ -338,6 +341,7 @@ class HousingMarket:
         feasible_sales = current_sales.copy()
         sell_positions = np.flatnonzero(feasible_sales["sales_types"].eq("Sell").to_numpy())
         if len(sell_positions) > 0:
+            # Sale transactions need either a mortgage or enough liquid wealth.
             buyer_ids = feasible_sales["buyer_id"].astype(int).to_numpy()
             prices = feasible_sales["price_or_rent"].to_numpy(dtype=float)
             financing_ok = np.ones(len(feasible_sales), dtype=bool)
@@ -348,6 +352,7 @@ class HousingMarket:
             )
             feasible_sales = feasible_sales.loc[financing_ok].copy()
 
+        # Occupied homes can transfer only if the current inhabitant also moves.
         initial_inhabitants = self.states["properties"]["Corresponding Inhabitant Household ID"].fillna(-1).astype(int)
         while len(feasible_sales) > 0:
             moving_households = set(feasible_sales["buyer_id"].astype(int).tolist())
@@ -487,12 +492,14 @@ class HousingMarket:
             This method ensures all market clearing outcomes are properly
             reflected in the system state.
         """
+        # Downstream state updates should only see transactions that can close.
         self.states["current_sales"] = self._filter_feasible_current_sales(
             household_received_mortgages=household_received_mortgages,
             household_financial_wealth=household_financial_wealth,
         )
 
         def clear_previous_residence(household_id: int, property_id: int) -> None:
+            """Clear the old residence only if this household still inhabits it."""
             if property_id == -1:
                 return
             current_inhabitant = self.states["properties"].at[

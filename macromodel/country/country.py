@@ -843,6 +843,7 @@ class Country:
         Updates property ownership, rents, and related financial positions
         after market clearing.
         """
+        # Apply transactions before updating observed ratios so they reflect post-clearing prices.
         self.housing_market.process_housing_market_clearing(
             household_states=self.households.states,
             household_received_mortgages=self.households.ts.current("received_mortgages"),
