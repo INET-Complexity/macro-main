@@ -55,6 +55,7 @@ from macromodel.exogenous.exogenous import Exogenous
 from macromodel.markets.credit_market.credit_market import CreditMarket
 from macromodel.markets.housing_market.housing_market import HousingMarket
 from macromodel.markets.labour_market.labour_market import LabourMarket
+from macromodel.policy.output_based_price_system_can import OutputBasedPriceSystemCAN
 from macromodel.rest_of_the_world import RestOfTheWorld
 from macromodel.util.get_histogram import get_histogram
 
@@ -143,6 +144,7 @@ class Country:
         emitting_indices: Optional[np.ndarray] = None,
         emission_factors_lcu_ch4: Optional[np.ndarray] = None,
         emitting_indices_ch4: Optional[np.ndarray] = None,
+        obps: Optional[OutputBasedPriceSystemCAN] = None,
     ):
         """Initialize a new country economy.
 
@@ -212,6 +214,10 @@ class Country:
         self.emission_factors_lcu_ch4 = emission_factors_lcu_ch4
         self.emitting_indices_ch4 = emitting_indices_ch4
         self.use_emission_multiplier = self.configuration.use_emission_multiplier
+
+        self.obps = obps
+        self.use_obps_reg = self.configuration.use_obps_reg
+        self.extra_marginal_taxes_firm = np.zeros(self.firms.n_industries)
 
     @classmethod
     def from_pickled_country(
@@ -400,6 +406,14 @@ class Country:
             scale=scale,
         )
 
+        obps = None
+        if add_emissions and country_configuration.use_obps_reg and synthetic_country.obps_data is not None:
+            obps = OutputBasedPriceSystemCAN(
+                country_name=country_name,
+                industries=list(industries),
+                obps_data=synthetic_country.obps_data,
+            )
+
         return cls(
             country_name=country_name,
             scale=scale,
@@ -425,6 +439,7 @@ class Country:
             emitting_indices=emitting_indices,
             emission_factors_lcu_ch4=emission_factors_lcu_ch4,
             emitting_indices_ch4=emitting_indices_ch4,
+            obps=obps,
         )
 
     def reset(self, configuration: CountryConfiguration) -> None:
@@ -535,6 +550,35 @@ class Country:
             )
         )
 
+    def update_extra_taxes(self, record_obps_reference: bool = True) -> None:
+        """Compute extra marginal taxes for firms from active policy instruments.
+
+        Currently supports the Output-Based Pricing System (OBPS). The sectoral
+        tax cost is divided by production to obtain a per-unit marginal cost that
+        is added to the sector average price seen by firms during price-setting
+        and input-demand calculations.
+
+        Args:
+            record_obps_reference: If True, accumulate 2017–2019 reference
+                emission data (should be True only in the planning phase).
+        """
+        self.extra_marginal_taxes_firm = np.zeros(self.firms.n_industries)
+
+        if self.use_obps_reg and self.obps is not None:
+            sectoral_tax = self.obps.compute_obps(
+                use_obps_reg=self.use_obps_reg,
+                record_obps_reference=record_obps_reference,
+                production=self.firms.ts.current("production"),
+                input_em=self.firms.ts.current("inputs_emissions")+self.firms.ts.current("inputs_emissions_ch4"),
+                capital_em=self.firms.ts.current("capital_emissions")+self.firms.ts.current("capital_emissions_ch4"),
+            )
+            self.extra_marginal_taxes_firm = np.divide(
+                sectoral_tax,
+                self.firms.ts.current("production"),
+                out=np.zeros_like(sectoral_tax),
+                where=self.firms.ts.current("production") != 0,
+            )
+
     def clear_labour_market(self) -> None:
         """Execute labor market clearing.
 
@@ -555,6 +599,9 @@ class Country:
         Computes expected profits, asset values, benefits, and other metrics
         used by agents in their planning decisions.
         """
+        if self.add_emissions:
+            self.update_extra_taxes(record_obps_reference=True)
+
         # Firms estimate profits
         self.firms.ts.expected_profits.append(
             self.firms.compute_estimated_profits(
@@ -669,13 +716,15 @@ class Country:
                     current_estimated_ppi_inflation=self.economy.ts.current("estimated_ppi_inflation")[0],
                     previous_average_good_prices=self.economy.ts.current("good_prices"),
                     ppi_during=self.exogenous.national_accounts_during["PPI (Value)"].values.flatten(),
+                    extra_marginal_taxes=self.extra_marginal_taxes_firm,
                 )
             )
 
         # Firm demand for goods
         self.firms.ts.unconstrained_target_intermediate_inputs.append(
             self.firms.compute_unconstrained_demand_for_intermediate_inputs(
-                good_prices=self.economy.ts.current("good_prices")
+                good_prices=self.economy.ts.current("good_prices"),
+                extra_taxes=self.extra_marginal_taxes_firm,
             )
         )
         self.firms.ts.unconstrained_target_intermediate_inputs_costs.append(
@@ -685,7 +734,8 @@ class Country:
         )
         self.firms.ts.unconstrained_target_capital_inputs.append(
             self.firms.compute_unconstrained_demand_for_capital_inputs(
-                good_prices=self.economy.ts.current("good_prices")
+                good_prices=self.economy.ts.current("good_prices"),
+                extra_taxes=self.extra_marginal_taxes_firm,
             )
         )
         self.firms.ts.unconstrained_target_capital_inputs_costs.append(
