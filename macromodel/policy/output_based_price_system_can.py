@@ -73,11 +73,25 @@ class OutputBasedPriceSystemCAN:
 
         # Industries regulated under OBPS (federal schedule)
         self.regulated_industries = [
-            "B05a", "B05b", "B05c",
-            "B07", "B09",
-            "C10T12", "C16", "C17", "C19", "C20", "C21", "C22", "C23",
-            "C24a", "C24b", "C29", "C30",
-            "D01b", "D01c",
+            "B05a",
+            "B05b",
+            "B05c",
+            "B07",
+            "B09",
+            "C10T12",
+            "C16",
+            "C17",
+            "C19",
+            "C20",
+            "C21",
+            "C22",
+            "C23",
+            "C24a",
+            "C24b",
+            "C29",
+            "C30",
+            "D01b",
+            "D01c",
         ]
         self.regulated_indices = np.array(
             [list(industries).index(ind) for ind in self.regulated_industries if ind in industries]

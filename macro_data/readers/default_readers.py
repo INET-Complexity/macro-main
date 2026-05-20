@@ -325,7 +325,7 @@ class DataReaders:
 
             if simulation_year != 2014:
                 raise ValueError("Only 2014 is supported for this reader.")
-            disagg_path = raw_data_path / "icio" / "sectoral_disagg_CAN_2014_v2.csv"
+            disagg_path = raw_data_path / "icio" / "icio_can_2014_disagg.csv"
             df = pd.read_csv(disagg_path, header=[0, 1], index_col=[0, 1])
             icio[simulation_year].iot = df
             industries = df.loc["ROW"].index.unique()

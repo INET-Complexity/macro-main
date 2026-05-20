@@ -569,8 +569,8 @@ class Country:
                 use_obps_reg=self.use_obps_reg,
                 record_obps_reference=record_obps_reference,
                 production=self.firms.ts.current("production"),
-                input_em=self.firms.ts.current("inputs_emissions")+self.firms.ts.current("inputs_emissions_ch4"),
-                capital_em=self.firms.ts.current("capital_emissions")+self.firms.ts.current("capital_emissions_ch4"),
+                input_em=self.firms.ts.current("inputs_emissions") + self.firms.ts.current("inputs_emissions_ch4"),
+                capital_em=self.firms.ts.current("capital_emissions") + self.firms.ts.current("capital_emissions_ch4"),
             )
             self.extra_marginal_taxes_firm = np.divide(
                 sectoral_tax,

@@ -168,7 +168,9 @@ class DefaultPriceSetter(PriceSetter):
         Returns:
             np.ndarray: Updated prices by firm, guaranteed to be positive
         """
-        tax_by_sector = extra_marginal_taxes if extra_marginal_taxes is not None else np.zeros_like(prev_average_good_prices)
+        tax_by_sector = (
+            extra_marginal_taxes if extra_marginal_taxes is not None else np.zeros_like(prev_average_good_prices)
+        )
         average_price_by_firm = (prev_average_good_prices + tax_by_sector)[current_firm_sectors]
 
         # Demand-pull inflation
@@ -338,9 +340,7 @@ class SectorExogenousPriceSetter(DefaultPriceSetter):
         )
 
         tax_by_firm = (
-            extra_marginal_taxes[current_firm_sectors]
-            if extra_marginal_taxes is not None
-            else np.zeros_like(price)
+            extra_marginal_taxes[current_firm_sectors] if extra_marginal_taxes is not None else np.zeros_like(price)
         )
 
         for industry_name in self.firm_exo_prices.prices.columns:
