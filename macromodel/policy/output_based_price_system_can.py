@@ -1,12 +1,14 @@
 """Canada Output-Based Pricing System (OBPS) policy for the macroeconomic model.
 
-Calculates the tax that firms pay on emissions that exceed a sector-specific
-prescribed limit. The tax is computed as:
+Computes a two-way carbon price signal for each regulated sector based on
+emissions relative to an output-based benchmark:
 
-    obps_cost[i] = max(0, emissions[i] - limit[i]) * carbon_price[t]
+    obps_cost[i] = (emissions[i] - limit[i]) * carbon_price[t]
 
-Dividing by production gives a per-unit marginal cost passed to firms as
-extra_marginal_taxes_firm in the country's target-setting phase.
+Sectors emitting above their benchmark incur a positive cost; sectors below
+receive a negative cost (rebate). Dividing by production gives a per-unit
+marginal tax passed to firms as extra_marginal_taxes_firm in the country's
+target-setting phase.
 """
 
 from dataclasses import dataclass
@@ -124,8 +126,8 @@ class OutputBasedPriceSystemCAN:
         """Compute per-sector OBPS tax cost.
 
         Records reference emission intensities during 2017–2019. From 2019
-        onwards, computes the cost of emissions above the prescribed limit
-        at the current carbon price.
+        onwards, computes the signed cost of emissions relative to the
+        prescribed limit at the current carbon price.
 
         Args:
             use_obps_reg: If False, returns a zero array.
@@ -135,8 +137,9 @@ class OutputBasedPriceSystemCAN:
             capital_em: Capital-related CO₂e emissions per industry.
 
         Returns:
-            np.ndarray: OBPS tax cost (dollars) per industry; zero for
-                unregulated industries or years before 2019.
+            np.ndarray: Signed OBPS cost (dollars) per industry — positive
+                when emissions exceed the limit, negative when below it;
+                zero for unregulated industries or years before 2019.
         """
         if not use_obps_reg:
             return np.zeros(len(self.industries))
