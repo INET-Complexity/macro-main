@@ -143,9 +143,7 @@ class TestGetLimit:
 
 class TestReferenceAccumulation:
     def test_reference_intensity_computed_from_2017_to_2019(self):
-        obps = OutputBasedPriceSystemCAN(
-            country_name="CAN", industries=INDUSTRIES, obps_data=_make_data()
-        )
+        obps = OutputBasedPriceSystemCAN(country_name="CAN", industries=INDUSTRIES, obps_data=_make_data())
         # Simulate 2017, 2018, 2019 accumulation
         for year, em, prod in [
             (2017, [30.0, 0.0], [100.0, 50.0]),
@@ -166,9 +164,7 @@ class TestReferenceAccumulation:
         assert obps.reference_emission_intensity[1] == pytest.approx(0.0)
 
     def test_reference_not_accumulated_when_flag_false(self):
-        obps = OutputBasedPriceSystemCAN(
-            country_name="CAN", industries=INDUSTRIES, obps_data=_make_data()
-        )
+        obps = OutputBasedPriceSystemCAN(country_name="CAN", industries=INDUSTRIES, obps_data=_make_data())
         obps.current_year = 2017
         obps.current_t = 3
         obps.compute_obps(
