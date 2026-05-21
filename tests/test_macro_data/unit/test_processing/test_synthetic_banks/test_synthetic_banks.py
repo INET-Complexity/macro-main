@@ -60,6 +60,48 @@ class TestSyntheticBanks:
         }
 
         assert set(banks.bank_data.columns) == columns
+        annual_policy_rate = (
+            readers.policy_rates.get_policy_rates(Country("FRA")).loc["2013-Q4", "Policy Rate"].values[0]
+        )
+        assert banks.bank_data["Interest Rates on Firm Deposits"].values[0] == annual_policy_rate / 4.0
+        assert banks.bank_data["Interest Rates on Household Deposits"].values[0] == annual_policy_rate / 4.0
+        firm_rates = DefaultSyntheticBanks._convert_annual_rate_series_to_period(
+            readers.ecb_reader.get_firm_rates(Country("FRA")),
+            time_unit=3,
+        )
+        household_consumption_rates = DefaultSyntheticBanks._convert_annual_rate_series_to_period(
+            readers.ecb_reader.get_household_consumption_rates(Country("FRA")),
+            time_unit=3,
+        )
+        mortgage_rates = DefaultSyntheticBanks._convert_annual_rate_series_to_period(
+            readers.ecb_reader.get_household_mortgage_rates(Country("FRA")),
+            time_unit=3,
+        )
+        policy_rates = DefaultSyntheticBanks._convert_annual_rate_frame_to_period(
+            readers.policy_rates.get_policy_rates(Country("FRA")),
+            time_unit=3,
+            column="Policy Rate",
+        )
+
+        assert banks.firm_short_spread == DefaultSyntheticBanks._mean_pre_start_spread(
+            firm_rates,
+            policy_rates,
+            year=2014,
+            quarter=1,
+        )
+        assert banks.firm_long_spread == banks.firm_short_spread
+        assert banks.household_consumption_spread == DefaultSyntheticBanks._mean_pre_start_spread(
+            household_consumption_rates,
+            policy_rates,
+            year=2014,
+            quarter=1,
+        )
+        assert banks.mortgage_spread == DefaultSyntheticBanks._mean_pre_start_spread(
+            mortgage_rates,
+            policy_rates,
+            year=2014,
+            quarter=1,
+        )
         # Check if we have all the necessary fields
         # for bank_field in [
         #     "Equity",

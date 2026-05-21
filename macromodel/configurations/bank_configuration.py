@@ -118,7 +118,7 @@ class InterestRateFunction(BaseModel):
     """
 
     path_name: str = "interest_rates"
-    name: Literal["DefaultInterestRatesSetter"] = "DefaultInterestRatesSetter"
+    name: Literal["DefaultInterestRatesSetter", "MarkUpInterestRatesSetter"] = "DefaultInterestRatesSetter"
     parameters: dict[str, Any] = {}
 
 

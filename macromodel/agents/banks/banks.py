@@ -134,6 +134,20 @@ class Banks(Agent):
         parameters = configuration.parameters
         functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.banks")
 
+        def get_spread(
+            attribute_names: list[str],
+            column_names: list[str],
+        ) -> float | np.ndarray:
+            for attribute_name in attribute_names:
+                if hasattr(synthetic_banks, attribute_name):
+                    spread = getattr(synthetic_banks, attribute_name)
+                    if spread is not None:
+                        return spread
+            for column_name in column_names:
+                if column_name in synthetic_banks.bank_data.columns:
+                    return synthetic_banks.bank_data[column_name].values
+            return 0.0
+
         data = synthetic_banks.bank_data.drop(columns=["Corresponding Firms ID", "Corresponding Households ID"])
         ts = create_banks_timeseries(
             bank_data=data,
@@ -150,6 +164,22 @@ class Banks(Agent):
             "Household Consumption ECT": synthetic_banks.hh_consumption_ect,
             "Household Mortgage Pass Through": synthetic_banks.hh_mortgage_passthrough,
             "Household Mortgage ECT": synthetic_banks.hh_mortgage_ect,
+            "Firm Short Spread": get_spread(
+                attribute_names=["firm_short_spread", "short_term_firm_spread", "firm_spread"],
+                column_names=["Firm Short Spread", "Short-Term Firm Spread", "Firm Spread"],
+            ),
+            "Firm Long Spread": get_spread(
+                attribute_names=["firm_long_spread", "long_term_firm_spread", "firm_spread"],
+                column_names=["Firm Long Spread", "Long-Term Firm Spread", "Firm Spread"],
+            ),
+            "Household Consumption Spread": get_spread(
+                attribute_names=["hh_consumption_spread", "household_consumption_spread"],
+                column_names=["Household Consumption Spread"],
+            ),
+            "Mortgage Spread": get_spread(
+                attribute_names=["mortgage_spread", "hh_mortgage_spread", "household_mortgage_spread"],
+                column_names=["Mortgage Spread", "Household Mortgage Spread"],
+            ),
         }
 
         return cls(
@@ -225,6 +255,7 @@ class Banks(Agent):
                 prev_interest_rates_on_short_term_firm_loans=self.ts.current("interest_rates_on_short_term_firm_loans"),
                 firm_pt=self.states["Firm Pass Through"],
                 firm_ect=self.states["Firm ECT"],
+                firm_short_spread=self.states["Firm Short Spread"],
             )
         )
         self.ts.average_interest_rates_on_short_term_firm_loans.append(
@@ -236,6 +267,7 @@ class Banks(Agent):
                 prev_interest_rates_on_long_term_firm_loans=self.ts.current("interest_rates_on_long_term_firm_loans"),
                 firm_pt=self.states["Firm Pass Through"],
                 firm_ect=self.states["Firm ECT"],
+                firm_long_spread=self.states["Firm Long Spread"],
             )
         )
         self.ts.average_interest_rates_on_long_term_firm_loans.append(
@@ -249,6 +281,7 @@ class Banks(Agent):
                 ),
                 hh_cons_pt=self.states["Household Consumption Pass Through"],
                 hh_cons_ect=self.states["Household Consumption ECT"],
+                hh_consumption_spread=self.states["Household Consumption Spread"],
             )
         )
         self.ts.average_interest_rates_on_household_consumption_loans.append(
@@ -260,6 +293,7 @@ class Banks(Agent):
                 prev_interest_rate_on_mortgages=self.ts.current("interest_rates_on_mortgages"),
                 hh_mortgage_pt=self.states["Household Mortgage Pass Through"],
                 hh_mortgage_ect=self.states["Household Mortgage ECT"],
+                mortgage_spread=self.states["Mortgage Spread"],
             )
         )
         self.ts.average_interest_rates_on_mortgages.append([self.ts.current("interest_rates_on_mortgages").mean()])

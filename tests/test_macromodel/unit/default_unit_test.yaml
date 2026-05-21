@@ -16,7 +16,7 @@ FRA:
       interest_rates:
         name:
           desc: The function used for setting interest rates.
-          options: DefaultInterestRatesSetter
+          options: DefaultInterestRatesSetter,MarkUpInterestRatesSetter
           type: str
           value: DefaultInterestRatesSetter
       profit_estimator:
