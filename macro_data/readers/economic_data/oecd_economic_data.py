@@ -1159,9 +1159,6 @@ class OECDEconData:
         if "GDP" in na_data.columns:
             na_data["Gross Output"] = na_data["GDP"].values
             na_data["Intermediate Consumption"] = na_data["GDP"].values
-            for col in fields.keys():
-                if col not in na_data.columns:
-                    na_data[col] = na_data["GDP"].values
 
         # Change index
         na_data.index = [pd.Timestamp(int(ind[0:4]), 3 * int(ind[6]) - 2, 1) for ind in na_data.index]  # noqa
