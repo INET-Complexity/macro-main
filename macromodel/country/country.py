@@ -822,7 +822,7 @@ class Country:
         )
         self.households.compute_target_credit(
             current_sales=self.housing_market.states["current_sales"].loc[
-                self.housing_market.states["current_sales"]["sales_types"] == "Rental"
+                self.housing_market.states["current_sales"]["sales_types"] == "Sell"
             ],
         )
         self.banks.set_interest_rates(central_bank_policy_rate=self.central_bank.ts.current("policy_rate")[0])
@@ -848,16 +848,17 @@ class Country:
         Updates property ownership, rents, and related financial positions
         after market clearing.
         """
+        # Apply transactions before updating observed ratios so they reflect post-clearing prices.
+        self.housing_market.process_housing_market_clearing(
+            household_states=self.households.states,
+            household_received_mortgages=self.households.ts.current("received_mortgages"),
+            household_financial_wealth=self.households.ts.current("wealth_financial_assets"),
+        )
         self.housing_market.ts.observed_fraction_value_price.append(
             self.housing_market.compute_observed_fraction_value_price()
         )
         self.housing_market.ts.observed_fraction_rent_value.append(
             self.housing_market.compute_observed_fraction_rent_value()
-        )
-        self.housing_market.process_housing_market_clearing(
-            household_states=self.households.states,
-            household_received_mortgages=self.households.ts.current("received_mortgages"),
-            household_financial_wealth=self.households.ts.current("wealth_financial_assets"),
         )
         self.households.process_housing_market_clearing(
             housing_data=self.housing_market.states["properties"],

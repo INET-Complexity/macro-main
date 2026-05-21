@@ -15,7 +15,6 @@ import h5py
 import numpy as np
 import pandas as pd
 
-import macromodel.util.get_histogram
 from macro_data import SyntheticHousingMarket
 from macromodel.configurations import HousingMarketConfiguration
 from macromodel.markets.housing_market.housing_market_ts import (
@@ -158,16 +157,14 @@ class HousingMarket:
         property_data["Up for Rent"] = None
         property_data["Temporarily for Sale"] = False
 
-        # property_data["Corresponding Inhabitant Household ID"].loc[
-        #     :, np.isnan(property_data["Corresponding Inhabitant Household ID"])
-        # ] = -1
-        property_data["Corresponding Inhabitant Household ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
-        property_data["House ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
-        property_data["Is Owner-Occupied"] = macromodel.util.get_histogram.fillna(-1).astype(int)
-        property_data["Corresponding Owner Household ID"] = property_data["Corresponding Owner Household ID"].astype(
-            int
-        )
-        property_data["Corresponding Inhabitant Household ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
+        # Preserve existing IDs; only missing IDs are normalized to -1.
+        for column in [
+            "Corresponding Inhabitant Household ID",
+            "House ID",
+            "Is Owner-Occupied",
+            "Corresponding Owner Household ID",
+        ]:
+            property_data[column] = property_data[column].fillna(-1).astype(int)
 
         ts = create_housing_market_timeseries(
             data=property_data,
@@ -248,11 +245,14 @@ class HousingMarket:
 
         # Recording the states of all homes
         states = data.copy()
-        states["Corresponding Inhabitant Household ID"][np.isnan(states["Corresponding Inhabitant Household ID"])] = -1
-        states["House ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
-        states["Is Owner-Occupied"] = macromodel.util.get_histogram.fillna(-1).astype(int)
-        states["Corresponding Owner Household ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
-        states["Corresponding Inhabitant Household ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
+        # Preserve existing IDs; only missing IDs are normalized to -1.
+        for column in [
+            "Corresponding Inhabitant Household ID",
+            "House ID",
+            "Is Owner-Occupied",
+            "Corresponding Owner Household ID",
+        ]:
+            states[column] = states[column].fillna(-1).astype(int)
 
         # Create the corresponding time series object
         ts = create_housing_market_timeseries(
@@ -327,6 +327,50 @@ class HousingMarket:
             max_price_willing_to_pay=max_price_willing_to_pay,
             max_rent_willing_to_pay=max_rent_willing_to_pay,
         )
+
+    def _filter_feasible_current_sales(
+        self,
+        household_received_mortgages: np.ndarray,
+        household_financial_wealth: np.ndarray,
+    ) -> pd.DataFrame:
+        """Keep only transactions that can be safely applied to property states."""
+        current_sales = self.states["current_sales"]
+        if len(current_sales) == 0:
+            return current_sales.copy()
+
+        feasible_sales = current_sales.copy()
+        sell_positions = np.flatnonzero(feasible_sales["sales_types"].eq("Sell").to_numpy())
+        if len(sell_positions) > 0:
+            # Sale transactions need either a mortgage or enough liquid wealth.
+            buyer_ids = feasible_sales["buyer_id"].astype(int).to_numpy()
+            prices = feasible_sales["price_or_rent"].to_numpy(dtype=float)
+            financing_ok = np.ones(len(feasible_sales), dtype=bool)
+            sell_buyers = buyer_ids[sell_positions]
+            financing_ok[sell_positions] = np.logical_or(
+                household_received_mortgages[sell_buyers] > 0,
+                household_financial_wealth[sell_buyers] >= prices[sell_positions],
+            )
+            feasible_sales = feasible_sales.loc[financing_ok].copy()
+
+        # Occupied homes can transfer only if the current inhabitant also moves.
+        initial_inhabitants = self.states["properties"]["Corresponding Inhabitant Household ID"].fillna(-1).astype(int)
+        while len(feasible_sales) > 0:
+            moving_households = set(feasible_sales["buyer_id"].astype(int).tolist())
+            keep_transaction = []
+            for _, sale in feasible_sales.iterrows():
+                buyer_id = int(sale["buyer_id"])
+                property_id = int(sale["property_id"])
+                inhabitant_id = int(initial_inhabitants.at[property_id])
+                keep_transaction.append(
+                    inhabitant_id == -1 or inhabitant_id == buyer_id or inhabitant_id in moving_households
+                )
+
+            keep_transaction = np.array(keep_transaction, dtype=bool)
+            if keep_transaction.all():
+                break
+            feasible_sales = feasible_sales.loc[keep_transaction].copy()
+
+        return feasible_sales.reset_index(drop=True)
 
     @staticmethod
     def _perform_linear_regression(x: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -448,6 +492,27 @@ class HousingMarket:
             This method ensures all market clearing outcomes are properly
             reflected in the system state.
         """
+        # Downstream state updates should only see transactions that can close.
+        self.states["current_sales"] = self._filter_feasible_current_sales(
+            household_received_mortgages=household_received_mortgages,
+            household_financial_wealth=household_financial_wealth,
+        )
+
+        def clear_previous_residence(household_id: int, property_id: int) -> None:
+            """Clear the old residence only if this household still inhabits it."""
+            if property_id == -1:
+                return
+            current_inhabitant = self.states["properties"].at[
+                property_id,
+                "Corresponding Inhabitant Household ID",
+            ]
+            if not pd.isna(current_inhabitant) and int(current_inhabitant) == household_id:
+                self.states["properties"].loc[
+                    property_id,
+                    "Corresponding Inhabitant Household ID",
+                ] = -1
+                self.states["properties"].loc[property_id, "Is Owner-Occupied"] = 0
+
         total_number_of_bought_houses = 0
         total_number_of_newly_rented_houses = 0
         for index, sale in self.states["current_sales"].iterrows():
@@ -459,11 +524,7 @@ class HousingMarket:
             prev_property_id = household_states["Corresponding Inhabited House ID"][buyer_id]
             if sale["sales_types"] == "Rental":
                 self.states["properties"].loc[property_id, "Corresponding Inhabitant Household ID"] = buyer_id
-                if prev_property_id != -1:
-                    self.states["properties"].loc[
-                        prev_property_id,
-                        "Corresponding Inhabitant Household ID",
-                    ] = -1
+                clear_previous_residence(buyer_id, prev_property_id)
                 household_states["Corresponding Inhabited House ID"][buyer_id] = property_id
                 household_states["Tenure Status of the Main Residence"][buyer_id] = 3
                 household_states["corr_renters"][seller_id].append(buyer_id)
@@ -481,11 +542,7 @@ class HousingMarket:
 
                     # Corresponding inhabitant households
                     self.states["properties"].loc[property_id, "Corresponding Inhabitant Household ID"] = buyer_id
-                    if prev_property_id != -1:
-                        self.states["properties"].loc[
-                            prev_property_id,
-                            "Corresponding Inhabitant Household ID",
-                        ] = -1
+                    clear_previous_residence(buyer_id, prev_property_id)
 
                     # Corresponding inhabited house ID
                     household_states["Corresponding Inhabited House ID"][buyer_id] = property_id
