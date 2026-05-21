@@ -3,6 +3,23 @@ import pandas as pd
 
 from macro_data.util.imputation import apply_iterative_imputer
 
+MONTHLY_HFCS_CASH_FLOW_COLUMNS = [
+    "Rent Paid",
+    "Rent Paid for Partially Owned Dwelling",
+    "Mortgage Payment on Main Residence 1",
+    "Mortgage Payment on Main Residence 2",
+    "Mortgage Payment on Main Residence 3",
+    "Additional Mortgage Payments on Main Residence",
+    "Other Property Loan Payments",
+    "Consumer Loan Payment 1",
+    "Consumer Loan Payment 2",
+    "Consumer Loan Payment 3",
+    "Additional Consumer Loan Payments",
+    "Pension Contributions",
+    "Private Transfers Given",
+    "Health Insurance Payments",
+]
+
 
 def get_household_type(ages: np.ndarray) -> int:
     """
@@ -88,6 +105,7 @@ def set_household_housing_data(
     scale: int,
     rent_as_fraction_of_unemployment_rate: float,
     unemployment_benefits_by_capita: float,
+    yearly_factor: float = 4.0,
 ) -> pd.DataFrame:
     """
     Sets the housing data for each household in the given DataFrame.
@@ -115,7 +133,15 @@ def set_household_housing_data(
 
     # Rent paid and value of the household main residence
     social_housing_rent = rent_as_fraction_of_unemployment_rate * unemployment_benefits_by_capita
-    household_data = fill_rent(household_data, households_owning, households_renting, scale, social_housing_rent)
+    household_data = fill_rent(
+        household_data,
+        households_owning,
+        households_renting,
+        scale,
+        social_housing_rent,
+        yearly_factor=yearly_factor,
+    )
+    household_data = rescale_monthly_hfcs_cash_flows(household_data, scale, yearly_factor)
 
     # Number of additional properties
     # household_data["Number of Properties other than Household Main Residence"].fillna(0, inplace=True)
@@ -131,7 +157,13 @@ def set_household_housing_data(
     household_data = fix_property_values(household_data, household_without_additional_properties)
 
     # Rent received
-    household_data = fix_rent(household_data, household_without_additional_properties, scale, social_housing_rent)
+    household_data = fix_rent(
+        household_data,
+        household_without_additional_properties,
+        scale,
+        social_housing_rent,
+        yearly_factor=yearly_factor,
+    )
     return household_data
 
 
@@ -140,6 +172,7 @@ def fix_rent(
     household_without_additional_properties: pd.Series,
     scale: int,
     social_housing_rent: float,
+    yearly_factor: float = 4.0,
 ) -> pd.DataFrame:
     """
     Adjusts the rental income of households based on specified parameters.
@@ -154,7 +187,7 @@ def fix_rent(
         pd.DataFrame: The updated dataframe with adjusted rental income.
     """
     household_data.loc[:, "Rental Income from Real Estate"] *= scale
-    household_data.loc[:, "Rental Income from Real Estate"] /= 12.0
+    household_data.loc[:, "Rental Income from Real Estate"] /= yearly_factor
     household_data.loc[
         household_data["Rental Income from Real Estate"] < social_housing_rent,
         "Rental Income from Real Estate",
@@ -202,6 +235,7 @@ def fill_rent(
     households_renting: pd.Series,
     scale: int,
     social_housing_rent: float,
+    yearly_factor: float = 4.0,
 ) -> pd.DataFrame:
     """
     Fill in missing values for rent paid and value of the main residence in the household data.
@@ -217,7 +251,12 @@ def fill_rent(
     Returns:
         pd.DataFrame: Updated household data with filled-in values for rent paid and value of the main residence.
     """
-    household_data.loc[:, "Rent Paid"] *= scale
+    monthly_factor = 12.0 / yearly_factor
+    if "Rent Paid for Partially Owned Dwelling" in household_data.columns:
+        household_data["Rent Paid"] = household_data["Rent Paid"].fillna(0.0) + household_data[
+            "Rent Paid for Partially Owned Dwelling"
+        ].fillna(0.0)
+    household_data.loc[:, "Rent Paid"] *= scale * monthly_factor
     household_data.loc[:, "Value of the Main Residence"] *= scale
     household_data.loc[households_renting & (household_data["Rent Paid"] == 0.0), "Rent Paid"] = np.nan
     household_data.loc[
@@ -236,4 +275,13 @@ def fill_rent(
         households_owning,
         "Rent Paid",
     ] = 0.0
+    return household_data
+
+
+def rescale_monthly_hfcs_cash_flows(household_data: pd.DataFrame, scale: int, yearly_factor: float) -> pd.DataFrame:
+    """Convert imported monthly HFCS cash flows to model-period values."""
+    monthly_factor = 12.0 / yearly_factor
+    columns = [col for col in MONTHLY_HFCS_CASH_FLOW_COLUMNS if col in household_data.columns and col != "Rent Paid"]
+    if columns:
+        household_data.loc[:, columns] *= scale * monthly_factor
     return household_data

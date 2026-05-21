@@ -23,10 +23,7 @@ Example:
         initial_inventory_to_input_fraction=0.1
     )
 
-    banks_config = BanksDataConfiguration(
-        long_term_firm_loan_maturity=60,
-        mortgage_maturity=120
-    )
+    banks_config = BanksDataConfiguration()
 
     # Create country configuration
     france_config = CountryDataConfiguration(
@@ -54,8 +51,12 @@ from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
+from macromodel.configurations.bank_configuration import BankParameters
+
 from .countries import Country
 from .region import Region
+
+_MODEL_BANK_PARAMETERS = BankParameters()
 
 
 class FirmsDataConfiguration(BaseModel):
@@ -107,18 +108,29 @@ class BanksDataConfiguration(BaseModel):
     This class controls how synthetic bank data is generated, including loan
     maturities and interest rate settings.
 
+    Loan maturities are expressed as model-period counts, not calendar months.
+
     Attributes:
         constructor (Literal["Compustat", "Default"]): The data constructor to use
-        long_term_firm_loan_maturity (int): Maturity period (months) for long-term firm loans
-        consumption_exp_loan_maturity (int): Maturity period (months) for consumption loans
-        mortgage_maturity (int): Maturity period (months) for mortgages
+        long_term_firm_loan_maturity (int): Initial maturity in model periods, not months, for long-term firm loans
+        consumption_exp_loan_maturity (int): Initial maturity in model periods, not months, for consumption loans
+        mortgage_maturity (int): Initial maturity in model periods, not months, for mortgages
         interest_rates (InterestRates): Interest rate markup configuration
     """
 
     constructor: Literal["Compustat", "Default"] = "Compustat"
-    long_term_firm_loan_maturity: int = 60
-    consumption_exp_loan_maturity: int = 12
-    mortgage_maturity: int = 120
+    long_term_firm_loan_maturity: int = Field(
+        _MODEL_BANK_PARAMETERS.long_term_firm_loan_maturity,
+        description="Initial maturity in model periods, not months, for long-term firm loans.",
+    )
+    consumption_exp_loan_maturity: int = Field(
+        _MODEL_BANK_PARAMETERS.household_consumption_loan_maturity,
+        description="Initial maturity in model periods, not months, for consumption loans.",
+    )
+    mortgage_maturity: int = Field(
+        _MODEL_BANK_PARAMETERS.mortgage_maturity,
+        description="Initial maturity in model periods, not months, for mortgages.",
+    )
     interest_rates: InterestRates = InterestRates()
 
 

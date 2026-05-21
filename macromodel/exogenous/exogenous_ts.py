@@ -33,6 +33,12 @@ import pandas as pd
 from macromodel.timeseries import TimeSeries
 
 
+def _periods_per_year(time_unit: int) -> int:
+    if time_unit <= 0 or 12 % time_unit != 0:
+        raise ValueError("time_unit must be a positive divisor of 12.")
+    return 12 // time_unit
+
+
 def create_exogenous_timeseries(
     inflation_during: pd.DataFrame,
     national_accounts_during: pd.DataFrame,
@@ -40,6 +46,7 @@ def create_exogenous_timeseries(
     vacancy_rate_during: pd.DataFrame,
     house_price_index_during: pd.DataFrame,
     exchange_rates_data_during: pd.DataFrame,
+    time_unit: int = 3,
 ) -> TimeSeries:
     """Create a unified time series from exogenous economic data.
 
@@ -163,10 +170,11 @@ def create_exogenous_timeseries(
         for t in range(1, len(national_accounts_during["Exports (Value)"].values) - offset):
             exog_ts.total_exports.append([national_accounts_during["Exports (Value)"].values[t]])
 
-    # Update exchange rates with appropriate frequency
-    for t in range(1, len(exchange_rates_data_during.values)):
-        num = 4 if t > 1 else 3
-        for _ in range(num):
-            exog_ts.exchange_rate.append([exchange_rates_data_during.values[t - 1]])
+    # Exchange rates are annual; repeat each annual value over the configured model periods.
+    periods_per_year = _periods_per_year(time_unit)
+    for t, exchange_rate in enumerate(exchange_rates_data_during.values):
+        repeats = periods_per_year - 1 if t == 0 else periods_per_year
+        for _ in range(repeats):
+            exog_ts.exchange_rate.append([exchange_rate])
 
     return exog_ts

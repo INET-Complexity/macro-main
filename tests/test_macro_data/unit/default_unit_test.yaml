@@ -723,13 +723,14 @@ init:
     banks:
       parameters:
         household_consumption_expansion_loan_maturity:
-          desc: The initial loan maturity in months for household consumption expansion
-            loans.
+          desc: The initial loan maturity in model periods, not months, for household
+            consumption expansion loans.
           options: ''
           type: int
           value: 12
         household_payday_loan_maturity:
-          desc: The initial loan maturity in months for household payday loans.
+          desc: The initial loan maturity in model periods, not months, for household
+            payday loans.
           options: ''
           type: int
           value: 1
@@ -752,17 +753,19 @@ init:
           type: float
           value: 0.1
         long_term_firm_loan_maturity:
-          desc: The initial loan maturity in months for long-term firm loans.
+          desc: The initial loan maturity in model periods, not months, for long-term
+            firm loans.
           options: ''
           type: int
           value: 60
         mortgage_maturity:
-          desc: The initial loan maturity in months for mortgages.
+          desc: The initial loan maturity in model periods, not months, for mortgages.
           options: ''
           type: int
           value: 120
         short_term_firm_loan_maturity:
-          desc: The initial loan maturity in months for short-term firm loans.
+          desc: The initial loan maturity in model periods, not months, for short-term
+            firm loans.
           options: ''
           type: int
           value: 12

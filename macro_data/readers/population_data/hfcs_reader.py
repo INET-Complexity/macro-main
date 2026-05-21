@@ -92,10 +92,23 @@ var_mapping = {
     "DL1220": "Outstanding Balance of Credit Card Debt",  # Credit card debt
     "DL1230": "Outstanding Balance of other Non-Mortgage Loans",  # Other loans
     "HB0300": "Tenure Status of the Main Residence",  # Housing tenure
+    "HB0410": "Rent Paid for Partially Owned Dwelling",  # Monthly partial-ownership rent
+    "HB2001": "Mortgage Payment on Main Residence 1",  # Monthly mortgage payment
+    "HB2002": "Mortgage Payment on Main Residence 2",  # Monthly mortgage payment
+    "HB2003": "Mortgage Payment on Main Residence 3",  # Monthly mortgage payment
+    "HB2200": "Additional Mortgage Payments on Main Residence",  # Monthly mortgage payments
     "HB2300": "Rent Paid",  # Rental payments
     "HB2410": "Number of Properties other than Household Main Residence",  # Property count
+    "HB4200": "Other Property Loan Payments",  # Monthly other-property loan payments
+    "HC1001": "Consumer Loan Payment 1",  # Monthly consumer loan payment
+    "HC1002": "Consumer Loan Payment 2",  # Monthly consumer loan payment
+    "HC1003": "Consumer Loan Payment 3",  # Monthly consumer loan payment
+    "HC1200": "Additional Consumer Loan Payments",  # Monthly consumer loan payments
+    "PF0930": "Pension Contributions",  # Monthly pension contributions
     "DOCOGOODP": "Consumption of Consumer Goods/Services as a Share of Income",  # Consumption ratio
     "HI0220": "Amount spent on Consumption of Goods and Services",  # Total consumption
+    "HI0310": "Private Transfers Given",  # Monthly private transfers
+    "PNF3610": "Health Insurance Payments",  # Monthly health insurance payments
 }
 
 # List of variables containing monetary values that need currency conversion
@@ -127,8 +140,21 @@ var_numerical = [
     "Outstanding Balance of Credit Line",  # Credit line
     "Outstanding Balance of Credit Card Debt",  # Card debt
     "Outstanding Balance of other Non-Mortgage Loans",  # Other debt
+    "Rent Paid for Partially Owned Dwelling",  # Partial-ownership rent
+    "Mortgage Payment on Main Residence 1",  # Mortgage payment
+    "Mortgage Payment on Main Residence 2",  # Mortgage payment
+    "Mortgage Payment on Main Residence 3",  # Mortgage payment
+    "Additional Mortgage Payments on Main Residence",  # Mortgage payment
     "Rent Paid",  # Rent expense
+    "Other Property Loan Payments",  # Other-property loan payment
+    "Consumer Loan Payment 1",  # Consumer loan payment
+    "Consumer Loan Payment 2",  # Consumer loan payment
+    "Consumer Loan Payment 3",  # Consumer loan payment
+    "Additional Consumer Loan Payments",  # Consumer loan payment
+    "Pension Contributions",  # Pension contribution
     "Amount spent on Consumption of Goods and Services",  # Total spending
+    "Private Transfers Given",  # Private transfer
+    "Health Insurance Payments",  # Health insurance
     "Consumption of Consumer Goods/Services as a Share of Income",  # Spending ratio
 ]
 

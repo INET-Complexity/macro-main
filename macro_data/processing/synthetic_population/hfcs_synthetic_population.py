@@ -144,6 +144,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         consumption_weights: np.ndarray,
         consumption_weights_by_income: np.ndarray,
         investment: np.ndarray,
+        yearly_factor: float = 4.0,
     ):
         saving_rates_model = LinearRegression()
         social_transfers_model = LinearRegression()
@@ -164,6 +165,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             saving_rates_model,
             social_transfers_model,
             wealth_distribution_model,
+            yearly_factor=yearly_factor,
         )
 
     # TODO rent as fraction of unemployment rate seems to be a parameter of government functions
@@ -241,6 +243,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             unemployment_rate,
             participation_rate,
             n_firms_by_industry,
+            yearly_factor=yearly_factor,
         )
         n_unemployed = np.sum(individual_data["Activity Status"] == 2)
 
@@ -276,6 +279,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             scale,
             rent_as_fraction_of_unemployment_rate,
             unemployment_benefits_by_capita=total_unemployment_benefits / n_unemployed,
+            yearly_factor=yearly_factor,
         )
 
         # initialise fields to nans, will be filled later when computing wealth
@@ -319,6 +323,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             consumption_weights_by_income=consumption_weights_by_income,
             coefficient_fa_income=0.0,
             investment=investment,
+            yearly_factor=yearly_factor,
         )
 
     def restrict(self) -> None:

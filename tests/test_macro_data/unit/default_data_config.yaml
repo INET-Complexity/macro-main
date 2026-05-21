@@ -40,7 +40,7 @@ country_configs:
       long_term_firm_loan_maturity:
         60
       consumption_exp_loan_maturity:
-        12
+        1
       mortgage_maturity:
         120
 

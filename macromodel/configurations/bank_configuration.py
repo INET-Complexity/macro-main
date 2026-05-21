@@ -27,10 +27,10 @@ class BankParameters(BaseModel):
         mortgage_loan_to_income_ratio (float): Maximum mortgage to income ratio
         mortgage_loan_to_value_ratio (float): Maximum mortgage to property value
         mortgage_debt_service_to_income_ratio (float): Maximum mortgage payment to income
-        household_consumption_loan_maturity (int): Consumer loan term in periods
-        long_term_firm_loan_maturity (int): Long-term firm loan term in months
-        mortgage_maturity (int): Mortgage term in months
-        short_term_firm_loan_maturity (int): Short-term firm loan term in months
+        household_consumption_loan_maturity (int): Consumer loan term in model periods
+        long_term_firm_loan_maturity (int): Long-term firm loan term in model periods
+        mortgage_maturity (int): Mortgage term in model periods
+        short_term_firm_loan_maturity (int): Short-term firm loan term in model periods
     """
 
     capital_adequacy_ratio: float = Field(ge=0, le=1, default=0.08)
@@ -41,10 +41,26 @@ class BankParameters(BaseModel):
     mortgage_loan_to_income_ratio: float = Field(ge=0, le=1, default=0.05)
     mortgage_loan_to_value_ratio: float = Field(ge=0, le=1, default=0.05)
     mortgage_debt_service_to_income_ratio: float = Field(ge=0, le=1, default=0.05)
-    household_consumption_loan_maturity: int = Field(ge=0, default=1)
-    long_term_firm_loan_maturity: int = Field(ge=0, default=60)
-    mortgage_maturity: int = Field(ge=0, default=120)
-    short_term_firm_loan_maturity: int = Field(ge=0, default=20)
+    household_consumption_loan_maturity: int = Field(
+        ge=0,
+        default=1,
+        description="Consumer loan term in model periods.",
+    )
+    long_term_firm_loan_maturity: int = Field(
+        ge=0,
+        default=60,
+        description="Long-term firm loan term in model periods.",
+    )
+    mortgage_maturity: int = Field(
+        ge=0,
+        default=120,
+        description="Mortgage term in model periods.",
+    )
+    short_term_firm_loan_maturity: int = Field(
+        ge=0,
+        default=20,
+        description="Short-term firm loan term in model periods.",
+    )
 
 
 class DemographyFunction(BaseModel):
