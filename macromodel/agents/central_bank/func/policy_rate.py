@@ -41,6 +41,10 @@ class PolicyRate(ABC):
         inflation: float,
         growth: float,
         central_bank_states: dict[str, float],
+        cpi_yoy_inflation: float | None = None,
+        output_gap: float | None = None,
+        time_unit: int = 1,
+        shock: float = 0.0,
     ) -> float:
         """Calculate the appropriate policy interest rate.
 
@@ -60,6 +64,12 @@ class PolicyRate(ABC):
                 - r_star: Natural real interest rate
                 - xi_pi: Inflation gap response coefficient
                 - xi_gamma: Output growth response coefficient
+            cpi_yoy_inflation (float | None): Optional year-over-year CPI inflation
+                used by rules that target annual CPI inflation directly.
+            output_gap (float | None): Optional output gap used by rules that react
+                to activity relative to trend rather than raw growth.
+            time_unit (int): Simulation period length in months.
+            shock (float): Additive policy shock.
 
         Returns:
             float: New policy interest rate
@@ -88,6 +98,10 @@ class ConstantPolicyRate(PolicyRate):
         inflation: float,
         growth: float,
         central_bank_states: dict[str, float],
+        cpi_yoy_inflation: float | None = None,
+        output_gap: float | None = None,
+        time_unit: int = 1,
+        shock: float = 0.0,
     ) -> float:
         """Keep policy rate constant.
 
@@ -125,6 +139,10 @@ class PolednaPolicyRate(PolicyRate):
         inflation: float,
         growth: float,
         central_bank_states: dict[str, float],
+        cpi_yoy_inflation: float | None = None,
+        output_gap: float | None = None,
+        time_unit: int = 1,
+        shock: float = 0.0,
     ) -> float:
         """Calculate policy rate using Poledna et al. rule.
 
@@ -152,3 +170,65 @@ class PolednaPolicyRate(PolicyRate):
                 + central_bank_states["xi_gamma"] * growth
             ),
         )
+
+
+class SmoothTaylorRule(PolicyRate):
+    """Implementation of a smoothed Taylor rule with annual CPI inflation.
+
+    This rule follows:
+
+        i_t = rho * i_{t-1}
+            + (1-rho) * (r_star + pi_star + phi_pi * (pi_t - pi_star) + phi_q * q_t)
+            + epsilon_t
+
+    Design choices for this model implementation:
+    - `pi_t` is observed year-over-year CPI inflation.
+    - `r_star`, `targeted_inflation_rate`, `phi_pi`, and `phi_q` are interpreted as
+      annual-policy parameters.
+    - The model stores and applies policy rates in per-period units, so the final
+      annual policy rate is converted to the simulation frequency using `time_unit`.
+    """
+
+    @staticmethod
+    def _periods_per_year(time_unit: int) -> int:
+        """Convert the model time unit in months to integer periods per year."""
+        if time_unit <= 0 or 12 % time_unit != 0:
+            raise ValueError("SmoothTaylorRule requires `time_unit` to be a positive divisor of 12.")
+        return 12 // time_unit
+
+    def compute_rate(
+        self,
+        prev_rate: float,
+        inflation: float,
+        growth: float,
+        central_bank_states: dict[str, float],
+        cpi_yoy_inflation: float | None = None,
+        output_gap: float | None = None,
+        time_unit: int = 1,
+        shock: float = 0.0,
+    ) -> float:
+        """Calculate the per-period policy rate from annual Taylor-rule inputs.
+
+        Args:
+            [same as parent class]
+
+        Returns:
+            float: New policy rate in per-period units, constrained to be non-negative.
+        """
+        periods_per_year = self._periods_per_year(time_unit)
+        annual_prev_rate = prev_rate * periods_per_year
+        annual_inflation = inflation if cpi_yoy_inflation is None else cpi_yoy_inflation
+        current_output_gap = 0.0 if output_gap is None else output_gap
+
+        annual_rate = (
+            central_bank_states["rho"] * annual_prev_rate
+            + (1 - central_bank_states["rho"])
+            * (
+                central_bank_states["r_star"]
+                + central_bank_states["targeted_inflation_rate"]
+                + central_bank_states["phi_pi"] * (annual_inflation - central_bank_states["targeted_inflation_rate"])
+                + central_bank_states["phi_q"] * current_output_gap
+            )
+            + shock
+        )
+        return max(0.0, annual_rate / periods_per_year)

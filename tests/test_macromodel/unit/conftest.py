@@ -233,6 +233,7 @@ def test_economy(
         central_government=test_central_government,
         exogenous=test_exogenous,
         industry_vectors=synthetic_country.industry_data["industry_vectors"],
+        time_unit=3,
     )
 
 

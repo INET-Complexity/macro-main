@@ -116,6 +116,7 @@ class Economy:
         n_industries: int,
         functions: dict[str, Any],
         ts: TimeSeries,
+        time_unit: int,
     ):
         """Initialize an Economy instance.
 
@@ -125,6 +126,7 @@ class Economy:
             n_industries (int): Number of industrial sectors
             functions (dict[str, Any]): Economic function implementations
             ts (TimeSeries): Time series data for economic metrics
+            time_unit (int): Simulation period length in months
         """
         self.country_name = country_name
         self.all_country_names = all_country_names
@@ -132,6 +134,7 @@ class Economy:
         self.functions = functions
         self.n_industries = n_industries
         self.ts = ts
+        self.time_unit = time_unit
 
     @classmethod
     def from_agents(
@@ -146,6 +149,7 @@ class Economy:
         central_government: CentralGovernment,
         exogenous: Exogenous,
         industry_vectors: pd.DataFrame,
+        time_unit: int,
     ):
         """Create an Economy instance from agent-level data and configurations.
 
@@ -170,6 +174,7 @@ class Economy:
             central_government (CentralGovernment): Fiscal authority
             exogenous (Exogenous): External economic conditions
             industry_vectors (pd.DataFrame): Industry-level initial conditions
+            time_unit (int): Simulation period length in months
 
         Returns:
             Economy: Newly constructed Economy instance with initialized metrics
@@ -251,6 +256,14 @@ class Economy:
         export_taxes = central_government.states["Export Tax"]
 
         initial_npl_ratio = 0.0
+        periods_per_year = cls._periods_per_year(time_unit)
+        initial_cpi_yoy_inflation = cls._compute_yoy_from_period_inflation(
+            np.concatenate((exogenous.inflation_before["CPI Inflation"].values, np.array([initial_cpi_inflation]))),
+            periods_per_year,
+        )
+        initial_real_gross_output = initial_total_output
+        initial_potential_output = initial_real_gross_output
+        initial_output_gap = 0.0
 
         ts = create_economy_timeseries(
             country_name=country_name,
@@ -268,6 +281,7 @@ class Economy:
             initial_total_wages=initial_total_wages,
             initial_individual_activity=initial_individual_activity,
             initial_cpi_inflation=initial_cpi_inflation,
+            initial_cpi_yoy_inflation=initial_cpi_yoy_inflation,
             initial_ppi_inflation=initial_ppi_inflation,
             initial_hpi_inflation=initial_hpi_inflation,
             initial_real_rent_paid=initial_real_rent_paid,
@@ -284,6 +298,9 @@ class Economy:
             initial_total_growth=initial_total_growth[0],
             export_taxes=export_taxes,
             initial_npl_ratio=initial_npl_ratio,
+            initial_real_gross_output=initial_real_gross_output,
+            initial_potential_output=initial_potential_output,
+            initial_output_gap=initial_output_gap,
         )
 
         functions = functions_from_model(economy_configuration.functions, loc="macromodel.economy")
@@ -296,7 +313,29 @@ class Economy:
             n_industries,
             functions,
             ts,
+            time_unit,
         )
+
+    @staticmethod
+    def _periods_per_year(time_unit: int) -> int:
+        """Return the number of model periods in one year.
+
+        The YoY CPI measure and the one-year EWMA trend both require the simulation
+        frequency to divide evenly into a calendar year.
+        """
+        if time_unit <= 0 or 12 % time_unit != 0:
+            raise ValueError("Economy time-based policy helpers require `time_unit` to be a positive divisor of 12.")
+        return 12 // time_unit
+
+    @staticmethod
+    def _compute_yoy_from_period_inflation(period_inflation: np.ndarray, periods_per_year: int) -> float:
+        """Convert a history of per-period inflation rates into a YoY rate."""
+        clean_inflation = period_inflation[~np.isnan(period_inflation)]
+        if clean_inflation.size == 0:
+            return 0.0
+        if clean_inflation.size < periods_per_year:
+            return clean_inflation[-1]
+        return float(np.prod(1.0 + clean_inflation[-periods_per_year:]) - 1.0)
 
     def reset(self, configuration: EconomyConfiguration) -> None:
         """Reset the economy's state and update function configurations.
@@ -628,6 +667,23 @@ class Economy:
             inflation_by_industry[g] = self.ts.current("good_prices")[g] / self.ts.prev("good_prices")[g] - 1.0
         self.ts.industry_inflation.append(inflation_by_industry)
 
+    def compute_cpi_yoy_inflation(self, exogenous_cpi_inflation_before: np.ndarray) -> None:
+        """Calculate CPI inflation over one year using per-period CPI inflation history.
+
+        The policy rule consumes a smoother annual CPI signal. Rather than rebuilding
+        historical CPI levels, this method compounds the latest `periods_per_year`
+        period-over-period CPI inflation rates from the combined exogenous and
+        endogenous histories.
+        """
+        periods_per_year = self._periods_per_year(self.time_unit)
+        combined_history = np.concatenate(
+            (
+                exogenous_cpi_inflation_before,
+                np.array(self.ts.historic("cpi_inflation")).flatten(),
+            )
+        )
+        self.ts.cpi_yoy_inflation.append([self._compute_yoy_from_period_inflation(combined_history, periods_per_year)])
+
     def compute_growth(
         self,
         current_production: np.ndarray,
@@ -666,6 +722,25 @@ class Economy:
             else:
                 current_sectoral_growth[g] = (current_total_output - prev_total_output) / prev_total_output
         self.ts.sectoral_growth.append(current_sectoral_growth)
+
+    def compute_output_gap(self) -> None:
+        """Update the real-output trend and output gap used by SmoothTaylorRule.
+
+        Real gross output is approximated using total nominal output deflated by the
+        current PPI index. Potential output is a one-sided EWMA trend with a span of
+        one model year, which keeps the implementation simple and frequency-aware.
+        """
+        periods_per_year = self._periods_per_year(self.time_unit)
+        alpha = 2.0 / (periods_per_year + 1.0)
+        current_real_gross_output = self.ts.current("total_output")[0] / np.maximum(self.ts.current("ppi")[0], 1e-12)
+        previous_potential_output = self.ts.current("potential_output")[0]
+        current_potential_output = alpha * current_real_gross_output + (1.0 - alpha) * previous_potential_output
+        safe_real_output = np.maximum(current_real_gross_output, 1e-12)
+        safe_potential_output = np.maximum(current_potential_output, 1e-12)
+
+        self.ts.real_gross_output.append([current_real_gross_output])
+        self.ts.potential_output.append([current_potential_output])
+        self.ts.output_gap.append([np.log(safe_real_output) - np.log(safe_potential_output)])
 
     def compute_house_price_index(
         self,

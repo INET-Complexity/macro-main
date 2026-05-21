@@ -63,6 +63,7 @@ def create_economy_timeseries(
     initial_total_wages: float,
     initial_individual_activity: np.ndarray,
     initial_cpi_inflation: float,
+    initial_cpi_yoy_inflation: float,
     initial_ppi_inflation: float,
     initial_hpi_inflation: float,
     initial_real_rent_paid: np.ndarray,
@@ -79,6 +80,9 @@ def create_economy_timeseries(
     export_taxes: float,
     initial_total_growth: float,
     initial_npl_ratio: float,
+    initial_real_gross_output: float,
+    initial_potential_output: float,
+    initial_output_gap: float,
 ) -> TimeSeries:
     """Create and initialize economy-wide time series data.
 
@@ -111,6 +115,7 @@ def create_economy_timeseries(
         initial_total_wages (float): Total wage payments
         initial_individual_activity (np.ndarray): Activity statuses
         initial_cpi_inflation (float): Starting CPI inflation
+        initial_cpi_yoy_inflation (float): Starting year-over-year CPI inflation
         initial_ppi_inflation (float): Starting PPI inflation
         initial_hpi_inflation (float): Starting HPI inflation
         initial_real_rent_paid (np.ndarray): Actual rent payments
@@ -127,6 +132,9 @@ def create_economy_timeseries(
         export_taxes (float): Export tax rate
         initial_total_growth (float): Starting growth rate
         initial_npl_ratio (float): Non-performing loan ratio
+        initial_real_gross_output (float): Starting real gross output level
+        initial_potential_output (float): Starting smoothed real gross output trend
+        initial_output_gap (float): Starting output gap
 
     Returns:
         TimeSeries: Initialized time series object with all economic indicators
@@ -139,6 +147,7 @@ def create_economy_timeseries(
         initial_price=[initial_firm_prices],
         #
         cpi_inflation=[initial_cpi_inflation],
+        cpi_yoy_inflation=[initial_cpi_yoy_inflation],
         ppi_inflation=[initial_ppi_inflation],
         cfpi_inflation=[np.nan],
         industry_inflation=np.full(n_industries, np.nan),
@@ -177,6 +186,9 @@ def create_economy_timeseries(
         total_growth=[initial_total_growth],
         estimated_growth=[np.nan],
         sectoral_growth=np.full(n_industries, np.nan),
+        real_gross_output=[initial_real_gross_output],
+        potential_output=[initial_potential_output],
+        output_gap=[initial_output_gap],
         #
         hpi=[1.0],
         hpi_inflation=[initial_hpi_inflation],

@@ -182,6 +182,7 @@ class SyntheticCountry:
         country: Country,
         year: int,
         quarter: int,
+        time_unit: int,
         country_configuration: CountryDataConfiguration,
         industries: list[str],
         readers: DataReaders,
@@ -205,6 +206,7 @@ class SyntheticCountry:
             country (Country): The EU country to create synthetic data for
             year (int): Base year for data generation
             quarter (int): Base quarter for data generation
+            time_unit (int): Simulation period length in months
             country_configuration (CountryDataConfiguration): Country-specific settings
             industries (list[str]): List of industry sectors to model
             readers (DataReaders): Data source readers
@@ -237,7 +239,13 @@ class SyntheticCountry:
         )
 
         central_bank = DefaultSyntheticCentralBank.from_readers(
-            country, year, quarter, readers, exogenous_country_data, country_configuration.central_bank_configuration
+            country,
+            year,
+            quarter,
+            readers,
+            exogenous_country_data,
+            country_configuration.central_bank_configuration,
+            time_unit=time_unit,
         )
 
         population: SyntheticHFCSPopulation = SyntheticHFCSPopulation.from_readers(
@@ -274,6 +282,7 @@ class SyntheticCountry:
             banks_data_configuration=country_configuration.banks_configuration,
             quarter=quarter,
             inflation_data=exogenous_country_data.inflation,
+            time_unit=time_unit,
         )
 
         synthetic_goods_market = SyntheticGoodsMarket.from_readers(
@@ -387,6 +396,7 @@ class SyntheticCountry:
         proxy_country: Country,
         year: int,
         quarter: int,
+        time_unit: int,
         country_configuration: CountryDataConfiguration,
         industries: list[str],
         readers: DataReaders,
@@ -413,6 +423,7 @@ class SyntheticCountry:
             proxy_country (Country): The EU country to use as a template
             year (int): Base year for data generation
             quarter (int): Base quarter for data generation
+            time_unit (int): Simulation period length in months
             country_configuration (CountryDataConfiguration): Country-specific settings
             industries (list[str]): List of industry sectors to model
             readers (DataReaders): Data source readers
@@ -442,7 +453,13 @@ class SyntheticCountry:
         )
 
         central_bank = DefaultSyntheticCentralBank.from_readers(
-            country, year, quarter, readers, exogenous_country_data, country_configuration.central_bank_configuration
+            country,
+            year,
+            quarter,
+            readers,
+            exogenous_country_data,
+            country_configuration.central_bank_configuration,
+            time_unit=time_unit,
         )
 
         population_ratio = readers.world_bank.get_population(
@@ -489,6 +506,7 @@ class SyntheticCountry:
             banks_data_configuration=country_configuration.banks_configuration,
             quarter=quarter,
             inflation_data=proxy_inflation_data,
+            time_unit=time_unit,
             proxy_eu_country=proxy_country,
         )
 
