@@ -215,7 +215,7 @@ class OutputBasedPriceSystemCAN:
             return production * B
 
         tightening_rate = row["tightening_rate"].values[0]
-        return production * (B - B * tightening_rate * (self.current_year - 2022))
+        return max(0.0, production * (B - B * tightening_rate * (self.current_year - 2022)))
 
     def get_price(self) -> float:
         """Return the current period carbon price ($/tCO₂e)."""

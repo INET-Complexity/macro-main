@@ -140,6 +140,12 @@ class TestGetLimit:
         limit = obps.get_limit(1, production=100.0)
         assert limit == pytest.approx(0.0)
 
+    def test_limit_floored_at_zero_when_tightening_exceeds_baseline(self):
+        # 2022 + 50 years of tightening at 2%/yr → multiplier goes negative; floor clamps to 0
+        obps = _make_obps(year=2072)
+        limit = obps.get_limit(0, production=100.0)
+        assert limit == pytest.approx(0.0)
+
 
 class TestReferenceAccumulation:
     def test_reference_intensity_computed_from_2017_to_2019(self):
