@@ -11,6 +11,7 @@ marginal tax passed to firms as extra_marginal_taxes_firm in the country's
 target-setting phase.
 """
 
+import logging
 from dataclasses import dataclass
 
 import numpy as np
@@ -37,8 +38,8 @@ class OutputBasedPriceSystemCAN:
         df_policy: Per-industry reduction factors and tightening rates.
         df_policy_elec: Electricity-specific tightening rates (optional).
         df_rates: Carbon price schedule by year and jurisdiction.
-        reference_emission_intensity: Baseline emission intensity recorded
-            over the 2017–2019 reference period.
+        baseline_emission_intensity: Baseline emission intensity recorded
+            over the 2017–2019 reference period and fixed thereafter.
         reference_emission: Cumulative emissions during the reference period.
         reference_production: Cumulative production during the reference period.
         emission_limit: Current period allowable emissions per industry.
@@ -54,11 +55,12 @@ class OutputBasedPriceSystemCAN:
     df_policy: pd.DataFrame
     df_policy_elec: pd.DataFrame
     df_rates: pd.DataFrame
-    reference_emission_intensity: np.ndarray
+    baseline_emission_intensity: np.ndarray
     reference_emission: np.ndarray
     reference_production: np.ndarray
     emission_limit: np.ndarray
     price: np.ndarray
+    initial_year: int = 2014
     current_t: int = 0
     current_year: int = 2014
 
@@ -99,8 +101,27 @@ class OutputBasedPriceSystemCAN:
             [list(industries).index(ind) for ind in self.regulated_industries if ind in industries]
         )
 
+        skipped = [ind for ind in self.regulated_industries if ind not in industries]
+        if skipped:
+            logging.warning(
+                "OBPS (%s): %d regulated industrie(s) not found in model and will be skipped: %s",
+                country_name,
+                len(skipped),
+                skipped,
+            )
+        if len(self.regulated_indices) == 0:
+            logging.warning(
+                "OBPS (%s): none of the regulated industries appear in the model — OBPS will have no effect. "
+                "Check that industry codes match.",
+                country_name,
+            )
+
+        self.initial_year = 2014
+        self.current_t = 0
+        self.current_year = self.initial_year
+
         n = len(industries)
-        self.reference_emission_intensity = np.zeros(n)
+        self.baseline_emission_intensity = np.zeros(n)
         self.reference_emission = np.zeros(n)
         self.reference_production = np.zeros(n)
         self.emission_limit = np.zeros(n)
@@ -112,7 +133,7 @@ class OutputBasedPriceSystemCAN:
         self.price = np.zeros(len(self.df_rates))
         df_sub = self.df_rates[["Date", self.country_name]]
         for t in range(len(self.df_rates)):
-            df_row = df_sub[df_sub["Date"] == t + 2014]
+            df_row = df_sub[df_sub["Date"] == t + self.initial_year]
             self.price[t] = df_row[self.country_name].values[0]
 
     def compute_obps(
@@ -149,10 +170,10 @@ class OutputBasedPriceSystemCAN:
             self.reference_production += production
 
         if self.current_year == 2019:
-            self.reference_emission_intensity = np.divide(
+            self.baseline_emission_intensity = np.divide(
                 self.reference_emission,
                 self.reference_production,
-                out=np.zeros_like(self.reference_emission),
+                out=np.zeros_like(self.baseline_emission_intensity),
                 where=self.reference_production != 0,
             )
 
@@ -188,7 +209,7 @@ class OutputBasedPriceSystemCAN:
             return 0.0
 
         reduction_factor = row["reduction_factor"].values[0]
-        B = reduction_factor * self.reference_emission_intensity[industry_idx]
+        B = reduction_factor * self.baseline_emission_intensity[industry_idx]
 
         if self.current_year < 2023:
             return production * B
@@ -208,4 +229,4 @@ class OutputBasedPriceSystemCAN:
     def reset(self) -> None:
         """Reset time variables to the initial year."""
         self.current_t = 0
-        self.current_year = 2014
+        self.current_year = self.initial_year

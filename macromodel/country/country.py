@@ -564,6 +564,12 @@ class Country:
         """
         self.extra_marginal_taxes_firm = np.zeros(self.firms.n_industries)
 
+        if self.use_obps_reg and self.obps is None:
+            logging.warning(
+                "use_obps_reg is True for %s but no OBPS object is set — OBPS has no effect.",
+                self.country_name,
+            )
+
         if self.use_obps_reg and self.obps is not None:
             sectoral_tax = self.obps.compute_obps(
                 use_obps_reg=self.use_obps_reg,
@@ -577,6 +583,11 @@ class Country:
                 self.firms.ts.current("production"),
                 out=np.zeros_like(sectoral_tax),
                 where=self.firms.ts.current("production") != 0,
+            )
+            # A negative rebate cannot bring the effective sector price below zero.
+            self.extra_marginal_taxes_firm = np.maximum(
+                -self.economy.ts.current("good_prices"),
+                self.extra_marginal_taxes_firm,
             )
 
     def clear_labour_market(self) -> None:
