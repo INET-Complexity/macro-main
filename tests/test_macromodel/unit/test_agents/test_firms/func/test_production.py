@@ -48,27 +48,40 @@ class TestProductionSetter:
         )
 
     def test__compute_production_with_tfp_boost(self):
-        """Test that TFP>1.0 increases effective capacity."""
+        """Test that TFP>1.0 scales labour in compute_production().
+
+        Note: Limiting stock (intermediate + capital inputs) is pre-scaled by TFP
+        in set_targets(), so compute_production() only scales labour here.
+        This test passes pre-scaled limiting inputs to reflect real usage.
+        """
         tfp_boost = np.array([1.5, 1.2])  # 50% and 20% productivity boost
+        # Simulate pre-scaled limiting inputs (as done in set_targets())
+        # Raw limiting intermediate = [9, 11], raw limiting capital = [6, 8]
+        pre_scaled_limiting_intermediate = np.array([9.0, 11.0]) * tfp_boost  # [13.5, 13.2]
+        pre_scaled_limiting_capital = np.array([6.0, 8.0]) * tfp_boost  # [9.0, 9.6]
         result = PureLeontief().compute_production(
             desired_production=np.array([10.0, 10.0]),
             current_labour_inputs=np.array([9.0, 11.0]),
-            current_limiting_intermediate_inputs=np.array([9.0, 11.0]),
-            current_limiting_capital_inputs=np.array([6.0, 8.0]),
+            current_limiting_intermediate_inputs=pre_scaled_limiting_intermediate,
+            current_limiting_capital_inputs=pre_scaled_limiting_capital,
             tfp_multiplier=tfp_boost,
         )
-        # TFP scales inputs: min([10, 9*1.5, 9*1.5, 6*1.5]) = min([10, 13.5, 13.5, 9]) = 9
-        # TFP scales inputs: min([10, 11*1.2, 11*1.2, 8*1.2]) = min([10, 13.2, 13.2, 9.6]) = 9.6
+        # Labour is scaled in compute_production: 9*1.5=13.5, 11*1.2=13.2
+        # Limiting stock is already pre-scaled: min(intermediate, capital) = [9.0, 9.6]
+        # Final: min([10, 13.5, 9.0], [10, 13.2, 9.6]) = [9.0, 9.6]
         assert np.allclose(result, np.array([9.0, 9.6]))
 
     def test__compute_production_tfp_respects_target(self):
         """Test that TFP doesn't allow production above target."""
         tfp_high = np.array([2.0, 2.0])  # Double productivity
+        # Simulate pre-scaled limiting inputs (as done in set_targets())
+        pre_scaled_limiting_intermediate = np.array([9.0, 11.0]) * tfp_high  # [18.0, 22.0]
+        pre_scaled_limiting_capital = np.array([6.0, 8.0]) * tfp_high  # [12.0, 16.0]
         result = PureLeontief().compute_production(
             desired_production=np.array([5.0, 7.0]),  # Low targets
             current_labour_inputs=np.array([9.0, 11.0]),
-            current_limiting_intermediate_inputs=np.array([9.0, 11.0]),
-            current_limiting_capital_inputs=np.array([6.0, 8.0]),
+            current_limiting_intermediate_inputs=pre_scaled_limiting_intermediate,
+            current_limiting_capital_inputs=pre_scaled_limiting_capital,
             tfp_multiplier=tfp_high,
         )
         # Despite high TFP, production is limited by desired_production

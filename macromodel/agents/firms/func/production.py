@@ -50,21 +50,19 @@ class ProductionSetter(ABC):
         Returns:
             np.ndarray: Feasible production levels by firm
         """
+        # Limiting stock is already TFP-scaled in set_targets()
         limiting_stock = self.compute_limiting_stock(
             current_limiting_intermediate_inputs,
             current_limiting_capital_inputs,
         )
 
-        # Apply TFP multiplier if provided
+        # Apply TFP multiplier to labour only (limiting stock is pre-scaled)
         if tfp_multiplier is not None:
-            # TFP scales effective capacity from inputs
             effective_labour = current_labour_inputs * tfp_multiplier
-            effective_limiting_stock = limiting_stock * tfp_multiplier
         else:
             effective_labour = current_labour_inputs
-            effective_limiting_stock = limiting_stock
 
-        return np.amin([desired_production, effective_labour, effective_limiting_stock], axis=0)
+        return np.amin([desired_production, effective_labour, limiting_stock], axis=0)
 
     @abstractmethod
     def compute_limiting_intermediate_inputs_stock(

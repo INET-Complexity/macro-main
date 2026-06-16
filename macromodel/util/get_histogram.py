@@ -57,12 +57,53 @@ def get_histogram(values: np.ndarray, scale: Optional[int], bins: int = 40, norm
             values = (values - np.min(values)) / diff
         else:
             values = values - np.min(values)
+
+    # [TFP_DEBUG] Apply scaling and handle edge cases
     if scale is None:
-        hist, bin_edges = np.histogram(values, bins=bins)
+        scaled_values = values
     else:
-        hist, bin_edges = np.histogram(values / scale, bins=bins)
+        scaled_values = values / scale
+
+    # Filter out non-finite values
+    scaled_values = scaled_values[np.isfinite(scaled_values)]
+    if len(scaled_values) == 0:
+        return np.full((2, bins + 1), np.nan)
+
+    min_value = np.min(scaled_values)
+    max_value = np.max(scaled_values)
+    if not np.isfinite(min_value) or not np.isfinite(max_value):
+        return np.full((2, bins + 1), np.nan)
+
+    # Handle edge cases: zero-width or subnormal ranges
+    data_range = max_value - min_value
+    hist_range = None
+    if data_range <= 0:
+        # All values are identical - create a small range around them
+        low = np.nextafter(min_value, -np.inf)
+        high = np.nextafter(max_value, np.inf)
+        if low == high:
+            pad = max(np.finfo(float).tiny * bins, 1e-12)
+            low = min_value - pad
+            high = max_value + pad
+        hist_range = (low, high)
+    elif data_range / bins < np.finfo(float).tiny:
+        # Range is too small for the number of bins
+        pad = max(np.finfo(float).tiny * bins, 1e-12)
+        hist_range = (min_value - pad, max_value + pad)
+
+    try:
+        hist, bin_edges = np.histogram(scaled_values, bins=bins, range=hist_range)
+    except ValueError:
+        # Fallback to single bin if histogram fails
+        hist, bin_edges = np.histogram(scaled_values, bins=1, range=hist_range)
+        # Pad to expected size
+        hist = np.concatenate([hist, np.zeros(bins - 1)])
+        bin_edges = np.linspace(bin_edges[0], bin_edges[-1], bins + 1)
+
     hist = hist.astype(float)
-    hist /= hist.sum()
+    hist_sum = hist.sum()
+    if hist_sum > 0:
+        hist /= hist_sum
     return np.array([np.concatenate((hist, [np.nan])), bin_edges])
 
 
