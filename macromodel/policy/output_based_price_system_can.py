@@ -26,7 +26,7 @@ class OutputBasedPriceSystemCAN:
 
     Calculates the tax that regulated firms pay on emissions above a
     prescribed output-weighted limit. Reference emission intensities are
-    recorded during 2017–2019 and used to set sector-specific limits from
+    recorded during 2017–2018 and used to set sector-specific limits from
     2019 onwards.
 
     Attributes:
@@ -130,11 +130,7 @@ class OutputBasedPriceSystemCAN:
         self.df_policy_elec = obps_data.df_policy_elec if obps_data.df_policy_elec is not None else pd.DataFrame()
         self.df_rates = obps_data.df_rates
 
-        self.price = np.zeros(len(self.df_rates))
-        df_sub = self.df_rates[["Date", self.country_name]]
-        for t in range(len(self.df_rates)):
-            df_row = df_sub[df_sub["Date"] == t + self.initial_year]
-            self.price[t] = df_row[self.country_name].values[0]
+        self.price_by_year = dict(zip(self.df_rates["Date"], self.df_rates[self.country_name]))
 
     def compute_obps(
         self,
@@ -165,11 +161,11 @@ class OutputBasedPriceSystemCAN:
         if not use_obps_reg:
             return np.zeros(len(self.industries))
 
-        if record_obps_reference and self.current_year in (2017, 2018, 2019):
+        if record_obps_reference and self.current_year in (2017, 2018):
             self.reference_emission += input_em + capital_em
             self.reference_production += production
 
-        if self.current_year == 2019:
+        if self.current_year == 2018:
             self.baseline_emission_intensity = np.divide(
                 self.reference_emission,
                 self.reference_production,
@@ -181,12 +177,13 @@ class OutputBasedPriceSystemCAN:
             return np.zeros(len(self.industries))
 
         obps_cost = np.zeros(len(self.industries))
+        current_price = self.get_price()
         for i in self.regulated_indices:
             if production[i] > 0:
                 limit = self.get_limit(i, production[i])
                 self.emission_limit[i] = limit
                 difference = (input_em[i] + capital_em[i]) - limit
-                obps_cost[i] = difference * self.price[min(self.current_t, len(self.price) - 1)]
+                obps_cost[i] = difference * current_price
 
         return obps_cost
 
@@ -218,8 +215,22 @@ class OutputBasedPriceSystemCAN:
         return max(0.0, production * (B - B * tightening_rate * (self.current_year - 2022)))
 
     def get_price(self) -> float:
-        """Return the current period carbon price ($/tCO₂e)."""
-        return self.price[self.current_t]
+        """Return the current period carbon price ($/tCO₂e).
+
+        For years not explicitly in the schedule, uses forward-filling: returns
+        the price from the last milestone year less than or equal to current_year.
+        """
+        year = self.current_year
+        available_years = sorted(self.price_by_year.keys())
+
+        if year in self.price_by_year:
+            return self.price_by_year[year]
+
+        past_years = [y for y in available_years if y <= year]
+        if past_years:
+            return self.price_by_year[max(past_years)]
+
+        return self.price_by_year[min(available_years)]
 
     def update(self) -> None:
         """Advance the timestep by one annual period."""
@@ -227,6 +238,13 @@ class OutputBasedPriceSystemCAN:
         self.current_year += 1
 
     def reset(self) -> None:
-        """Reset time variables to the initial year."""
+        """Reset all internal state for a fresh simulation run.
+
+        Resets time tracking, accumulators, and computed baselines to initial values.
+        """
         self.current_t = 0
         self.current_year = self.initial_year
+        self.reference_emission = np.zeros(len(self.industries))
+        self.reference_production = np.zeros(len(self.industries))
+        self.baseline_emission_intensity = np.zeros(len(self.industries))
+        self.emission_limit = np.zeros(len(self.industries))

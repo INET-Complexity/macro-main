@@ -148,9 +148,9 @@ class TestGetLimit:
 
 
 class TestReferenceAccumulation:
-    def test_reference_intensity_computed_from_2017_to_2019(self):
+    def test_reference_intensity_computed_from_2017_to_2018(self):
         obps = OutputBasedPriceSystemCAN(country_name="CAN", industries=INDUSTRIES, obps_data=_make_data())
-        # Simulate 2017, 2018, 2019 accumulation
+        # Simulate 2017, 2018, 2019 accumulation (reference recorded in 2017-2018 only)
         for year, em, prod in [
             (2017, [30.0, 0.0], [100.0, 50.0]),
             (2018, [30.0, 0.0], [100.0, 50.0]),
@@ -165,7 +165,7 @@ class TestReferenceAccumulation:
                 input_em=np.array(em),
                 capital_em=np.zeros(2),
             )
-        # intensity = total_em / total_prod = 90 / 300 = 0.3
+        # intensity = total_em / total_prod = 60 / 200 = 0.3 (accumulated during 2017-2018)
         assert obps.baseline_emission_intensity[0] == pytest.approx(0.3)
         assert obps.baseline_emission_intensity[1] == pytest.approx(0.0)
 
@@ -181,3 +181,97 @@ class TestReferenceAccumulation:
             capital_em=np.zeros(2),
         )
         assert np.all(obps.reference_emission == 0.0)
+
+
+class TestSparseYearSchedule:
+    """Test OBPS with sparse (non-contiguous) year schedules matching real Canada data."""
+
+    def _make_sparse_data(self) -> OBPSCANData:
+        """Create a realistic sparse carbon price schedule: 2014, 2019, 2030."""
+        df_rates = pd.DataFrame(
+            {
+                "Date": [2014, 2019, 2030],
+                "CAN": [15.0, 50.0, 170.0],
+            }
+        )
+        df_policy = pd.DataFrame(
+            {
+                "Industry": ["C24a"],
+                "reduction_factor": [0.8],
+                "tightening_rate": [0.02],
+            }
+        )
+        return OBPSCANData(df_rates=df_rates, df_policy=df_policy)
+
+    def test_sparse_schedule_initializes_without_error(self):
+        """Sparse schedule should not crash during initialization."""
+        obps = OutputBasedPriceSystemCAN(country_name="CAN", industries=INDUSTRIES, obps_data=self._make_sparse_data())
+        obps.baseline_emission_intensity[0] = 0.5
+        assert obps.get_price() == pytest.approx(15.0)
+
+    def test_sparse_schedule_forward_fills_intermediate_years(self):
+        """Years between milestones should use the last milestone's price (forward-fill)."""
+        obps = OutputBasedPriceSystemCAN(country_name="CAN", industries=INDUSTRIES, obps_data=self._make_sparse_data())
+        obps.baseline_emission_intensity[0] = 0.5
+
+        obps.current_year = 2014
+        assert obps.get_price() == pytest.approx(15.0)
+
+        obps.current_year = 2016
+        assert obps.get_price() == pytest.approx(15.0)
+
+        obps.current_year = 2019
+        assert obps.get_price() == pytest.approx(50.0)
+
+        obps.current_year = 2025
+        assert obps.get_price() == pytest.approx(50.0)
+
+        obps.current_year = 2030
+        assert obps.get_price() == pytest.approx(170.0)
+
+        obps.current_year = 2035
+        assert obps.get_price() == pytest.approx(170.0)
+
+    def test_sparse_schedule_obps_cost_with_milestone_prices(self):
+        """OBPS cost should use correct price at each milestone year."""
+        obps = OutputBasedPriceSystemCAN(country_name="CAN", industries=INDUSTRIES, obps_data=self._make_sparse_data())
+        obps.baseline_emission_intensity[0] = 0.5
+
+        # At 2019: price = 50, limit = 100*0.8*0.5 = 40, emissions = 60 → cost = 20 * 50 = 1000
+        obps.current_year = 2019
+        obps.current_t = 5
+        cost = obps.compute_obps(
+            use_obps_reg=True,
+            record_obps_reference=False,
+            production=np.array([100.0, 50.0]),
+            input_em=np.array([60.0, 0.0]),
+            capital_em=np.zeros(2),
+        )
+        assert cost[0] == pytest.approx(1000.0)
+
+        # At 2030: price = 170, B = 0.4, limit = 100*(0.4 - 0.4*0.02*8) = 33.6, emissions = 60
+        # → cost = 26.4 * 170 = 4488
+        obps.current_year = 2030
+        obps.current_t = 16
+        cost = obps.compute_obps(
+            use_obps_reg=True,
+            record_obps_reference=False,
+            production=np.array([100.0, 50.0]),
+            input_em=np.array([60.0, 0.0]),
+            capital_em=np.zeros(2),
+        )
+        assert cost[0] == pytest.approx(4488.0)
+
+    def test_sparse_schedule_with_reset(self):
+        """Reset should clear accumulated state on sparse schedule."""
+        obps = OutputBasedPriceSystemCAN(country_name="CAN", industries=INDUSTRIES, obps_data=self._make_sparse_data())
+
+        obps.current_year = 2030
+        obps.baseline_emission_intensity[0] = 0.5
+        obps.reference_emission[0] = 100.0
+
+        obps.reset()
+
+        assert obps.current_year == 2014
+        assert obps.baseline_emission_intensity[0] == 0.0
+        assert obps.reference_emission[0] == 0.0

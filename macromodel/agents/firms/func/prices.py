@@ -172,6 +172,7 @@ class DefaultPriceSetter(PriceSetter):
             extra_marginal_taxes if extra_marginal_taxes is not None else np.zeros_like(prev_average_good_prices)
         )
         average_price_by_firm = (prev_average_good_prices + tax_by_sector)[current_firm_sectors]
+        tax_by_firm = tax_by_sector[current_firm_sectors]
 
         # Demand-pull inflation
         demand_pull_inflation = np.zeros_like(prev_firm_prices)
@@ -196,12 +197,13 @@ class DefaultPriceSetter(PriceSetter):
         )
         demand_pull_inflation = np.maximum(min_inflation, np.minimum(max_inflation, demand_pull_inflation))
 
-        # Cost-push inflation
+        # Cost-push inflation: include the tax in unit costs so positive tax raises prices
+        total_unit_costs = curr_unit_costs + tax_by_firm
         cost_push_inflation = (
             np.divide(
-                curr_unit_costs,
+                total_unit_costs,
                 average_price_by_firm,
-                out=np.ones_like(curr_unit_costs),
+                out=np.ones_like(total_unit_costs),
                 where=average_price_by_firm != 0.0,
             )
             - 1.0

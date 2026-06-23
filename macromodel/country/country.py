@@ -571,12 +571,19 @@ class Country:
             )
 
         if self.use_obps_reg and self.obps is not None:
+            input_em_ch4 = self.firms.ts.current("inputs_emissions_ch4")
+            if input_em_ch4 is None:
+                input_em_ch4 = np.zeros_like(self.firms.ts.current("inputs_emissions"))
+            capital_em_ch4 = self.firms.ts.current("capital_emissions_ch4")
+            if capital_em_ch4 is None:
+                capital_em_ch4 = np.zeros_like(self.firms.ts.current("capital_emissions"))
+
             sectoral_tax = self.obps.compute_obps(
                 use_obps_reg=self.use_obps_reg,
                 record_obps_reference=record_obps_reference,
                 production=self.firms.ts.current("production"),
-                input_em=self.firms.ts.current("inputs_emissions") + self.firms.ts.current("inputs_emissions_ch4"),
-                capital_em=self.firms.ts.current("capital_emissions") + self.firms.ts.current("capital_emissions_ch4"),
+                input_em=self.firms.ts.current("inputs_emissions") + input_em_ch4,
+                capital_em=self.firms.ts.current("capital_emissions") + capital_em_ch4,
             )
             self.extra_marginal_taxes_firm = np.divide(
                 sectoral_tax,
