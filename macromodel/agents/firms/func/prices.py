@@ -388,6 +388,7 @@ class ExogenousPriceSetter(PriceSetter):
         current_time: int,
         min_inflation: float = -0.1,
         max_inflation: float = 0.1,
+        extra_marginal_taxes: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Set prices according to exogenous PPI path.
 
@@ -400,6 +401,8 @@ class ExogenousPriceSetter(PriceSetter):
             current_time (int): Current period index
             min_inflation (float, optional): Unused. Defaults to -0.1.
             max_inflation (float, optional): Unused. Defaults to 0.1.
+            extra_marginal_taxes (np.ndarray, optional): Unused. Accepts for
+                interface consistency. Defaults to None.
 
         Returns:
             np.ndarray: Price level from exogenous PPI path
