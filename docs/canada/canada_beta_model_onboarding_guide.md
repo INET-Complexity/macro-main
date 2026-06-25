@@ -165,7 +165,8 @@ Runnable examples:
 ### External Raw Data Folder
 
 The public repository does not commit raw data. Users provide a local raw-data folder and
-pass it as `raw_data_path` to `DataWrapper.from_config(...)`.
+pass it as `raw_data_path` to `DataWrapper.from_config(...)`. To read more about the raw data used
+in the Canadian model, please refer to the [raw data documentation file](https://github.com/uvic-sesit/macroabm-ca/blob/documentation_updates/docs/canada/raw_data_reference.md).
 
 Common convention:
 
