@@ -1,7 +1,7 @@
 # Raw Data Reference — macroabm-ca
 
-All raw data used by the macroabm-CANADA lives in `macro-main-1/raw_data/` (separate offline folder), loaded at runtime via
-`macro_data.DataWrapper.from_config(raw_data_path=...)`. The sections below describe each
+All raw data used by the macroabm-CANADA lives in the `SESIT - MacroABM data/raw_data/` SharePoint folder, loaded at runtime via
+`macro_data.DataWrapper.from_config(raw_data_path=...)`. If you do not already have access to this SharePoint folder, please reach out to Esmaeil at eizadi@uvic.ca. The sections below describe each
 relevant folder and file added/ modified specifically for the Canada specific model: what it contains, where it is read in the code, and how it
 influences the simulation.
 
@@ -108,12 +108,12 @@ sectors where the emission factors need adjustment.
 
 ## 3. `icio/`
 
-### `sectoral_disagg_CAN_2014_v2.csv`
+### `icio_2014_can_provinces.csv`
 
 **What it contains**  
-A full inter-industry transaction matrix for Canada, 2014, in the model's 50-sector ISIC
-classification. Rows and columns are labelled with `CountryInd` (CAN or ROW) and
-`industryInd` (sector code). The matrix covers CAN×CAN intermediate flows, CAN×ROW trade
+A full inter-industry and inter-provincial transaction matrix for Canada, 2014, in the model's 43-sector ISIC
+classification. Rows and columns are labelled with `CountryInd` (CAN_AB, CAN_BC, ..., or ROW) and
+`industryInd` (sector code). The matrix covers province x province intermediate flows, province×ROW trade
 flows, and final demand columns (Household Consumption, Government Consumption, Fixed Capital
 Formation). Values are in CAD thousands.
 
@@ -121,7 +121,7 @@ Formation). Values are in CAD thousands.
 Activated when `use_disagg_can_2014_reader=True` in the data configuration. The path is
 hardcoded in `DataReaders.from_raw_data()` (line 328 of `default_readers.py`):
 ```python
-disagg_path = raw_data_path / "icio" / "sectoral_disagg_CAN_2014_v2.csv"
+disagg_path = raw_data_path / "icio" / "icio_2014_can_provinces.csv"
 ```
 
 **How it is used**  
