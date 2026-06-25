@@ -75,6 +75,14 @@ New to the project? Start with our comprehensive contribution guides:
 
 The project is designed for use by multiple teams. Please read our [repository guidelines](contributing/development.md#repository-guidelines) to keep the codebase generic and maintainable.
 
+## Canada (macroabm-ca)
+
+Documentation specific to the Canada MacroABM adaptation:
+
+- [MacroABM-CA Onboarding Guide](canada/canada_beta_model_onboarding_guide.md) - Practical orientation for running and interpreting the Canada model
+- [Canada Provincial IO Development](canada/canada_provincial_io_development.md) - Preparing the repository for the updated provincial IO table
+- [Raw Data Reference](canada/raw_data_reference.md) - Description of all raw data sources used by the Canada model
+
 ## Support
 
 - Open an issue on the [INET](https://github.com/inet-complexity/macro-main), [macrocosm](https://github.com/macro-cosm/macro-main/) or [SESIT](https://gitlab.com/sesit/macrocosm/macromodel) repositories when you run into something, or ping José Moran.
