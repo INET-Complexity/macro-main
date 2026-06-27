@@ -35,15 +35,16 @@ the current Canada provincial model.
 
 | Start here | Use it for | What it produces |
 |------------|------------|------------------|
-| `Sample_macroabm-Canada_provincial_run.ipynb` | One basic end-to-end provincial run | A local `DataWrapper` pickle, one H5 result file, and basic GDP/production plots |
-| `Sample_macroabm-CANADA_run_time_iteration.ipynb` | Scenario comparison | In-memory scenario results and comparison plots for GDP, emissions, and prices |
+| `scenarios/Sample_macroabm-Canada_provincial_run.ipynb` | One basic end-to-end provincial run | A local `DataWrapper` pickle, one H5 result file, and basic GDP/production plots |
+| `scenarios/Sample_macroabm-CANADA_run_time_iteration.ipynb` | Scenario comparison | In-memory scenario results and comparison plots for GDP, emissions, and prices |
+| `scenarios/run_canada_provincial.py` | Same end-to-end provincial run as the basic notebook | Same outputs as the provincial notebook, runnable from the command line |
 
 Recommended order for beta testers:
 
 1. Read Sections 1-6 of this guide to understand the data/model contract.
-2. Run `Sample_macroabm-Canada_provincial_run.ipynb` to confirm the provincial model can
+2. Run `scenarios/Sample_macroabm-Canada_provincial_run.ipynb` (or `scenarios/run_canada_provincial.py`) to confirm the provincial model can
    build, run, save, and plot results on your machine.
-3. Run `Sample_macroabm-CANADA_run_time_iteration.ipynb` if you want to compare scenario
+3. Run `scenarios/Sample_macroabm-CANADA_run_time_iteration.ipynb` if you want to compare scenario
    behaviour across price-setting assumptions or repeated random-seed trials.
 4. Use the deeper documentation links in each section below when you need API-level or
    implementation detail.
@@ -154,13 +155,17 @@ The public code path for building the provincial model starts from:
 - [`macro_data/readers/default_readers.py`](../macro_data/readers/default_readers.py)
 - [`macromodel/simulation.py`](../macromodel/simulation.py)
 
+Canadian model teams should keep runnable scenario scripts and notebooks in the
+[`scenarios/`](../../scenarios/) folder. See [Section 11](#11-team-workflow-scenarios-and-upstream-sync)
+for naming conventions and upstream-sync guidance.
+
 Project teams may keep local run scripts around these entry points. Those scripts should set
 the raw data path, build a `DataWrapper` pickle, configure the provincial simulation, and
 save H5 outputs.
 
 Runnable examples:
 
-- see the two notebooks listed in [Section 0](#0-suggested-starting-point)
+- see the notebooks and scripts listed in [Section 0](#0-suggested-starting-point)
 
 ### External Raw Data Folder
 
@@ -728,6 +733,8 @@ with h5py.File(path, "r") as f:
 print(national_gdp)
 ```
 
+---
+
 ## 10. Final Note On Testing And Policy Runs
 
 MacroABM-CA results, like other similar models, are sensitive to model settings, input data, and policy assumptions. When using the model for beta testing or policy
@@ -735,3 +742,126 @@ simulation, document the raw data version, IO table, run script or notebook, tim
 random seed or trial design, policy settings, and any code or parameter changes made for
 the run. This makes results easier to interpret, compare, reproduce, and revise as the
 model continues to develop.
+
+---
+
+## 11. Team Workflow: Scenarios and Upstream Sync
+
+This section covers two practical conventions for the Canadian model team: where to keep
+scenario scripts, and how to pull framework updates from the upstream INET repository without
+losing Canada-specific work.
+
+### 11.1 Keep scenario scripts in `scenarios/`
+
+All Canadian model run scripts and notebooks should live in the [`scenarios/`](../../scenarios/)
+folder at the repository root. Do not leave one-off runs at the repo root or in unrelated
+directories — that makes scripts harder to find, reuse, and hand off to other team members.
+
+**Naming.** Use descriptive filenames that make the purpose of the run obvious at a glance.
+Good names include the geography, policy or behavioural assumption, and horizon where
+relevant. Examples:
+
+```text
+scenarios/run_canada_provincial.py
+scenarios/Sample_macroabm-Canada_provincial_run.ipynb
+scenarios/scenario_carbon_price_ramp_2025_2030.py
+scenarios/scenario_tfp_growth_sensitivity_16q.py
+```
+
+Avoid generic names like `run.py`, `test.ipynb`, or `new_scenario_v2.py`. The goal is that
+someone returning to the repository months later can tell what each script does without
+opening it.
+
+**Reuse.** When adapting an existing scenario, copy and rename the closest script rather
+than editing a shared baseline in place. Keep the original smoke-test scripts
+(`run_canada_provincial.py`, the sample notebooks) as stable reference runs.
+
+**What belongs in `scenarios/`.** End-to-end run scripts, scenario-comparison notebooks,
+and small wrappers around `DataWrapper.from_config(...)` and `Simulation.from_datawrapper(...)`.
+Analysis-only post-processing can live in a separate project repository if it is not meant
+to be rerun as part of the model workflow.
+
+### 11.2 Pulling changes from the upstream INET repository
+
+MacroABM-CA is a Canada-specific adaptation built on top of the shared MacroABM framework.
+The upstream source of truth for core framework code is the INET repository:
+
+- [inet-complexity/macro-main](https://github.com/inet-complexity/macro-main)
+
+When the INET team releases new model features, bug fixes, or refactors, the Canadian team
+needs to pull those changes into `macroabm-ca` while preserving Canada-only additions that
+the upstream repo does not carry.
+
+#### Canada-only folders to preserve
+
+Two folders were added for the Canadian workflow and are **not** expected to exist in the
+upstream INET repository:
+
+| Folder | Purpose |
+|--------|---------|
+| [`docs/canada/`](./) | Canada-specific onboarding, raw-data, and provincial IO documentation |
+| [`scenarios/`](../../scenarios/) | Canadian team run scripts, notebooks, and scenario presets |
+
+Whoever performs an upstream pull should treat these folders as **keep-local** content. Do
+not delete or overwrite them when merging upstream changes. If Git reports conflicts inside
+these folders, resolve them in favour of the Canadian team's version unless you are
+deliberately replacing that documentation or script.
+
+All other shared framework code — principally `macro_data/`, `macromodel/`, `macrocalib/`,
+`tests/`, and top-level project files — should be updated from upstream.
+
+#### Upstream first, then pull
+
+To avoid messy merges, **aim to land Canadian model features in the INET repository before
+pulling upstream changes** whenever those features touch shared framework code. Examples
+include provincial IO reader changes, Canada-specific configuration paths, or new agent
+behaviour intended for the general model.
+
+The preferred sequence is:
+
+1. **Identify overlap.** Before pulling, list changes in `macroabm-ca` that modify shared
+   packages (`macro_data/`, `macromodel/`, etc.) rather than `docs/canada/` or `scenarios/`.
+2. **Upstream what you can.** Open a pull request or coordinate with the INET team to merge
+   reusable Canada work into `inet-complexity/macro-main` first.
+3. **Pull once upstream is aligned.** After shared features are accepted upstream (or
+   consciously deferred), fetch and merge the latest INET changes into `macroabm-ca`.
+4. **Resolve conflicts in shared code only.** Keep `docs/canada/` and `scenarios/` intact;
+   carefully reconcile conflicts in framework packages and tests.
+5. **Verify locally.** Rebuild or reuse an existing provincial pickle, run
+   `scenarios/run_canada_provincial.py` (or the basic provincial notebook), and run the
+   test suite before pushing the merged branch.
+
+Skipping step 2 and pulling a large upstream diff while carrying unmerged Canadian edits in
+the same files often produces painful three-way conflicts that are much slower to untangle
+than upstreaming first.
+
+#### Suggested git workflow
+
+These steps assume `origin` points at the Canadian repository
+([uvic-sesit/macroabm-ca](https://github.com/uvic-sesit/macroabm-ca)) and that you add the
+INET repository as a separate remote (typically named `upstream`):
+
+```bash
+# One-time setup
+git remote add upstream https://github.com/inet-complexity/macro-main.git
+
+# Before each sync
+git status                          # working tree should be clean
+git fetch upstream
+
+# Merge upstream main into your current branch
+git merge upstream/main
+
+# Or, if your team prefers rebasing:
+# git rebase upstream/main
+```
+
+During conflict resolution:
+
+- **`docs/canada/` and `scenarios/`** — keep the Canadian versions unless intentionally updating them.
+- **`macro_data/`, `macromodel/`, `tests/`** — merge upstream improvements with any remaining Canada-specific logic; run tests after resolving.
+- **Lockfiles and config** (`pyproject.toml`, `uv.lock`) — reconcile carefully; reinstall with `uv sync` and rerun tests.
+
+If you are unsure whether a conflict hunk is Canada-specific or shared framework code, check
+whether the same file exists in the upstream repository and whether the Canadian change has
+already been merged there.
