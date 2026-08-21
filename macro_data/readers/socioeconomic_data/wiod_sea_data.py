@@ -110,7 +110,7 @@ class WIODSEAReader:
         for sea_industry, should_fix in zip(not_present_industries, industry_to_fix):
             sub_industries = [ind for ind in industries if ind.startswith(sea_industry[0])]
             for country in country_names:
-                factors = value_added_dict[country].loc[sub_industries].values
+                factors = value_added_dict[country].loc[sub_industries].to_numpy(copy=True)
                 factors /= factors.sum()
                 for sub_industry, factor in zip(sub_industries, factors):
                     sea.loc[(country, sub_industry), :] = sea.loc[(country, sea_industry), :] * factor

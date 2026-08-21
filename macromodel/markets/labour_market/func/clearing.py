@@ -999,7 +999,7 @@ class PolednaLabourMarketClearer(LabourMarketClearer):
         current_individuals_activity[
             np.logical_and(
                 current_individuals_activity != ActivityStatus.NOT_ECONOMICALLY_ACTIVE,
-                np.isnan(individuals_corresponding_firm),
+                individuals_corresponding_firm < 0,
             )
         ] = ActivityStatus.UNEMPLOYED
         current_individuals_activity[individuals_corresponding_firm >= 0] = ActivityStatus.EMPLOYED

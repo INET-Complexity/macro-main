@@ -141,6 +141,8 @@ class Country:
         add_emissions: bool = False,
         emission_factors_lcu: Optional[np.ndarray] = None,
         emitting_indices: Optional[np.ndarray] = None,
+        emission_factors_lcu_ch4: Optional[np.ndarray] = None,
+        emitting_indices_ch4: Optional[np.ndarray] = None,
     ):
         """Initialize a new country economy.
 
@@ -207,6 +209,9 @@ class Country:
         self.add_emissions = add_emissions
         self.emission_factors_lcu = emission_factors_lcu
         self.emitting_indices = emitting_indices
+        self.emission_factors_lcu_ch4 = emission_factors_lcu_ch4
+        self.emitting_indices_ch4 = emitting_indices_ch4
+        self.use_emission_multiplier = self.configuration.use_emission_multiplier
 
     @classmethod
     def from_pickled_country(
@@ -254,6 +259,13 @@ class Country:
             emitting_indices = None
             emission_factors_lcu = None
 
+        if synthetic_country.emission_factors_ch4 is not None:
+            emission_factors_lcu_ch4 = synthetic_country.emission_factors_ch4.emission_factors
+            emitting_indices_ch4 = synthetic_country.emission_factors_ch4.emitting_indices
+        else:
+            emission_factors_lcu_ch4 = None
+            emitting_indices_ch4 = None
+
         n_industries = len(industries)
 
         synthetic_population = synthetic_country.population
@@ -269,6 +281,8 @@ class Country:
         initial_consumption_by_industry = synthetic_country.industry_data["industry_vectors"][
             "Household Consumption in LCU"
         ]
+        emission_fractions = synthetic_country.emission_fractions
+
         households = Households.from_pickled_agent(
             synthetic_population=synthetic_population,
             synthetic_country=synthetic_country,
@@ -280,9 +294,14 @@ class Country:
             value_added_tax=synthetic_country.tax_data.value_added_tax,
             scale=scale,
             add_emissions=add_emissions,
+            emission_fractions=emission_fractions,
         )
 
         average_initial_price = synthetic_country.industry_data["industry_vectors"]["Average Initial Price"].values
+        firm_exo_prices = synthetic_country.firm_exo_prices
+        if firm_exo_prices is not None:
+            firm_exo_prices.initial_year = initial_year
+            firm_exo_prices.initial_model_prices = average_initial_price
         firms = Firms.from_pickled_agent(
             synthetic_firms=synthetic_country.firms,
             configuration=country_configuration.firms,
@@ -292,6 +311,8 @@ class Country:
             average_initial_price=average_initial_price,
             industries=industries,
             add_emissions=add_emissions,
+            emission_fractions=emission_fractions,
+            firm_exo_prices=firm_exo_prices,
         )
 
         taxes_less_subsidies = synthetic_country.industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values
@@ -402,6 +423,8 @@ class Country:
             add_emissions=add_emissions,
             emission_factors_lcu=emission_factors_lcu,
             emitting_indices=emitting_indices,
+            emission_factors_lcu_ch4=emission_factors_lcu_ch4,
+            emitting_indices_ch4=emitting_indices_ch4,
         )
 
     def reset(self, configuration: CountryConfiguration) -> None:
@@ -1104,7 +1127,18 @@ class Country:
             readjusted_factors = (
                 self.emission_factors_lcu / self.economy.ts.current("good_prices")[self.emitting_indices]
             )
-            self.firms.update_emissions(readjusted_factors=readjusted_factors, emitting_indices=self.emitting_indices)
+            readjusted_factors_ch4 = (
+                self.emission_factors_lcu_ch4 / self.economy.ts.current("good_prices")[self.emitting_indices_ch4]
+                if self.emission_factors_lcu_ch4 is not None
+                else None
+            )
+            self.firms.update_emissions(
+                readjusted_factors=readjusted_factors,
+                emitting_indices=self.emitting_indices,
+                use_emission_multiplier=self.use_emission_multiplier,
+                readjusted_factors_ch4=readjusted_factors_ch4,
+                emitting_indices_ch4=self.emitting_indices_ch4,
+            )
 
         self.firms.ts.used_intermediate_inputs.append(self.firms.compute_used_intermediate_inputs())
         self.firms.ts.used_intermediate_inputs_costs.append(
@@ -1240,8 +1274,14 @@ class Country:
             readjusted_factors = (
                 self.emission_factors_lcu / self.economy.ts.current("good_prices")[self.emitting_indices]
             )
+            readjusted_factors_ch4 = (
+                self.emission_factors_lcu_ch4 / self.economy.ts.current("good_prices")[self.emitting_indices_ch4]
+                if self.emission_factors_lcu_ch4 is not None
+                else None
+            )
         else:
             readjusted_factors = None
+            readjusted_factors_ch4 = None
 
         self.households.update_consumption_and_investment(
             tau_vat=self.central_government.states["Value-added Tax"],
@@ -1249,6 +1289,9 @@ class Country:
             readjusted_factors=readjusted_factors,
             emitting_indices=self.emitting_indices,
             add_emissions=self.add_emissions,
+            use_emission_multiplier=self.use_emission_multiplier,
+            readjusted_factors_ch4=readjusted_factors_ch4,
+            emitting_indices_ch4=self.emitting_indices_ch4,
         )
         self.households.update_wealth(
             housing_data=self.housing_market.states["properties"],

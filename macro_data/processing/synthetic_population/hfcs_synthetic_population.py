@@ -728,7 +728,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
         self.household_data["Investment Rate"] = factor * investment_rate
 
-        self.investment *= factor
+        self.investment = self.investment * factor
 
         # set initial investment
         self.household_data["Investment"] = (self.household_data["Income"] * self.household_data["Investment Rate"]) / (
@@ -778,7 +778,7 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         factor = iot_hh_consumption.sum() / current_hh_consumption.sum()
         self.household_data["Saving Rate"] = 1 - (1 - self.household_data["Saving Rate"]) * factor
         if positive_saving_rates_only:
-            sr = self.household_data["Saving Rate"].values
+            sr = self.household_data["Saving Rate"].to_numpy(copy=True)
             sr[sr < 0] = 0.0
             current_hh_consumption = default_desired_consumption(
                 income_=income,

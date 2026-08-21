@@ -1,3 +1,29 @@
+import numpy as np
+
+from macro_data.readers.emission_fraction.emission_fraction_reader import EmissionFractions
+
+
+def _setup_emission_ts(households, n_hh, n_industries):
+    """Inject a non-NaN spending matrix and emission timeseries keys."""
+    households.ts.dicts["nominal_amount_spent_in_lcu"][-1] = np.full((n_hh, n_industries), 10.0)
+    for key in [
+        "consumption_emissions",
+        "investment_emissions",
+        "consumption_emissions_by_good",
+        "investment_emissions_by_good",
+        "coal_consumption_emissions",
+        "oil_consumption_emissions",
+        "gas_consumption_emissions",
+        "refined_products_consumption_emissions",
+        "coal_investment_emissions",
+        "oil_investment_emissions",
+        "gas_investment_emissions",
+        "refined_products_investment_emissions",
+    ]:
+        size = n_industries if "by_good" in key else n_hh
+        households.ts.dicts[key] = [np.zeros(size)]
+
+
 class TestHouseholds:
     def test__create(self, test_households):
         assert test_households.country_name == "FRA"
@@ -81,3 +107,119 @@ class TestHouseholds:
     #         ),
     #         np.full(18, 55.55555556),
     #     )
+
+
+class TestHouseholdsUpdateConsumptionEmissions:
+    """Tests for the emission multiplier logic in update_consumption_and_investment."""
+
+    def test__appends_consumption_emissions(self, test_households):
+        n_hh = len(test_households.states["Type"])
+        n_industries = test_households.n_industries
+        _setup_emission_ts(test_households, n_hh, n_industries)
+        n_before = len(test_households.ts.consumption_emissions)
+        emitting_indices = np.array([0, 1, 2, 3])
+
+        test_households.update_consumption_and_investment(
+            tau_vat=0.0,
+            tau_cf=0.0,
+            add_emissions=True,
+            readjusted_factors=np.ones(4),
+            emitting_indices=emitting_indices,
+        )
+
+        assert len(test_households.ts.consumption_emissions) == n_before + 1
+        assert len(test_households.ts.investment_emissions) == n_before + 1
+
+    def test__consumption_emissions_by_good_appended(self, test_households):
+        n_hh = len(test_households.states["Type"])
+        n_industries = test_households.n_industries
+        _setup_emission_ts(test_households, n_hh, n_industries)
+        emitting_indices = np.array([0, 1, 2, 3])
+
+        test_households.update_consumption_and_investment(
+            tau_vat=0.0,
+            tau_cf=0.0,
+            add_emissions=True,
+            readjusted_factors=np.ones(4),
+            emitting_indices=emitting_indices,
+        )
+
+        assert len(test_households.ts.consumption_emissions_by_good) == 2
+        assert len(test_households.ts.investment_emissions_by_good) == 2
+
+    def test__all_ones_multiplier_matches_no_multiplier(self, test_households):
+        """Consumption fractions of 1.0 everywhere should give same emissions as no multiplier."""
+        n_hh = len(test_households.states["Type"])
+        n_industries = test_households.n_industries
+        _setup_emission_ts(test_households, n_hh, n_industries)
+        emitting_indices = np.array([0, 1, 2, 3])
+        readjusted_factors = np.ones(4)
+
+        test_households.update_consumption_and_investment(
+            tau_vat=0.0,
+            tau_cf=0.0,
+            add_emissions=True,
+            readjusted_factors=readjusted_factors,
+            emitting_indices=emitting_indices,
+            use_emission_multiplier=False,
+        )
+        baseline = test_households.ts.consumption_emissions[-1].copy()
+
+        consumption_ones = np.ones((1, n_industries))
+        investment_ones = np.ones((1, n_industries))
+        test_households.emission_fractions = EmissionFractions(consumption=consumption_ones, investment=investment_ones)
+        test_households.update_consumption_and_investment(
+            tau_vat=0.0,
+            tau_cf=0.0,
+            add_emissions=True,
+            readjusted_factors=readjusted_factors,
+            emitting_indices=emitting_indices,
+            use_emission_multiplier=True,
+        )
+
+        assert np.allclose(baseline, test_households.ts.consumption_emissions[-1])
+
+    def test__zero_multiplier_yields_zero_emissions(self, test_households):
+        """Consumption fractions of 0.0 should zero out emissions."""
+        n_hh = len(test_households.states["Type"])
+        n_industries = test_households.n_industries
+        _setup_emission_ts(test_households, n_hh, n_industries)
+        emitting_indices = np.array([0, 1, 2, 3])
+
+        consumption_zeros = np.zeros((1, n_industries))
+        investment_zeros = np.zeros((1, n_industries))
+        test_households.emission_fractions = EmissionFractions(
+            consumption=consumption_zeros, investment=investment_zeros
+        )
+        test_households.update_consumption_and_investment(
+            tau_vat=0.0,
+            tau_cf=0.0,
+            add_emissions=True,
+            readjusted_factors=np.ones(4),
+            emitting_indices=emitting_indices,
+            use_emission_multiplier=True,
+        )
+
+        assert np.allclose(test_households.ts.consumption_emissions[-1], 0.0)
+        assert np.allclose(test_households.ts.investment_emissions[-1], 0.0)
+
+    def test__ch4_by_good_populated_when_ch4_factors_provided(self, test_households):
+        n_hh = len(test_households.states["Type"])
+        n_industries = test_households.n_industries
+        _setup_emission_ts(test_households, n_hh, n_industries)
+        test_households.ts.dicts["consumption_emissions_ch4_by_good"] = [np.zeros(n_industries)]
+        test_households.ts.dicts["investment_emissions_ch4_by_good"] = [np.zeros(n_industries)]
+        emitting_indices = np.array([0, 1, 2, 3])
+
+        test_households.update_consumption_and_investment(
+            tau_vat=0.0,
+            tau_cf=0.0,
+            add_emissions=True,
+            readjusted_factors=np.ones(4),
+            emitting_indices=emitting_indices,
+            readjusted_factors_ch4=np.ones(4),
+            emitting_indices_ch4=np.array([0, 1, 2, 3]),
+        )
+
+        assert len(test_households.ts.consumption_emissions_ch4_by_good) == 2
+        assert len(test_households.ts.investment_emissions_ch4_by_good) == 2

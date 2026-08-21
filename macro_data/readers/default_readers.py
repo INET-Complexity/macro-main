@@ -39,7 +39,9 @@ from macro_data.readers.economic_data.oecd_economic_data import OECDEconData
 from macro_data.readers.economic_data.ons_reader import ONSReader
 from macro_data.readers.economic_data.policy_rates import PolicyRatesReader
 from macro_data.readers.economic_data.world_bank_reader import WorldBankReader
-from macro_data.readers.emissions.emissions_reader import EmissionsReader
+from macro_data.readers.emission_fraction.emission_fraction_reader import EmissionsFractionReader
+from macro_data.readers.emissions.emissions_reader import CH4EmissionsReaderCAN, EmissionsReader
+from macro_data.readers.exo_prices.exo_prices_reader import SectorExoPricesReader
 from macro_data.readers.icio_sea_matching import (
     add_investment_matrix_to_icio,
     get_investment_fractions,
@@ -108,6 +110,9 @@ class DataPaths:
     compustat_firms_quarterly_path: Path
     compustat_banks_path: Path
     emissions_path: Path
+    emissions_fraction_path: Optional[Path] = None
+    firm_prices_path: Optional[Path] = None
+    ch4_emissions_path: Optional[Path] = None
 
     @classmethod
     def default_paths(cls, raw_data_path: Path, icio_years: Iterable[int]):
@@ -140,6 +145,11 @@ class DataPaths:
             compustat_firms_quarterly_path=raw_data_path / "compustat" / "firms_quarterly.csv",
             compustat_banks_path=raw_data_path / "compustat" / "banks.csv",
             emissions_path=raw_data_path / "emissions",
+            emissions_fraction_path=raw_data_path / "emission_factors",
+            firm_prices_path=raw_data_path / "cims_prices" / "firm_prices.csv",
+            ch4_emissions_path=raw_data_path
+            / "emission_factors"
+            / "EN-GHG_EconSectByGas-CA_Emissions_2014_2023_v4.csv",
         )
 
     # @classmethod
@@ -174,6 +184,7 @@ class DataReaders:
         compustat_firms (CompustatFirmsReader): Compustat firms data reader
         compustat_banks (CompustatBanksReader): Compustat banks data reader
         emissions (EmissionsReader): Emissions data reader
+        emission_fractions (Optional[EmissionsFractionReader]): Emission fraction data reader
         regions_dict (Optional[dict[Country, list[Region]]]): Regional disaggregation mapping
     """
 
@@ -192,6 +203,9 @@ class DataReaders:
     compustat_firms: CompustatFirmsReader
     compustat_banks: CompustatBanksReader
     emissions: EmissionsReader
+    emission_fractions: Optional[EmissionsFractionReader] = None
+    exo_prices: Optional[SectorExoPricesReader] = None
+    ch4_emissions: Optional[CH4EmissionsReaderCAN] = None
     regions_dict: Optional[dict[Country, list[Region]]] = None
 
     @classmethod
@@ -455,6 +469,18 @@ class DataReaders:
 
         emissions = EmissionsReader.read_price_data(datapaths.emissions_path)
 
+        emission_fractions = None
+        if datapaths.emissions_fraction_path is not None and datapaths.emissions_fraction_path.exists():
+            emission_fractions = EmissionsFractionReader.read_fraction_data(datapaths.emissions_fraction_path)
+
+        exo_prices = None
+        if datapaths.firm_prices_path is not None and datapaths.firm_prices_path.exists():
+            exo_prices = SectorExoPricesReader.read_from_raw_data(datapaths.firm_prices_path)
+
+        ch4_emissions = None
+        if datapaths.ch4_emissions_path is not None and datapaths.ch4_emissions_path.exists():
+            ch4_emissions = CH4EmissionsReaderCAN.read_data(datapaths.ch4_emissions_path)
+
         return cls(
             icio=icio,
             wiod_sea=wiod_sea,
@@ -471,6 +497,9 @@ class DataReaders:
             compustat_firms=compustat_firms,
             compustat_banks=compustat_banks,
             emissions=emissions,
+            emission_fractions=emission_fractions,
+            exo_prices=exo_prices,
+            ch4_emissions=ch4_emissions,
             regions_dict=regions_dict,
         )
 

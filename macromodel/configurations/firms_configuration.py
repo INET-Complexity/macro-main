@@ -186,7 +186,7 @@ class Prices(BaseModel):
     Options: ConstantPriceSetter, SupplyDemandPriceSetter, CANVASPriceSetter
     """
 
-    name: Literal["DefaultPriceSetter", "ExogenousPriceSetter"] = "DefaultPriceSetter"
+    name: Literal["DefaultPriceSetter", "ExogenousPriceSetter", "SectorExogenousPriceSetter"] = "DefaultPriceSetter"
     path_name: str = "prices"
     parameters: dict[str, Any] = {
         "price_setting_noise_std": 0.05,

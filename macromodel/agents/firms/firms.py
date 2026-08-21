@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 
 from macro_data import SyntheticFirms
+from macro_data.readers.emission_fraction.emission_fraction_reader import EmissionFractions
+from macro_data.readers.exo_prices import SectorExoPrices
 from macromodel.agents.agent import Agent
 from macromodel.agents.firms.firm_ts import FirmTimeSeries
 from macromodel.agents.firms.utils.create_bundle_matrix import create_bundle_matrix
@@ -74,6 +76,7 @@ class Firms(Agent):
         configuration: FirmsConfiguration,
         industries: list[str],
         bundle_matrix: np.ndarray,
+        emission_fractions: Optional[EmissionFractions] = None,
     ):
         """Initialize the firms sector.
 
@@ -97,6 +100,7 @@ class Firms(Agent):
             industries (list[str]): Industry sector names
             bundle_matrix (np.ndarray): Matrix to manage bundles for goods (mapping each industry to an
                                                identifier of similar goods for which it can be substituted)
+            emission_fractions (Optional[EmissionFractions]): Per-industry emission fraction multipliers
         """
         n_transactors = ts.current("n_firms")
         super().__init__(
@@ -132,6 +136,8 @@ class Firms(Agent):
         self.industries = industries
 
         self.substitution_bundles = bundle_matrix
+
+        self.emission_fractions = emission_fractions
 
     def get_effective_intermediate_coefficients(self) -> np.ndarray:
         """Get the effective intermediate input coefficients for each firm.
@@ -180,6 +186,8 @@ class Firms(Agent):
         average_initial_price: np.ndarray,
         industries: list[str],
         add_emissions: bool = False,
+        emission_fractions: Optional[EmissionFractions] = None,
+        firm_exo_prices: Optional[SectorExoPrices] = None,
     ):
         """Create a Firms instance from pickled synthetic data.
 
@@ -195,11 +203,18 @@ class Firms(Agent):
             average_initial_price (np.ndarray): Initial price levels
             industries (list[str]): Industry sector names
             add_emissions (bool, optional): Whether to track emissions. Defaults to False.
+            emission_fractions (Optional[EmissionFractions]): Per-industry emission fraction multipliers.
 
         Returns:
             Firms: Initialized Firms instance
         """
+        from macromodel.agents.firms.func.prices import SectorExogenousPriceSetter
+
         functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.firms")
+
+        if isinstance(functions.get("prices"), SectorExogenousPriceSetter) and firm_exo_prices is not None:
+            functions["prices"].firm_exo_prices = firm_exo_prices
+            functions["prices"].overriden_industries = industries
 
         intermediate_inputs_productivity_matrix = synthetic_firms.intermediate_inputs_productivity_matrix
         capital_inputs_productivity_matrix = synthetic_firms.capital_inputs_productivity_matrix
@@ -216,6 +231,8 @@ class Firms(Agent):
         if add_emissions:
             inputs_emissions = synthetic_firms.firm_data["Input Emissions"].values
             capital_emissions = synthetic_firms.firm_data["Capital Emissions"].values
+            inputs_emissions_ch4 = np.zeros_like(inputs_emissions)
+            capital_emissions_ch4 = np.zeros_like(capital_emissions)
             input_dict: dict = {
                 f"{key}_inputs_emissions": synthetic_firms.firm_data[f"{emitting_industry} Input Emissions"]
                 for key, emitting_industry in zip(
@@ -232,6 +249,8 @@ class Firms(Agent):
         else:
             inputs_emissions = None
             capital_emissions = None
+            inputs_emissions_ch4 = None
+            capital_emissions_ch4 = None
             input_dict = {}
             capital_dict = {}
 
@@ -246,6 +265,8 @@ class Firms(Agent):
             calculate_hill_exponent=configuration.calculate_hill_exponent,
             inputs_emissions=inputs_emissions,
             capital_emissions=capital_emissions,
+            inputs_emissions_ch4=inputs_emissions_ch4,
+            capital_emissions_ch4=capital_emissions_ch4,
             **input_dict,
             **capital_dict,
         )
@@ -302,6 +323,7 @@ class Firms(Agent):
             configuration=configuration,
             industries=industries,
             bundle_matrix=bundle_matrix,
+            emission_fractions=emission_fractions,
         )
 
     @property
@@ -1814,7 +1836,14 @@ class Firms(Agent):
         """
         return self.ts.current("debt").sum()
 
-    def update_emissions(self, readjusted_factors: np.ndarray, emitting_indices: list | np.ndarray):
+    def update_emissions(
+        self,
+        readjusted_factors: np.ndarray,
+        emitting_indices: list | np.ndarray,
+        use_emission_multiplier: bool = False,
+        readjusted_factors_ch4: Optional[np.ndarray] = None,
+        emitting_indices_ch4: Optional[list | np.ndarray] = None,
+    ):
         """Update emissions from production activities.
 
         Calculates emissions from:
@@ -1822,14 +1851,35 @@ class Firms(Agent):
         - Capital input use
         Tracks emissions by source (coal, gas, oil, refined products)
 
+        When use_emission_multiplier is True and emission_fractions.co2 is available
+        (shape: n_emitting x n_industries), each firm's slice is scaled by its
+        industry-specific CO2 fraction multiplier before applying the emission factors.
+
         Args:
-            readjusted_factors (np.ndarray): Emission factors per unit
-            emitting_indices (list | np.ndarray): Indices of emitting sectors
+            readjusted_factors (np.ndarray): CO2 emission factors per unit (shape: n_emitting)
+            emitting_indices (list | np.ndarray): CO2 emitting sector indices
+            use_emission_multiplier (bool): Whether to apply industry-specific CO2 fraction multipliers
+            readjusted_factors_ch4 (Optional[np.ndarray]): CH4 emission factors per unit
+            emitting_indices_ch4 (Optional[list | np.ndarray]): CH4 emitting sector indices
         """
         used_intermediate_inputs = self.compute_used_intermediate_inputs()
         used_capital_inputs = self.compute_used_capital_inputs()
-        inputs_emissions = used_intermediate_inputs[:, emitting_indices] @ readjusted_factors
-        capital_emissions = used_capital_inputs[:, emitting_indices] @ readjusted_factors
+
+        # Apply per-industry CO2 fraction multipliers when enabled.
+        # emission_fractions.co2 has shape (n_emitting, n_industries); transposed and
+        # indexed by each firm's industry gives (n_firms, n_emitting) multipliers.
+        if use_emission_multiplier and self.emission_fractions is not None and self.emission_fractions.co2 is not None:
+            firm_industries = self.states["Industry"]
+            emitting_fractions = self.emission_fractions.co2.T[firm_industries]
+            inputs_slice = used_intermediate_inputs[:, emitting_indices] * emitting_fractions
+            capital_slice = used_capital_inputs[:, emitting_indices] * emitting_fractions
+        else:
+            inputs_slice = used_intermediate_inputs[:, emitting_indices]
+            capital_slice = used_capital_inputs[:, emitting_indices]
+
+        inputs_emissions = inputs_slice @ readjusted_factors
+        capital_emissions = capital_slice @ readjusted_factors
+
         refining_firms = self.states["Industry"] == emitting_indices[-1]
         inputs_emissions[refining_firms] = 0
         capital_emissions[refining_firms] = 0
@@ -1837,9 +1887,14 @@ class Firms(Agent):
         self.ts.inputs_emissions.append(inputs_emissions)
         self.ts.capital_emissions.append(capital_emissions)
 
-        # disaggregate emissions
-        inputs_emissions_disaggregated = used_intermediate_inputs[:, emitting_indices] * readjusted_factors
-        capital_emissions_disaggregated = used_capital_inputs[:, emitting_indices] * readjusted_factors
+        if emitting_indices_ch4 is not None and readjusted_factors_ch4 is not None:
+            inputs_emissions_ch4 = used_intermediate_inputs[:, emitting_indices_ch4] @ readjusted_factors_ch4
+            capital_emissions_ch4 = used_capital_inputs[:, emitting_indices_ch4] @ readjusted_factors_ch4
+            self.ts.inputs_emissions_ch4.append(inputs_emissions_ch4)
+            self.ts.capital_emissions_ch4.append(capital_emissions_ch4)
+
+        inputs_emissions_disaggregated = inputs_slice * readjusted_factors
+        capital_emissions_disaggregated = capital_slice * readjusted_factors
         inputs_emissions_disaggregated[refining_firms] = 0
         capital_emissions_disaggregated[refining_firms] = 0
 

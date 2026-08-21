@@ -108,7 +108,9 @@ from macro_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
 )
 from macro_data.readers import AGGREGATED_INDUSTRIES, ALL_INDUSTRIES, DataReaders
-from macro_data.readers.emissions.emissions_reader import EmissionsData
+from macro_data.readers.emission_fraction.emission_fraction_reader import EmissionFractions
+from macro_data.readers.emissions.emissions_reader import CH4EmissionsDataCAN, EmissionsData
+from macro_data.readers.exo_prices.exo_prices_reader import SectorExoPrices
 from macro_data.readers.exogenous_data import ExogenousCountryData
 
 
@@ -169,6 +171,10 @@ class SyntheticCountry:
     industries: list[str]
     consumption_weights_by_income: pd.DataFrame
     emission_factors: EmissionsData
+    emission_fractions: Optional[EmissionFractions] = None
+    firm_exo_prices: Optional[SectorExoPrices] = None
+    emission_factors_ch4: Optional[CH4EmissionsDataCAN] = None
+    historical_emissions_df: Optional[pd.DataFrame] = None
 
     @classmethod
     def eu_synthetic_country(
@@ -323,6 +329,27 @@ class SyntheticCountry:
             emission_factors_array=emission_factors_array,
         )
 
+        if readers.emission_fractions is not None:
+            emission_fractions = EmissionFractions.from_reader(readers.emission_fractions)
+        else:
+            emission_fractions = None
+
+        if readers.ch4_emissions is not None and emission_factors is not None:
+            production_by_industry = (
+                firms.firm_data.groupby("Industry")["Production"]
+                .sum()
+                .reindex(range(len(industries)), fill_value=0.0)
+                .values
+            )
+            emission_factors_ch4 = CH4EmissionsDataCAN.from_reader(
+                reader=readers.ch4_emissions,
+                industries=industries,
+                production_by_industry=production_by_industry,
+                year=year,
+            )
+        else:
+            emission_factors_ch4 = None
+
         return cls(
             population=population,
             firms=firms,
@@ -346,6 +373,11 @@ class SyntheticCountry:
             consumption_weights_by_income=weights_by_income,
             synthetic_goods_market=synthetic_goods_market,
             emission_factors=emission_factors,
+            emission_fractions=emission_fractions,
+            emission_factors_ch4=emission_factors_ch4,
+            firm_exo_prices=(
+                SectorExoPrices.from_reader(readers.exo_prices) if readers.exo_prices is not None else None
+            ),
         )
 
     @classmethod
@@ -513,6 +545,27 @@ class SyntheticCountry:
             emission_factors_array=emission_factors_array,
         )
 
+        if readers.emission_fractions is not None:
+            emission_fractions = EmissionFractions.from_reader(readers.emission_fractions)
+        else:
+            emission_fractions = None
+
+        if readers.ch4_emissions is not None and emission_factors is not None:
+            production_by_industry = (
+                firms.firm_data.groupby("Industry")["Production"]
+                .sum()
+                .reindex(range(len(industries)), fill_value=0.0)
+                .values
+            )
+            emission_factors_ch4 = CH4EmissionsDataCAN.from_reader(
+                reader=readers.ch4_emissions,
+                industries=industries,
+                production_by_industry=production_by_industry,
+                year=year,
+            )
+        else:
+            emission_factors_ch4 = None
+
         return cls(
             population=population,
             firms=firms,
@@ -536,6 +589,11 @@ class SyntheticCountry:
             consumption_weights_by_income=weights_by_income,
             synthetic_goods_market=synthetic_goods_market,
             emission_factors=emission_factors,
+            emission_fractions=emission_fractions,
+            emission_factors_ch4=emission_factors_ch4,
+            firm_exo_prices=(
+                SectorExoPrices.from_reader(readers.exo_prices) if readers.exo_prices is not None else None
+            ),
         )
 
     @classmethod

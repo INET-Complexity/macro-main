@@ -53,6 +53,19 @@ class Loader:
         self.file = h5py.File(path, "r")
         self.config = yaml.safe_load(self.file.attrs["configuration"])
 
+    def close(self) -> None:
+        """Close the underlying HDF5 file if it is still open."""
+        if getattr(self, "file", None) is not None and self.file.id.valid:
+            self.file.close()
+
+    def __enter__(self) -> "Loader":
+        """Support context-manager usage."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Ensure the file handle is closed when leaving context."""
+        self.close()
+
     def get_country_agent_field_dataframe(
         self,
         country_name: str,

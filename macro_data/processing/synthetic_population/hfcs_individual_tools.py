@@ -158,7 +158,7 @@ def fill_individual_education(individual_data: pd.DataFrame) -> pd.DataFrame:
 
 def fill_individual_labour_status(individual_data: pd.DataFrame) -> pd.DataFrame:
     individual_data.loc[individual_data["Age"] < 16, "Labour Status"] = 4  # student
-    individual_data.loc[individual_data["Labour Status"].isna()] = 2  # unemployed
+    individual_data.loc[individual_data["Labour Status"].isna(), "Labour Status"] = 2  # unemployed
     return individual_data
 
 

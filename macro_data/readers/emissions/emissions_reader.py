@@ -16,6 +16,8 @@ Classes:
     - EmissionsReader: Reads and processes fuel price data
     - EmissionsData: Stores emissions factors in local currency units
     - EmissionsEnergyFactors: Manages energy-to-emissions conversion factors
+    - CH4EmissionsReaderCAN: Reads Statistics Canada GHG inventory data for CH4
+    - CH4EmissionsDataCAN: Per-industry CH4 emission factors for Canada
 
 Example:
     ```python
@@ -308,3 +310,122 @@ def get_avg_coke_refining_kwh_per_tco2(icio_reader: ICIOReader, countries: list[
         Includes ROW (Rest of World) in the average calculation
     """
     return np.mean([get_country_coke_refining_kwh_per_tco2(icio_reader, country) for country in countries + ["ROW"]])
+
+
+_EMISSION_INDUSTRIES_CH4 = [
+    "A01",
+    "B05a",
+    "B05b",
+    "B05c",
+    "B07",
+    "B09",
+    "C17",
+    "C19",
+    "C20",
+    "C21",
+    "C22",
+    "C23",
+    "C24a",
+    "C24b",
+    "D01b",
+    "D01c",
+    "E",
+    "F",
+    "H49",
+    "H50",
+    "H51",
+]
+
+
+@dataclass
+class CH4EmissionsReaderCAN:
+    """Reads Statistics Canada GHG inventory data for CH4 emissions by ICIO industry.
+
+    Specific to Canada's EN-GHG_EconSectByGas-CA CSV format from Environment
+    and Climate Change Canada.
+
+    Attributes:
+        df: Raw DataFrame from the StatsCan EN-GHG CSV file
+    """
+
+    df: pd.DataFrame
+
+    @classmethod
+    def read_data(cls, path: Path | str) -> "CH4EmissionsReaderCAN":
+        """Read the StatsCan EN-GHG emissions CSV.
+
+        Args:
+            path: Path to EN-GHG_EconSectByGas-CA_Emissions_*.csv
+        """
+        if isinstance(path, str):
+            path = Path(path)
+        return cls(df=pd.read_csv(path))
+
+    def get_ch4_by_industry_code(self, year: int = 2014) -> dict[str, float]:
+        """Return total CH4 in tCO2e keyed by ICIO industry code.
+
+        Rows with no ID (aggregated sub-totals) are ignored. Multiple rows
+        sharing the same ID are summed.
+
+        Args:
+            year: Calendar year to extract
+
+        Returns:
+            dict mapping ICIO industry code to CH4 in tCO2e
+        """
+        col = f"{year}_CH4"
+        valid = self.df.dropna(subset=["ID"])
+        grouped = valid.groupby("ID")[col].sum() * 1e3  # ktCO2e → tCO2e
+        return grouped.to_dict()
+
+
+@dataclass
+class CH4EmissionsDataCAN:
+    """Per-industry CH4 emission factors.
+
+    Attributes:
+        emission_factors: tCO2e per LCU of production, shape (n_ch4_emitting,)
+        emitting_indices: ICIO industry indices of CH4-emitting sectors
+    """
+
+    emission_factors: np.ndarray
+    emitting_indices: np.ndarray
+
+    @classmethod
+    def from_reader(
+        cls,
+        reader: CH4EmissionsReaderCAN,
+        industries: list[str],
+        production_by_industry: np.ndarray,
+        year: int = 2014,
+    ) -> "CH4EmissionsDataCAN":
+        """Compute per-unit CH4 factors from inventory totals and firm production.
+
+        Divides observed total CH4 emissions (tCO2e) by total industry production
+        (LCU) to get a factor in tCO2e/LCU, consistent with the CO2 factor approach.
+        Industries in the CH4 emitting list absent from the StatsCan CSV receive
+        a factor of zero.
+
+        Args:
+            reader: Loaded CH4EmissionsReaderCAN
+            industries: Ordered ICIO industry code list for the country
+            production_by_industry: Total production per industry in LCU, shape (n_industries,)
+            year: Base year for the emissions data
+        """
+        ch4_by_code = reader.get_ch4_by_industry_code(year)
+
+        ch4 = np.zeros(len(industries))
+        for code, val in ch4_by_code.items():
+            if code in industries:
+                ch4[list(industries).index(code)] = val
+
+        emitting_indices = np.array(
+            [list(industries).index(ind) for ind in _EMISSION_INDUSTRIES_CH4 if ind in industries]
+        )
+
+        prod = production_by_industry[emitting_indices]
+        emission_factors = np.zeros_like(prod)
+        mask = prod > 0
+        emission_factors[mask] = ch4[emitting_indices][mask] / prod[mask]
+
+        return cls(emission_factors=emission_factors, emitting_indices=emitting_indices)

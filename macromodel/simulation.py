@@ -147,6 +147,15 @@ class Simulation:
             for country_name in countries_without_row
         }
 
+        row_firm_exo_prices = next(
+            (
+                datawrapper.synthetic_countries[c].firm_exo_prices
+                for c in countries_without_row
+                if datawrapper.synthetic_countries[c].firm_exo_prices is not None
+            ),
+            None,
+        )
+
         rest_of_the_world = RestOfTheWorld.from_pickled_row(
             country_name="ROW",
             all_country_names=countries_with_row,
@@ -155,6 +164,8 @@ class Simulation:
             configuration=simulation_configuration.row_configuration,
             calibration_data_before=datawrapper.calibration_before,
             calibration_data_during=datawrapper.calibration_during,
+            firm_exo_prices=row_firm_exo_prices,
+            industries=datawrapper.industries,
         )
 
         goods_market_participants = {

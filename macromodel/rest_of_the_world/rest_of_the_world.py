@@ -37,6 +37,7 @@ from macromodel.agents.agent import Agent
 from macromodel.configurations import RestOfTheWorldConfiguration
 from macromodel.configurations.row_configuration import RestOfTheWorldParameters
 from macromodel.markets.goods_market.value_type import ValueType
+from macromodel.rest_of_the_world.func.prices import SectorExogenousROWPriceSetter
 from macromodel.rest_of_the_world.rest_of_the_world_ts import (
     create_rest_of_the_world_timeseries,
 )
@@ -133,6 +134,8 @@ class RestOfTheWorld(Agent):
         configuration: RestOfTheWorldConfiguration,
         calibration_data_before: pd.DataFrame,
         calibration_data_during: pd.DataFrame,
+        firm_exo_prices=None,
+        industries=None,
     ) -> "RestOfTheWorld":
         """Create ROW instance from synthetic data.
 
@@ -147,11 +150,23 @@ class RestOfTheWorld(Agent):
             configuration (RestOfTheWorldConfiguration): Model settings
             calibration_data_before (pd.DataFrame): Pre-period calibration data
             calibration_data_during (pd.DataFrame): During-period calibration data
+            firm_exo_prices: SectorExoPrices container for exogenous sector price
+                overrides (optional). Reuses the same CSV as domestic firms.
+            industries: Ordered list of industry names, one per industry index,
+                used to populate overriden_industries on the ROW price setter.
 
         Returns:
             RestOfTheWorld: Initialized ROW instance
         """
         functions = functions_from_model(model=configuration.functions, loc="macromodel.rest_of_the_world")
+
+        if (
+            isinstance(functions.get("prices"), SectorExogenousROWPriceSetter)
+            and firm_exo_prices is not None
+            and industries is not None
+        ):
+            functions["prices"].firm_exo_prices = firm_exo_prices
+            functions["prices"].overriden_industries = list(industries)
 
         data = synthetic_row.row_data.astype(float)
         data.rename_axis("Industry", inplace=True)
