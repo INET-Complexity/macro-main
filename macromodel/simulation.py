@@ -302,6 +302,11 @@ class Simulation:
 
         # self.exchange_rates.set_current_exchange_rates(current_year=self.timestep.year)
 
+        for country in self.countries.values():
+            if country.obps is not None:
+                while country.obps.current_year < self.timestep.year:
+                    country.obps.update()
+
         for ind, country in enumerate(self.countries.values()):
             exchange_rate = self.exchange_rates.get_current_exchange_rates_from_usd_to_lcu(
                 country_name=country.country_name,

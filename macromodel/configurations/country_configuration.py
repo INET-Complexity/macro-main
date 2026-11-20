@@ -39,6 +39,7 @@ class CountryConfiguration(BaseModel):
     assume_zero_noise: bool = False
     use_emission_multiplier: bool = False
     CH4_production_emissions_only: bool = False
+    use_obps_reg: bool = False
 
     @classmethod
     def n_industry_default(

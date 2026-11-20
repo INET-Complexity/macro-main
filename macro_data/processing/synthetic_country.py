@@ -112,6 +112,7 @@ from macro_data.readers.emission_fraction.emission_fraction_reader import Emissi
 from macro_data.readers.emissions.emissions_reader import CH4EmissionsDataCAN, EmissionsData
 from macro_data.readers.exo_prices.exo_prices_reader import SectorExoPrices
 from macro_data.readers.exogenous_data import ExogenousCountryData
+from macro_data.readers.policy_data.obps_can_reader import OBPSCANData
 
 
 @dataclass
@@ -173,6 +174,7 @@ class SyntheticCountry:
     emission_factors: EmissionsData
     emission_fractions: Optional[EmissionFractions] = None
     firm_exo_prices: Optional[SectorExoPrices] = None
+    obps_data: Optional[OBPSCANData] = None
     emission_factors_ch4: Optional[CH4EmissionsDataCAN] = None
     historical_emissions_df: Optional[pd.DataFrame] = None
 
@@ -378,6 +380,7 @@ class SyntheticCountry:
             firm_exo_prices=(
                 SectorExoPrices.from_reader(readers.exo_prices) if readers.exo_prices is not None else None
             ),
+            obps_data=readers.obps_can.obps_data if readers.obps_can is not None else None,
         )
 
     @classmethod
@@ -594,6 +597,7 @@ class SyntheticCountry:
             firm_exo_prices=(
                 SectorExoPrices.from_reader(readers.exo_prices) if readers.exo_prices is not None else None
             ),
+            obps_data=readers.obps_can.obps_data if readers.obps_can is not None else None,
         )
 
     @classmethod
