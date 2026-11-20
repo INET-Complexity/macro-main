@@ -1056,22 +1056,25 @@ init:
           type: str
           value: compustat_synthetic_banks.CompustatSyntheticBanks
         household_consumption_loan_maturity:
-          desc: The initial loan maturity in months for household consumption loans.
+          desc: The initial loan maturity in model periods, not months, for household
+            consumption loans.
           options: ''
           type: int
           value: 1
         long_term_firm_loan_maturity:
-          desc: The initial loan maturity in months for long-term firm loans.
+          desc: The initial loan maturity in model periods, not months, for long-term
+            firm loans.
           options: ''
           type: int
           value: 60
         mortgage_maturity:
-          desc: The initial loan maturity in months for mortgages.
+          desc: The initial loan maturity in model periods, not months, for mortgages.
           options: ''
           type: int
           value: 120
         short_term_firm_loan_maturity:
-          desc: The initial loan maturity in months for short-term firm loans.
+          desc: The initial loan maturity in model periods, not months, for short-term
+            firm loans.
           options: ''
           type: int
           value: 20

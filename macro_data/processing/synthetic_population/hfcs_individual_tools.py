@@ -15,6 +15,7 @@ def process_individual_data(
     unemployment_rate: float,
     participation_rate: float,
     n_firms_by_industry: list[int] | np.ndarray,
+    yearly_factor: float = 4.0,
 ) -> pd.DataFrame:
     """
     Process individual data by performing various data cleaning and transformation steps.
@@ -62,7 +63,10 @@ def process_individual_data(
         logging.warning("Total unemployment benefits not found, setting to 0.0")
 
     individual_data = fill_individual_employee_income(
-        individual_data, unemployment_benefits_by_individual=total_unemployment_benefits / n_unemployed, scale=scale
+        individual_data,
+        unemployment_benefits_by_individual=total_unemployment_benefits / n_unemployed,
+        scale=scale,
+        yearly_factor=yearly_factor,
     )
     individual_data = set_individual_unemployed_income(
         individual_data, unemployment_benefits_by_individual=total_unemployment_benefits / n_unemployed
@@ -551,7 +555,10 @@ def select_employed_in_industry(individual_data: pd.DataFrame, industry: int) ->
 
 
 def fill_individual_employee_income(
-    individual_data: pd.DataFrame, unemployment_benefits_by_individual: float, scale: int
+    individual_data: pd.DataFrame,
+    unemployment_benefits_by_individual: float,
+    scale: int,
+    yearly_factor: float = 4.0,
 ) -> pd.DataFrame:
     """
     Fills the 'Employee Income' column in the individual_data DataFrame for employed individuals.
@@ -586,8 +593,7 @@ def fill_individual_employee_income(
     # Rescale that
     individual_data.loc[:, "Employee Income"] *= scale
 
-    # Monthly!
-    individual_data.loc[:, "Employee Income"] /= 4.0
+    individual_data.loc[:, "Employee Income"] /= yearly_factor
 
     # Employee income is at least the unemployment rate
     is_employed = individual_data["Activity Status"] == 1

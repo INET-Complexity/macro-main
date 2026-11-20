@@ -147,10 +147,10 @@ class CreditMarket:
         mortgage_loans = synthetic_credit_market.mortgage_loans.stack()
 
         ts = create_credit_market_timeseries(
-            total_consumption_expansion_loans=consumption_expansion_loans.sum(),
-            total_short_term_loans=shortterm_loans.sum(),
-            total_long_term_loans=longterm_loans.sum(),
-            total_mortgage_loans=mortgage_loans.sum(),
+            total_consumption_expansion_loans=consumption_expansion_loans[0].sum(),
+            total_short_term_loans=shortterm_loans[0].sum(),
+            total_long_term_loans=longterm_loans[0].sum(),
+            total_mortgage_loans=mortgage_loans[0].sum(),
         )
 
         states = {
@@ -225,10 +225,10 @@ class CreditMarket:
 
         # Create the corresponding time series object
         ts = create_credit_market_timeseries(
-            total_short_term_loans=st_loans.sum(),
-            total_long_term_loans=lt_loans.sum(),
-            total_consumption_expansion_loans=cons_loans.sum(),
-            total_mortgage_loans=mort_loans.sum(),
+            total_short_term_loans=st_loans[0].sum(),
+            total_long_term_loans=lt_loans[0].sum(),
+            total_consumption_expansion_loans=cons_loans[0].sum(),
+            total_mortgage_loans=mort_loans[0].sum(),
         )
 
         return cls(

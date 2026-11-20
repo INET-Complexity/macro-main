@@ -476,8 +476,8 @@ class WorldBankReader:
                 "PPI Inflation": vals_ppi,
             },
         )
-        data_df["CPI Inflation"] = np.log(data_df["CPI Inflation"] / data_df["CPI Inflation"].shift(1))
-        data_df["PPI Inflation"] = np.log(data_df["PPI Inflation"] / data_df["PPI Inflation"].shift(1))
+        data_df["CPI Inflation"] = data_df["CPI Inflation"] / data_df["CPI Inflation"].shift(1) - 1.0
+        data_df["PPI Inflation"] = data_df["PPI Inflation"] / data_df["PPI Inflation"].shift(1) - 1.0
         data_df.index = [pd.Timestamp(int(ind[0:4]), 3 * int(ind[6]) - 2, 1) for ind in data_df.index]  # noqa
 
         return data_df.astype(float)

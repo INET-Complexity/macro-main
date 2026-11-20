@@ -17,13 +17,7 @@ central_bank_configuration:
     0.02
 
 banks_configuration:
-  long_term_firm_loan_maturity:
-    60
-  consumption_exp_loan_maturity:
-    12
-  mortgage_maturity:
-    120
-
+  # Loan maturities are expressed in model periods, not calendar months.
   interest_rates:
     consumption_loans_markup:
       0.01

@@ -26,12 +26,16 @@ class ExogenousCountryData:
         year: int,
         quarter: int,
         proxy_country: Optional[Country] = None,
+        time_unit: int = 3,
     ):
+        validate_time_unit(time_unit)
         inflation = readers.imf_reader.get_inflation(country_name)
         if inflation is None:
             inflation = readers.world_bank.get_inflation(country_name)
+        inflation = convert_growth_rates_to_model_period(inflation, time_unit)
 
         national_accounts_growth = readers.get_national_accounts_growth(country_name)
+        national_accounts_growth = convert_growth_rates_to_model_period(national_accounts_growth, time_unit)
 
         if proxy_country is None:
             capital_formation_tax = readers.eurostat.taxrate_on_capital_formation(country_name, year)
@@ -49,9 +53,10 @@ class ExogenousCountryData:
             quarter,
         )
 
-        labour_stats = prepare_labour_stats(country_name, readers)
+        labour_stats = prepare_labour_stats(country_name, readers, time_unit=time_unit)
 
         house_price_index = readers.oecd_econ.get_house_price_index(country_name)
+        house_price_index = convert_growth_rates_to_model_period(house_price_index, time_unit)
 
         return cls(
             country_name=country_name,
@@ -88,7 +93,73 @@ class ExogenousCountryData:
         return country_data
 
 
-def prepare_labour_stats(country_name: Country, readers: DataReaders):
+def validate_time_unit(time_unit: int) -> None:
+    if time_unit <= 0 or 12 % time_unit != 0:
+        raise ValueError("time_unit must be a positive divisor of 12.")
+
+
+def convert_growth_rates_to_model_period(data: pd.DataFrame | pd.Series, time_unit: int):
+    """Convert quarterly growth/rate series to the model period."""
+    validate_time_unit(time_unit)
+    if time_unit == 3:
+        return data
+
+    is_series = isinstance(data, pd.Series)
+    df = data.to_frame() if is_series else data.copy()
+    df.index = pd.to_datetime(df.index)
+    df = df.sort_index().astype(float)
+
+    monthly_rows = []
+    monthly_index = []
+    for period_start, row in df.iterrows():
+        monthly_row = (1.0 + row) ** (1.0 / 3.0) - 1.0
+        for month_offset in range(3):
+            monthly_rows.append(monthly_row)
+            monthly_index.append(period_start + pd.DateOffset(months=month_offset))
+
+    monthly = pd.DataFrame(monthly_rows, index=pd.DatetimeIndex(monthly_index), columns=df.columns)
+    groups = np.arange(len(monthly)) // time_unit
+    period_index = monthly.index.to_series().groupby(groups).first()
+
+    def compound_period(values: pd.Series) -> float:
+        if values.isna().any():
+            return np.nan
+        return float((1.0 + values).prod() - 1.0)
+
+    converted = monthly.groupby(groups).agg(compound_period)
+    converted.index = pd.DatetimeIndex(period_index.values)
+    return converted.iloc[:, 0] if is_series else converted
+
+
+def convert_levels_to_model_period(data: pd.DataFrame | pd.Series, time_unit: int):
+    """Interpolate quarterly level/ratio series to model-period starts."""
+    validate_time_unit(time_unit)
+    if time_unit == 3:
+        return data
+
+    is_series = isinstance(data, pd.Series)
+    df = data.to_frame() if is_series else data.copy()
+    df.index = pd.to_datetime(df.index)
+    df = df.sort_index().astype(float)
+
+    monthly_index = pd.date_range(
+        start=df.index.min(),
+        end=df.index.max() + pd.DateOffset(months=2),
+        freq="MS",
+    )
+    interpolated = (
+        df.reindex(df.index.union(monthly_index))
+        .sort_index()
+        .interpolate(method="linear")
+        .ffill()
+        .bfill()
+        .reindex(monthly_index)
+    )
+    converted = interpolated.iloc[::time_unit].copy()
+    return converted.iloc[:, 0] if is_series else converted
+
+
+def prepare_labour_stats(country_name: Country, readers: DataReaders, time_unit: int = 3):
     labour_stats = readers.imf_reader.get_labour_stats(country_name)
     vacancy_rate = readers.oecd_econ.get_vacancy_rate(country_name)
     participation_rate = readers.world_bank.get_participation_rate(country_name)
@@ -121,6 +192,12 @@ def prepare_labour_stats(country_name: Country, readers: DataReaders):
         },
         inplace=True,
     )
+    value_columns = [
+        "Unemployment Rate (Value)",
+        "Participation Rate (Value)",
+        "Vacancy Rate (Value)",
+    ]
+    labour_stats = convert_levels_to_model_period(labour_stats[value_columns], time_unit)
     labour_stats["Unemployment Rate (Growth)"] = labour_stats["Unemployment Rate (Value)"].pct_change(fill_method=None)
     labour_stats["Participation Rate (Growth)"] = labour_stats["Participation Rate (Value)"].pct_change(
         fill_method=None
@@ -208,7 +285,17 @@ def prepare_inflation(country_name: Country, readers: DataReaders):
 
 def normalised_growth(growth_rates: pd.Series, year: int, quarter: int):
     growth = (1 + growth_rates).cumprod()
-    return (growth / growth.loc[f"{year}-Q{quarter}"].values).values
+    base_date = pd.Timestamp(year, 3 * (quarter - 1) + 1, 1)
+    if base_date in growth.index:
+        base_value = growth.loc[base_date]
+    else:
+        base_value = (
+            growth.reindex(growth.index.union(pd.DatetimeIndex([base_date])))
+            .sort_index()
+            .interpolate(method="time")
+            .loc[base_date]
+        )
+    return (growth / base_value).values
 
 
 def compile_national_accounts_data(
