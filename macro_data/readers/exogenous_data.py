@@ -262,11 +262,26 @@ def compile_national_accounts_data(
         initial_taxes_on_products + gross_operating_surplus + industry_vectors["Labour Compensation in LCU"].sum()
     )
 
-    def get_growth(column: str):
+    def get_growth(column: str, fallback_column: Optional[str] = None):
         if column in national_accounts_growth.columns:
             return normalised_growth(national_accounts_growth[column], base_year, base_quarter)
-        else:
-            return normalised_growth(inflation[column], base_year, base_quarter)
+        if fallback_column is not None and fallback_column in national_accounts_growth.columns:
+            return normalised_growth(national_accounts_growth[fallback_column], base_year, base_quarter)
+        return normalised_growth(inflation[column], base_year, base_quarter)
+
+    def get_growth_values(column: str, fallback_column: Optional[str] = None):
+        if column in national_accounts_growth.columns:
+            return national_accounts_growth[column].values
+        if fallback_column is not None and fallback_column in national_accounts_growth.columns:
+            return national_accounts_growth[fallback_column].values
+        if fallback_column is None:
+            raise KeyError(
+                f"Missing required national accounts growth series '{column}' while building exogenous data."
+            )
+        raise KeyError(
+            f"Missing required national accounts growth series '{column}' while building exogenous data, "
+            f"and fallback series '{fallback_column}' is also unavailable."
+        )
 
     assert np.isclose(gdp_output, gdp_expenditure)
     assert np.isclose(gdp_output, gdp_income)
@@ -291,6 +306,7 @@ def compile_national_accounts_data(
         / get_growth("PPI Inflation")
         * (
             industry_vectors["Output in LCU"].sum()
+            - industry_vectors["Taxes Less Subsidies in LCU"].sum()
             - industry_vectors["Intermediate Inputs Use in LCU"].sum()
             + initial_taxes_on_products
         ),
@@ -306,15 +322,19 @@ def compile_national_accounts_data(
         "Intermediate Consumption (Growth)": national_accounts_growth["Intermediate Consumption"].values,
         "Intermediate Consumption (Value)": get_growth("Intermediate Consumption")
         * industry_vectors["Intermediate Inputs Use in LCU"].sum(),
-        "Taxes less Subsidies on Products (Growth)": national_accounts_growth[
-            "Taxes less Subsidies on Production"
-        ].values,
-        "Taxes less Subsidies on Products (Value)": get_growth("Taxes less Subsidies on Production")
+        "Taxes less Subsidies on Products (Growth)": get_growth_values(
+            "Taxes less Subsidies on Production", fallback_column="GDP"
+        ),
+        "Taxes less Subsidies on Products (Value)": get_growth(
+            "Taxes less Subsidies on Production", fallback_column="GDP"
+        )
         * initial_taxes_on_products,
-        "Taxes less Subsidies on Production (Growth)": national_accounts_growth[
-            "Taxes less Subsidies on Production"
-        ].values,
-        "Taxes less Subsidies on Production (Value)": get_growth("Taxes less Subsidies on Production")
+        "Taxes less Subsidies on Production (Growth)": get_growth_values(
+            "Taxes less Subsidies on Production", fallback_column="GDP"
+        ),
+        "Taxes less Subsidies on Production (Value)": get_growth(
+            "Taxes less Subsidies on Production", fallback_column="GDP"
+        )
         * industry_vectors["Taxes Less Subsidies in LCU"].sum(),
         #
         "Household Consumption (Growth)": national_accounts_growth["HH Cons"].values,
@@ -362,55 +382,60 @@ def compile_national_accounts_data(
         "Imports (Growth)": national_accounts_growth["Imports"].values,
         "Imports (Value)": get_growth("Imports") * industry_vectors["Imports in LCU"].sum(),
         #
-        "Compensation of Employees (Growth)": national_accounts_growth["Compensation of Employees"].values,
+        "Compensation of Employees (Growth)": get_growth_values("Compensation of Employees", fallback_column="GDP"),
         "Compensation of Employees (Value)": get_growth("Compensation of Employees")
         * industry_vectors["Labour Compensation in LCU"].sum(),
-        "Gross Operating Surplus and Mixed Income (Growth)": national_accounts_growth[
-            "Gross Operating Surplus and Mixed Income"
-        ].values,
+        "Gross Operating Surplus and Mixed Income (Growth)": get_growth_values(
+            "Gross Operating Surplus and Mixed Income", fallback_column="GDP"
+        ),
         "Gross Operating Surplus and Mixed Income (Value)": get_growth("Gross Operating Surplus and Mixed Income")
         * gross_operating_surplus,
-        "Gross Value Added (Growth)": national_accounts_growth["Gross Value Added"].values,
-        "Gross Value Added (Value)": get_growth("Gross Value Added") * industry_vectors["Value Added in LCU"].sum(),
-        "Gross Value Added - A (Growth)": national_accounts_growth["Gross Value Added - A"].values,
-        "Gross Value Added - A (Value)": get_growth("Gross Value Added - A")
+        "Gross Value Added (Growth)": get_growth_values("Gross Value Added", fallback_column="GDP"),
+        "Gross Value Added (Value)": get_growth("Gross Value Added", fallback_column="GDP")
+        * industry_vectors["Value Added in LCU"].sum(),
+        "Gross Value Added - A (Growth)": get_growth_values("Gross Value Added - A", fallback_column="GDP"),
+        "Gross Value Added - A (Value)": get_growth("Gross Value Added - A", fallback_column="GDP")
         * industry_vectors["Value Added in LCU"].iloc[[0]].sum(),
-        "Gross Value Added - B, C, D, E (Growth)": national_accounts_growth["Gross Value Added - B, C, D, E"].values,
-        "Gross Value Added - B, C, D, E (Value)": get_growth("Gross Value Added - B, C, D, E")
+        "Gross Value Added - B, C, D, E (Growth)": get_growth_values(
+            "Gross Value Added - B, C, D, E", fallback_column="GDP"
+        ),
+        "Gross Value Added - B, C, D, E (Value)": get_growth("Gross Value Added - B, C, D, E", fallback_column="GDP")
         * industry_vectors["Value Added in LCU"].iloc[[1, 2, 3, 4]].sum(),
-        "Gross Value Added - C (Growth)": national_accounts_growth["Gross Value Added - C"].values,
-        "Gross Value Added - C (Value)": get_growth("Gross Value Added - C")
+        "Gross Value Added - C (Growth)": get_growth_values("Gross Value Added - C", fallback_column="GDP"),
+        "Gross Value Added - C (Value)": get_growth("Gross Value Added - C", fallback_column="GDP")
         * industry_vectors["Value Added in LCU"].iloc[[2]].sum(),
-        "Gross Value Added - F (Growth)": national_accounts_growth["Gross Value Added - F"].values,
-        "Gross Value Added - F (Value)": get_growth("Gross Value Added - F")
+        "Gross Value Added - F (Growth)": get_growth_values("Gross Value Added - F", fallback_column="GDP"),
+        "Gross Value Added - F (Value)": get_growth("Gross Value Added - F", fallback_column="GDP")
         * industry_vectors["Value Added in LCU"].iloc[[5]].sum(),
-        "Gross Value Added - G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U (Growth)": national_accounts_growth[
-            "Gross Value Added - G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U"
-        ].values,
+        "Gross Value Added - G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U (Growth)": get_growth_values(
+            "Gross Value Added - G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U", fallback_column="GDP"
+        ),
         "Gross Value Added - G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U (Value)": get_growth(
-            "Gross Value Added - G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U"
+            "Gross Value Added - G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U", fallback_column="GDP"
         )
         * industry_vectors["Value Added in LCU"].iloc[[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]].sum(),
-        "Gross Value Added - G, H, I (Growth)": national_accounts_growth["Gross Value Added - G, H, I"].values,
-        "Gross Value Added - G, H, I (Value)": get_growth("Gross Value Added - G, H, I")
+        "Gross Value Added - G, H, I (Growth)": get_growth_values("Gross Value Added - G, H, I", fallback_column="GDP"),
+        "Gross Value Added - G, H, I (Value)": get_growth("Gross Value Added - G, H, I", fallback_column="GDP")
         * industry_vectors["Value Added in LCU"].iloc[[6, 7, 8]].sum(),
-        "Gross Value Added - J (Growth)": national_accounts_growth["Gross Value Added - J"].values,
-        "Gross Value Added - J (Value)": get_growth("Gross Value Added - J")
+        "Gross Value Added - J (Growth)": get_growth_values("Gross Value Added - J", fallback_column="GDP"),
+        "Gross Value Added - J (Value)": get_growth("Gross Value Added - J", fallback_column="GDP")
         * industry_vectors["Value Added in LCU"].iloc[[9]].sum(),
-        "Gross Value Added - K (Growth)": national_accounts_growth["Gross Value Added - K"].values,
-        "Gross Value Added - K (Value)": get_growth("Gross Value Added - K")
+        "Gross Value Added - K (Growth)": get_growth_values("Gross Value Added - K", fallback_column="GDP"),
+        "Gross Value Added - K (Value)": get_growth("Gross Value Added - K", fallback_column="GDP")
         * industry_vectors["Value Added in LCU"].iloc[[10]].sum(),
-        "Gross Value Added - L (Growth)": national_accounts_growth["Gross Value Added - L"].values,
-        "Gross Value Added - L (Value)": get_growth("Gross Value Added - L")
+        "Gross Value Added - L (Growth)": get_growth_values("Gross Value Added - L", fallback_column="GDP"),
+        "Gross Value Added - L (Value)": get_growth("Gross Value Added - L", fallback_column="GDP")
         * industry_vectors["Value Added in LCU"].iloc[[11]].sum(),
-        "Gross Value Added - M, N (Growth)": national_accounts_growth["Gross Value Added - M, N"].values,
-        "Gross Value Added - M, N (Value)": get_growth("Gross Value Added - M, N")
+        "Gross Value Added - M, N (Growth)": get_growth_values("Gross Value Added - M, N", fallback_column="GDP"),
+        "Gross Value Added - M, N (Value)": get_growth("Gross Value Added - M, N", fallback_column="GDP")
         * industry_vectors["Value Added in LCU"].iloc[[12, 13]].sum(),
-        "Gross Value Added - O, P, Q (Growth)": national_accounts_growth["Gross Value Added - O, P, Q"].values,
-        "Gross Value Added - O, P, Q (Value)": get_growth("Gross Value Added - O, P, Q")
+        "Gross Value Added - O, P, Q (Growth)": get_growth_values("Gross Value Added - O, P, Q", fallback_column="GDP"),
+        "Gross Value Added - O, P, Q (Value)": get_growth("Gross Value Added - O, P, Q", fallback_column="GDP")
         * industry_vectors["Value Added in LCU"].iloc[[14, 15, 16]].sum(),
-        "Gross Value Added - R, S, T, U (Growth)": national_accounts_growth["Gross Value Added - R, S, T, U"].values,
-        "Gross Value Added - R, S, T, U (Value)": get_growth("Gross Value Added - R, S, T, U")
+        "Gross Value Added - R, S, T, U (Growth)": get_growth_values(
+            "Gross Value Added - R, S, T, U", fallback_column="GDP"
+        ),
+        "Gross Value Added - R, S, T, U (Value)": get_growth("Gross Value Added - R, S, T, U", fallback_column="GDP")
         * industry_vectors["Value Added in LCU"].iloc[[17]].sum(),
     }
 

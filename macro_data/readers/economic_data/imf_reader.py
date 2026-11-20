@@ -376,31 +376,39 @@ class IMFReader:
             "Imports of Services": "Imports of Services",
             "Imports of Goods and Services": "Imports of Goods and Services",
         }
-        gdp_field = "Gross Domestic Product"
         data_ls = {}
+        suffixes = [
+            ", Nominal, Seasonally Adjusted, Domestic Currency",
+            ", Nominal, Domestic Currency",
+            ", Nominal, Unadjusted, Domestic Currency",
+        ]
 
-        for field in fields.keys():
-            if field + ", Nominal, Seasonally Adjusted, Domestic Currency" in data.columns:
-                data_ls[fields[field]] = data[field + ", Nominal, Seasonally Adjusted, Domestic Currency"].values
-            elif field + ", Nominal, Domestic Currency" in data.columns:
-                data_ls[fields[field]] = data[field + ", Nominal, Domestic Currency"].values
-            elif field + ", Nominal, Unadjusted, Domestic Currency" in data.columns:
-                data_ls[fields[field]] = data[field + ", Nominal, Unadjusted, Domestic Currency"].values
-            elif gdp_field + ", Nominal, Seasonally Adjusted, Domestic Currency" in data.columns:
-                data_ls[fields[field]] = data[gdp_field + ", Nominal, Seasonally Adjusted, Domestic Currency"].values
-            elif gdp_field + ", Nominal, Domestic Currency" in data.columns:
-                data_ls[fields[field]] = data[gdp_field + ", Nominal, Domestic Currency"].values
-            elif gdp_field + ", Nominal, Unadjusted, Domestic Currency" in data.columns:
-                data_ls[fields[field]] = data[gdp_field + ", Nominal, Unadjusted, Domestic Currency"].values
-            else:
-                raise ValueError(f"No suitable data found for {country} {field}")
+        for field, field_name in fields.items():
+            field_values = None
+            for suffix in suffixes:
+                column_name = field + suffix
+                if column_name in data.columns:
+                    field_values = data[column_name].values
+                    break
+
+            if field_values is None:
+                if field_name == "GDP":
+                    raise ValueError(f"No suitable data found for {country} {field}")
+                continue
+
+            data_ls[field_name] = field_values
 
         data = pd.DataFrame(
             data=data_ls,
             index=[pd.Timestamp(int(ind[0:4]), 3 * int(ind[5]) - 2, 1) for ind in data.index],
         ).iloc[0:-1]
         data = data.astype(float)
-        data["HH Cons"] = data["HH Cons"] + data["NPISH Cons"]
+
+        if "HH Cons" in data.columns and "NPISH Cons" in data.columns:
+            data["HH Cons"] = data["HH Cons"] + data["NPISH Cons"]
+        elif "NPISH Cons" in data.columns:
+            data["HH Cons"] = data["NPISH Cons"]
+
         data = (data / data.shift(1) - 1.0).iloc[1:]
         data["Gross Output"] = data["GDP"].values
         data["Intermediate Consumption"] = data["GDP"].values
