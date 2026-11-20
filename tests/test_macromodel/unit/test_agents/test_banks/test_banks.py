@@ -10,6 +10,10 @@ class TestBanks:
             "Household Consumption ECT",
             "Household Mortgage Pass Through",
             "Household Mortgage ECT",
+            "Firm Short Spread",
+            "Firm Long Spread",
+            "Household Consumption Spread",
+            "Mortgage Spread",
         }
 
         ts_keys = [

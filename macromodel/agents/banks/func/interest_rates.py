@@ -43,6 +43,7 @@ class InterestRatesSetter(ABC):
         prev_interest_rates_on_short_term_firm_loans: np.ndarray,
         firm_pt: float,
         firm_ect: float,
+        firm_short_spread: float | np.ndarray | None = None,
     ) -> np.ndarray:
         """Calculate short-term firm loan rates.
 
@@ -65,6 +66,7 @@ class InterestRatesSetter(ABC):
         prev_interest_rates_on_long_term_firm_loans: np.ndarray,
         firm_pt: float,
         firm_ect: float,
+        firm_long_spread: float | np.ndarray | None = None,
     ) -> np.ndarray:
         """Calculate long-term firm loan rates.
 
@@ -87,6 +89,7 @@ class InterestRatesSetter(ABC):
         prev_interest_rate_on_hh_consumption_loans: np.ndarray,
         hh_cons_pt: float,
         hh_cons_ect: float,
+        hh_consumption_spread: float | np.ndarray | None = None,
     ) -> np.ndarray:
         """Calculate household consumption loan rates.
 
@@ -109,6 +112,7 @@ class InterestRatesSetter(ABC):
         prev_interest_rate_on_mortgages: np.ndarray,
         hh_mortgage_pt: float,
         hh_mortgage_ect: float,
+        mortgage_spread: float | np.ndarray | None = None,
     ) -> np.ndarray:
         """Calculate mortgage rates.
 
@@ -235,6 +239,7 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
         prev_interest_rates_on_short_term_firm_loans: np.ndarray,
         firm_pt: float,
         firm_ect: float,
+        firm_short_spread: float | np.ndarray | None = None,
     ) -> np.ndarray:
         """Calculate short-term firm loan rates.
 
@@ -264,6 +269,7 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
         prev_interest_rates_on_long_term_firm_loans: np.ndarray,
         firm_pt: float,
         firm_ect: float,
+        firm_long_spread: float | np.ndarray | None = None,
     ) -> np.ndarray:
         """Calculate long-term firm loan rates.
 
@@ -293,6 +299,7 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
         prev_interest_rate_on_hh_consumption_loans: np.ndarray,
         hh_cons_pt: float,
         hh_cons_ect: float,
+        hh_consumption_spread: float | np.ndarray | None = None,
     ) -> np.ndarray:
         """Calculate household consumption loan rates.
 
@@ -322,6 +329,7 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
         prev_interest_rate_on_mortgages: np.ndarray,
         hh_mortgage_pt: float,
         hh_mortgage_ect: float,
+        mortgage_spread: float | np.ndarray | None = None,
     ) -> np.ndarray:
         """Calculate mortgage rates.
 
@@ -448,3 +456,134 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
         return prev_overdraft_rate_on_hh_deposits + hh_cons_ect * (
             prev_overdraft_rate_on_hh_deposits - hh_cons_pt * central_bank_policy_rate
         )
+
+
+class MarkUpInterestRatesSetter(InterestRatesSetter):
+    """Interest rate setter using product-specific policy-rate markups."""
+
+    def __init__(
+        self,
+        firm_short_spread: float | None = None,
+        firm_long_spread: float | None = None,
+        firm_spread: float | None = None,
+        hh_consumption_spread: float | None = None,
+        household_consumption_spread: float | None = None,
+        mortgage_spread: float | None = None,
+        hh_mortgage_spread: float | None = None,
+        household_mortgage_spread: float | None = None,
+    ) -> None:
+        self.firm_short_spread = firm_short_spread if firm_short_spread is not None else firm_spread
+        self.firm_long_spread = firm_long_spread if firm_long_spread is not None else firm_spread
+        self.hh_consumption_spread = (
+            hh_consumption_spread if hh_consumption_spread is not None else household_consumption_spread
+        )
+        self.mortgage_spread = mortgage_spread
+        if self.mortgage_spread is None:
+            self.mortgage_spread = hh_mortgage_spread
+        if self.mortgage_spread is None:
+            self.mortgage_spread = household_mortgage_spread
+
+    @staticmethod
+    def _policy_plus_spread(
+        central_bank_policy_rate: float,
+        prev_interest_rates: np.ndarray,
+        spread: float | np.ndarray | None,
+    ) -> np.ndarray:
+        spread_array = np.asarray(0.0 if spread is None else spread, dtype=float)
+        if spread_array.shape == ():
+            spread_array = np.full(prev_interest_rates.shape, float(spread_array))
+        else:
+            spread_array = np.broadcast_to(spread_array, prev_interest_rates.shape)
+        return np.maximum(central_bank_policy_rate + spread_array, 0.0)
+
+    def get_interest_rates_on_short_term_firm_loans(
+        self,
+        central_bank_policy_rate: float,
+        prev_interest_rates_on_short_term_firm_loans: np.ndarray,
+        firm_pt: float,
+        firm_ect: float,
+        firm_short_spread: float | np.ndarray | None = None,
+    ) -> np.ndarray:
+        return self._policy_plus_spread(
+            central_bank_policy_rate=central_bank_policy_rate,
+            prev_interest_rates=prev_interest_rates_on_short_term_firm_loans,
+            spread=self.firm_short_spread if self.firm_short_spread is not None else firm_short_spread,
+        )
+
+    def get_interest_rates_on_long_term_firm_loans(
+        self,
+        central_bank_policy_rate: float,
+        prev_interest_rates_on_long_term_firm_loans: np.ndarray,
+        firm_pt: float,
+        firm_ect: float,
+        firm_long_spread: float | np.ndarray | None = None,
+    ) -> np.ndarray:
+        return self._policy_plus_spread(
+            central_bank_policy_rate=central_bank_policy_rate,
+            prev_interest_rates=prev_interest_rates_on_long_term_firm_loans,
+            spread=self.firm_long_spread if self.firm_long_spread is not None else firm_long_spread,
+        )
+
+    def get_interest_rates_on_household_consumption_loans(
+        self,
+        central_bank_policy_rate: float,
+        prev_interest_rate_on_hh_consumption_loans: np.ndarray,
+        hh_cons_pt: float,
+        hh_cons_ect: float,
+        hh_consumption_spread: float | np.ndarray | None = None,
+    ) -> np.ndarray:
+        return self._policy_plus_spread(
+            central_bank_policy_rate=central_bank_policy_rate,
+            prev_interest_rates=prev_interest_rate_on_hh_consumption_loans,
+            spread=self.hh_consumption_spread if self.hh_consumption_spread is not None else hh_consumption_spread,
+        )
+
+    def get_interest_rate_on_mortgages(
+        self,
+        central_bank_policy_rate: float,
+        prev_interest_rate_on_mortgages: np.ndarray,
+        hh_mortgage_pt: float,
+        hh_mortgage_ect: float,
+        mortgage_spread: float | np.ndarray | None = None,
+    ) -> np.ndarray:
+        return self._policy_plus_spread(
+            central_bank_policy_rate=central_bank_policy_rate,
+            prev_interest_rates=prev_interest_rate_on_mortgages,
+            spread=self.mortgage_spread if self.mortgage_spread is not None else mortgage_spread,
+        )
+
+    def compute_interest_rate_on_firm_deposits(
+        self,
+        central_bank_policy_rate: float,
+        prev_interest_rate_on_firm_deposits: np.ndarray,
+        firm_pt: float,
+        firm_ect: float,
+    ) -> np.ndarray:
+        return np.full(prev_interest_rate_on_firm_deposits.shape, central_bank_policy_rate)
+
+    def compute_overdraft_rate_on_firm_deposits(
+        self,
+        central_bank_policy_rate: float,
+        prev_overdraft_rate_on_firm_deposits: np.ndarray,
+        firm_pt: float,
+        firm_ect: float,
+    ) -> np.ndarray:
+        return np.full(prev_overdraft_rate_on_firm_deposits.shape, central_bank_policy_rate)
+
+    def compute_interest_rate_on_household_deposits(
+        self,
+        central_bank_policy_rate: float,
+        prev_interest_rate_on_hh_deposits: np.ndarray,
+        hh_cons_pt: float,
+        hh_cons_ect: float,
+    ) -> np.ndarray:
+        return np.full(prev_interest_rate_on_hh_deposits.shape, central_bank_policy_rate)
+
+    def compute_overdraft_rate_on_household_deposits(
+        self,
+        central_bank_policy_rate: float,
+        prev_overdraft_rate_on_hh_deposits: np.ndarray,
+        hh_cons_pt: float,
+        hh_cons_ect: float,
+    ) -> np.ndarray:
+        return np.full(prev_overdraft_rate_on_hh_deposits.shape, central_bank_policy_rate)
