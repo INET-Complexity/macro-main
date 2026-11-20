@@ -17,12 +17,13 @@ class CentralBankPolicy(BaseModel):
 
     Attributes:
         path_name (str): Module path for policy rate functions
-        name (Literal): Selected policy mechanism ("ConstantPolicyRate" or "PolednaPolicyRate")
+        name (Literal): Selected policy mechanism ("ConstantPolicyRate",
+            "PolednaPolicyRate", or "SmoothTaylorRule")
         parameters (dict): Configuration parameters for policy implementation
     """
 
     path_name: str = "policy_rate"
-    name: Literal["ConstantPolicyRate", "PolednaPolicyRate"] = "ConstantPolicyRate"
+    name: Literal["ConstantPolicyRate", "PolednaPolicyRate", "SmoothTaylorRule"] = "ConstantPolicyRate"
     parameters: dict = {}
 
 

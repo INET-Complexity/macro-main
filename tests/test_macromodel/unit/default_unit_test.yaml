@@ -72,7 +72,7 @@ FRA:
       policy_rate:
         name:
           desc: The function used for setting the central bank policy rate.
-          options: ConstantPolicyRate,PolednaPolicyRate
+          options: ConstantPolicyRate,PolednaPolicyRate,SmoothTaylorRule
           type: str
           value: PolednaPolicyRate
   central_government:

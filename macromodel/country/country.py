@@ -224,6 +224,7 @@ class Country:
         industries: list[str],
         initial_year: int,
         t_max: int,
+        time_unit: int,
         running_multiple_countries: bool,
         emission_factors_usd: np.ndarray,
     ) -> "Country":
@@ -241,6 +242,7 @@ class Country:
             industries (list[str]): Industry sectors
             initial_year (int): Starting year
             t_max (int): Maximum simulation periods
+            time_unit (int): Simulation period length in months
             running_multiple_countries (bool): If True, part of multi-country sim
             emission_factors_usd (np.ndarray): Emission factors in USD
 
@@ -378,6 +380,7 @@ class Country:
             households=households,
             industry_vectors=synthetic_country.industry_data["industry_vectors"],
             exogenous=exogenous,
+            time_unit=time_unit,
         )
 
         labour_market = LabourMarket.from_agents(
@@ -604,6 +607,9 @@ class Country:
                 self.central_bank.compute_rate(
                     inflation=self.economy.ts.current("ppi_inflation")[0],
                     growth=self.economy.ts.current("total_growth")[0],
+                    cpi_yoy_inflation=self.economy.ts.current("cpi_yoy_inflation")[0],
+                    output_gap=self.economy.ts.current("output_gap")[0],
+                    time_unit=self.economy.time_unit,
                 )
             ]
         )
@@ -1054,6 +1060,9 @@ class Country:
             firms_real_amount_bought_as_capital_goods=self.firms.ts.current("real_amount_bought_as_capital_goods"),
         )
         self.economy.compute_inflation()
+        self.economy.compute_cpi_yoy_inflation(
+            exogenous_cpi_inflation_before=self.exogenous.inflation_before["CPI Inflation"].values
+        )
         self.economy.compute_growth(
             current_production=self.firms.ts.current("production"),
             prev_production=self.firms.ts.prev("production"),
@@ -1323,6 +1332,9 @@ class Country:
                 central_bank_policy_rate=self.central_bank.ts.current("policy_rate"),
             )
         )
+        self.banks.ts.interest_received.append(
+            self.banks.ts.current("interest_received_on_loans") + self.banks.ts.current("interest_received_on_deposits")
+        )
         self.banks.ts.profits.append(self.banks.compute_profits())
         self.banks.ts.profits_histogram.append(get_histogram(self.banks.ts.current("profits"), self.scale))
 
@@ -1432,6 +1444,7 @@ class Country:
             central_government_rent_received=self.central_government.ts.current("total_rent_received")[0],
             running_multiple_countries=self.running_multiple_countries,
         )
+        self.economy.compute_output_gap()
 
     def update_population_structure(self) -> None:
         """Update demographic composition.
@@ -1503,8 +1516,10 @@ class Country:
             "Exports": self.economy.total_exports(),
             "PPI": self.economy.total_ppi_inflation(),
             "CPI": self.economy.total_cpi_inflation(),
+            "CPI YoY Inflation": self.economy.ts.get_aggregate("cpi_yoy_inflation"),
             "CFPI": self.economy.total_cfpi_inflation(),
             "Gross Output": self.firms.total_sales() + self.firms.total_taxes_paid_on_production(),
+            "Output Gap": self.economy.ts.get_aggregate("output_gap"),
             "Unemployment Rate": self.economy.unemployment_rate(),
             "Consumption Expansion Loan Debt": self.households.consumption_loan_debt(),
             "Mortgage Debt": self.households.mortgage_debt(),
