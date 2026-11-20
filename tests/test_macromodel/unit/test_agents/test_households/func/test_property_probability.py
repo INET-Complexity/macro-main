@@ -68,8 +68,8 @@ class TestHouseholdProbabilityOfBuying:
         """
         np.random.seed(42)  # For reproducibility
 
-        # Single household that is renting (status = 0)
-        household_residence_tenure_status = np.array([0])
+        # Single household that is renting (status = 3)
+        household_residence_tenure_status = np.array([3])
         household_income = np.array([50000.0])  # Moderate income
         household_financial_wealth = np.array([10000.0])  # Some savings
 
@@ -147,8 +147,8 @@ class TestHouseholdProbabilityOfBuying:
         np.random.seed(123)
 
         n_households = 10
-        # Mix of renters (0) and people in social housing (-1)
-        household_residence_tenure_status = np.array([-1, 0, 0, 0, -1, 0, 0, -1, 0, 0])
+        # Mix of renters (3) and people in social housing (-1)
+        household_residence_tenure_status = np.array([-1, 3, 3, 3, -1, 3, 3, -1, 3, 3])
 
         # Varying incomes
         household_income = np.linspace(20000, 100000, n_households)
@@ -179,3 +179,26 @@ class TestHouseholdProbabilityOfBuying:
             if not np.isnan(max_rent[i]):
                 assert np.isfinite(max_rent[i]), f"Household {i}: max_rent must be finite"
                 assert max_rent[i] > 0, f"Household {i}: max_rent must be positive"
+
+    def test_renter_status_three_gets_housing_demand(self, property_demand_calculator, minimal_housing_data):
+        """Regression: renters use tenure status 3, not 0.
+
+        With the previous ``status == 0`` check, renter households did not enter
+        the move/buy/rent decision, so rental demand could vanish even when
+        renters were configured to consider moving.
+        """
+        np.random.seed(321)
+
+        max_price, max_rent, _ = property_demand_calculator.compute_demand(
+            housing_data=minimal_housing_data,
+            household_residence_tenure_status=np.array([3]),
+            household_income=np.array([50000.0]),
+            household_financial_wealth=np.array([10000.0]),
+            observed_fraction_value_price=np.array([1.0, 0.0]),
+            observed_fraction_rent_value=np.array([0.005, 0.0]),
+            expected_hpi_growth=0.02,
+            assumed_mortgage_maturity=25,
+            rental_income_taxes=0.2,
+        )
+
+        assert not (np.isnan(max_price[0]) and np.isnan(max_rent[0]))
