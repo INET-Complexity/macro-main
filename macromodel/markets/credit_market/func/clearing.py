@@ -260,19 +260,19 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
                 - banks.ts.current("total_outstanding_loans")
                 - new_credit_by_bank,
             )
-            max_supply_based_on_preferences_firms = banks.ts.initial("new_loans_fraction_firms") * np.exp(
+            max_supply_based_on_preferences_firms = max_car * banks.ts.initial("new_loans_fraction_firms") * np.exp(
                 -self.credit_supply_temperature * current_npl_firm_loans
             )
-            max_supply_based_on_preferences_hh_cons = banks.ts.initial("new_loans_fraction_hh_cons") * np.exp(
+            max_supply_based_on_preferences_hh_cons = max_car * banks.ts.initial("new_loans_fraction_hh_cons") * np.exp(
                 -self.credit_supply_temperature * current_npl_hh_cons_loans
             )
-            max_supply_based_on_preferences_mortgages = banks.ts.initial("new_loans_fraction_mortgages") * np.exp(
+            max_supply_based_on_preferences_mortgages = max_car * banks.ts.initial("new_loans_fraction_mortgages") * np.exp(
                 -self.credit_supply_temperature * current_npl_mortgages
             )
             current_sum = (
-                max_supply_based_on_preferences_firms * max_car
-                + max_supply_based_on_preferences_hh_cons * max_car
-                + max_supply_based_on_preferences_mortgages * max_car
+                max_supply_based_on_preferences_firms
+                + max_supply_based_on_preferences_hh_cons
+                + max_supply_based_on_preferences_mortgages
             )
             scale = np.divide(
                 max_car,
@@ -999,19 +999,19 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 - banks.ts.current("total_outstanding_loans")
                 - new_credit_by_bank,
             )
-            max_supply_based_on_preferences_firms = banks.ts.initial("new_loans_fraction_firms") * np.exp(
+            max_supply_based_on_preferences_firms = max_car * banks.ts.initial("new_loans_fraction_firms") * np.exp(
                 -self.credit_supply_temperature * current_npl_firm_loans
             )
-            max_supply_based_on_preferences_hh_cons = banks.ts.initial("new_loans_fraction_hh_cons") * np.exp(
+            max_supply_based_on_preferences_hh_cons = max_car * banks.ts.initial("new_loans_fraction_hh_cons") * np.exp(
                 -self.credit_supply_temperature * current_npl_hh_cons_loans
             )
-            max_supply_based_on_preferences_mortgages = banks.ts.initial("new_loans_fraction_mortgages") * np.exp(
+            max_supply_based_on_preferences_mortgages = max_car * banks.ts.initial("new_loans_fraction_mortgages") * np.exp(
                 -self.credit_supply_temperature * current_npl_mortgages
             )
             current_sum = (
-                max_supply_based_on_preferences_firms * max_car
-                + max_supply_based_on_preferences_hh_cons * max_car
-                + max_supply_based_on_preferences_mortgages * max_car
+                max_supply_based_on_preferences_firms
+                + max_supply_based_on_preferences_hh_cons
+                + max_supply_based_on_preferences_mortgages
             )
             scale = np.divide(
                 max_car,
