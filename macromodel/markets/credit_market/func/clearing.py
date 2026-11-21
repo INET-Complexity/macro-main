@@ -32,7 +32,6 @@ from typing import Tuple
 
 import numpy as np
 import pandas as pd
-from numba import njit
 
 from macromodel.agents.banks.banks import Banks
 from macromodel.agents.firms import Firms
