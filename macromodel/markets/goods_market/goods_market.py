@@ -206,7 +206,11 @@ class GoodsMarket:
         """
         self.ts.reset()
         self.states = deepcopy(self.initial_states)
-        update_functions(model=configuration.functions, loc="macromodel.agents.goods_market", functions=self.functions)
+        update_functions(
+            model=configuration.functions,
+            loc="macromodel.agents.goods_market",
+            functions=self.functions,
+        )
 
     def prepare(self, collect_sd: bool = True) -> None:
         """Prepare the market for clearing.

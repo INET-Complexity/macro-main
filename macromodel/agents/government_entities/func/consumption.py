@@ -25,7 +25,9 @@ from macromodel.forecaster.forecaster import (
 )
 
 
-def _normalise_government_consumption_weights(previous_desired_government_consumption: np.ndarray) -> np.ndarray:
+def _normalise_government_consumption_weights(
+    previous_desired_government_consumption: np.ndarray,
+) -> np.ndarray:
     """Return stable industry weights for government consumption targets."""
     weights = np.asarray(previous_desired_government_consumption, dtype=float)
     weights = np.where(np.isfinite(weights) & (weights > 0.0), weights, 0.0)

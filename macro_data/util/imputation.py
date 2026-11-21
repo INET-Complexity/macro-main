@@ -43,7 +43,10 @@ from sklearn.impute import IterativeImputer  # noqa
 
 
 def apply_iterative_imputer(
-    df: pd.DataFrame, columns: list[str], selection: Optional[pd.Series] = None, **imputer_args
+    df: pd.DataFrame,
+    columns: list[str],
+    selection: Optional[pd.Series] = None,
+    **imputer_args,
 ) -> pd.DataFrame:
     """
     Apply iterative imputation to fill missing values in specified columns.

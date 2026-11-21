@@ -115,7 +115,13 @@ def set_household_housing_data(
 
     # Rent paid and value of the household main residence
     social_housing_rent = rent_as_fraction_of_unemployment_rate * unemployment_benefits_by_capita
-    household_data = fill_rent(household_data, households_owning, households_renting, scale, social_housing_rent)
+    household_data = fill_rent(
+        household_data,
+        households_owning,
+        households_renting,
+        scale,
+        social_housing_rent,
+    )
 
     # Number of additional properties
     # household_data["Number of Properties other than Household Main Residence"].fillna(0, inplace=True)
@@ -131,7 +137,12 @@ def set_household_housing_data(
     household_data = fix_property_values(household_data, household_without_additional_properties)
 
     # Rent received
-    household_data = fix_rent(household_data, household_without_additional_properties, scale, social_housing_rent)
+    household_data = fix_rent(
+        household_data,
+        household_without_additional_properties,
+        scale,
+        social_housing_rent,
+    )
     return household_data
 
 
@@ -163,7 +174,9 @@ def fix_rent(
     mask = ~household_without_additional_properties & (household_data["Rental Income from Real Estate"] == 0.0)
     household_data.loc[mask, "Rental Income from Real Estate"] = np.nan
     household_data = apply_iterative_imputer(
-        household_data, ["Type", "Value of other Properties", "Rental Income from Real Estate"], min_value=0.0
+        household_data,
+        ["Type", "Value of other Properties", "Rental Income from Real Estate"],
+        min_value=0.0,
     )
     return household_data
 
@@ -221,7 +234,8 @@ def fill_rent(
     household_data.loc[:, "Value of the Main Residence"] *= scale
     household_data.loc[households_renting & (household_data["Rent Paid"] == 0.0), "Rent Paid"] = np.nan
     household_data.loc[
-        households_owning & (household_data["Value of the Main Residence"] == 0.0), "Value of the Main Residence"
+        households_owning & (household_data["Value of the Main Residence"] == 0.0),
+        "Value of the Main Residence",
     ] = np.nan
     household_data = apply_iterative_imputer(
         household_data,

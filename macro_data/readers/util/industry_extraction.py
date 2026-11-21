@@ -71,7 +71,11 @@ def compile_industry_data(
     }
 
     fill_trade_data(
-        "ROW", current_icio_reader, exchange_rate_row, industry_data["ROW"]["industry_vectors"], country_names
+        "ROW",
+        current_icio_reader,
+        exchange_rate_row,
+        industry_data["ROW"]["industry_vectors"],
+        country_names,
     )
 
     return industry_data
@@ -154,7 +158,13 @@ def get_industry_vectors(
         n_firms_by_industry[n_firms_by_industry == 0] = 1
         industry_vectors["Number of Firms"] = n_firms_by_industry
 
-    fill_trade_data(country_name, current_icio_reader, exchange_rate, industry_vectors, trade_partners)
+    fill_trade_data(
+        country_name,
+        current_icio_reader,
+        exchange_rate,
+        industry_vectors,
+        trade_partners,
+    )
 
     return industry_vectors
 
@@ -176,7 +186,10 @@ def fill_trade_data(
 
 
 def compile_exogenous_industry_data(
-    readers: DataReaders, country_names: list[str], year_min: int = 2010, year_max: int = 2019
+    readers: DataReaders,
+    country_names: list[str],
+    year_min: int = 2010,
+    year_max: int = 2019,
 ) -> dict[str, pd.DataFrame]:
     icio_readers = readers.icio
     exchange_rates = readers.exchange_rates
@@ -186,7 +199,14 @@ def compile_exogenous_industry_data(
     exogenous_industry_data = {
         country: pd.concat(
             [
-                get_country_industry_data(country, country_names, exchange_rates, icio_readers, year, sea_reader)
+                get_country_industry_data(
+                    country,
+                    country_names,
+                    exchange_rates,
+                    icio_readers,
+                    year,
+                    sea_reader,
+                )
                 for year in range(year_min, year_max)
                 if year in icio_readers.keys()
             ]
@@ -214,7 +234,10 @@ def compile_exogenous_industry_data(
 
 
 def get_row_industry_data(
-    country_names: list[str], exchange_rates: ExchangeRatesReader, icio_readers: dict[int, ICIOReader], year: int
+    country_names: list[str],
+    exchange_rates: ExchangeRatesReader,
+    icio_readers: dict[int, ICIOReader],
+    year: int,
 ) -> pd.DataFrame:
     exchange_rate_row = exchange_rates.from_usd_to_lcu("ROW", year)
     row_industry_data = pd.DataFrame(

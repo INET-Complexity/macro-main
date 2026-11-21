@@ -780,13 +780,31 @@ class EuroStatReader:
         if isinstance(country, Region):
             country = country.parent_country
         # Get growth rates
-        data_b = get_perc_growth_series(country=country, growth_df=self.data["perc_growth_sector_B"], series_name="B")
-        data_c = get_perc_growth_series(country=country, growth_df=self.data["perc_growth_sector_C"], series_name="C")
-        data_d = get_perc_growth_series(country=country, growth_df=self.data["perc_growth_sector_D"], series_name="D")
-        data_f = get_perc_growth_series(country=country, growth_df=self.data["perc_growth_sector_F"], series_name="F")
+        data_b = get_perc_growth_series(
+            country=country,
+            growth_df=self.data["perc_growth_sector_B"],
+            series_name="B",
+        )
+        data_c = get_perc_growth_series(
+            country=country,
+            growth_df=self.data["perc_growth_sector_C"],
+            series_name="C",
+        )
+        data_d = get_perc_growth_series(
+            country=country,
+            growth_df=self.data["perc_growth_sector_D"],
+            series_name="D",
+        )
+        data_f = get_perc_growth_series(
+            country=country,
+            growth_df=self.data["perc_growth_sector_F"],
+            series_name="F",
+        )
 
         services = get_perc_growth_series(
-            country=country, growth_df=self.data["perc_growth_services"], series_name="Services"
+            country=country,
+            growth_df=self.data["perc_growth_services"],
+            series_name="Services",
         )
 
         growth_df = pd.concat([data_b, data_c, data_d, data_f], axis=1)
@@ -819,7 +837,10 @@ class EuroStatReader:
         return growth_df
 
     def get_total_industry_debt_and_deposits(
-        self, country: Country, proxy_country: Optional[Country] = None, ratio: float = 1.0
+        self,
+        country: Country,
+        proxy_country: Optional[Country] = None,
+        ratio: float = 1.0,
     ) -> pd.DataFrame:
         """
         Get total industry debt and deposits time series for a specific country.
@@ -925,7 +946,11 @@ class EuroStatReader:
         hh_perc = df_year.loc[df["indic"] == "INV_HH"]["OBS_VALUE"].values[0] / 100.0
         gov_perc = df_year.loc[df["indic"] == "INV_GOV"]["OBS_VALUE"].values[0] / 100.0
         total_perc = firm_perc + hh_perc + gov_perc
-        return {"Firm": firm_perc / total_perc, "Household": hh_perc / total_perc, "Government": gov_perc / total_perc}
+        return {
+            "Firm": firm_perc / total_perc,
+            "Household": hh_perc / total_perc,
+            "Government": gov_perc / total_perc,
+        }
 
     def get_imputed_rent_fraction(
         self,

@@ -126,7 +126,10 @@ class CompustatSpoofer:
             # Treat as categorical - resample from observed values
             value_counts = non_missing.value_counts(normalize=True)
             spoofed_values = np.random.choice(
-                value_counts.index, size=len(non_missing), p=value_counts.values, replace=True
+                value_counts.index,
+                size=len(non_missing),
+                p=value_counts.values,
+                replace=True,
             )
         else:
             # Auto-detect distribution

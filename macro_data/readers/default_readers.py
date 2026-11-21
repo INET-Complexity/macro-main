@@ -39,8 +39,13 @@ from macro_data.readers.economic_data.oecd_economic_data import OECDEconData
 from macro_data.readers.economic_data.ons_reader import ONSReader
 from macro_data.readers.economic_data.policy_rates import PolicyRatesReader
 from macro_data.readers.economic_data.world_bank_reader import WorldBankReader
-from macro_data.readers.emission_fraction.emission_fraction_reader import EmissionsFractionReader
-from macro_data.readers.emissions.emissions_reader import CH4EmissionsReaderCAN, EmissionsReader
+from macro_data.readers.emission_fraction.emission_fraction_reader import (
+    EmissionsFractionReader,
+)
+from macro_data.readers.emissions.emissions_reader import (
+    CH4EmissionsReaderCAN,
+    EmissionsReader,
+)
 from macro_data.readers.exo_prices.exo_prices_reader import SectorExoPricesReader
 from macro_data.readers.icio_sea_matching import (
     add_investment_matrix_to_icio,
@@ -278,7 +283,9 @@ class DataReaders:
             total_output[country] = icio[simulation_year].get_total_output(country).sum()
 
         eurostat = EuroStatReader(
-            path=datapaths.eurostat_path, country_code_path=datapaths.country_codes_path, total_output=total_output
+            path=datapaths.eurostat_path,
+            country_code_path=datapaths.country_codes_path,
+            total_output=total_output,
         )
 
         proxified = [country if country.is_eu_country else proxy_country_dict[country] for country in country_names]
@@ -432,7 +439,8 @@ class DataReaders:
         )
 
         policy_rates = PolicyRatesReader(
-            path=datapaths.policy_rates_path, country_code_path=datapaths.country_codes_path
+            path=datapaths.policy_rates_path,
+            country_code_path=datapaths.country_codes_path,
         )
 
         imf_reader = IMFReader.from_data(data_path=datapaths.imf_path, scale_dict=scale_dict)
@@ -454,7 +462,10 @@ class DataReaders:
         )
 
         compustat_banks = CompustatBanksReader.from_raw_data(
-            year=simulation_year, quarter=1, raw_quarterly_path=datapaths.compustat_banks_path, countries=all_countries
+            year=simulation_year,
+            quarter=1,
+            raw_quarterly_path=datapaths.compustat_banks_path,
+            countries=all_countries,
         )
 
         if prune_date:
@@ -564,7 +575,11 @@ class DataReaders:
             return None
 
     def get_benefits_inflation_data(
-        self, country_name: Country, year_min: int, year_max: int, exogenous_data: dict[str, Any]
+        self,
+        country_name: Country,
+        year_min: int,
+        year_max: int,
+        exogenous_data: dict[str, Any],
     ) -> pd.DataFrame:
         """Calculate benefits and inflation data for a country.
 
@@ -741,7 +756,9 @@ class DataReaders:
             shares /= shares.sum()
             agg_weights = weights_by_income.loc[aggregate_industry]
             sub_weights = pd.DataFrame(
-                np.outer(shares.values, agg_weights.values), index=sub_industries, columns=weights_by_income.columns
+                np.outer(shares.values, agg_weights.values),
+                index=sub_industries,
+                columns=weights_by_income.columns,
             )
             weights_by_income_all.loc[sub_industries] = sub_weights
 

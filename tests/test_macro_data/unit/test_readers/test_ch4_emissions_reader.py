@@ -3,7 +3,10 @@ import pathlib
 import numpy as np
 import pytest
 
-from macro_data.readers.emissions.emissions_reader import CH4EmissionsDataCAN, CH4EmissionsReaderCAN
+from macro_data.readers.emissions.emissions_reader import (
+    CH4EmissionsDataCAN,
+    CH4EmissionsReaderCAN,
+)
 
 DATA_PATH = pathlib.Path(__file__).parent.parent / "sample_raw_data" / "emission_factors"
 SAMPLE_CSV = DATA_PATH / "EN-GHG_EconSectByGas-CA_sample.csv"

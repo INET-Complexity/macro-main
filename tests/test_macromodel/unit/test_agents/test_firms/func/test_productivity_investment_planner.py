@@ -619,7 +619,11 @@ class TestHeterogeneousParameters:
         n_firms = 3
         planner = SimpleProductivityInvestmentPlanner(
             n_firms=n_firms,
-            investment_effectiveness=[0.05, 0.10, 0.15],  # Different effectiveness per firm
+            investment_effectiveness=[
+                0.05,
+                0.10,
+                0.15,
+            ],  # Different effectiveness per firm
             hurdle_rate=0.01,  # Low hurdle rate to ensure investment
             investment_propensity=1.0,
         )

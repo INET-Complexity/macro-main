@@ -416,7 +416,15 @@ class WorldBankReader:
             country = country.parent_country
         df = self.data["unemployment"]
         df = df.loc[df["Country Code"] == country]
-        df = df.drop(columns=["Country Code", "Country Name", "Indicator Name", "Indicator Code", "Unnamed: 66"])
+        df = df.drop(
+            columns=[
+                "Country Code",
+                "Country Name",
+                "Indicator Name",
+                "Indicator Code",
+                "Unnamed: 66",
+            ]
+        )
         df = df.T
         df.index = pd.to_datetime(df.index, format="%Y")
         df.columns = ["Unemployment Rate"]
@@ -511,7 +519,10 @@ class WorldBankReader:
                     # Check if column can be transformed in a date
                     dates = pd.to_datetime(value[col], errors="coerce", format="mixed")
                     if dates.isnull().sum() == 0:
-                        logging.log(level=logging.DEBUG, msg=f"WBank: NAT dates {dates.isna().sum()}.")
+                        logging.log(
+                            level=logging.DEBUG,
+                            msg=f"WBank: NAT dates {dates.isna().sum()}.",
+                        )
                         mask = dates >= pd.to_datetime(prune_date)
                         if mask.sum() == 0:
                             warnings.warn(
@@ -519,7 +530,8 @@ class WorldBankReader:
                                 DataFilterWarning,
                             )
                         logging.log(
-                            level=logging.DEBUG, msg=f"WBank: Keeping {mask.sum()} rows for prune date {prune_date}."
+                            level=logging.DEBUG,
+                            msg=f"WBank: Keeping {mask.sum()} rows for prune date {prune_date}.",
                         )
                         self.data[key] = value.loc[mask, :]
                         break

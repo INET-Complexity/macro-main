@@ -158,7 +158,9 @@ class CentralGovernment(Agent):
         """
         self.gen_reset()
         update_functions(
-            model=configuration.functions, loc="macromodel.agents.central_government", functions=self.functions
+            model=configuration.functions,
+            loc="macromodel.agents.central_government",
+            functions=self.functions,
         )
 
     def update_benefits(

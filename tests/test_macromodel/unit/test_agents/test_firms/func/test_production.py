@@ -76,15 +76,30 @@ class TestProductionSetter:
 
     def test__compute_limiting_intermediate_inputs_stock(self):
         intermediate_inputs_productivity_matrix = np.array(
-            [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [np.inf, np.inf, np.inf, np.inf], [1.0, 1.0, 1.0, 1.0]]
+            [
+                [1.0, 1.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0, 1.0],
+                [np.inf, np.inf, np.inf, np.inf],
+                [1.0, 1.0, 1.0, 1.0],
+            ]
         )
         intermediate_inputs_stock = np.array(
-            [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [0.0, 0.0, 0.0, 0.0], [1.0, 1.0, 1.0, 1.0]]
+            [
+                [1.0, 1.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0],
+                [1.0, 1.0, 1.0, 1.0],
+            ]
         )
         intermediate_inputs_utilisation_rate = np.ones(4)
         goods_criticality_matrix = np.ones((4, 4))
         substitution_bundle_matrix = np.array(
-            [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+            [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
         )
         bundle_test = BundledLeontief()
         bundle_productivity = bundle_test.compute_limiting_intermediate_inputs_stock(

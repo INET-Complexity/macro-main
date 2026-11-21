@@ -270,7 +270,8 @@ class Agent:
         )
         for country_name in self.all_country_names:
             self.transactor_seller_states["Real Amount sold to " + country_name] = round_pos(
-                self.transactor_seller_states["Real Amount sold to " + country_name], rounding
+                self.transactor_seller_states["Real Amount sold to " + country_name],
+                rounding,
             )
         self.transactor_seller_states["Real Excess Demand"] = round_pos(
             self.transactor_seller_states["Real Excess Demand"], rounding
@@ -280,14 +281,16 @@ class Agent:
         )
         for country_name in self.all_country_names:
             self.transactor_buyer_states["Nominal Amount spent on Goods from " + country_name] = round_pos2(
-                self.transactor_buyer_states["Nominal Amount spent on Goods from " + country_name], rounding
+                self.transactor_buyer_states["Nominal Amount spent on Goods from " + country_name],
+                rounding,
             )
         self.transactor_buyer_states["Real Amount bought"] = round_pos2(
             self.transactor_buyer_states["Real Amount bought"], rounding
         )
         for country_name in self.all_country_names:
             self.transactor_buyer_states["Real Amount bought from " + country_name] = round_pos2(
-                self.transactor_buyer_states["Real Amount bought from " + country_name], rounding
+                self.transactor_buyer_states["Real Amount bought from " + country_name],
+                rounding,
             )
 
         # Update time series for sellers

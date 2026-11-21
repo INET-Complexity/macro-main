@@ -146,7 +146,7 @@ readers = DataReaders.from_raw_data(
     simulation_year=2018,
     scale_dict={"FRA": 1.0, "DEU": 1.0, "USA": 1.0},
     industries=["C10T12", "C13T15"],
-    aggregate_industries=True
+    aggregate_industries=True,
 )
 
 # Access data through the unified interface

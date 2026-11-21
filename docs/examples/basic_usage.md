@@ -14,11 +14,7 @@ from macro_data import DataWrapper
 config = default_data_configuration(countries=["FRA"], proxy_country_dict={})
 
 # Create DataWrapper instance
-creator = DataWrapper.from_config(
-    configuration=config,
-    raw_data_path="path/to/raw/data",
-    single_hfcs_survey=True
-)
+creator = DataWrapper.from_config(configuration=config, raw_data_path="path/to/raw/data", single_hfcs_survey=True)
 
 # Save processed data for later use
 creator.save("./data_fra.pkl")
@@ -41,10 +37,7 @@ country_config = CountryConfiguration()
 sim_config = SimulationConfiguration(country_configurations={"FRA": country_config})
 
 # Initialize simulation
-simulation = Simulation.from_datawrapper(
-    datawrapper=preprocessed_data,
-    simulation_configuration=sim_config
-)
+simulation = Simulation.from_datawrapper(datawrapper=preprocessed_data, simulation_configuration=sim_config)
 
 # Run the simulation (runs for the configured number of steps)
 simulation.run()

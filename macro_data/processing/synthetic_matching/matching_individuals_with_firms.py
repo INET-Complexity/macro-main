@@ -255,5 +255,6 @@ def match_individuals_with_firms_country(
         )
 
     population.set_individual_labour_inputs(
-        firm_production=firms.firm_data["Production"], firm_employees=firms.firm_data["Employees ID"]
+        firm_production=firms.firm_data["Production"],
+        firm_employees=firms.firm_data["Employees ID"],
     )

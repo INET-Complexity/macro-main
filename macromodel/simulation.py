@@ -90,7 +90,10 @@ class Simulation:
         """
 
         data_configuration = datawrapper.configuration
-        for country, country_sim_conf in simulation_configuration.country_configurations.items():
+        for (
+            country,
+            country_sim_conf,
+        ) in simulation_configuration.country_configurations.items():
             if country not in data_configuration.country_configs:
                 raise ValueError(
                     f"Country {country} not found in the data configuration. Please use a valid data configuration."
@@ -185,7 +188,11 @@ class Simulation:
             row_index=row_index,
         )
 
-        timestep = Timestep(year=datawrapper.configuration.year, month=1, increment=datawrapper.time_unit)
+        timestep = Timestep(
+            year=datawrapper.configuration.year,
+            month=1,
+            increment=datawrapper.time_unit,
+        )
 
         if simulation_configuration.seed is not None:
             np.random.seed(simulation_configuration.seed)
@@ -510,7 +517,8 @@ class Simulation:
 
 
 def check_compatibility(
-    country_data_configuration: CountryDataConfiguration, country_sim_configuration: CountryConfiguration
+    country_data_configuration: CountryDataConfiguration,
+    country_sim_configuration: CountryConfiguration,
 ) -> bool:
     """Check if data and simulation configurations are compatible for a country.
 

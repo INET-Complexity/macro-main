@@ -181,7 +181,11 @@ def fit_household_models(df: pd.DataFrame, n_lags: int, min_size: int = 12) -> t
     household_consumption_rates = df["household_consumption_rates"].values[-1] + household_consumption_ect * (
         df["household_consumption_rates"].values[-1] - household_consumption_pt * df["Policy Rate"].values[-1]
     )
-    return household_consumption_pt, household_consumption_ect, household_consumption_rates
+    return (
+        household_consumption_pt,
+        household_consumption_ect,
+        household_consumption_rates,
+    )
 
 
 def fit_firm_models(df: pd.DataFrame, n_lags: int, min_size: int = 12) -> tuple[float, float, float]:

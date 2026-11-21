@@ -354,7 +354,10 @@ class SyntheticPopulation(ABC):
 
     @abstractmethod
     def set_debt_installments(
-        self, consumption_installments: np.ndarray, ce_installments: np.ndarray, mortgage_installments: np.ndarray
+        self,
+        consumption_installments: np.ndarray,
+        ce_installments: np.ndarray,
+        mortgage_installments: np.ndarray,
     ) -> None:
         """Set household debt installment payments.
 
@@ -476,14 +479,20 @@ class SyntheticPopulation(ABC):
         self.household_data["Investment Rate"] = default_investment_rates
 
     def normalise_household_investment(
-        self, tau_cf: float, iot_hh_investment: np.ndarray | pd.Series, positive_investment_rates: bool = True
+        self,
+        tau_cf: float,
+        iot_hh_investment: np.ndarray | pd.Series,
+        positive_investment_rates: bool = True,
     ) -> None:
         inv_weights = iot_hh_investment / iot_hh_investment.sum()
         income = self.household_data["Income"].values
         investment_rate = self.household_data["Investment Rate"].values
 
         current_hh_investment = default_target_investment(
-            income_=income, investment_rate=investment_rate, tau_cf_=tau_cf, investment_weights_=inv_weights
+            income_=income,
+            investment_rate=investment_rate,
+            tau_cf_=tau_cf,
+            investment_weights_=inv_weights,
         )
 
         factor = iot_hh_investment.sum() / current_hh_investment.sum()
@@ -512,7 +521,10 @@ class SyntheticPopulation(ABC):
         income = self.household_data["Income"].values
         investment_rate = self.household_data["Investment Rate"].values
         return default_target_investment(
-            income_=income, investment_rate=investment_rate, tau_cf_=tau_cf, investment_weights_=self.investment_weights
+            income_=income,
+            investment_rate=investment_rate,
+            tau_cf_=tau_cf,
+            investment_weights_=self.investment_weights,
         )
 
     def match_consumption_weights_by_income(
@@ -526,7 +538,10 @@ class SyntheticPopulation(ABC):
     def set_wealth_distribution_function(self, independents: Optional[list[str]] = None) -> None: ...
 
     def add_emissions(
-        self, emission_factors_array: np.ndarray, emitting_indices: list[int] | np.ndarray, tau_cf: float
+        self,
+        emission_factors_array: np.ndarray,
+        emitting_indices: list[int] | np.ndarray,
+        tau_cf: float,
     ) -> None:
         """Calculate and add emissions data to household records.
 

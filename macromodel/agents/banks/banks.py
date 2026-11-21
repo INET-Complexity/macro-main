@@ -174,7 +174,11 @@ class Banks(Agent):
         """
         self.gen_reset()
         self.parameters = configuration.parameters
-        update_functions(model=configuration.functions, loc="macromodel.agents.banks", functions=self.functions)
+        update_functions(
+            model=configuration.functions,
+            loc="macromodel.agents.banks",
+            functions=self.functions,
+        )
 
     def compute_estimated_profits(self, estimated_growth: float, estimated_inflation: float) -> np.ndarray:
         """Calculate estimated future profits.

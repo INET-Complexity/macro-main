@@ -152,7 +152,11 @@ class CentralBank(Agent):
                 parameters for the reset state
         """
         self.gen_reset()
-        update_functions(model=configuration.functions, loc="macromodel.agents.central_bank", functions=self.functions)
+        update_functions(
+            model=configuration.functions,
+            loc="macromodel.agents.central_bank",
+            functions=self.functions,
+        )
 
     def compute_rate(self, inflation: float, growth: float) -> float:
         """Calculate the policy interest rate.

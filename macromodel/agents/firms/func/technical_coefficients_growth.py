@@ -28,7 +28,12 @@ class TechnicalCoefficientsGrowth(ABC):
         diminishing_returns_factor (float): Rate of diminishing returns (δ)
     """
 
-    def __init__(self, investment_effectiveness: float = 0.1, diminishing_returns_factor: float = 0.5, **kwargs):
+    def __init__(
+        self,
+        investment_effectiveness: float = 0.1,
+        diminishing_returns_factor: float = 0.5,
+        **kwargs,
+    ):
         """Initialize technical coefficients growth calculator.
 
         Args:
@@ -203,7 +208,12 @@ class SimpleTechnicalGrowth(TechnicalCoefficientsGrowth):
     - Ω_ij = cumulative past improvements for firm i on input j
     """
 
-    def __init__(self, investment_effectiveness: float = 0.1, diminishing_returns_factor: float = 0.5, **kwargs):
+    def __init__(
+        self,
+        investment_effectiveness: float = 0.1,
+        diminishing_returns_factor: float = 0.5,
+        **kwargs,
+    ):
         """Initialize SimpleTechnicalGrowth with parameters.
 
         Args:

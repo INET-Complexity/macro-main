@@ -153,7 +153,8 @@ class DefaultSyntheticRestOfTheWorld(SyntheticRestOfTheWorld):
             [industry_data[c]["industry_vectors"]["Imports in USD"].sum() for c in industry_data if c != "ROW"]
         )
         exports_by_industry = np.sum(
-            [industry_data[c]["industry_vectors"]["Exports in USD"].values for c in industry_data if c != "ROW"], axis=1
+            [industry_data[c]["industry_vectors"]["Exports in USD"].values for c in industry_data if c != "ROW"],
+            axis=1,
         )
 
         row_exports = row_industry_data["industry_vectors"]["Exports in USD"]

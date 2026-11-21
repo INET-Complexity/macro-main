@@ -267,7 +267,10 @@ class ProductivityInvestmentPlanner(ABC):
         # Normalize priorities
         priority_sums = priorities.sum(axis=1, keepdims=True)
         normalized_priorities = np.divide(
-            priorities, priority_sums, out=np.zeros_like(priorities), where=priority_sums > 0
+            priorities,
+            priority_sums,
+            out=np.zeros_like(priorities),
+            where=priority_sums > 0,
         )
 
         # Distribute technical budget across inputs
@@ -294,7 +297,10 @@ class ProductivityInvestmentPlanner(ABC):
         # Usage-based priority: heavily used inputs get higher weight
         total_usage_per_firm = input_usage.sum(axis=1, keepdims=True)
         relative_usage = np.divide(
-            input_usage, total_usage_per_firm, out=np.zeros_like(input_usage), where=total_usage_per_firm > 0
+            input_usage,
+            total_usage_per_firm,
+            out=np.zeros_like(input_usage),
+            where=total_usage_per_firm > 0,
         )
 
         # Improvement potential: lower efficiency gets higher weight

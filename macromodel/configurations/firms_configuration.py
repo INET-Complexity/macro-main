@@ -177,7 +177,10 @@ class OfferedWageSetter(BaseModel):
 
     name: Literal["DefaultOfferedWageSetter"] = "DefaultOfferedWageSetter"
     path_name: str = "offered_wage_setter"
-    parameters: dict[str, Any] = {"labour_market_tightness_markup_scale": 0.5, "markup_time_span": 4}
+    parameters: dict[str, Any] = {
+        "labour_market_tightness_markup_scale": 0.5,
+        "markup_time_span": 4,
+    }
 
 
 class Prices(BaseModel):
@@ -202,9 +205,13 @@ class Production(BaseModel):
     Options: PureLeontief, CriticalAndImportantLeontief, CriticalLeontief, Linear
     """
 
-    name: Literal["PureLeontief", "CriticalAndImportantLeontief", "CriticalLeontief", "Linear", "BundledLeontief"] = (
-        "PureLeontief"
-    )
+    name: Literal[
+        "PureLeontief",
+        "CriticalAndImportantLeontief",
+        "CriticalLeontief",
+        "Linear",
+        "BundledLeontief",
+    ] = "PureLeontief"
     path_name: str = "production"
     parameters: dict[str, Any] = {}
 
@@ -219,7 +226,10 @@ class TargetCapitalInputs(BaseModel):
         "FinancialTargetCapitalInputsSetter"
     )
     path_name: str = "target_capital_inputs"
-    parameters: dict[str, Any] = {"target_capital_inputs_fraction": 0.0, "credit_gap_fraction": 0.0}
+    parameters: dict[str, Any] = {
+        "target_capital_inputs_fraction": 0.0,
+        "credit_gap_fraction": 0.0,
+    }
 
 
 class TargetCredit(BaseModel):
@@ -239,11 +249,15 @@ class TargetIntermediateInputs(BaseModel):
     Options: UnconstrainedTargetIntermediateInputsSetter, FinancialTargetIntermediateInputsSetter
     """
 
-    name: Literal["FinancialTargetIntermediateInputsSetter", "BundleWeightedTargetIntermediateInputsSetter"] = (
-        "FinancialTargetIntermediateInputsSetter"
-    )
+    name: Literal[
+        "FinancialTargetIntermediateInputsSetter",
+        "BundleWeightedTargetIntermediateInputsSetter",
+    ] = "FinancialTargetIntermediateInputsSetter"
     path_name: str = "target_intermediate_inputs"
-    parameters: dict[str, Any] = {"target_intermediate_inputs_fraction": 0.0, "credit_gap_fraction": 0.0}
+    parameters: dict[str, Any] = {
+        "target_intermediate_inputs_fraction": 0.0,
+        "credit_gap_fraction": 0.0,
+    }
 
 
 class WageSetter(BaseModel):
@@ -307,7 +321,9 @@ class ProductivityInvestmentPlanner(BaseModel):
     """
 
     name: Literal[
-        "NoProductivityInvestmentPlanner", "SimpleProductivityInvestmentPlanner", "OptimalProductivityInvestmentPlanner"
+        "NoProductivityInvestmentPlanner",
+        "SimpleProductivityInvestmentPlanner",
+        "OptimalProductivityInvestmentPlanner",
     ] = "NoProductivityInvestmentPlanner"
     path_name: str = "productivity_investment_planner"
     parameters: dict[str, Any] = {
@@ -394,38 +410,65 @@ class FirmsParameters(BaseModel):
 
     # Productivity investment allocation parameters
     max_productivity_investment_fraction: float = Field(
-        0.15, ge=0.0, le=1.0, description="Max productivity investment as fraction of output value"
+        0.15,
+        ge=0.0,
+        le=1.0,
+        description="Max productivity investment as fraction of output value",
     )
     max_productivity_cash_fraction: float = Field(
-        0.3, ge=0.0, le=1.0, description="Max productivity investment as fraction of available cash"
+        0.3,
+        ge=0.0,
+        le=1.0,
+        description="Max productivity investment as fraction of available cash",
     )
     tfp_investment_share: float = Field(
-        0.4, ge=0.0, le=1.0, description="Share of productivity budget allocated to TFP (vs technical)"
+        0.4,
+        ge=0.0,
+        le=1.0,
+        description="Share of productivity budget allocated to TFP (vs technical)",
     )
 
     # Technical coefficient investment parameters
     technical_investment_effectiveness: float = Field(
-        0.15, ge=0.0, le=1.0, description="Effectiveness of technical coefficient investment"
+        0.15,
+        ge=0.0,
+        le=1.0,
+        description="Effectiveness of technical coefficient investment",
     )
     technical_diminishing_returns: float = Field(
-        0.5, ge=0.0, le=2.0, description="Diminishing returns factor for technical improvements"
+        0.5,
+        ge=0.0,
+        le=2.0,
+        description="Diminishing returns factor for technical improvements",
     )
 
     # Investment targeting weights
     price_weight: float = Field(
-        0.4, ge=0.0, le=1.0, description="Weight for price-based targeting in technical investment"
+        0.4,
+        ge=0.0,
+        le=1.0,
+        description="Weight for price-based targeting in technical investment",
     )
     usage_weight: float = Field(
-        0.3, ge=0.0, le=1.0, description="Weight for usage-based targeting in technical investment"
+        0.3,
+        ge=0.0,
+        le=1.0,
+        description="Weight for usage-based targeting in technical investment",
     )
     potential_weight: float = Field(
-        0.3, ge=0.0, le=1.0, description="Weight for improvement potential in technical investment"
+        0.3,
+        ge=0.0,
+        le=1.0,
+        description="Weight for improvement potential in technical investment",
     )
 
     # Bundle arbitrage parameters
     enable_bundle_arbitrage: bool = Field(True, description="Enable bundle-aware arbitrage in technical investment")
     bundle_significance_threshold: float = Field(
-        0.1, ge=0.0, le=1.0, description="Min fraction of spending for bundle arbitrage to apply"
+        0.1,
+        ge=0.0,
+        le=1.0,
+        description="Min fraction of spending for bundle arbitrage to apply",
     )
     arbitrage_intensity: float = Field(2.0, ge=0.0, le=5.0, description="Intensity of bundle arbitrage effects")
 
@@ -523,7 +566,10 @@ class FirmsConfiguration(BaseModel):
         # Only validate list parameter lengths if planner is active
         if self.functions.productivity_investment_planner.name != "NoProductivityInvestmentPlanner":
             # Validate that list parameters in productivity investment planner have correct length
-            for param_name, param_value in self.functions.productivity_investment_planner.parameters.items():
+            for (
+                param_name,
+                param_value,
+            ) in self.functions.productivity_investment_planner.parameters.items():
                 if param_name == "n_firms":
                     continue
                 if isinstance(param_value, list):

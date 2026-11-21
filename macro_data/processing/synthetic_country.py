@@ -108,8 +108,13 @@ from macro_data.processing.synthetic_population.synthetic_population import (
     SyntheticPopulation,
 )
 from macro_data.readers import AGGREGATED_INDUSTRIES, ALL_INDUSTRIES, DataReaders
-from macro_data.readers.emission_fraction.emission_fraction_reader import EmissionFractions
-from macro_data.readers.emissions.emissions_reader import CH4EmissionsDataCAN, EmissionsData
+from macro_data.readers.emission_fraction.emission_fraction_reader import (
+    EmissionFractions,
+)
+from macro_data.readers.emissions.emissions_reader import (
+    CH4EmissionsDataCAN,
+    EmissionsData,
+)
 from macro_data.readers.exo_prices.exo_prices_reader import SectorExoPrices
 from macro_data.readers.exogenous_data import ExogenousCountryData
 
@@ -237,7 +242,12 @@ class SyntheticCountry:
         )
 
         central_bank = DefaultSyntheticCentralBank.from_readers(
-            country, year, quarter, readers, exogenous_country_data, country_configuration.central_bank_configuration
+            country,
+            year,
+            quarter,
+            readers,
+            exogenous_country_data,
+            country_configuration.central_bank_configuration,
         )
 
         population: SyntheticHFCSPopulation = SyntheticHFCSPopulation.from_readers(
@@ -277,7 +287,11 @@ class SyntheticCountry:
         )
 
         synthetic_goods_market = SyntheticGoodsMarket.from_readers(
-            country_name=country, year=year, quarter=quarter, readers=readers, exogenous_data=exogenous_country_data
+            country_name=country,
+            year=year,
+            quarter=quarter,
+            readers=readers,
+            exogenous_data=exogenous_country_data,
         )
 
         tax_data = TaxData.from_readers(readers, country, year)
@@ -442,7 +456,12 @@ class SyntheticCountry:
         )
 
         central_bank = DefaultSyntheticCentralBank.from_readers(
-            country, year, quarter, readers, exogenous_country_data, country_configuration.central_bank_configuration
+            country,
+            year,
+            quarter,
+            readers,
+            exogenous_country_data,
+            country_configuration.central_bank_configuration,
         )
 
         population_ratio = readers.world_bank.get_population(
@@ -493,7 +512,11 @@ class SyntheticCountry:
         )
 
         synthetic_goods_market = SyntheticGoodsMarket.from_readers(
-            country_name=country, year=year, quarter=quarter, readers=readers, exogenous_data=exogenous_country_data
+            country_name=country,
+            year=year,
+            quarter=quarter,
+            readers=readers,
+            exogenous_data=exogenous_country_data,
         )
 
         tax_data = TaxData.from_readers(readers, country, year)
@@ -857,7 +880,9 @@ class SyntheticCountry:
         population.set_household_investment_rates(capital_formation_taxrate=tax_data.capital_formation_tax)
         iot_consumption = country_industry_data["industry_vectors"]["Household Consumption in LCU"]
         population.normalise_household_consumption(
-            iot_hh_consumption=iot_consumption, vat=tax_data.value_added_tax, independents=independents
+            iot_hh_consumption=iot_consumption,
+            vat=tax_data.value_added_tax,
+            independents=independents,
         )
 
         population.normalise_household_investment(
@@ -866,12 +891,16 @@ class SyntheticCountry:
         )
 
         population.match_consumption_weights_by_income(
-            weights_by_income=weights_by_income, iot_hh_consumption=iot_consumption, vat=tax_data.value_added_tax
+            weights_by_income=weights_by_income,
+            iot_hh_consumption=iot_consumption,
+            vat=tax_data.value_added_tax,
         )
 
         if (emission_factors_array is not None) and (emitting_industry_indices is not None):
             population.add_emissions(
-                emission_factors_array, emitting_industry_indices, tau_cf=tax_data.capital_formation_tax
+                emission_factors_array,
+                emitting_industry_indices,
+                tau_cf=tax_data.capital_formation_tax,
             )
 
         banks.initialise_deposits_and_loans(

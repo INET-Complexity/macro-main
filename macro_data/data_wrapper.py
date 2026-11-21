@@ -274,7 +274,8 @@ class DataWrapper:
                 proxy_inflation[country] = None
 
         calibration_data = pd.concat(
-            [exogenous_data[country].get_calibration_data(year, quarter) for country in country_names], axis=1
+            [exogenous_data[country].get_calibration_data(year, quarter) for country in country_names],
+            axis=1,
         )
 
         calibration_data = add_row_to_calibration(
@@ -300,7 +301,8 @@ class DataWrapper:
                 goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
                 emission_factors=(
                     EmissionsData.from_readers(
-                        emission_factors, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country, year)
+                        emission_factors,
+                        exchange_rate=readers.exchange_rates.from_usd_to_lcu(country, year),
                     )
                     if add_emissions
                     else None
@@ -327,7 +329,8 @@ class DataWrapper:
                     proxy_inflation_data=proxy_inflation[country],
                     emission_factors=(
                         EmissionsData.from_readers(
-                            emission_factors, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country, year)
+                            emission_factors,
+                            exchange_rate=readers.exchange_rates.from_usd_to_lcu(country, year),
                         )
                         if add_emissions
                         else None
@@ -338,7 +341,8 @@ class DataWrapper:
         row_imports_growth = calibration_data[("ROW", "Imports (Growth)")]
 
         total_number_sellers = np.sum(
-            [synthetic_countries[country].n_sellers_by_industry for country in synthetic_countries], axis=1
+            [synthetic_countries[country].n_sellers_by_industry for country in synthetic_countries],
+            axis=1,
         )
 
         total_number_buyers = np.sum([synthetic_countries[country].n_buyers for country in synthetic_countries])

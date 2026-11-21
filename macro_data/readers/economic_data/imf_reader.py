@@ -111,7 +111,9 @@ class IMFReader:
         """
         data = {
             "bank_demography": pd.read_csv(
-                data_path / "imf_fas_bank_demographics.csv", encoding="latin-1", engine="pyarrow"
+                data_path / "imf_fas_bank_demographics.csv",
+                encoding="latin-1",
+                engine="pyarrow",
             ),
             "international_financial_statistics": pd.read_csv(
                 data_path / "IFS.csv", encoding="latin-1", engine="pyarrow"

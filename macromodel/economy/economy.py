@@ -177,7 +177,9 @@ class Economy:
         initial_firm_prices = firms.ts.current("price")
         initial_total_output = (firms.ts.current("price") * firms.ts.current("production")).sum()
         initial_sectoral_firm_sales = np.bincount(
-            firms.states["Industry"], weights=firms.ts.current("total_sales"), minlength=firms.n_industries
+            firms.states["Industry"],
+            weights=firms.ts.current("total_sales"),
+            minlength=firms.n_industries,
         )
         initial_sectoral_firm_used_ii = np.bincount(
             firms.states["Industry"],
