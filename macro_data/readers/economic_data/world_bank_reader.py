@@ -416,7 +416,10 @@ class WorldBankReader:
             country = country.parent_country
         df = self.data["unemployment"]
         df = df.loc[df["Country Code"] == country]
-        df = df.drop(columns=["Country Code", "Country Name", "Indicator Name", "Indicator Code", "Unnamed: 66"])
+        drop_cols = ["Country Code", "Country Name", "Indicator Name", "Indicator Code"]
+        if "Unnamed: 66" in df.columns:
+            drop_cols.append("Unnamed: 66")
+        df = df.drop(columns=drop_cols)
         df = df.T
         df.index = pd.to_datetime(df.index, format="%Y")
         df.columns = ["Unemployment Rate"]
