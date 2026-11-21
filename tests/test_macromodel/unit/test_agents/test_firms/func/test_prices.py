@@ -2,8 +2,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from macro_data.readers.exo_prices.exo_prices_reader import SectorExoPrices, SectorExoPricesReader
-from macromodel.agents.firms.func.prices import DefaultPriceSetter, SectorExogenousPriceSetter
+from macro_data.readers.exo_prices.exo_prices_reader import (
+    SectorExoPrices,
+    SectorExoPricesReader,
+)
+from macromodel.agents.firms.func.prices import (
+    DefaultPriceSetter,
+    SectorExogenousPriceSetter,
+)
 
 N_FIRMS = 4
 # Two firms per industry: indices 0,1 → B05a; indices 2,3 → C19
@@ -61,7 +67,9 @@ class TestSectorExoPricesReader:
 
     def test_from_reader_copies_dataframe(self):
         df = pd.DataFrame({"B05a": [1.0, 2.0]}, index=[2013, 2030])
-        exo = SectorExoPrices.from_reader(SectorExoPricesReader(prices=df), initial_year=2015)
+        exo = SectorExoPrices.from_reader(
+            SectorExoPricesReader(prices=df), initial_year=2015
+        )
         assert exo.prices is df
         assert exo.initial_year == 2015
         assert exo.initial_model_prices is None
@@ -87,7 +95,9 @@ class TestSectorExogenousPriceSetter:
         setter = self._make_setter()
         setter.firm_exo_prices = _make_exo_prices(["B05a"])
 
-        default_prices = DefaultPriceSetter(**DEFAULT_PARAMS).compute_price(**PRICE_KWARGS)
+        default_prices = DefaultPriceSetter(**DEFAULT_PARAMS).compute_price(
+            **PRICE_KWARGS
+        )
         result = setter.compute_price(**PRICE_KWARGS)
 
         # B05a firms (0, 1) should differ from default (rising price path > 2014 base)
@@ -102,7 +112,9 @@ class TestSectorExogenousPriceSetter:
         setter = self._make_setter()
         setter.firm_exo_prices = _make_exo_prices(["B05a", "C19"])
 
-        default_prices = DefaultPriceSetter(**DEFAULT_PARAMS).compute_price(**PRICE_KWARGS)
+        default_prices = DefaultPriceSetter(**DEFAULT_PARAMS).compute_price(
+            **PRICE_KWARGS
+        )
         result = setter.compute_price(**PRICE_KWARGS)
 
         # All firms should differ from default
@@ -115,7 +127,9 @@ class TestSectorExogenousPriceSetter:
         setter = self._make_setter()
         setter.firm_exo_prices = _make_exo_prices(["UNKNOWN_SECTOR"])
 
-        default_prices = DefaultPriceSetter(**DEFAULT_PARAMS).compute_price(**PRICE_KWARGS)
+        default_prices = DefaultPriceSetter(**DEFAULT_PARAMS).compute_price(
+            **PRICE_KWARGS
+        )
         result = setter.compute_price(**PRICE_KWARGS)
 
         assert np.allclose(result, default_prices)

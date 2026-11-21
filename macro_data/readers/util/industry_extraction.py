@@ -26,14 +26,24 @@ def compile_industry_data(
     for country_name in country_names:
         # Matrices
 
-        intermediate_inputs_productivity_matrix = current_icio_reader.get_intermediate_inputs_matrix(country_name)
-        capital_inputs_productivity_matrix = current_icio_reader.get_capital_inputs_matrix(
-            country_name=country_name,
-            capital_stock=sea_reader.get_values_in_usd(country_name, "Capital Stock"),
+        intermediate_inputs_productivity_matrix = (
+            current_icio_reader.get_intermediate_inputs_matrix(country_name)
         )
-        capital_inputs_depreciation_matrix = current_icio_reader.get_capital_inputs_depreciation(
-            country_name=country_name,
-            capital_compensation=sea_reader.get_values_in_usd(country_name, "Capital Compensation"),
+        capital_inputs_productivity_matrix = (
+            current_icio_reader.get_capital_inputs_matrix(
+                country_name=country_name,
+                capital_stock=sea_reader.get_values_in_usd(
+                    country_name, "Capital Stock"
+                ),
+            )
+        )
+        capital_inputs_depreciation_matrix = (
+            current_icio_reader.get_capital_inputs_depreciation(
+                country_name=country_name,
+                capital_compensation=sea_reader.get_values_in_usd(
+                    country_name, "Capital Compensation"
+                ),
+            )
         )
 
         # Exchange rates
@@ -64,14 +74,20 @@ def compile_industry_data(
     industry_data["ROW"] = {
         "industry_vectors": {
             "Exports in USD": current_icio_reader.get_exports("ROW"),
-            "Exports in LCU": exchange_rate_row * current_icio_reader.get_exports("ROW"),
+            "Exports in LCU": exchange_rate_row
+            * current_icio_reader.get_exports("ROW"),
             "Imports in USD": current_icio_reader.get_imports("ROW"),
-            "Imports in LCU": exchange_rate_row * current_icio_reader.get_imports("ROW"),
+            "Imports in LCU": exchange_rate_row
+            * current_icio_reader.get_imports("ROW"),
         }
     }
 
     fill_trade_data(
-        "ROW", current_icio_reader, exchange_rate_row, industry_data["ROW"]["industry_vectors"], country_names
+        "ROW",
+        current_icio_reader,
+        exchange_rate_row,
+        industry_data["ROW"]["industry_vectors"],
+        country_names,
     )
 
     return industry_data
@@ -90,38 +106,78 @@ def get_industry_vectors(
     industry_vectors = pd.DataFrame(
         data={
             "Output in USD": current_icio_reader.get_total_output(country_name),
-            "Output in LCU": current_icio_reader.get_total_output(country_name) * exchange_rate,
-            "Intermediate Inputs Supply": current_icio_reader.get_intermediate_inputs_use(country_name).sum(axis=1),
-            "Intermediate Inputs Use in USD": current_icio_reader.get_intermediate_inputs_use(country_name).sum(axis=0),
+            "Output in LCU": current_icio_reader.get_total_output(country_name)
+            * exchange_rate,
+            "Intermediate Inputs Supply": current_icio_reader.get_intermediate_inputs_use(
+                country_name
+            ).sum(
+                axis=1
+            ),
+            "Intermediate Inputs Use in USD": current_icio_reader.get_intermediate_inputs_use(
+                country_name
+            ).sum(
+                axis=0
+            ),
             "Intermediate Inputs Use in LCU": exchange_rate
             * current_icio_reader.get_intermediate_inputs_use(country_name).sum(axis=0),
             "Intermediate Inputs Domestic Use in USD": current_icio_reader.get_intermediate_inputs_domestic(
                 country_name
-            ).sum(axis=0),
+            ).sum(
+                axis=0
+            ),
             "Intermediate Inputs Domestic Use in LCU": exchange_rate
-            * current_icio_reader.get_intermediate_inputs_domestic(country_name).sum(axis=0),
-            "Firm Capital Inputs in USD": current_icio_reader.get_firm_capital_inputs(country_name),
-            "Firm Capital Inputs in LCU": exchange_rate * current_icio_reader.get_firm_capital_inputs(country_name),
-            "Household Capital Inputs in USD": current_icio_reader.get_household_capital_inputs(country_name),
+            * current_icio_reader.get_intermediate_inputs_domestic(country_name).sum(
+                axis=0
+            ),
+            "Firm Capital Inputs in USD": current_icio_reader.get_firm_capital_inputs(
+                country_name
+            ),
+            "Firm Capital Inputs in LCU": exchange_rate
+            * current_icio_reader.get_firm_capital_inputs(country_name),
+            "Household Capital Inputs in USD": current_icio_reader.get_household_capital_inputs(
+                country_name
+            ),
             "Household Capital Inputs in LCU": exchange_rate
             * current_icio_reader.get_household_capital_inputs(country_name),
-            "Household Investment Weights": current_icio_reader.get_household_capital_inputs(country_name)
+            "Household Investment Weights": current_icio_reader.get_household_capital_inputs(
+                country_name
+            )
             / current_icio_reader.get_household_capital_inputs(country_name).sum(),
             "Value Added in USD": current_icio_reader.get_value_added(country_name),
-            "Value Added in LCU": exchange_rate * current_icio_reader.get_value_added(country_name),
-            "Taxes Less Subsidies in USD": current_icio_reader.get_taxes_less_subsidies(country_name),
-            "Taxes Less Subsidies in LCU": exchange_rate * current_icio_reader.get_taxes_less_subsidies(country_name),
-            "Taxes Less Subsidies Rates": current_icio_reader.get_taxes_less_subsidies_rates(country_name),
-            "Household Consumption in USD": current_icio_reader.get_hh_consumption(country_name),
-            "Household Consumption in LCU": exchange_rate * current_icio_reader.get_hh_consumption(country_name),
-            "Domestic Household Consumption in USD": current_icio_reader.get_hh_consumption_domestic(country_name),
+            "Value Added in LCU": exchange_rate
+            * current_icio_reader.get_value_added(country_name),
+            "Taxes Less Subsidies in USD": current_icio_reader.get_taxes_less_subsidies(
+                country_name
+            ),
+            "Taxes Less Subsidies in LCU": exchange_rate
+            * current_icio_reader.get_taxes_less_subsidies(country_name),
+            "Taxes Less Subsidies Rates": current_icio_reader.get_taxes_less_subsidies_rates(
+                country_name
+            ),
+            "Household Consumption in USD": current_icio_reader.get_hh_consumption(
+                country_name
+            ),
+            "Household Consumption in LCU": exchange_rate
+            * current_icio_reader.get_hh_consumption(country_name),
+            "Domestic Household Consumption in USD": current_icio_reader.get_hh_consumption_domestic(
+                country_name
+            ),
             "Domestic Household Consumption in LCU": exchange_rate
             * current_icio_reader.get_hh_consumption_domestic(country_name),
-            "Household Consumption Weights": current_icio_reader.get_hh_consumption_weights(country_name),
-            "Government Consumption in USD": current_icio_reader.get_govt_consumption(country_name),
-            "Government Consumption in LCU": exchange_rate * current_icio_reader.get_govt_consumption(country_name),
-            "Government Consumption Weights": current_icio_reader.govt_consumption_weights(country_name),
-            "Labour Compensation in USD": sea_reader.get_values_in_usd(country_name, "Labour Compensation")
+            "Household Consumption Weights": current_icio_reader.get_hh_consumption_weights(
+                country_name
+            ),
+            "Government Consumption in USD": current_icio_reader.get_govt_consumption(
+                country_name
+            ),
+            "Government Consumption in LCU": exchange_rate
+            * current_icio_reader.get_govt_consumption(country_name),
+            "Government Consumption Weights": current_icio_reader.govt_consumption_weights(
+                country_name
+            ),
+            "Labour Compensation in USD": sea_reader.get_values_in_usd(
+                country_name, "Labour Compensation"
+            )
             / yearly_factor,
             "Labour Compensation in LCU": exchange_rate
             * sea_reader.get_values_in_usd(
@@ -129,18 +185,26 @@ def get_industry_vectors(
                 "Labour Compensation",
             )
             / yearly_factor,
-            "Capital Stock": sea_reader.get_values_in_usd(country_name, "Capital Stock"),
+            "Capital Stock": sea_reader.get_values_in_usd(
+                country_name, "Capital Stock"
+            ),
             "Exports in USD": current_icio_reader.get_exports(country_name),
-            "Exports in LCU": exchange_rate * current_icio_reader.get_exports(country_name),
+            "Exports in LCU": exchange_rate
+            * current_icio_reader.get_exports(country_name),
             "Imports in USD": current_icio_reader.get_imports(country_name),
-            "Imports in LCU": exchange_rate * current_icio_reader.get_imports(country_name),
-            "Average Initial Price": np.full(len(current_icio_reader.industries), exchange_rate),
+            "Imports in LCU": exchange_rate
+            * current_icio_reader.get_imports(country_name),
+            "Average Initial Price": np.full(
+                len(current_icio_reader.industries), exchange_rate
+            ),
         },
         index=pd.Index(current_icio_reader.industries, name="Industry"),
     )
     # Record the number of firms by sector
     if single_firm_per_industry:
-        industry_vectors["Number of Firms"] = np.ones(len(current_icio_reader.industries), dtype=int)
+        industry_vectors["Number of Firms"] = np.ones(
+            len(current_icio_reader.industries), dtype=int
+        )
     else:
         if isinstance(country_name, Region):
             data_country = country_name.parent_country
@@ -154,7 +218,13 @@ def get_industry_vectors(
         n_firms_by_industry[n_firms_by_industry == 0] = 1
         industry_vectors["Number of Firms"] = n_firms_by_industry
 
-    fill_trade_data(country_name, current_icio_reader, exchange_rate, industry_vectors, trade_partners)
+    fill_trade_data(
+        country_name,
+        current_icio_reader,
+        exchange_rate,
+        industry_vectors,
+        trade_partners,
+    )
 
     return industry_vectors
 
@@ -169,14 +239,25 @@ def fill_trade_data(
     for c in trade_partners:
         if c == country_name:
             continue
-        industry_vectors["Exports in USD to " + c] = current_icio_reader.get_trade(country_name, c)
-        industry_vectors["Exports in LCU to " + c] = exchange_rate * current_icio_reader.get_trade(country_name, c)
-        industry_vectors["Imports in USD from " + c] = current_icio_reader.get_trade(c, country_name)
-        industry_vectors["Imports in LCU from " + c] = exchange_rate * current_icio_reader.get_trade(c, country_name)
+        industry_vectors["Exports in USD to " + c] = current_icio_reader.get_trade(
+            country_name, c
+        )
+        industry_vectors["Exports in LCU to " + c] = (
+            exchange_rate * current_icio_reader.get_trade(country_name, c)
+        )
+        industry_vectors["Imports in USD from " + c] = current_icio_reader.get_trade(
+            c, country_name
+        )
+        industry_vectors["Imports in LCU from " + c] = (
+            exchange_rate * current_icio_reader.get_trade(c, country_name)
+        )
 
 
 def compile_exogenous_industry_data(
-    readers: DataReaders, country_names: list[str], year_min: int = 2010, year_max: int = 2019
+    readers: DataReaders,
+    country_names: list[str],
+    year_min: int = 2010,
+    year_max: int = 2019,
 ) -> dict[str, pd.DataFrame]:
     icio_readers = readers.icio
     exchange_rates = readers.exchange_rates
@@ -186,7 +267,14 @@ def compile_exogenous_industry_data(
     exogenous_industry_data = {
         country: pd.concat(
             [
-                get_country_industry_data(country, country_names, exchange_rates, icio_readers, year, sea_reader)
+                get_country_industry_data(
+                    country,
+                    country_names,
+                    exchange_rates,
+                    icio_readers,
+                    year,
+                    sea_reader,
+                )
                 for year in range(year_min, year_max)
                 if year in icio_readers.keys()
             ]
@@ -206,15 +294,22 @@ def compile_exogenous_industry_data(
     # Interpolate if we have enough data
     for country_name, country_data in exogenous_industry_data.items():
         if country_data.shape[0] > 1:
-            country_data = country_data.astype(float).resample("M").interpolate("linear").copy()
-            country_data.index = pd.DatetimeIndex([pd.Timestamp(d.year, d.month, 1) for d in country_data.index])
+            country_data = (
+                country_data.astype(float).resample("M").interpolate("linear").copy()
+            )
+            country_data.index = pd.DatetimeIndex(
+                [pd.Timestamp(d.year, d.month, 1) for d in country_data.index]
+            )
             exogenous_industry_data[country_name] = country_data
 
     return exogenous_industry_data
 
 
 def get_row_industry_data(
-    country_names: list[str], exchange_rates: ExchangeRatesReader, icio_readers: dict[int, ICIOReader], year: int
+    country_names: list[str],
+    exchange_rates: ExchangeRatesReader,
+    icio_readers: dict[int, ICIOReader],
+    year: int,
 ) -> pd.DataFrame:
     exchange_rate_row = exchange_rates.from_usd_to_lcu("ROW", year)
     row_industry_data = pd.DataFrame(
@@ -227,10 +322,18 @@ def get_row_industry_data(
         index=pd.Index(icio_readers[year].industries, name="Industry"),
     )
     for c in country_names:
-        row_industry_data["Exports in USD to " + c] = icio_readers[year].get_trade("ROW", c)
-        row_industry_data["Exports in LCU to " + c] = exchange_rate_row * icio_readers[year].get_trade("ROW", c)
-        row_industry_data["Imports in USD from " + c] = icio_readers[year].get_trade(c, "ROW")
-        row_industry_data["Imports in LCU from " + c] = exchange_rate_row * icio_readers[year].get_trade(c, "ROW")
+        row_industry_data["Exports in USD to " + c] = icio_readers[year].get_trade(
+            "ROW", c
+        )
+        row_industry_data["Exports in LCU to " + c] = exchange_rate_row * icio_readers[
+            year
+        ].get_trade("ROW", c)
+        row_industry_data["Imports in USD from " + c] = icio_readers[year].get_trade(
+            c, "ROW"
+        )
+        row_industry_data["Imports in LCU from " + c] = (
+            exchange_rate_row * icio_readers[year].get_trade(c, "ROW")
+        )
 
     row_industry_data = row_industry_data.stack().to_frame().T.swaplevel(0, 1, axis=1)
 
@@ -254,38 +357,78 @@ def get_country_industry_data(
     industry_data = pd.DataFrame(
         data={
             "Output in USD": current_icio_reader.get_total_output(country_name),
-            "Output in LCU": current_icio_reader.get_total_output(country_name) * exchange_rate,
-            "Intermediate Inputs Supply": current_icio_reader.get_intermediate_inputs_use(country_name).sum(axis=0),
-            "Intermediate Inputs Use in USD": current_icio_reader.get_intermediate_inputs_use(country_name).sum(axis=1),
+            "Output in LCU": current_icio_reader.get_total_output(country_name)
+            * exchange_rate,
+            "Intermediate Inputs Supply": current_icio_reader.get_intermediate_inputs_use(
+                country_name
+            ).sum(
+                axis=0
+            ),
+            "Intermediate Inputs Use in USD": current_icio_reader.get_intermediate_inputs_use(
+                country_name
+            ).sum(
+                axis=1
+            ),
             "Intermediate Inputs Use in LCU": exchange_rate
             * current_icio_reader.get_intermediate_inputs_use(country_name).sum(axis=1),
             "Intermediate Inputs Domestic Use in USD": current_icio_reader.get_intermediate_inputs_domestic(
                 country_name
-            ).sum(axis=1),
+            ).sum(
+                axis=1
+            ),
             "Intermediate Inputs Domestic Use in LCU": exchange_rate
-            * current_icio_reader.get_intermediate_inputs_domestic(country_name).sum(axis=1),
-            "Firm Capital Inputs in USD": current_icio_reader.get_firm_capital_inputs(country_name),
-            "Firm Capital Inputs in LCU": exchange_rate * current_icio_reader.get_firm_capital_inputs(country_name),
-            "Household Capital Inputs in USD": current_icio_reader.get_household_capital_inputs(country_name),
+            * current_icio_reader.get_intermediate_inputs_domestic(country_name).sum(
+                axis=1
+            ),
+            "Firm Capital Inputs in USD": current_icio_reader.get_firm_capital_inputs(
+                country_name
+            ),
+            "Firm Capital Inputs in LCU": exchange_rate
+            * current_icio_reader.get_firm_capital_inputs(country_name),
+            "Household Capital Inputs in USD": current_icio_reader.get_household_capital_inputs(
+                country_name
+            ),
             "Household Capital Inputs in LCU": exchange_rate
             * current_icio_reader.get_household_capital_inputs(country_name),
-            "Household Investment Weights": current_icio_reader.get_household_capital_inputs(country_name)
+            "Household Investment Weights": current_icio_reader.get_household_capital_inputs(
+                country_name
+            )
             / current_icio_reader.get_household_capital_inputs(country_name).sum(),
             "Value Added in USD": current_icio_reader.get_value_added(country_name),
-            "Value Added in LCU": exchange_rate * current_icio_reader.get_value_added(country_name),
-            "Taxes Less Subsidies in USD": current_icio_reader.get_taxes_less_subsidies(country_name),
-            "Taxes Less Subsidies in LCU": exchange_rate * current_icio_reader.get_taxes_less_subsidies(country_name),
-            "Taxes Less Subsidies Rates": current_icio_reader.get_taxes_less_subsidies_rates(country_name),
-            "Household Consumption in USD": current_icio_reader.get_hh_consumption(country_name),
-            "Household Consumption in LCU": exchange_rate * current_icio_reader.get_hh_consumption(country_name),
-            "Domestic Household Consumption in USD": current_icio_reader.get_hh_consumption_domestic(country_name),
+            "Value Added in LCU": exchange_rate
+            * current_icio_reader.get_value_added(country_name),
+            "Taxes Less Subsidies in USD": current_icio_reader.get_taxes_less_subsidies(
+                country_name
+            ),
+            "Taxes Less Subsidies in LCU": exchange_rate
+            * current_icio_reader.get_taxes_less_subsidies(country_name),
+            "Taxes Less Subsidies Rates": current_icio_reader.get_taxes_less_subsidies_rates(
+                country_name
+            ),
+            "Household Consumption in USD": current_icio_reader.get_hh_consumption(
+                country_name
+            ),
+            "Household Consumption in LCU": exchange_rate
+            * current_icio_reader.get_hh_consumption(country_name),
+            "Domestic Household Consumption in USD": current_icio_reader.get_hh_consumption_domestic(
+                country_name
+            ),
             "Domestic Household Consumption in LCU": exchange_rate
             * current_icio_reader.get_hh_consumption_domestic(country_name),
-            "Household Consumption Weights": current_icio_reader.get_hh_consumption_weights(country_name),
-            "Government Consumption in USD": current_icio_reader.get_govt_consumption(country_name),
-            "Government Consumption in LCU": exchange_rate * current_icio_reader.get_govt_consumption(country_name),
-            "Government Consumption Weights": current_icio_reader.govt_consumption_weights(country_name),
-            "Labour Compensation in USD": sea_reader.get_values_in_usd(country_name, "Labour Compensation")
+            "Household Consumption Weights": current_icio_reader.get_hh_consumption_weights(
+                country_name
+            ),
+            "Government Consumption in USD": current_icio_reader.get_govt_consumption(
+                country_name
+            ),
+            "Government Consumption in LCU": exchange_rate
+            * current_icio_reader.get_govt_consumption(country_name),
+            "Government Consumption Weights": current_icio_reader.govt_consumption_weights(
+                country_name
+            ),
+            "Labour Compensation in USD": sea_reader.get_values_in_usd(
+                country_name, "Labour Compensation"
+            )
             / current_icio_reader.yearly_factor,
             "Labour Compensation in LCU": exchange_rate
             * sea_reader.get_values_in_usd(
@@ -293,22 +436,36 @@ def get_country_industry_data(
                 "Labour Compensation",
             )
             / current_icio_reader.yearly_factor,
-            "Capital Stock": sea_reader.get_values_in_usd(country_name, "Capital Stock"),
+            "Capital Stock": sea_reader.get_values_in_usd(
+                country_name, "Capital Stock"
+            ),
             "Exports in USD": current_icio_reader.get_exports(country_name),
-            "Exports in LCU": exchange_rate * current_icio_reader.get_exports(country_name),
+            "Exports in LCU": exchange_rate
+            * current_icio_reader.get_exports(country_name),
             "Imports in USD": current_icio_reader.get_imports(country_name),
-            "Imports in LCU": exchange_rate * current_icio_reader.get_imports(country_name),
-            "Average Initial Price": np.full(len(current_icio_reader.industries), exchange_rate),
+            "Imports in LCU": exchange_rate
+            * current_icio_reader.get_imports(country_name),
+            "Average Initial Price": np.full(
+                len(current_icio_reader.industries), exchange_rate
+            ),
         },
         index=pd.Index(icio_readers[year].industries, name="Industry"),
     )
     for c in country_names + ["ROW"]:
         if c == country_name:
             continue
-        industry_data["Exports in USD to " + c] = icio_readers[year].get_trade(country_name, c)
-        industry_data["Exports in LCU to " + c] = exchange_rate * icio_readers[year].get_trade(country_name, c)
-        industry_data["Imports in USD from " + c] = icio_readers[year].get_trade(c, country_name)
-        industry_data["Imports in LCU from " + c] = exchange_rate * icio_readers[year].get_trade(c, country_name)
+        industry_data["Exports in USD to " + c] = icio_readers[year].get_trade(
+            country_name, c
+        )
+        industry_data["Exports in LCU to " + c] = exchange_rate * icio_readers[
+            year
+        ].get_trade(country_name, c)
+        industry_data["Imports in USD from " + c] = icio_readers[year].get_trade(
+            c, country_name
+        )
+        industry_data["Imports in LCU from " + c] = exchange_rate * icio_readers[
+            year
+        ].get_trade(c, country_name)
 
     # put everything in one row
     industry_data = industry_data.stack().to_frame().T.swaplevel(0, 1, axis=1)

@@ -94,8 +94,12 @@ class TestFirms:
 
     def test__compute_inventory(self, test_firms):
         test_firms.ts.real_amount_sold.append(np.full(18, 0.5))
-        depreciation_rates = np.array(test_firms.depreciation_rates[test_firms.states["Industry"]])
-        a = (1 - depreciation_rates) * (test_firms.ts.current("inventory") + test_firms.ts.current("production"))
+        depreciation_rates = np.array(
+            test_firms.depreciation_rates[test_firms.states["Industry"]]
+        )
+        a = (1 - depreciation_rates) * (
+            test_firms.ts.current("inventory") + test_firms.ts.current("production")
+        )
         b = test_firms.compute_inventory()
         assert np.allclose(
             a - b,
@@ -110,7 +114,8 @@ class TestFirms:
         test_firms.ts["interest_received"] = np.full(18, 3.0)
         test_firms.ts.total_wage.append(np.full(18, 1.0))
         assert np.allclose(
-            test_firms.compute_profits() - test_firms.ts.current("production") * test_firms.ts.current("price"),
+            test_firms.compute_profits()
+            - test_firms.ts.current("production") * test_firms.ts.current("price"),
             np.full(18, -24),
         )
 

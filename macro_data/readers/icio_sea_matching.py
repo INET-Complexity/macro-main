@@ -20,13 +20,19 @@ def match_iot_with_sea(
 ) -> None:
     for country_name in country_names:
         if regions_dict is None:
-            _match_country_iot_with_sea(country_name, icio_reader, sea_reader, yearly_factor)
+            _match_country_iot_with_sea(
+                country_name, icio_reader, sea_reader, yearly_factor
+            )
         else:
             if country_name in regions_dict:
                 for region in regions_dict[country_name]:
-                    _match_country_iot_with_sea(region, icio_reader, sea_reader, yearly_factor)
+                    _match_country_iot_with_sea(
+                        region, icio_reader, sea_reader, yearly_factor
+                    )
             else:
-                _match_country_iot_with_sea(country_name, icio_reader, sea_reader, yearly_factor)
+                _match_country_iot_with_sea(
+                    country_name, icio_reader, sea_reader, yearly_factor
+                )
 
 
 def add_investment_matrix_to_icio(
@@ -38,30 +44,49 @@ def add_investment_matrix_to_icio(
 ) -> None:
     for country_name in country_names:
         if regions_dict is None:
-            _add_country_investment(country_name, icio_reader, sea_reader, yearly_factor)
+            _add_country_investment(
+                country_name, icio_reader, sea_reader, yearly_factor
+            )
         else:
             # check if country is in regions_dict
             if country_name in regions_dict:
                 for region in regions_dict[country_name]:
-                    _add_country_investment(region, icio_reader, sea_reader, yearly_factor)
+                    _add_country_investment(
+                        region, icio_reader, sea_reader, yearly_factor
+                    )
             else:
-                _add_country_investment(country_name, icio_reader, sea_reader, yearly_factor)
+                _add_country_investment(
+                    country_name, icio_reader, sea_reader, yearly_factor
+                )
 
 
 def _add_country_investment(
-    country_name: Country | Region, icio_reader: ICIOReader, sea_reader: WIODSEAReader, yearly_factor: float = 4.0
+    country_name: Country | Region,
+    icio_reader: ICIOReader,
+    sea_reader: WIODSEAReader,
+    yearly_factor: float = 4.0,
 ):
-    gfcf = icio_reader.column_allc(country_name, "Firm Fixed Capital Formation") / icio_reader.yearly_factor
-    cap_factors = sea_reader.get_values_in_usd(country_name, "Capital Compensation") / gfcf
+    gfcf = (
+        icio_reader.column_allc(country_name, "Firm Fixed Capital Formation")
+        / icio_reader.yearly_factor
+    )
+    cap_factors = (
+        sea_reader.get_values_in_usd(country_name, "Capital Compensation") / gfcf
+    )
     value_added = icio_reader.get_value_added(country_name) * yearly_factor
 
     # replace nans with 0
     cap_factors = np.where(np.isnan(cap_factors), 0, cap_factors)
     cap_factors /= cap_factors.sum()  # normalise to 1
 
-    violated_constraint = cap_factors >= icio_reader.get_value_added(country_name) / gfcf.sum()
+    violated_constraint = (
+        cap_factors >= icio_reader.get_value_added(country_name) / gfcf.sum()
+    )
     if np.any(violated_constraint):
-        ratios = sea_reader.get_values_in_usd(country_name, "Capital Compensation") / value_added
+        ratios = (
+            sea_reader.get_values_in_usd(country_name, "Capital Compensation")
+            / value_added
+        )
         ratios = np.where(np.isnan(ratios), 0, ratios)
         max_capital_ratio = ratios.max()
         cap_factors = adjust_c_vector(
@@ -77,7 +102,9 @@ def _add_country_investment(
     #     cap_factors /= cap_factors.sum()  # normalise to 1
 
     investment_matrix = np.array([gfcf for _ in range(len(cap_factors))]).T
-    investment_matrix = np.einsum("ij, j-> ij", investment_matrix, cap_factors)  # proportionally fitting CAP
+    investment_matrix = np.einsum(
+        "ij, j-> ij", investment_matrix, cap_factors
+    )  # proportionally fitting CAP
 
     assert np.allclose(investment_matrix.sum(axis=1), gfcf, rtol=1e-3)
 
@@ -88,7 +115,9 @@ def _add_country_investment(
         where=value_added != 0,
     )
 
-    assert np.all(capital_ratios <= 1.0), f"Capital ratios for {country_name} exceed 1.0: {capital_ratios}"
+    assert np.all(
+        capital_ratios <= 1.0
+    ), f"Capital ratios for {country_name} exceed 1.0: {capital_ratios}"
 
     # investment_matrix *= 1 / np.sum(cap_factors)  # match GFCF exactly
     investment_matrix = (
@@ -121,7 +150,10 @@ def get_sea(
 
 
 def _match_country_iot_with_sea(
-    country_name: Country | Region, icio_reader: ICIOReader, sea_reader: WIODSEAReader, yearly_factor: float = 4.0
+    country_name: Country | Region,
+    icio_reader: ICIOReader,
+    sea_reader: WIODSEAReader,
+    yearly_factor: float = 4.0,
 ):
     # sea_reader.df.loc[
     #     sea_reader.df.index.get_level_values(0) == country_name,
@@ -130,7 +162,8 @@ def _match_country_iot_with_sea(
     sea_reader.set_values_in_usd(
         country_name,
         "Capital Compensation",
-        yearly_factor * icio_reader.investment_matrices[country_name].values.sum(axis=0),
+        yearly_factor
+        * icio_reader.investment_matrices[country_name].values.sum(axis=0),
     )
     new_va = yearly_factor * icio_reader.get_value_added(country_name)
     va_factor = new_va / get_sea(country_name, "Value Added", sea_reader)
@@ -148,7 +181,8 @@ def _match_country_iot_with_sea(
     sea_reader.set_values_in_usd(
         country_name,
         "Labour Compensation",
-        get_sea(country_name, "Value Added", sea_reader) - get_sea(country_name, "Capital Compensation", sea_reader),
+        get_sea(country_name, "Value Added", sea_reader)
+        - get_sea(country_name, "Capital Compensation", sea_reader),
     )
     # Update Capital Stock values using proper indexing to avoid chained assignment
     mask = (sea_reader.df.index.get_level_values(0) == country_name) & (
@@ -172,13 +206,20 @@ def reconcile_value_added(
         else:
             if country_name in regions_dict:
                 for region in regions_dict[country_name]:
-                    _reconcile_value_added(region, icio_reader, sea_reader, yearly_factor)
+                    _reconcile_value_added(
+                        region, icio_reader, sea_reader, yearly_factor
+                    )
             else:
-                _reconcile_value_added(country_name, icio_reader, sea_reader, yearly_factor)
+                _reconcile_value_added(
+                    country_name, icio_reader, sea_reader, yearly_factor
+                )
 
 
 def _reconcile_value_added(
-    country_name: Country | Region, icio_reader: ICIOReader, sea_reader: WIODSEAReader, yearly_factor: float = 4.0
+    country_name: Country | Region,
+    icio_reader: ICIOReader,
+    sea_reader: WIODSEAReader,
+    yearly_factor: float = 4.0,
 ):
     new_va = yearly_factor * icio_reader.get_value_added_series(country_name)
     old_va = sea_reader.df.loc[country_name, "Value Added"]
@@ -200,7 +241,10 @@ def _reconcile_value_added(
 
 
 def _match_country_iot_with_sea2(
-    country_name: Country | Region, icio_reader: ICIOReader, sea_reader: WIODSEAReader, yearly_factor: float = 4.0
+    country_name: Country | Region,
+    icio_reader: ICIOReader,
+    sea_reader: WIODSEAReader,
+    yearly_factor: float = 4.0,
 ):
     sea_reader.df.loc[
         sea_reader.df.index.get_level_values(0) == country_name,
@@ -216,8 +260,14 @@ def _match_country_iot_with_sea2(
     # labour compensation + capital compensation = value added, but we need to offset by a factor
 
     sea_value_added = (
-        sea_reader.df.loc[sea_reader.df.index.get_level_values(0) == country_name, "Labour Compensation"]
-        + sea_reader.df.loc[sea_reader.df.index.get_level_values(0) == country_name, "Capital Compensation"]
+        sea_reader.df.loc[
+            sea_reader.df.index.get_level_values(0) == country_name,
+            "Labour Compensation",
+        ]
+        + sea_reader.df.loc[
+            sea_reader.df.index.get_level_values(0) == country_name,
+            "Capital Compensation",
+        ]
     )
 
     ratio = new_va / sea_value_added
@@ -235,7 +285,9 @@ def _match_country_iot_with_sea2(
     sea_reader.df.loc[
         sea_reader.df.index.get_level_values(0) == country_name,
         "Capital Stock",
-    ] *= va_factor * ratio
+    ] *= (
+        va_factor * ratio
+    )
 
     # icio_capital_columns = icio_reader.iot.columns.get_level_values(1).str.contains("Capital Formation")
     #
@@ -256,7 +308,9 @@ def get_investment_fractions(
         if not data_country.is_eu_country:
             data_country = proxy_country_dict[data_country]
 
-        investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(data_country, year=year)
+        investment_fractions[country_name] = (
+            eurostat.get_investment_fractions_of_country(data_country, year=year)
+        )
     return investment_fractions
 
 

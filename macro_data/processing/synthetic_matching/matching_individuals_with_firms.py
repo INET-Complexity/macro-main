@@ -96,8 +96,14 @@ def preprocess(
 
     # Rescale income
     firm_ids = np.flatnonzero(synthetic_firms.firm_data["Industry"] == industry_index)
-    total_employee_income = synthetic_population.individual_data.loc[ind_employees, "Employee Income"].sum()
-    labour_taxrate = 1 - employee_social_contribution_taxes - income_taxes * (1 - employee_social_contribution_taxes)
+    total_employee_income = synthetic_population.individual_data.loc[
+        ind_employees, "Employee Income"
+    ].sum()
+    labour_taxrate = (
+        1
+        - employee_social_contribution_taxes
+        - income_taxes * (1 - employee_social_contribution_taxes)
+    )
     if total_employee_income == 0.0:
         synthetic_population.individual_data.loc[ind_employees, "Employee Income"] = 0.0
     else:
@@ -127,7 +133,10 @@ def preprocess(
         )
 
         pos_corr_firm = np.concatenate(
-            [[firm_id] * synthetic_firms.firm_data.at[firm_id, "Number of Employees"] for firm_id in firm_ids]
+            [
+                [firm_id] * synthetic_firms.firm_data.at[firm_id, "Number of Employees"]
+                for firm_id in firm_ids
+            ]
         )
 
         return wages_offered, pos_corr_firm
@@ -171,10 +180,14 @@ def find_optimal_matching(
             to match firm expenses. Defaults to True.
     """
     # Create a cost matrix
-    in_industry = synthetic_population.individual_data["Employment Industry"] == industry_index
+    in_industry = (
+        synthetic_population.individual_data["Employment Industry"] == industry_index
+    )
     employed = synthetic_population.individual_data["Activity Status"] == 1
     employed_ind = np.flatnonzero(in_industry & employed)
-    employed_wages = synthetic_population.individual_data["Employee Income"].values[employed_ind]
+    employed_wages = synthetic_population.individual_data["Employee Income"].values[
+        employed_ind
+    ]
     cost = sp.spatial.distance_matrix(employed_wages[:, None], wages_offered[:, None])
 
     # Find the optimal configuration
@@ -184,23 +197,37 @@ def find_optimal_matching(
     corr_firms = pos_corr_firm[corr_positions]
 
     # Record the results
-    synthetic_population.individual_data.loc[employed_ind, "Corresponding Firm ID"] = corr_firms
-    for ind, firm_id in enumerate(np.where(synthetic_firms.firm_data["Industry"] == industry_index)[0]):
+    synthetic_population.individual_data.loc[employed_ind, "Corresponding Firm ID"] = (
+        corr_firms
+    )
+    for ind, firm_id in enumerate(
+        np.where(synthetic_firms.firm_data["Industry"] == industry_index)[0]
+    ):
         corr_ind = employed_ind[corr_firms == firm_id]
         synthetic_firms.firm_data.at[firm_id, "Employees ID"] = list(corr_ind)
 
         if normalise_employee_income:
             synthetic_population.individual_data.loc[corr_ind, "Employee Income"] *= (
-                1 - employee_social_contribution_taxes - income_taxes * (1 - employee_social_contribution_taxes)
+                1
+                - employee_social_contribution_taxes
+                - income_taxes * (1 - employee_social_contribution_taxes)
             ) * (
                 synthetic_firms.firm_data.at[firm_id, "Total Wages"]
-                / synthetic_population.individual_data.loc[corr_ind, "Employee Income"].sum()
+                / synthetic_population.individual_data.loc[
+                    corr_ind, "Employee Income"
+                ].sum()
             )
         else:
             synthetic_firms.firm_data.at[firm_id, "Total Wages"] = (
                 1.0
-                / (1 - employee_social_contribution_taxes - income_taxes * (1 - employee_social_contribution_taxes))
-                * synthetic_population.individual_data.loc[corr_ind, "Employee Income"].sum()
+                / (
+                    1
+                    - employee_social_contribution_taxes
+                    - income_taxes * (1 - employee_social_contribution_taxes)
+                )
+                * synthetic_population.individual_data.loc[
+                    corr_ind, "Employee Income"
+                ].sum()
             )
 
     # Update individual income
@@ -255,5 +282,6 @@ def match_individuals_with_firms_country(
         )
 
     population.set_individual_labour_inputs(
-        firm_production=firms.firm_data["Production"], firm_employees=firms.firm_data["Employees ID"]
+        firm_production=firms.firm_data["Production"],
+        firm_employees=firms.firm_data["Employees ID"],
     )

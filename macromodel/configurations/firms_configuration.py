@@ -3,7 +3,9 @@ from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field, model_validator
 
 
-def create_good_bundle(n_industries: int, bundles: Optional[list[list[int]]] = None) -> list:
+def create_good_bundle(
+    n_industries: int, bundles: Optional[list[list[int]]] = None
+) -> list:
     """Assign bundle indices to industries based on substitution groups.
 
     For a given number of industries, assign each industry to a bundle index.
@@ -61,7 +63,9 @@ class BoughtGoodsDistributor(BaseModel):
     Options: BoughtGoodsDistributorEvenly, BoughtGoodsDistributorIIPrio
     """
 
-    name: Literal["BoughtGoodsDistributorEvenly", "BoughtGoodsDistributorIIPrio"] = "BoughtGoodsDistributorIIPrio"
+    name: Literal["BoughtGoodsDistributorEvenly", "BoughtGoodsDistributorIIPrio"] = (
+        "BoughtGoodsDistributorIIPrio"
+    )
     path_name: str = "bought_goods_distributor"
     parameters: dict[str, Any] = {}
 
@@ -87,7 +91,9 @@ class LabourProductivity(BaseModel):
     Options: WorkEffortLabourProductivitySetter
     """
 
-    name: Literal["WorkEffortLabourProductivitySetter"] = "WorkEffortLabourProductivitySetter"
+    name: Literal["WorkEffortLabourProductivitySetter"] = (
+        "WorkEffortLabourProductivitySetter"
+    )
     path_name: str = "labour_productivity"
     parameters: dict[str, Any] = {
         "max_increase_in_work_effort": 1.5,
@@ -164,7 +170,9 @@ class GrowthEstimator(BaseModel):
     Options: ZeroGrowthEstimator, DefaultGrowthEstimator
     """
 
-    name: Literal["ZeroGrowthEstimator", "DefaultGrowthEstimator"] = "DefaultGrowthEstimator"
+    name: Literal["ZeroGrowthEstimator", "DefaultGrowthEstimator"] = (
+        "DefaultGrowthEstimator"
+    )
     path_name: str = "growth_estimator"
     parameters: dict[str, Any] = {}
 
@@ -177,7 +185,10 @@ class OfferedWageSetter(BaseModel):
 
     name: Literal["DefaultOfferedWageSetter"] = "DefaultOfferedWageSetter"
     path_name: str = "offered_wage_setter"
-    parameters: dict[str, Any] = {"labour_market_tightness_markup_scale": 0.5, "markup_time_span": 4}
+    parameters: dict[str, Any] = {
+        "labour_market_tightness_markup_scale": 0.5,
+        "markup_time_span": 4,
+    }
 
 
 class Prices(BaseModel):
@@ -186,7 +197,9 @@ class Prices(BaseModel):
     Options: ConstantPriceSetter, SupplyDemandPriceSetter, CANVASPriceSetter
     """
 
-    name: Literal["DefaultPriceSetter", "ExogenousPriceSetter", "SectorExogenousPriceSetter"] = "DefaultPriceSetter"
+    name: Literal[
+        "DefaultPriceSetter", "ExogenousPriceSetter", "SectorExogenousPriceSetter"
+    ] = "DefaultPriceSetter"
     path_name: str = "prices"
     parameters: dict[str, Any] = {
         "price_setting_noise_std": 0.05,
@@ -202,9 +215,13 @@ class Production(BaseModel):
     Options: PureLeontief, CriticalAndImportantLeontief, CriticalLeontief, Linear
     """
 
-    name: Literal["PureLeontief", "CriticalAndImportantLeontief", "CriticalLeontief", "Linear", "BundledLeontief"] = (
-        "PureLeontief"
-    )
+    name: Literal[
+        "PureLeontief",
+        "CriticalAndImportantLeontief",
+        "CriticalLeontief",
+        "Linear",
+        "BundledLeontief",
+    ] = "PureLeontief"
     path_name: str = "production"
     parameters: dict[str, Any] = {}
 
@@ -215,11 +232,14 @@ class TargetCapitalInputs(BaseModel):
     Options: UnconstrainedTargetCapitalInputsSetter, FinancialTargetCapitalInputsSetter
     """
 
-    name: Literal["FinancialTargetCapitalInputsSetter", "BundleWeightedTargetCapitalInputsSetter"] = (
-        "FinancialTargetCapitalInputsSetter"
-    )
+    name: Literal[
+        "FinancialTargetCapitalInputsSetter", "BundleWeightedTargetCapitalInputsSetter"
+    ] = "FinancialTargetCapitalInputsSetter"
     path_name: str = "target_capital_inputs"
-    parameters: dict[str, Any] = {"target_capital_inputs_fraction": 0.0, "credit_gap_fraction": 0.0}
+    parameters: dict[str, Any] = {
+        "target_capital_inputs_fraction": 0.0,
+        "credit_gap_fraction": 0.0,
+    }
 
 
 class TargetCredit(BaseModel):
@@ -228,7 +248,9 @@ class TargetCredit(BaseModel):
     Options: DefaultTargetCreditSetter
     """
 
-    name: Literal["DefaultTargetCreditSetter", "SimpleTargetCreditSetter"] = "DefaultTargetCreditSetter"
+    name: Literal["DefaultTargetCreditSetter", "SimpleTargetCreditSetter"] = (
+        "DefaultTargetCreditSetter"
+    )
     path_name: str = "target_credit"
     parameters: dict[str, Any] = {}
 
@@ -239,11 +261,15 @@ class TargetIntermediateInputs(BaseModel):
     Options: UnconstrainedTargetIntermediateInputsSetter, FinancialTargetIntermediateInputsSetter
     """
 
-    name: Literal["FinancialTargetIntermediateInputsSetter", "BundleWeightedTargetIntermediateInputsSetter"] = (
-        "FinancialTargetIntermediateInputsSetter"
-    )
+    name: Literal[
+        "FinancialTargetIntermediateInputsSetter",
+        "BundleWeightedTargetIntermediateInputsSetter",
+    ] = "FinancialTargetIntermediateInputsSetter"
     path_name: str = "target_intermediate_inputs"
-    parameters: dict[str, Any] = {"target_intermediate_inputs_fraction": 0.0, "credit_gap_fraction": 0.0}
+    parameters: dict[str, Any] = {
+        "target_intermediate_inputs_fraction": 0.0,
+        "credit_gap_fraction": 0.0,
+    }
 
 
 class WageSetter(BaseModel):
@@ -289,7 +315,9 @@ class ProductivityGrowth(BaseModel):
     Options: NoOpTFPGrowth, SimpleTFPGrowth, StochasticTFPGrowth, SectoralTFPGrowth
     """
 
-    name: Literal["NoOpTFPGrowth", "SimpleTFPGrowth", "StochasticTFPGrowth", "SectoralTFPGrowth"] = "NoOpTFPGrowth"
+    name: Literal[
+        "NoOpTFPGrowth", "SimpleTFPGrowth", "StochasticTFPGrowth", "SectoralTFPGrowth"
+    ] = "NoOpTFPGrowth"
     path_name: str = "productivity_growth"
     parameters: dict[str, Any] = {}
 
@@ -307,7 +335,9 @@ class ProductivityInvestmentPlanner(BaseModel):
     """
 
     name: Literal[
-        "NoProductivityInvestmentPlanner", "SimpleProductivityInvestmentPlanner", "OptimalProductivityInvestmentPlanner"
+        "NoProductivityInvestmentPlanner",
+        "SimpleProductivityInvestmentPlanner",
+        "OptimalProductivityInvestmentPlanner",
     ] = "NoProductivityInvestmentPlanner"
     path_name: str = "productivity_investment_planner"
     parameters: dict[str, Any] = {
@@ -333,7 +363,9 @@ class TechnicalCoefficientsGrowth(BaseModel):
     Options: NoOpTechnicalGrowth, SimpleTechnicalGrowth
     """
 
-    name: Literal["NoOpTechnicalGrowth", "SimpleTechnicalGrowth"] = "NoOpTechnicalGrowth"
+    name: Literal["NoOpTechnicalGrowth", "SimpleTechnicalGrowth"] = (
+        "NoOpTechnicalGrowth"
+    )
     path_name: str = "technical_coefficients_growth"
     parameters: dict[str, Any] = {
         "investment_effectiveness": 0.15,
@@ -351,7 +383,9 @@ class FirmsFunctions(BaseModel):
     offered_wage_setter: OfferedWageSetter = OfferedWageSetter()
     prices: Prices = Prices()
     production: Production = Production()
-    productivity_growth: ProductivityGrowth = ProductivityGrowth()  # Defaults to NoOpTFPGrowth
+    productivity_growth: ProductivityGrowth = (
+        ProductivityGrowth()
+    )  # Defaults to NoOpTFPGrowth
     productivity_investment_planner: ProductivityInvestmentPlanner = (
         ProductivityInvestmentPlanner()
     )  # Defaults to NoProductivityInvestmentPlanner
@@ -363,7 +397,9 @@ class FirmsFunctions(BaseModel):
     excess_demand: ExcessDemand = ExcessDemand()
     labour_productivity: LabourProductivity = LabourProductivity()
     profit_estimator: ProfitEstimator = ProfitEstimator()
-    technical_coefficients_growth: TechnicalCoefficientsGrowth = TechnicalCoefficientsGrowth()
+    technical_coefficients_growth: TechnicalCoefficientsGrowth = (
+        TechnicalCoefficientsGrowth()
+    )
 
 
 class FirmsParameters(BaseModel):
@@ -389,45 +425,80 @@ class FirmsParameters(BaseModel):
     depreciation_rates: list[float] = [0.0 for _ in range(18)]
     capital_inputs_utilisation_rate: float = Field(1.0, ge=0.0, le=1.0)
     intermediate_inputs_utilisation_rate: float = Field(1.0, ge=0.0, le=1.0)
-    tfp_base_growth_rate: float = Field(0.0025, ge=0.0, le=0.1, description="Base TFP growth rate (quarterly)")
-    tfp_investment_elasticity: float = Field(0.3, ge=0.0, le=1.0, description="Returns to scale for TFP investment")
+    tfp_base_growth_rate: float = Field(
+        0.0025, ge=0.0, le=0.1, description="Base TFP growth rate (quarterly)"
+    )
+    tfp_investment_elasticity: float = Field(
+        0.3, ge=0.0, le=1.0, description="Returns to scale for TFP investment"
+    )
 
     # Productivity investment allocation parameters
     max_productivity_investment_fraction: float = Field(
-        0.15, ge=0.0, le=1.0, description="Max productivity investment as fraction of output value"
+        0.15,
+        ge=0.0,
+        le=1.0,
+        description="Max productivity investment as fraction of output value",
     )
     max_productivity_cash_fraction: float = Field(
-        0.3, ge=0.0, le=1.0, description="Max productivity investment as fraction of available cash"
+        0.3,
+        ge=0.0,
+        le=1.0,
+        description="Max productivity investment as fraction of available cash",
     )
     tfp_investment_share: float = Field(
-        0.4, ge=0.0, le=1.0, description="Share of productivity budget allocated to TFP (vs technical)"
+        0.4,
+        ge=0.0,
+        le=1.0,
+        description="Share of productivity budget allocated to TFP (vs technical)",
     )
 
     # Technical coefficient investment parameters
     technical_investment_effectiveness: float = Field(
-        0.15, ge=0.0, le=1.0, description="Effectiveness of technical coefficient investment"
+        0.15,
+        ge=0.0,
+        le=1.0,
+        description="Effectiveness of technical coefficient investment",
     )
     technical_diminishing_returns: float = Field(
-        0.5, ge=0.0, le=2.0, description="Diminishing returns factor for technical improvements"
+        0.5,
+        ge=0.0,
+        le=2.0,
+        description="Diminishing returns factor for technical improvements",
     )
 
     # Investment targeting weights
     price_weight: float = Field(
-        0.4, ge=0.0, le=1.0, description="Weight for price-based targeting in technical investment"
+        0.4,
+        ge=0.0,
+        le=1.0,
+        description="Weight for price-based targeting in technical investment",
     )
     usage_weight: float = Field(
-        0.3, ge=0.0, le=1.0, description="Weight for usage-based targeting in technical investment"
+        0.3,
+        ge=0.0,
+        le=1.0,
+        description="Weight for usage-based targeting in technical investment",
     )
     potential_weight: float = Field(
-        0.3, ge=0.0, le=1.0, description="Weight for improvement potential in technical investment"
+        0.3,
+        ge=0.0,
+        le=1.0,
+        description="Weight for improvement potential in technical investment",
     )
 
     # Bundle arbitrage parameters
-    enable_bundle_arbitrage: bool = Field(True, description="Enable bundle-aware arbitrage in technical investment")
-    bundle_significance_threshold: float = Field(
-        0.1, ge=0.0, le=1.0, description="Min fraction of spending for bundle arbitrage to apply"
+    enable_bundle_arbitrage: bool = Field(
+        True, description="Enable bundle-aware arbitrage in technical investment"
     )
-    arbitrage_intensity: float = Field(2.0, ge=0.0, le=5.0, description="Intensity of bundle arbitrage effects")
+    bundle_significance_threshold: float = Field(
+        0.1,
+        ge=0.0,
+        le=1.0,
+        description="Min fraction of spending for bundle arbitrage to apply",
+    )
+    arbitrage_intensity: float = Field(
+        2.0, ge=0.0, le=5.0, description="Intensity of bundle arbitrage effects"
+    )
 
     @classmethod
     def disaggregated_industries_default(
@@ -483,7 +554,9 @@ class FirmsConfiguration(BaseModel):
         calculate_hill_exponent (bool): Whether to calculate Hill exponent
     """
 
-    parameters: FirmsParameters = FirmsParameters.disaggregated_industries_default(n_industries=18)
+    parameters: FirmsParameters = FirmsParameters.disaggregated_industries_default(
+        n_industries=18
+    )
     functions: FirmsFunctions = FirmsFunctions()
     calculate_hill_exponent: bool = True
     substitution_bundles: list = DEFAULT_BUNDLE
@@ -521,9 +594,15 @@ class FirmsConfiguration(BaseModel):
         self.functions.productivity_investment_planner.parameters["n_firms"] = n_firms
 
         # Only validate list parameter lengths if planner is active
-        if self.functions.productivity_investment_planner.name != "NoProductivityInvestmentPlanner":
+        if (
+            self.functions.productivity_investment_planner.name
+            != "NoProductivityInvestmentPlanner"
+        ):
             # Validate that list parameters in productivity investment planner have correct length
-            for param_name, param_value in self.functions.productivity_investment_planner.parameters.items():
+            for (
+                param_name,
+                param_value,
+            ) in self.functions.productivity_investment_planner.parameters.items():
                 if param_name == "n_firms":
                     continue
                 if isinstance(param_value, list):
@@ -538,7 +617,9 @@ class FirmsConfiguration(BaseModel):
 
     @property
     def reset_params(self):
-        inventory_frac = self.functions.target_production.parameters["existing_inventory_fraction"]
+        inventory_frac = self.functions.target_production.parameters[
+            "existing_inventory_fraction"
+        ]
         values = {
             "capital_inputs_utilisation_rate": self.parameters.capital_inputs_utilisation_rate,
             "intermediate_inputs_utilisation_rate": self.parameters.intermediate_inputs_utilisation_rate,
@@ -559,11 +640,15 @@ class FirmsConfiguration(BaseModel):
             bundles = []
 
         if len(bundles) == 0 and enable_bundle_arbitrage:
-            raise ValueError("Bundle arbitrage cannot be enabled without defining bundles.")
+            raise ValueError(
+                "Bundle arbitrage cannot be enabled without defining bundles."
+            )
 
         if len(bundles) > 0:
             functions = FirmsFunctions(
-                target_capital_inputs=TargetCapitalInputs(name="BundleWeightedTargetCapitalInputsSetter"),
+                target_capital_inputs=TargetCapitalInputs(
+                    name="BundleWeightedTargetCapitalInputsSetter"
+                ),
                 target_intermediate_inputs=TargetIntermediateInputs(
                     name="BundleWeightedTargetIntermediateInputsSetter"
                 ),

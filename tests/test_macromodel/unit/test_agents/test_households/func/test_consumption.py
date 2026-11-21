@@ -52,8 +52,12 @@ class TestDefaultHouseholdConsumption:
         assert np.all(result >= 0)
 
         # Check consumption is proportional to after-tax income
-        expected_consumption_per_household = (1 - 0.2) * 100.0 / (1 + tau_vat)  # 80 / 1.1 ≈ 72.73
-        expected_consumption_per_industry = expected_consumption_per_household / n_industries
+        expected_consumption_per_household = (
+            (1 - 0.2) * 100.0 / (1 + tau_vat)
+        )  # 80 / 1.1 ≈ 72.73
+        expected_consumption_per_industry = (
+            expected_consumption_per_household / n_industries
+        )
 
         assert np.allclose(result, expected_consumption_per_industry, rtol=0.1)
 
@@ -163,9 +167,13 @@ class TestCESHouseholdConsumption:
         bundle_matrix = create_bundle_matrix(np.array(bundles_grouped))
 
         # Initial setup
-        consumption_weights = np.array([0.2, 0.3, 0.1, 0.4])  # Different initial weights
+        consumption_weights = np.array(
+            [0.2, 0.3, 0.1, 0.4]
+        )  # Different initial weights
         initial_prices = np.array([1.0, 1.0, 1.0, 1.0])
-        current_prices = np.array([2.0, 1.0, 1.0, 2.0])  # Industry 0 and 3 doubled in price
+        current_prices = np.array(
+            [2.0, 1.0, 1.0, 2.0]
+        )  # Industry 0 and 3 doubled in price
         initial_taxes = np.array([0.0, 0.0, 0.0, 0.0])
         current_taxes = np.array([0.0, 0.0, 0.0, 0.0])
 
@@ -206,10 +214,14 @@ class TestCESHouseholdConsumption:
 
         # Check that expensive goods (0, 3) have lower consumption than cheaper alternatives (1, 2)
         avg_consumption = np.mean(result, axis=0)
-        assert avg_consumption[1] > avg_consumption[0]  # Industry 1 > Industry 0 in bundle [0,1]
+        assert (
+            avg_consumption[1] > avg_consumption[0]
+        )  # Industry 1 > Industry 0 in bundle [0,1]
         # Industries 2 and 3 converge to similar consumption due to CES substitution balancing
         # industry 2's lower initial weight with industry 3's higher price
-        assert np.allclose(avg_consumption[2], avg_consumption[3], rtol=1e-10)  # Should be nearly equal
+        assert np.allclose(
+            avg_consumption[2], avg_consumption[3], rtol=1e-10
+        )  # Should be nearly equal
 
     def test_ces_bundle_normalization(self):
         """Test that CES substitution preserves bundle totals."""
@@ -277,7 +289,9 @@ class TestCESHouseholdConsumption:
         n_industries = 5
 
         # Create bundles with some empty ones
-        bundles = create_household_bundle(n_industries, [[0, 1], [], [3, 4]])  # Bundle 1 is empty
+        bundles = create_household_bundle(
+            n_industries, [[0, 1], [], [3, 4]]
+        )  # Bundle 1 is empty
         bundle_matrix = create_bundle_matrix(np.array(bundles))
 
         ces_consumption = CESHouseholdConsumption(

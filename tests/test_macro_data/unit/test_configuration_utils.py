@@ -14,7 +14,9 @@ class TestConfigUtils:
             assert True
 
         try:
-            default_data_configuration(countries=["CAN"], proxy_country_dict={"CAN": "USA"})
+            default_data_configuration(
+                countries=["CAN"], proxy_country_dict={"CAN": "USA"}
+            )
             assert False
         except ValueError:
             assert True

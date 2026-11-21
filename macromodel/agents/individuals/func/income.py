@@ -180,11 +180,15 @@ class DefaultIncomeSetter(IncomeSetter):
         income[unemp_ind] = 0.0
 
         # Not-economically active individuals
-        nea_ind = current_individual_activity_status == ActivityStatus.NOT_ECONOMICALLY_ACTIVE
+        nea_ind = (
+            current_individual_activity_status == ActivityStatus.NOT_ECONOMICALLY_ACTIVE
+        )
         income[nea_ind] = 0.0
 
         # Firm investors
-        firm_inv_ind = current_individual_activity_status == ActivityStatus.FIRM_INVESTOR
+        firm_inv_ind = (
+            current_individual_activity_status == ActivityStatus.FIRM_INVESTOR
+        )
         income[firm_inv_ind] = (
             dividend_payout_ratio
             * (1 - income_taxes)
@@ -193,7 +197,9 @@ class DefaultIncomeSetter(IncomeSetter):
         )
 
         # Bank investors
-        bank_inv_ind = current_individual_activity_status == ActivityStatus.BANK_INVESTOR
+        bank_inv_ind = (
+            current_individual_activity_status == ActivityStatus.BANK_INVESTOR
+        )
         income[bank_inv_ind] = (
             dividend_payout_ratio
             * (1 - income_taxes)
@@ -253,25 +259,35 @@ class DefaultIncomeSetter(IncomeSetter):
         income[unemp_ind] = 0.0
 
         # Not-economically active individuals
-        nea_ind = current_individual_activity_status == ActivityStatus.NOT_ECONOMICALLY_ACTIVE
+        nea_ind = (
+            current_individual_activity_status == ActivityStatus.NOT_ECONOMICALLY_ACTIVE
+        )
         income[nea_ind] = 0.0
 
         # Firm investors
-        firm_inv_ind = current_individual_activity_status == ActivityStatus.FIRM_INVESTOR
+        firm_inv_ind = (
+            current_individual_activity_status == ActivityStatus.FIRM_INVESTOR
+        )
         income[firm_inv_ind] = (
             dividend_payout_ratio
             * (1 - income_taxes)
             * (1 - tau_firm)
-            * np.maximum(0.0, firm_profits[corr_invested_firms[firm_inv_ind].astype(int)])
+            * np.maximum(
+                0.0, firm_profits[corr_invested_firms[firm_inv_ind].astype(int)]
+            )
         )
 
         # Bank investors
-        bank_inv_ind = current_individual_activity_status == ActivityStatus.BANK_INVESTOR
+        bank_inv_ind = (
+            current_individual_activity_status == ActivityStatus.BANK_INVESTOR
+        )
         income[bank_inv_ind] = (
             dividend_payout_ratio
             * (1 - income_taxes)
             * (1 - tau_firm)
-            * np.maximum(0.0, bank_profits[corr_invested_banks[bank_inv_ind].astype(int)])
+            * np.maximum(
+                0.0, bank_profits[corr_invested_banks[bank_inv_ind].astype(int)]
+            )
         )
 
         return cpi * individual_social_benefits + income

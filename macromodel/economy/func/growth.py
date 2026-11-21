@@ -76,7 +76,9 @@ class GrowthForecasting(ABC):
         Returns:
             float: Forecasted growth rate
         """
-        return self.forecaster.forecast(historic_growth, t, assume_zero_noise=assume_zero_noise)
+        return self.forecaster.forecast(
+            historic_growth, t, assume_zero_noise=assume_zero_noise
+        )
 
 
 class GrowthForecastingConstant(GrowthForecasting):

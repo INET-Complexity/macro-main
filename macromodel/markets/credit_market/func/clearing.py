@@ -97,7 +97,9 @@ class CreditMarketClearer(ABC):
         self.allow_short_term_firm_loans = allow_short_term_firm_loans
         self.allow_household_loans = allow_household_loans
         self.firms_max_number_of_banks_visiting = firms_max_number_of_banks_visiting
-        self.households_max_number_of_banks_visiting = households_max_number_of_banks_visiting
+        self.households_max_number_of_banks_visiting = (
+            households_max_number_of_banks_visiting
+        )
         self.consider_loan_type_fractions = consider_loan_type_fractions
         self.credit_supply_temperature = credit_supply_temperature
         self.interest_rates_selection_temperature = interest_rates_selection_temperature
@@ -260,15 +262,15 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
                 - banks.ts.current("total_outstanding_loans")
                 - new_credit_by_bank,
             )
-            max_supply_based_on_preferences_firms = banks.ts.initial("new_loans_fraction_firms") * np.exp(
-                -self.credit_supply_temperature * current_npl_firm_loans
-            )
-            max_supply_based_on_preferences_hh_cons = banks.ts.initial("new_loans_fraction_hh_cons") * np.exp(
-                -self.credit_supply_temperature * current_npl_hh_cons_loans
-            )
-            max_supply_based_on_preferences_mortgages = banks.ts.initial("new_loans_fraction_mortgages") * np.exp(
-                -self.credit_supply_temperature * current_npl_mortgages
-            )
+            max_supply_based_on_preferences_firms = banks.ts.initial(
+                "new_loans_fraction_firms"
+            ) * np.exp(-self.credit_supply_temperature * current_npl_firm_loans)
+            max_supply_based_on_preferences_hh_cons = banks.ts.initial(
+                "new_loans_fraction_hh_cons"
+            ) * np.exp(-self.credit_supply_temperature * current_npl_hh_cons_loans)
+            max_supply_based_on_preferences_mortgages = banks.ts.initial(
+                "new_loans_fraction_mortgages"
+            ) * np.exp(-self.credit_supply_temperature * current_npl_mortgages)
             current_sum = (
                 max_supply_based_on_preferences_firms * max_car
                 + max_supply_based_on_preferences_hh_cons * max_car
@@ -284,9 +286,15 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
             max_supply_based_on_preferences_hh_cons *= scale
             max_supply_based_on_preferences_mortgages *= scale
         else:
-            max_supply_based_on_preferences_firms = np.full(banks.ts.current("n_banks"), np.inf)
-            max_supply_based_on_preferences_hh_cons = np.full(banks.ts.current("n_banks"), np.inf)
-            max_supply_based_on_preferences_mortgages = np.full(banks.ts.current("n_banks"), np.inf)
+            max_supply_based_on_preferences_firms = np.full(
+                banks.ts.current("n_banks"), np.inf
+            )
+            max_supply_based_on_preferences_hh_cons = np.full(
+                banks.ts.current("n_banks"), np.inf
+            )
+            max_supply_based_on_preferences_mortgages = np.full(
+                banks.ts.current("n_banks"), np.inf
+            )
 
         # Firm loans
         if self.allow_short_term_firm_loans:
@@ -406,7 +414,9 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
         else:
             firm_target_credit = firms.ts.current("target_long_term_credit")
         firms_with_needs = np.where(firm_target_credit > 0)[0]
-        firms_with_needs_shuffled = np.random.choice(firms_with_needs, len(firms_with_needs), replace=False)
+        firms_with_needs_shuffled = np.random.choice(
+            firms_with_needs, len(firms_with_needs), replace=False
+        )
         for firm_id in firms_with_needs_shuffled:
             # Take a subset of all banks
             banks_subset = np.random.choice(
@@ -425,7 +435,8 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
 
                 # Supply
                 total_credit_supply = (
-                    banks.ts.current("equity")[bank_id] / banks.parameters.capital_adequacy_ratio
+                    banks.ts.current("equity")[bank_id]
+                    / banks.parameters.capital_adequacy_ratio
                     - banks.ts.current("total_outstanding_loans")[bank_id]
                     - new_credit_by_bank[bank_id]
                 )
@@ -445,7 +456,8 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
                     + firms.ts.current("deposits")[firm_id]
                     - firms.ts.current("debt")[firm_id]
                     - new_credit_by_firm[firm_id]
-                    - firms.ts.current("expected_profits")[firm_id] / banks.parameters.firm_loans_return_on_equity_ratio
+                    - firms.ts.current("expected_profits")[firm_id]
+                    / banks.parameters.firm_loans_return_on_equity_ratio
                 )
 
                 # Return on assets
@@ -463,7 +475,8 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
                     min(
                         firm_target_credit[firm_id],
                         total_credit_supply,
-                        max_supply_based_on_preferences[bank_id] - new_credit_by_bank[bank_id],
+                        max_supply_based_on_preferences[bank_id]
+                        - new_credit_by_bank[bank_id],
                         debt_to_equity_restrictions,
                         return_on_equity_restrictions,
                         return_on_assets_restrictions,
@@ -567,7 +580,8 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
 
                 # Supply
                 total_credit_supply = (
-                    banks.ts.current("equity")[bank_id] / banks.parameters.capital_adequacy_ratio
+                    banks.ts.current("equity")[bank_id]
+                    / banks.parameters.capital_adequacy_ratio
                     - banks.ts.current("total_outstanding_loans")[bank_id]
                     - new_credit_by_bank[bank_id]
                 )
@@ -576,7 +590,10 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
                 loan_to_income_restrictions = (
                     banks.parameters.household_consumption_loans_loan_to_income_ratio
                     * 0.5
-                    * (households.ts.prev("income")[household_id] + households.ts.current("income")[household_id])
+                    * (
+                        households.ts.prev("income")[household_id]
+                        + households.ts.current("income")[household_id]
+                    )
                     - households.ts.current("debt")[household_id]
                     - new_credit_by_household[household_id]
                 )
@@ -587,7 +604,8 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
                     min(
                         household_target_credit[household_id],
                         total_credit_supply,
-                        max_supply_based_on_preferences[bank_id] - new_credit_by_bank[bank_id],
+                        max_supply_based_on_preferences[bank_id]
+                        - new_credit_by_bank[bank_id],
                         loan_to_income_restrictions,
                     ),
                 )
@@ -689,7 +707,8 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
 
                 # Supply
                 total_credit_supply = (
-                    banks.ts.current("equity")[bank_id] / banks.parameters.capital_adequacy_ratio
+                    banks.ts.current("equity")[bank_id]
+                    / banks.parameters.capital_adequacy_ratio
                     - banks.ts.current("total_outstanding_loans")[bank_id]
                     - new_credit_by_bank[bank_id]
                 )
@@ -698,7 +717,10 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
                 loan_to_income_restrictions = (
                     banks.parameters.mortgage_loan_to_income_ratio
                     * 0.5
-                    * (households.ts.prev("income")[household_id] + households.ts.current("income")[household_id])
+                    * (
+                        households.ts.prev("income")[household_id]
+                        + households.ts.current("income")[household_id]
+                    )
                     - households.ts.current("debt")[household_id]
                     - new_credit_by_household[household_id]
                 )
@@ -714,7 +736,11 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
                 debt_service_to_income_restrictions = (
                     banks.parameters.mortgage_debt_service_to_income_ratio
                     * households.ts.current("income")[household_id]
-                    * (1 - (1 + banks_ir[bank_id]) ** (-banks.parameters.mortgage_maturity))
+                    * (
+                        1
+                        - (1 + banks_ir[bank_id])
+                        ** (-banks.parameters.mortgage_maturity)
+                    )
                     / banks_ir[bank_id]
                 )
 
@@ -724,7 +750,8 @@ class DefaultCreditMarketClearer(CreditMarketClearer):
                     min(
                         household_target_credit[household_id],
                         total_credit_supply,
-                        max_supply_based_on_preferences[bank_id] - new_credit_by_bank[bank_id],
+                        max_supply_based_on_preferences[bank_id]
+                        - new_credit_by_bank[bank_id],
                         loan_to_income_restrictions,
                         loan_to_value_restrictions,
                         debt_service_to_income_restrictions,
@@ -877,8 +904,10 @@ class PolednaCreditMarketClearer(CreditMarketClearer):
                 if firm_target_credit[firm_id] == 0:
                     break
                 bank_cap_req = (
-                    banks.ts.current("equity")[bank_id] / banks.parameters.capital_adequacy_ratio
-                    - (1 - 1.0 / loan_maturity) * banks.ts.current("total_outstanding_loans")[bank_id]
+                    banks.ts.current("equity")[bank_id]
+                    / banks.parameters.capital_adequacy_ratio
+                    - (1 - 1.0 / loan_maturity)
+                    * banks.ts.current("total_outstanding_loans")[bank_id]
                     - new_credit_by_bank[bank_id]
                 )
                 firm_risk_assessment = (
@@ -999,15 +1028,15 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 - banks.ts.current("total_outstanding_loans")
                 - new_credit_by_bank,
             )
-            max_supply_based_on_preferences_firms = banks.ts.initial("new_loans_fraction_firms") * np.exp(
-                -self.credit_supply_temperature * current_npl_firm_loans
-            )
-            max_supply_based_on_preferences_hh_cons = banks.ts.initial("new_loans_fraction_hh_cons") * np.exp(
-                -self.credit_supply_temperature * current_npl_hh_cons_loans
-            )
-            max_supply_based_on_preferences_mortgages = banks.ts.initial("new_loans_fraction_mortgages") * np.exp(
-                -self.credit_supply_temperature * current_npl_mortgages
-            )
+            max_supply_based_on_preferences_firms = banks.ts.initial(
+                "new_loans_fraction_firms"
+            ) * np.exp(-self.credit_supply_temperature * current_npl_firm_loans)
+            max_supply_based_on_preferences_hh_cons = banks.ts.initial(
+                "new_loans_fraction_hh_cons"
+            ) * np.exp(-self.credit_supply_temperature * current_npl_hh_cons_loans)
+            max_supply_based_on_preferences_mortgages = banks.ts.initial(
+                "new_loans_fraction_mortgages"
+            ) * np.exp(-self.credit_supply_temperature * current_npl_mortgages)
             current_sum = (
                 max_supply_based_on_preferences_firms * max_car
                 + max_supply_based_on_preferences_hh_cons * max_car
@@ -1023,9 +1052,15 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
             max_supply_based_on_preferences_hh_cons *= scale
             max_supply_based_on_preferences_mortgages *= scale
         else:
-            max_supply_based_on_preferences_firms = np.full(banks.ts.current("n_banks"), np.inf)
-            max_supply_based_on_preferences_hh_cons = np.full(banks.ts.current("n_banks"), np.inf)
-            max_supply_based_on_preferences_mortgages = np.full(banks.ts.current("n_banks"), np.inf)
+            max_supply_based_on_preferences_firms = np.full(
+                banks.ts.current("n_banks"), np.inf
+            )
+            max_supply_based_on_preferences_hh_cons = np.full(
+                banks.ts.current("n_banks"), np.inf
+            )
+            max_supply_based_on_preferences_mortgages = np.full(
+                banks.ts.current("n_banks"), np.inf
+            )
 
         # Firm loans
         new_st_loans = self.clear_loans(
@@ -1143,10 +1178,15 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
 
         # Select agents wanting credit and priorities
         agents_with_demand = np.where(target_credit > 0)[0]
-        debtor_priorities = self.get_debtor_priorities(n_agents=agents_with_demand.shape[0])
+        debtor_priorities = self.get_debtor_priorities(
+            n_agents=agents_with_demand.shape[0]
+        )
 
         # Determine capacities
-        if loan_type == LoanTypes.FIRM_SHORT_TERM_LOAN or loan_type == LoanTypes.FIRM_LONG_TERM_LOAN:
+        if (
+            loan_type == LoanTypes.FIRM_SHORT_TERM_LOAN
+            or loan_type == LoanTypes.FIRM_LONG_TERM_LOAN
+        ):
             debt_to_equity_restrictions = (
                 banks.parameters.firm_loans_debt_to_equity_ratio
                 * firms.ts.current("capital_inputs_stock_value")[agents_with_demand]
@@ -1163,8 +1203,12 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 / banks.parameters.firm_loans_return_on_equity_ratio
             )
             # Calculate ROA safely to avoid division by zero
-            firm_expected_profits = firms.ts.current("expected_profits")[agents_with_demand]
-            firm_capital_stock = firms.ts.current("capital_inputs_stock_value")[agents_with_demand]
+            firm_expected_profits = firms.ts.current("expected_profits")[
+                agents_with_demand
+            ]
+            firm_capital_stock = firms.ts.current("capital_inputs_stock_value")[
+                agents_with_demand
+            ]
 
             firm_roa = np.divide(
                 firm_expected_profits,
@@ -1175,7 +1219,9 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
 
             # Start permissive (allow all), block only firms that fail ROA check
             return_on_assets_restrictions = np.full(agents_with_demand.shape, np.inf)
-            return_on_assets_restrictions[firm_roa < banks.parameters.firm_loans_return_on_assets_ratio] = 0.0
+            return_on_assets_restrictions[
+                firm_roa < banks.parameters.firm_loans_return_on_assets_ratio
+            ] = 0.0
             credit_restrictions = np.minimum(
                 np.minimum(debt_to_equity_restrictions, return_on_equity_restrictions),
                 return_on_assets_restrictions,
@@ -1209,7 +1255,9 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
                 * households.ts.current("wealth_financial_assets")[agents_with_demand]
             )
 
-            credit_restrictions = np.minimum(loan_to_income_restrictions, loan_to_value_restrictions)
+            credit_restrictions = np.minimum(
+                loan_to_income_restrictions, loan_to_value_restrictions
+            )
         else:
             raise ValueError("Unknown loan type", loan_type)
         capacities = np.maximum(
@@ -1269,13 +1317,17 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
             loan_matrix = np.outer(supply_weights, received_loans_by_debtors)
             for bank_idx in range(len(supply_weights)):
                 new_loans[0, bank_idx, agents_with_demand] = loan_matrix[bank_idx, :]
-        new_loans[1, :, agents_with_demand] = banks_ir[:, np.newaxis] * new_loans[0, :, agents_with_demand]
-        new_loans[2, :, agents_with_demand] = 1.0 / loan_maturity * new_loans[0, :, agents_with_demand]
+        new_loans[1, :, agents_with_demand] = (
+            banks_ir[:, np.newaxis] * new_loans[0, :, agents_with_demand]
+        )
+        new_loans[2, :, agents_with_demand] = (
+            1.0 / loan_maturity * new_loans[0, :, agents_with_demand]
+        )
 
         return new_loans
 
     @staticmethod
-    #@njit(cache=True)
+    # @njit(cache=True)
     def get_debtor_priorities(n_agents: int) -> np.ndarray:
         """Generate random priorities for debtors.
 
@@ -1291,7 +1343,7 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
         return np.random.choice(n_agents, n_agents, replace=False)
 
     @staticmethod
-    #@njit(cache=True)
+    # @njit(cache=True)
     def get_creditor_priorities_deterministic(
         interest_rates_selection_temperature: float,
         interest_rates: np.ndarray,
@@ -1397,14 +1449,20 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
         if minimum_fill > 0.0:
             filled_capacities += np.minimum(
                 capacities_sorted,
-                capacities_sorted / np.sum(capacities_sorted) * minimum_fill * fill_amount,
+                capacities_sorted
+                / np.sum(capacities_sorted)
+                * minimum_fill
+                * fill_amount,
             )
         filled_ind = np.where(
-            (capacities_sorted - filled_capacities).cumsum() < fill_amount - np.sum(filled_capacities)
+            (capacities_sorted - filled_capacities).cumsum()
+            < fill_amount - np.sum(filled_capacities)
         )[0]
         filled_capacities[filled_ind] = capacities_sorted[filled_ind]
         if len(filled_ind) < len(filled_capacities):
-            filled_capacities[len(filled_ind)] += fill_amount - np.sum(filled_capacities)
+            filled_capacities[len(filled_ind)] += fill_amount - np.sum(
+                filled_capacities
+            )
             filled_capacities[len(filled_ind)] = min(
                 filled_capacities[len(filled_ind)],
                 capacities_sorted[len(filled_ind)],

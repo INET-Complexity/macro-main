@@ -101,10 +101,15 @@ def check_excess_demand(firms: Agent, households: Agent) -> None:
     prices = np.array([1.0, 2.0])
     for g in [0, 1]:
         nominal_excess_demand = (
-            prices[g] * firms.ts.current("real_excess_demand")[firms.transactor_seller_states["Industries"] == g].sum()
+            prices[g]
+            * firms.ts.current("real_excess_demand")[
+                firms.transactor_seller_states["Industries"] == g
+            ].sum()
         )
         nominal_supply = prices[g] * (
-            firms.transactor_seller_states["Initial Goods"][firms.transactor_seller_states["Industries"] == g].sum()
+            firms.transactor_seller_states["Initial Goods"][
+                firms.transactor_seller_states["Industries"] == g
+            ].sum()
         )
         nominal_demand = (
             prices[g] * firms.transactor_buyer_states["Initial Goods"][:, g].sum()

@@ -108,7 +108,9 @@ def default_rate_values(policy_rates: pd.DataFrame) -> tuple[float, float, float
     return 1.0, -1.0, policy_rates["Policy Rate"].values[-1]
 
 
-def fit_mortgage_models(df: pd.DataFrame, n_lags: int, min_size: int = 12) -> tuple[float, float, float]:
+def fit_mortgage_models(
+    df: pd.DataFrame, n_lags: int, min_size: int = 12
+) -> tuple[float, float, float]:
     """Fit ARDL models for mortgage rates.
 
     This function:
@@ -140,14 +142,19 @@ def fit_mortgage_models(df: pd.DataFrame, n_lags: int, min_size: int = 12) -> tu
         pt = -best_model.params[best_lag + 2] / best_model.params[best_lag + 1]
     household_mortgages_pt = pt
     household_mortgages_ect = best_model.params[best_lag + 1]
-    household_mortgages_rates = df["household_mortgage_rates"].values[-1] + household_mortgages_ect * (
-        df["household_mortgage_rates"].values[-1] - household_mortgages_pt * df["Policy Rate"].values[-1]
+    household_mortgages_rates = df["household_mortgage_rates"].values[
+        -1
+    ] + household_mortgages_ect * (
+        df["household_mortgage_rates"].values[-1]
+        - household_mortgages_pt * df["Policy Rate"].values[-1]
     )
 
     return household_mortgages_pt, household_mortgages_ect, household_mortgages_rates
 
 
-def fit_household_models(df: pd.DataFrame, n_lags: int, min_size: int = 12) -> tuple[float, float, float]:
+def fit_household_models(
+    df: pd.DataFrame, n_lags: int, min_size: int = 12
+) -> tuple[float, float, float]:
     """Fit ARDL models for household consumption loan rates.
 
     This function:
@@ -178,13 +185,22 @@ def fit_household_models(df: pd.DataFrame, n_lags: int, min_size: int = 12) -> t
         pt = -best_model.params[best_lag + 2] / best_model.params[best_lag + 1]
     household_consumption_pt = pt
     household_consumption_ect = best_model.params[best_lag + 1]
-    household_consumption_rates = df["household_consumption_rates"].values[-1] + household_consumption_ect * (
-        df["household_consumption_rates"].values[-1] - household_consumption_pt * df["Policy Rate"].values[-1]
+    household_consumption_rates = df["household_consumption_rates"].values[
+        -1
+    ] + household_consumption_ect * (
+        df["household_consumption_rates"].values[-1]
+        - household_consumption_pt * df["Policy Rate"].values[-1]
     )
-    return household_consumption_pt, household_consumption_ect, household_consumption_rates
+    return (
+        household_consumption_pt,
+        household_consumption_ect,
+        household_consumption_rates,
+    )
 
 
-def fit_firm_models(df: pd.DataFrame, n_lags: int, min_size: int = 12) -> tuple[float, float, float]:
+def fit_firm_models(
+    df: pd.DataFrame, n_lags: int, min_size: int = 12
+) -> tuple[float, float, float]:
     """Fit ARDL models for firm loan rates.
 
     This function:
@@ -221,7 +237,9 @@ def fit_firm_models(df: pd.DataFrame, n_lags: int, min_size: int = 12) -> tuple[
     return firm_pt, firm_ect, firm_rates
 
 
-def fit_models(exog: np.ndarray, n_lags: int, rates_diff: np.ndarray) -> tuple[int, ARDL]:
+def fit_models(
+    exog: np.ndarray, n_lags: int, rates_diff: np.ndarray
+) -> tuple[int, ARDL]:
     """Fit ARDL models with different lag specifications and select the best one.
 
     This function:

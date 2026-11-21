@@ -10,7 +10,9 @@ from pathlib import Path
 import pandas as pd
 
 
-def validate_firms_data(annual: pd.DataFrame, quarterly: pd.DataFrame) -> tuple[bool, list[str]]:
+def validate_firms_data(
+    annual: pd.DataFrame, quarterly: pd.DataFrame
+) -> tuple[bool, list[str]]:
     """
     Validate firms annual and quarterly data for consistency.
 
@@ -34,9 +36,13 @@ def validate_firms_data(annual: pd.DataFrame, quarterly: pd.DataFrame) -> tuple[
     print(f"   Overlap: {len(overlap)}")
 
     if len(overlap) == 0:
-        errors.append("No company names overlap between annual and quarterly data - merge will fail")
+        errors.append(
+            "No company names overlap between annual and quarterly data - merge will fail"
+        )
     elif len(overlap) < len(annual_conm) * 0.9:
-        errors.append(f"Only {len(overlap)}/{len(annual_conm)} annual companies have quarterly data")
+        errors.append(
+            f"Only {len(overlap)}/{len(annual_conm)} annual companies have quarterly data"
+        )
 
     # Check 2: gvkey uniqueness within files (skip if removed for spoofing)
     if "gvkey" in annual.columns:
@@ -163,7 +169,18 @@ def validate_banks_data(banks: pd.DataFrame) -> tuple[bool, list[str]]:
         print("\n1. gvkey column removed (spoofed data) - skipping uniqueness check")
 
     # Check 2: Required columns exist (flexible for spoofed data)
-    required_cols = ["curcdq", "fqtr", "fyearq", "datadate", "atq", "dlttq", "dptcq", "ltq", "teqq", "loc"]
+    required_cols = [
+        "curcdq",
+        "fqtr",
+        "fyearq",
+        "datadate",
+        "atq",
+        "dlttq",
+        "dptcq",
+        "ltq",
+        "teqq",
+        "loc",
+    ]
 
     print("\n2. Required columns:")
     missing = set(required_cols) - set(banks.columns)
@@ -218,7 +235,9 @@ def validate_banks_data(banks: pd.DataFrame) -> tuple[bool, list[str]]:
         print("\n6. Ticker symbols:")
         tic_missing = banks["tic"].isna().sum()
         tic_unique = banks["tic"].nunique()
-        print(f"   Missing: {tic_missing}/{len(banks)} ({tic_missing / len(banks) * 100:.1f}%)")
+        print(
+            f"   Missing: {tic_missing}/{len(banks)} ({tic_missing / len(banks) * 100:.1f}%)"
+        )
         print(f"   Unique: {tic_unique}")
 
     return len(errors) == 0, errors
@@ -241,7 +260,11 @@ def validate_cross_file_consistency(
 
     # Check 1: gvkey overlap (should be minimal - firms vs banks)
     # Skip if gvkey removed for spoofing
-    if "gvkey" in annual.columns and "gvkey" in quarterly.columns and "gvkey" in banks.columns:
+    if (
+        "gvkey" in annual.columns
+        and "gvkey" in quarterly.columns
+        and "gvkey" in banks.columns
+    ):
         firm_gvkeys = set(annual["gvkey"].unique()) | set(quarterly["gvkey"].unique())
         bank_gvkeys = set(banks["gvkey"].unique())
         overlap = firm_gvkeys & bank_gvkeys
@@ -252,7 +275,9 @@ def validate_cross_file_consistency(
         print(f"   Overlap: {len(overlap)}")
 
         if len(overlap) > len(bank_gvkeys) * 0.1:
-            errors.append(f"Large overlap ({len(overlap)}) between firm and bank gvkeys - may indicate data issues")
+            errors.append(
+                f"Large overlap ({len(overlap)}) between firm and bank gvkeys - may indicate data issues"
+            )
     else:
         print("\n1. gvkey column removed (spoofed data) - skipping overlap check")
 
@@ -318,7 +343,9 @@ def main():
     all_errors.extend(banks_errors)
 
     # Validate cross-file consistency
-    cross_valid, cross_errors = validate_cross_file_consistency(firms_annual, firms_quarterly, banks)
+    cross_valid, cross_errors = validate_cross_file_consistency(
+        firms_annual, firms_quarterly, banks
+    )
     all_valid = all_valid and cross_valid
     all_errors.extend(cross_errors)
 

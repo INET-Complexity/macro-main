@@ -80,7 +80,11 @@ class SyntheticGoodsMarket:
             rates to inflation and growth patterns.
     """
 
-    def __init__(self, country_name: str | Country, exchange_rates_model: Optional[LinearRegression]):
+    def __init__(
+        self,
+        country_name: str | Country,
+        exchange_rates_model: Optional[LinearRegression],
+    ):
         """
         Represents a synthetic goods market.
 
@@ -143,7 +147,7 @@ class SyntheticGoodsMarket:
         merged = merged.dropna()
 
         # select only data up to the current quarter
-        merged = merged.loc[: f"{year}-Q{quarter}"]
+        merged = merged.loc[:f"{year}-Q{quarter}"]
         # drop current quarter observation (ie last row)
         merged = merged.iloc[:-1]
 

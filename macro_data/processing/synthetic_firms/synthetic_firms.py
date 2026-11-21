@@ -126,7 +126,9 @@ class SyntheticFirms(ABC):
         self.total_firm_deposits = total_firm_deposits
         self.total_firm_debt = total_firm_debt
         self.capital_inputs_productivity_matrix = capital_inputs_productivity_matrix
-        self.intermediate_inputs_productivity_matrix = intermediate_inputs_productivity_matrix
+        self.intermediate_inputs_productivity_matrix = (
+            intermediate_inputs_productivity_matrix
+        )
         self.capital_inputs_depreciation_matrix = capital_inputs_depreciation_matrix
 
         self.labour_productivity_by_industry = labour_productivity_by_industry

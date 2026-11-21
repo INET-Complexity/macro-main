@@ -130,7 +130,8 @@ def get_trade_proportions(
     origin_trade_proportions = np.zeros_like(default_origin_trade_proportions)
     for c1 in range(n_countries):
         origin_trade_proportions[c1] = (
-            np.exp(-temperature * average_prices_by_country[c1]) * default_origin_trade_proportions[c1]
+            np.exp(-temperature * average_prices_by_country[c1])
+            * default_origin_trade_proportions[c1]
         )
     """
     origin_trade_proportions[-1] = (
@@ -138,7 +139,9 @@ def get_trade_proportions(
     ) * default_origin_trade_proportions[-1]
     """
     for c2 in range(n_countries):
-        origin_trade_proportions[:, c2] /= np.sum(origin_trade_proportions[:, c2], axis=0)
+        origin_trade_proportions[:, c2] /= np.sum(
+            origin_trade_proportions[:, c2], axis=0
+        )
 
     # Destin trade proportions
     destin_trade_proportions = default_destin_trade_proportions.copy()
@@ -248,7 +251,10 @@ def fill_buckets(
             capacities_sorted,
             capacities_sorted / np.sum(capacities_sorted) * minimum_fill * fill_amount,
         )
-    filled_ind = np.where((capacities_sorted - filled_capacities).cumsum() < fill_amount - np.sum(filled_capacities))[0]
+    filled_ind = np.where(
+        (capacities_sorted - filled_capacities).cumsum()
+        < fill_amount - np.sum(filled_capacities)
+    )[0]
     filled_capacities[filled_ind] = capacities_sorted[filled_ind]
     if len(filled_ind) < len(filled_capacities):
         filled_capacities[len(filled_ind)] += fill_amount - np.sum(filled_capacities)
@@ -308,16 +314,16 @@ def get_seller_priorities_stochastic(
         4. Random permutation favoring higher weights
     """
     if np.sum(productions) == 0.0:
-        return np.full(productions.shape[0], 1.0 / productions.shape[0]), np.random.choice(
-            productions.shape[0], productions.shape[0], replace=False
-        )
+        return np.full(
+            productions.shape[0], 1.0 / productions.shape[0]
+        ), np.random.choice(productions.shape[0], productions.shape[0], replace=False)
 
     distribution_production = productions / np.sum(productions)
     distribution_prices = np.exp(-price_temperature * prices)
     if np.sum(distribution_prices) == 0.0:
-        return np.full(productions.shape[0], 1.0 / productions.shape[0]), np.random.choice(
-            productions.shape[0], productions.shape[0], replace=False
-        )
+        return np.full(
+            productions.shape[0], 1.0 / productions.shape[0]
+        ), np.random.choice(productions.shape[0], productions.shape[0], replace=False)
     distribution_prices /= np.sum(distribution_prices)
 
     if distribution_type == "multiplicative":
@@ -330,7 +336,9 @@ def get_seller_priorities_stochastic(
     distribution[distribution == 0.0] = 1e-20
     distribution /= np.sum(distribution)
 
-    return distribution, np.random.choice(len(distribution), len(distribution), replace=False, p=distribution)
+    return distribution, np.random.choice(
+        len(distribution), len(distribution), replace=False, p=distribution
+    )
 
 
 @njit(cache=True)
@@ -382,16 +390,16 @@ def get_seller_priorities_deterministic(
         4. Sorted order = [0, 2, 1]
     """
     if np.sum(productions) == 0.0:
-        return np.full(productions.shape[0], 1.0 / productions.shape[0]), np.random.choice(
-            productions.shape[0], productions.shape[0], replace=False
-        )
+        return np.full(
+            productions.shape[0], 1.0 / productions.shape[0]
+        ), np.random.choice(productions.shape[0], productions.shape[0], replace=False)
 
     distribution_production = productions / np.sum(productions)
     distribution_prices = np.exp(-price_temperature * prices)
     if np.sum(distribution_prices) == 0.0:
-        return np.full(productions.shape[0], 1.0 / productions.shape[0]), np.random.choice(
-            productions.shape[0], productions.shape[0], replace=False
-        )
+        return np.full(
+            productions.shape[0], 1.0 / productions.shape[0]
+        ), np.random.choice(productions.shape[0], productions.shape[0], replace=False)
     distribution_prices /= np.sum(distribution_prices)
 
     if distribution_type == "multiplicative":
@@ -422,7 +430,9 @@ def get_buyer_priorities(n_buyers: int) -> np.ndarray:
 
 
 @njit(cache=True)
-def get_transactor_buyer_priorities(priorities: np.ndarray, prioritise: bool) -> np.ndarray:
+def get_transactor_buyer_priorities(
+    priorities: np.ndarray, prioritise: bool
+) -> np.ndarray:
     """Generate borrower priorities considering high/low priority status.
 
     This function creates a permutation of borrower indices that respects priority
@@ -613,32 +623,64 @@ def clear_water_bucket(
             for country_name in from_country_names:
                 for transactor in goods_market_participants[country_name]:
                     # Check lender priority if needed
-                    if transactor.transactor_seller_states["Priority"] == 1 or not sell_high_prio_only:
-                        if transactor.transactor_seller_states["Value Type"] == ValueType.REAL:
+                    if (
+                        transactor.transactor_seller_states["Priority"] == 1
+                        or not sell_high_prio_only
+                    ):
+                        if (
+                            transactor.transactor_seller_states["Value Type"]
+                            == ValueType.REAL
+                        ):
                             # Find lenders in current industry
                             ind = transactor.transactor_seller_states["Industries"] == g
-                            if np.any(transactor.transactor_seller_states["Remaining Goods"][ind] > 0.0):
+                            if np.any(
+                                transactor.transactor_seller_states["Remaining Goods"][
+                                    ind
+                                ]
+                                > 0.0
+                            ):
                                 # Get lender priorities (deterministic or stochastic)
                                 if deterministic:
-                                    _, seller_priorities = get_seller_priorities_deterministic(
-                                        productions=transactor.transactor_seller_states["Initial Goods"][ind],
-                                        prices=transactor.transactor_seller_states["Prices"][ind],
-                                        price_temperature=price_temperature,
-                                        distribution_type=distribution_type,
+                                    _, seller_priorities = (
+                                        get_seller_priorities_deterministic(
+                                            productions=transactor.transactor_seller_states[
+                                                "Initial Goods"
+                                            ][
+                                                ind
+                                            ],
+                                            prices=transactor.transactor_seller_states[
+                                                "Prices"
+                                            ][ind],
+                                            price_temperature=price_temperature,
+                                            distribution_type=distribution_type,
+                                        )
                                     )
                                 else:
-                                    _, seller_priorities = get_seller_priorities_stochastic(
-                                        productions=transactor.transactor_seller_states["Initial Goods"][ind],
-                                        prices=transactor.transactor_seller_states["Prices"][ind],
-                                        price_temperature=price_temperature,
-                                        distribution_type=distribution_type,
+                                    _, seller_priorities = (
+                                        get_seller_priorities_stochastic(
+                                            productions=transactor.transactor_seller_states[
+                                                "Initial Goods"
+                                            ][
+                                                ind
+                                            ],
+                                            prices=transactor.transactor_seller_states[
+                                                "Prices"
+                                            ][ind],
+                                            price_temperature=price_temperature,
+                                            distribution_type=distribution_type,
+                                        )
                                     )
 
                                 # Calculate real amount to distribute
                                 real_amount = fill_buckets(
                                     capacities=np.minimum(
-                                        destin_trade_prop * transactor.transactor_seller_states["Initial Goods"][ind],
-                                        transactor.transactor_seller_states["Remaining Goods"][ind],
+                                        destin_trade_prop
+                                        * transactor.transactor_seller_states[
+                                            "Initial Goods"
+                                        ][ind],
+                                        transactor.transactor_seller_states[
+                                            "Remaining Goods"
+                                        ][ind],
                                     ),
                                     fill_amount=total_real_supply[country_name][g]
                                     / aggr_real_supply[g]
@@ -647,11 +689,19 @@ def clear_water_bucket(
                                     minimum_fill=seller_minimum_fill,
                                 )
                                 for rec_country in total_real_demand.keys():
-                                    transactor.transactor_seller_states["Real Amount sold to " + rec_country][ind] += (
-                                        real_amount * total_real_demand[rec_country][g] / aggr_real_demand[g]
+                                    transactor.transactor_seller_states[
+                                        "Real Amount sold to " + rec_country
+                                    ][ind] += (
+                                        real_amount
+                                        * total_real_demand[rec_country][g]
+                                        / aggr_real_demand[g]
                                     )
-                                transactor.transactor_seller_states["Real Amount sold"][ind] += real_amount
-                                transactor.transactor_seller_states["Remaining Goods"][ind] -= real_amount
+                                transactor.transactor_seller_states["Real Amount sold"][
+                                    ind
+                                ] += real_amount
+                                transactor.transactor_seller_states["Remaining Goods"][
+                                    ind
+                                ] -= real_amount
 
             # Borrower
             for country_name in to_country_names:
@@ -659,25 +709,39 @@ def clear_water_bucket(
                     # Check borrower eligibility
                     if (
                         with_buyer_value_type is None
-                        or transactor.transactor_buyer_states["Value Type"] == with_buyer_value_type
+                        or transactor.transactor_buyer_states["Value Type"]
+                        == with_buyer_value_type
                     ):
-                        if transactor.transactor_buyer_states["Priority"] == 1 or not buy_high_prio_only:
+                        if (
+                            transactor.transactor_buyer_states["Priority"] == 1
+                            or not buy_high_prio_only
+                        ):
                             # Calculate real demand considering trade proportions
                             real_prop_rem = np.minimum(
-                                origin_trade_prop * transactor.transactor_buyer_states["Initial Goods"][:, g],
-                                transactor.transactor_buyer_states["Remaining Goods"][:, g],
+                                origin_trade_prop
+                                * transactor.transactor_buyer_states["Initial Goods"][
+                                    :, g
+                                ],
+                                transactor.transactor_buyer_states["Remaining Goods"][
+                                    :, g
+                                ],
                             )
 
                             # Convert nominal to real if needed
-                            if transactor.transactor_buyer_states["Value Type"] == ValueType.NOMINAL:
+                            if (
+                                transactor.transactor_buyer_states["Value Type"]
+                                == ValueType.NOMINAL
+                            ):
                                 real_prop_rem /= average_goods_price[g]
 
                             # Update borrower's nominal spending
-                            transactor.transactor_buyer_states["Nominal Amount spent"][:, g] += (
-                                average_goods_price[g] * real_prop_rem
-                            )
+                            transactor.transactor_buyer_states["Nominal Amount spent"][
+                                :, g
+                            ] += (average_goods_price[g] * real_prop_rem)
                             # Update total amount borrowed
-                            transactor.transactor_buyer_states["Real Amount bought"][:, g] += real_prop_rem
+                            transactor.transactor_buyer_states["Real Amount bought"][
+                                :, g
+                            ] += real_prop_rem
 
                             # Process each lender sector
                             for sell_country in total_real_supply.keys():
@@ -689,33 +753,61 @@ def clear_water_bucket(
                                     * total_real_supply[sell_country][g]
                                     / aggr_real_supply[g]
                                 )
-                                transactor.transactor_buyer_states["Real Amount bought from " + sell_country][:, g] += (
-                                    real_prop_rem * total_real_supply[sell_country][g] / aggr_real_supply[g]
+                                transactor.transactor_buyer_states[
+                                    "Real Amount bought from " + sell_country
+                                ][:, g] += (
+                                    real_prop_rem
+                                    * total_real_supply[sell_country][g]
+                                    / aggr_real_supply[g]
                                 )
-                            if transactor.transactor_buyer_states["Value Type"] == ValueType.NOMINAL:
-                                transactor.transactor_buyer_states["Remaining Goods"][:, g] -= (
-                                    average_goods_price[g] * real_prop_rem
-                                )
+                            if (
+                                transactor.transactor_buyer_states["Value Type"]
+                                == ValueType.NOMINAL
+                            ):
+                                transactor.transactor_buyer_states["Remaining Goods"][
+                                    :, g
+                                ] -= (average_goods_price[g] * real_prop_rem)
                             else:
-                                transactor.transactor_buyer_states["Remaining Goods"][:, g] -= real_prop_rem
+                                transactor.transactor_buyer_states["Remaining Goods"][
+                                    :, g
+                                ] -= real_prop_rem
         else:
             # Lender
             for country_name in from_country_names:
                 for transactor in goods_market_participants[country_name]:
-                    if transactor.transactor_seller_states["Priority"] == 1 or not sell_high_prio_only:
-                        if transactor.transactor_seller_states["Value Type"] == ValueType.REAL:
+                    if (
+                        transactor.transactor_seller_states["Priority"] == 1
+                        or not sell_high_prio_only
+                    ):
+                        if (
+                            transactor.transactor_seller_states["Value Type"]
+                            == ValueType.REAL
+                        ):
                             # Find lenders in current industry
                             ind = transactor.transactor_seller_states["Industries"] == g
                             rem_min = np.minimum(
-                                destin_trade_prop * transactor.transactor_seller_states["Initial Goods"][ind],
-                                transactor.transactor_seller_states["Remaining Goods"][ind],
+                                destin_trade_prop
+                                * transactor.transactor_seller_states["Initial Goods"][
+                                    ind
+                                ],
+                                transactor.transactor_seller_states["Remaining Goods"][
+                                    ind
+                                ],
                             )
-                            transactor.transactor_seller_states["Real Amount sold"][ind] += rem_min
+                            transactor.transactor_seller_states["Real Amount sold"][
+                                ind
+                            ] += rem_min
                             for buy_country in total_real_demand.keys():
-                                transactor.transactor_seller_states["Real Amount sold to " + buy_country][ind] += (
-                                    rem_min / aggr_real_demand[g] * total_real_demand[buy_country][g]
+                                transactor.transactor_seller_states[
+                                    "Real Amount sold to " + buy_country
+                                ][ind] += (
+                                    rem_min
+                                    / aggr_real_demand[g]
+                                    * total_real_demand[buy_country][g]
                                 )
-                            transactor.transactor_seller_states["Remaining Goods"][ind] -= rem_min
+                            transactor.transactor_seller_states["Remaining Goods"][
+                                ind
+                            ] -= rem_min
 
             # Borrower
             for country_name in to_country_names:
@@ -724,15 +816,23 @@ def clear_water_bucket(
                     priorities=buyer_priority[country_name],
                     prioritise=consider_buyer_priorities,
                 )
-                transactor_real_cap = np.zeros(len(goods_market_participants[country_name]))
+                transactor_real_cap = np.zeros(
+                    len(goods_market_participants[country_name])
+                )
                 for i in range(len(goods_market_participants[country_name])):
                     rem_amount = np.minimum(
                         origin_trade_prop
-                        * goods_market_participants[country_name][i].transactor_buyer_states["Initial Goods"][:, g],
-                        goods_market_participants[country_name][i].transactor_buyer_states["Remaining Goods"][:, g],
+                        * goods_market_participants[country_name][
+                            i
+                        ].transactor_buyer_states["Initial Goods"][:, g],
+                        goods_market_participants[country_name][
+                            i
+                        ].transactor_buyer_states["Remaining Goods"][:, g],
                     ).sum()
                     if (
-                        goods_market_participants[country_name][i].transactor_buyer_states["Value Type"]
+                        goods_market_participants[country_name][
+                            i
+                        ].transactor_buyer_states["Value Type"]
                         == ValueType.REAL
                     ):
                         transactor_real_cap[i] = rem_amount
@@ -740,7 +840,9 @@ def clear_water_bucket(
                         transactor_real_cap[i] = rem_amount / average_goods_price[g]
                 transactor_total_real_supply = fill_buckets(
                     capacities=transactor_real_cap,
-                    fill_amount=total_real_demand[country_name][g] / aggr_real_demand[g] * aggr_real_supply[g],
+                    fill_amount=total_real_demand[country_name][g]
+                    / aggr_real_demand[g]
+                    * aggr_real_supply[g],
                     priorities=transactor_buyer_priorities,
                     minimum_fill=buyer_minimum_fill_macro,
                 )
@@ -750,13 +852,19 @@ def clear_water_bucket(
                 # Iterate over borrowers
                 for i, transactor in enumerate(goods_market_participants[country_name]):
                     prop_real = np.minimum(
-                        origin_trade_prop * transactor.transactor_buyer_states["Initial Goods"][:, g],
+                        origin_trade_prop
+                        * transactor.transactor_buyer_states["Initial Goods"][:, g],
                         transactor.transactor_buyer_states["Remaining Goods"][:, g],
                     )
-                    if transactor.transactor_buyer_states["Value Type"] == ValueType.NOMINAL:
+                    if (
+                        transactor.transactor_buyer_states["Value Type"]
+                        == ValueType.NOMINAL
+                    ):
                         prop_real /= average_goods_price[g]
                     buyer_priorities = get_buyer_priorities(
-                        n_buyers=transactor.transactor_buyer_states["Remaining Goods"].shape[0]
+                        n_buyers=transactor.transactor_buyer_states[
+                            "Remaining Goods"
+                        ].shape[0]
                     )
                     real_amount_bought = fill_buckets(
                         capacities=prop_real,
@@ -768,22 +876,38 @@ def clear_water_bucket(
                         raise ValueError("Nan in real_amount_bought")
                     for sell_country in total_real_supply.keys():
                         real_amount_bought_by_country = (
-                            real_amount_bought * total_real_supply[sell_country][g] / aggr_real_supply[g]
+                            real_amount_bought
+                            * total_real_supply[sell_country][g]
+                            / aggr_real_supply[g]
                         )
-                        transactor.transactor_buyer_states["Real Amount bought from " + sell_country][:, g] += (
-                            real_amount_bought_by_country
+                        transactor.transactor_buyer_states[
+                            "Real Amount bought from " + sell_country
+                        ][:, g] += real_amount_bought_by_country
+                        transactor.transactor_buyer_states[
+                            "Nominal Amount spent on Goods from " + sell_country
+                        ][:, g] += (
+                            average_goods_price[g] * real_amount_bought_by_country
                         )
-                        transactor.transactor_buyer_states["Nominal Amount spent on Goods from " + sell_country][
+                    if (
+                        np.isnan(average_goods_price[g])
+                        or np.sum(np.isnan(real_amount_bought)) > 0
+                    ):
+                        raise ValueError(
+                            "Nan in average_goods_price or real_amount_bought"
+                        )
+                    transactor.transactor_buyer_states["Nominal Amount spent"][
+                        :, g
+                    ] += (average_goods_price[g] * real_amount_bought)
+                    transactor.transactor_buyer_states["Real Amount bought"][
+                        :, g
+                    ] += real_amount_bought
+                    if (
+                        transactor.transactor_buyer_states["Value Type"]
+                        == ValueType.REAL
+                    ):
+                        transactor.transactor_buyer_states["Remaining Goods"][
                             :, g
-                        ] += average_goods_price[g] * real_amount_bought_by_country
-                    if np.isnan(average_goods_price[g]) or np.sum(np.isnan(real_amount_bought)) > 0:
-                        raise ValueError("Nan in average_goods_price or real_amount_bought")
-                    transactor.transactor_buyer_states["Nominal Amount spent"][:, g] += (
-                        average_goods_price[g] * real_amount_bought
-                    )
-                    transactor.transactor_buyer_states["Real Amount bought"][:, g] += real_amount_bought
-                    if transactor.transactor_buyer_states["Value Type"] == ValueType.REAL:
-                        transactor.transactor_buyer_states["Remaining Goods"][:, g] -= real_amount_bought
+                        ] -= real_amount_bought
                     else:
                         transactor.transactor_buyer_states["Remaining Goods"][:, g] -= (
                             average_goods_price[g] * real_amount_bought

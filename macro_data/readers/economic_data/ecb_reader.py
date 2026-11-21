@@ -140,7 +140,9 @@ class ECBReader:
             "household_loans_for_mortgages",
         ]:
             filepath = path / (f + ".csv")
-            self.data[f] = preprocess_df(pd.read_csv(filepath, index_col="DATE", parse_dates=True))
+            self.data[f] = preprocess_df(
+                pd.read_csv(filepath, index_col="DATE", parse_dates=True)
+            )
 
     def get_firm_rates(self, country_name: str) -> Optional[pd.Series]:
         """

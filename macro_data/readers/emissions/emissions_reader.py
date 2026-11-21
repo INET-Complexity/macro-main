@@ -106,19 +106,28 @@ class EmissionsReader:
 
         coal = pd.read_csv(data_path / "PCOALAUUSDM.csv")
         coal["observation_date"] = pd.to_datetime(coal["observation_date"])
-        coal.rename(columns={"PCOALAUUSDM": "coal_price", "observation_date": "DATE"}, inplace=True)
+        coal.rename(
+            columns={"PCOALAUUSDM": "coal_price", "observation_date": "DATE"},
+            inplace=True,
+        )
         coal.set_index("DATE", inplace=True)
         coal = coal.resample("YS").first()
 
         oil = pd.read_csv(data_path / "POILBREUSDM.csv")
         oil["observation_date"] = pd.to_datetime(oil["observation_date"])
-        oil.rename(columns={"POILBREUSDM": "oil_price", "observation_date": "DATE"}, inplace=True)
+        oil.rename(
+            columns={"POILBREUSDM": "oil_price", "observation_date": "DATE"},
+            inplace=True,
+        )
         oil.set_index("DATE", inplace=True)
         oil = oil.resample("YS").first()
 
         gas = pd.read_csv(data_path / "PNGASEUUSDM.csv")
         gas["observation_date"] = pd.to_datetime(gas["observation_date"])
-        gas.rename(columns={"PNGASEUUSDM": "gas_price", "observation_date": "DATE"}, inplace=True)
+        gas.rename(
+            columns={"PNGASEUUSDM": "gas_price", "observation_date": "DATE"},
+            inplace=True,
+        )
         gas.set_index("DATE", inplace=True)
         gas = gas.resample("YS").first()
 
@@ -142,9 +151,15 @@ class EmissionsReader:
             Emissions factors are calculated by dividing the standard emissions
             factor for each fuel by its price, giving tCO2 per USD spent
         """
-        coal_tco2_per_usd = COAL_TCO2_PER_TON / self.prices_df.loc[f"{year}", "coal_price"].iloc[0]
-        oil_tco2_per_usd = OIL_TCO2_PER_BARREL / self.prices_df.loc[f"{year}", "oil_price"].iloc[0]
-        gas_tco2_per_usd = GAS_TCO2_PER_MBTU / self.prices_df.loc[f"{year}", "gas_price"].iloc[0]
+        coal_tco2_per_usd = (
+            COAL_TCO2_PER_TON / self.prices_df.loc[f"{year}", "coal_price"].iloc[0]
+        )
+        oil_tco2_per_usd = (
+            OIL_TCO2_PER_BARREL / self.prices_df.loc[f"{year}", "oil_price"].iloc[0]
+        )
+        gas_tco2_per_usd = (
+            GAS_TCO2_PER_MBTU / self.prices_df.loc[f"{year}", "gas_price"].iloc[0]
+        )
 
         return {
             "coal": coal_tco2_per_usd,
@@ -225,7 +240,14 @@ class EmissionsData:
             Order of factors in array is fixed and matches the order
             expected by other parts of the system
         """
-        return np.array([self.coal_factor_lcu, self.gas_factor_lcu, self.oil_factor_lcu, self.refining_factor_lcu])
+        return np.array(
+            [
+                self.coal_factor_lcu,
+                self.gas_factor_lcu,
+                self.oil_factor_lcu,
+                self.refining_factor_lcu,
+            ]
+        )
 
 
 @dataclass
@@ -276,7 +298,9 @@ class EmissionsEnergyFactors:
         return cls(refining_kwh_per_tco2=refining_coeff)
 
 
-def get_country_coke_refining_kwh_per_tco2(icio_reader: ICIOReader, country: str | Country) -> float:
+def get_country_coke_refining_kwh_per_tco2(
+    icio_reader: ICIOReader, country: str | Country
+) -> float:
     """
     Calculate energy output per tCO2 for coke refining in a country.
 
@@ -291,11 +315,17 @@ def get_country_coke_refining_kwh_per_tco2(icio_reader: ICIOReader, country: str
         Uses input-output coefficients to weight the energy content
         of different fuel inputs to the refining process
     """
-    coefficients = (1 / icio_reader.get_intermediate_inputs_matrix(country)).loc[["B05a", "B05b", "B05c"], "C19"]
-    return coefficients @ np.array([COAL_KWH_PER_TCO2, OIL_KWH_PER_TCO2, GAS_KWH_PER_TCO2])
+    coefficients = (1 / icio_reader.get_intermediate_inputs_matrix(country)).loc[
+        ["B05a", "B05b", "B05c"], "C19"
+    ]
+    return coefficients @ np.array(
+        [COAL_KWH_PER_TCO2, OIL_KWH_PER_TCO2, GAS_KWH_PER_TCO2]
+    )
 
 
-def get_avg_coke_refining_kwh_per_tco2(icio_reader: ICIOReader, countries: list[str | Country]) -> float:
+def get_avg_coke_refining_kwh_per_tco2(
+    icio_reader: ICIOReader, countries: list[str | Country]
+) -> float:
     """
     Calculate average energy output per tCO2 for coke refining across countries.
 
@@ -309,7 +339,12 @@ def get_avg_coke_refining_kwh_per_tco2(icio_reader: ICIOReader, countries: list[
     Note:
         Includes ROW (Rest of World) in the average calculation
     """
-    return np.mean([get_country_coke_refining_kwh_per_tco2(icio_reader, country) for country in countries + ["ROW"]])
+    return np.mean(
+        [
+            get_country_coke_refining_kwh_per_tco2(icio_reader, country)
+            for country in countries + ["ROW"]
+        ]
+    )
 
 
 _EMISSION_INDUSTRIES_CH4 = [
@@ -420,7 +455,11 @@ class CH4EmissionsDataCAN:
                 ch4[list(industries).index(code)] = val
 
         emitting_indices = np.array(
-            [list(industries).index(ind) for ind in _EMISSION_INDUSTRIES_CH4 if ind in industries]
+            [
+                list(industries).index(ind)
+                for ind in _EMISSION_INDUSTRIES_CH4
+                if ind in industries
+            ]
         )
 
         prod = production_by_industry[emitting_indices]

@@ -127,22 +127,31 @@ def create_country_configurations(
     """
     country_configs: dict[Country, CountryDataConfiguration] = {}
 
-    countries = [Country(country) if isinstance(country, str) else country for country in countries]
+    countries = [
+        Country(country) if isinstance(country, str) else country
+        for country in countries
+    ]
 
     if proxy_country_dict is None:
         # if there is a non-EU country, raise an error
         if any(not country.is_eu_country for country in countries):
-            raise ValueError("Non-EU countries must have a proxy country. Please provide a proxy country dictionary.")
+            raise ValueError(
+                "Non-EU countries must have a proxy country. Please provide a proxy country dictionary."
+            )
 
     if isinstance(scale, int):
         scale = {country: scale for country in countries}
     for country in countries:
         if country.is_eu_country:
-            country_configs[country] = read_country_conf().model_copy(update={"scale": scale[country]})
+            country_configs[country] = read_country_conf().model_copy(
+                update={"scale": scale[country]}
+            )
         else:
             proxy_country = proxy_country_dict.get(country, None)
             if proxy_country is None:
-                raise ValueError(f"{country} is not in EU: please set an EU proxy country.")
+                raise ValueError(
+                    f"{country} is not in EU: please set an EU proxy country."
+                )
             if isinstance(proxy_country, str):
                 proxy_country = Country(proxy_country)
             if not proxy_country.is_eu_country:
@@ -243,9 +252,13 @@ def default_data_configuration(
     # it can't be empty
     if use_disagg_can_2014_reader:
         if countries != ["CAN"]:
-            raise ValueError("If using the disaggregated reader for Canada, only CAN can be in the list of countries.")
+            raise ValueError(
+                "If using the disaggregated reader for Canada, only CAN can be in the list of countries."
+            )
 
-    country_configurations = create_country_configurations(countries, scale, proxy_country_dict)
+    country_configurations = create_country_configurations(
+        countries, scale, proxy_country_dict
+    )
     return DataConfiguration(
         year=year,
         country_configs=country_configurations,

@@ -84,7 +84,9 @@ class TestNoOpTechnicalGrowth:
         current_multipliers = np.random.rand(n_firms, n_industries) + 0.5
         growth_rates = np.zeros((n_firms, n_industries))
 
-        new_multipliers = TechnicalCoefficientsGrowth.update_multipliers(current_multipliers, growth_rates)
+        new_multipliers = TechnicalCoefficientsGrowth.update_multipliers(
+            current_multipliers, growth_rates
+        )
 
         assert np.allclose(new_multipliers, current_multipliers)
 
@@ -97,7 +99,8 @@ class TestSimpleTechnicalGrowth:
         effectiveness = 0.2
         diminishing = 0.05
         growth_func = SimpleTechnicalGrowth(
-            investment_effectiveness=effectiveness, diminishing_returns_factor=diminishing
+            investment_effectiveness=effectiveness,
+            diminishing_returns_factor=diminishing,
         )
         assert growth_func.investment_effectiveness == effectiveness
         assert growth_func.diminishing_returns_factor == diminishing
@@ -125,7 +128,9 @@ class TestSimpleTechnicalGrowth:
             ]
         )
 
-        firm_industries = np.array([0, 1])  # Firm 0 is in industry 0, firm 1 is in industry 1
+        firm_industries = np.array(
+            [0, 1]
+        )  # Firm 0 is in industry 0, firm 1 is in industry 1
         production = np.array([100.0, 200.0])
         prices = np.array([10.0, 15.0, 20.0])
 
@@ -157,7 +162,9 @@ class TestSimpleTechnicalGrowth:
 
     def test_capital_growth_calculation(self):
         """Test capital input growth calculation."""
-        growth_func = SimpleTechnicalGrowth(investment_effectiveness=0.1, diminishing_returns_factor=0.0)
+        growth_func = SimpleTechnicalGrowth(
+            investment_effectiveness=0.1, diminishing_returns_factor=0.0
+        )
 
         n_firms = 2
         n_industries = 3
@@ -165,7 +172,9 @@ class TestSimpleTechnicalGrowth:
         # Setup test data
         current_multipliers = np.ones((n_firms, n_industries))
         cumulative_improvements = np.zeros((n_firms, n_industries))
-        base_coefficients = np.array([[0.1, 0.2, 0.15], [0.05, 0.3, 0.1], [0.2, 0.1, 0.25]])
+        base_coefficients = np.array(
+            [[0.1, 0.2, 0.15], [0.05, 0.3, 0.1], [0.2, 0.1, 0.25]]
+        )
         firm_industries = np.array([0, 1])
         production = np.array([100.0, 200.0])
         prices = np.array([10.0, 15.0, 20.0])
@@ -188,7 +197,9 @@ class TestSimpleTechnicalGrowth:
 
     def test_diminishing_returns(self):
         """Test that diminishing returns reduce growth rates."""
-        growth_func = SimpleTechnicalGrowth(investment_effectiveness=0.1, diminishing_returns_factor=0.5)
+        growth_func = SimpleTechnicalGrowth(
+            investment_effectiveness=0.1, diminishing_returns_factor=0.5
+        )
 
         n_firms = 1
         n_industries = 2
@@ -271,7 +282,9 @@ class TestSimpleTechnicalGrowth:
             ]
         )
 
-        new_multipliers = TechnicalCoefficientsGrowth.update_multipliers(current_multipliers, growth_rates)
+        new_multipliers = TechnicalCoefficientsGrowth.update_multipliers(
+            current_multipliers, growth_rates
+        )
 
         expected = current_multipliers * (1 + growth_rates)
         assert np.allclose(new_multipliers, expected)
@@ -336,7 +349,9 @@ class TestEdgeCases:
 
     def test_very_high_cumulative_improvement(self):
         """Test behavior with very high cumulative improvements."""
-        growth_func = SimpleTechnicalGrowth(investment_effectiveness=0.1, diminishing_returns_factor=0.5)
+        growth_func = SimpleTechnicalGrowth(
+            investment_effectiveness=0.1, diminishing_returns_factor=0.5
+        )
 
         n_firms = 1
         n_industries = 1

@@ -209,40 +209,62 @@ def create_economy_timeseries(
         total_output_growth=[np.nan],
         total_intermediate_consumption=[initial_sectoral_firm_used_ii.sum()],
         total_intermediate_consumption_growth=[np.nan],
-        total_gross_value_added=[initial_sectoral_firm_sales.sum() - initial_sectoral_firm_used_ii.sum()],
+        total_gross_value_added=[
+            initial_sectoral_firm_sales.sum() - initial_sectoral_firm_used_ii.sum()
+        ],
         total_gross_value_added_growth=[np.nan],
-        total_gross_value_added_a=[initial_sectoral_firm_sales[0] - initial_sectoral_firm_used_ii[0]],
+        total_gross_value_added_a=[
+            initial_sectoral_firm_sales[0] - initial_sectoral_firm_used_ii[0]
+        ],
         total_gross_value_added_a_growth=[np.nan],
         total_gross_value_added_bcde=[
-            initial_sectoral_firm_sales[1:5].sum() - initial_sectoral_firm_used_ii[1:5].sum()
+            initial_sectoral_firm_sales[1:5].sum()
+            - initial_sectoral_firm_used_ii[1:5].sum()
         ],
         total_gross_value_added_bcde_growth=[np.nan],
-        total_gross_value_added_c=[initial_sectoral_firm_sales[2] - initial_sectoral_firm_used_ii[2]],
+        total_gross_value_added_c=[
+            initial_sectoral_firm_sales[2] - initial_sectoral_firm_used_ii[2]
+        ],
         total_gross_value_added_c_growth=[np.nan],
-        total_gross_value_added_f=[initial_sectoral_firm_sales[5] - initial_sectoral_firm_used_ii[5]],
+        total_gross_value_added_f=[
+            initial_sectoral_firm_sales[5] - initial_sectoral_firm_used_ii[5]
+        ],
         total_gross_value_added_f_growth=[np.nan],
         total_gross_value_added_ghijklmnopqrstu=[
-            initial_sectoral_firm_sales[6:].sum() - initial_sectoral_firm_used_ii[6:].sum()
+            initial_sectoral_firm_sales[6:].sum()
+            - initial_sectoral_firm_used_ii[6:].sum()
         ],
         total_gross_value_added_ghijklmnopqrstu_growth=[np.nan],
-        total_gross_value_added_ghi=[initial_sectoral_firm_sales[6:9].sum() - initial_sectoral_firm_used_ii[6:9].sum()],
+        total_gross_value_added_ghi=[
+            initial_sectoral_firm_sales[6:9].sum()
+            - initial_sectoral_firm_used_ii[6:9].sum()
+        ],
         total_gross_value_added_ghi_growth=[np.nan],
-        total_gross_value_added_j=[initial_sectoral_firm_sales[9] - initial_sectoral_firm_used_ii[9]],
+        total_gross_value_added_j=[
+            initial_sectoral_firm_sales[9] - initial_sectoral_firm_used_ii[9]
+        ],
         total_gross_value_added_j_growth=[np.nan],
-        total_gross_value_added_k=[initial_sectoral_firm_sales[10] - initial_sectoral_firm_used_ii[10]],
+        total_gross_value_added_k=[
+            initial_sectoral_firm_sales[10] - initial_sectoral_firm_used_ii[10]
+        ],
         total_gross_value_added_k_growth=[np.nan],
-        total_gross_value_added_l=[initial_sectoral_firm_sales[11] - initial_sectoral_firm_used_ii[11]],
+        total_gross_value_added_l=[
+            initial_sectoral_firm_sales[11] - initial_sectoral_firm_used_ii[11]
+        ],
         total_gross_value_added_l_growth=[np.nan],
         total_gross_value_added_mn=[
-            initial_sectoral_firm_sales[12:14].sum() - initial_sectoral_firm_used_ii[12:14].sum()
+            initial_sectoral_firm_sales[12:14].sum()
+            - initial_sectoral_firm_used_ii[12:14].sum()
         ],
         total_gross_value_added_mn_growth=[np.nan],
         total_gross_value_added_opq=[
-            initial_sectoral_firm_sales[14:17].sum() - initial_sectoral_firm_used_ii[14:17].sum()
+            initial_sectoral_firm_sales[14:17].sum()
+            - initial_sectoral_firm_used_ii[14:17].sum()
         ],
         total_gross_value_added_opq_growth=[np.nan],
         total_gross_value_added_rstu=[
-            initial_sectoral_firm_sales[17:].sum() - initial_sectoral_firm_used_ii[17:].sum()
+            initial_sectoral_firm_sales[17:].sum()
+            - initial_sectoral_firm_used_ii[17:].sum()
         ],
         total_gross_value_added_rstu_growth=[np.nan],
         total_taxes_less_subsidies_on_products=[initial_total_taxes_on_products],
@@ -288,7 +310,9 @@ def create_economy_timeseries(
             + initial_imp_rent_paid.sum(),
         ],
         gdp_income_growth=[np.nan],
-        total_gross_operating_surplus_and_mixed_income=[initial_total_operating_surplus],
+        total_gross_operating_surplus_and_mixed_income=[
+            initial_total_operating_surplus
+        ],
         total_gross_operating_surplus_and_mixed_income_growth=[np.nan],
         total_compensation_of_employees=[initial_total_wages],
         total_compensation_of_employees_growth=[np.nan],
@@ -305,11 +329,11 @@ def create_economy_timeseries(
     current_expenditure = ts.current("gdp_expenditure")[0]
     current_income = ts.current("gdp_income")[0]
 
-    assert np.isclose(current_output, current_expenditure), (
-        f"mismatch, output/expenditure GDP: {current_output / current_expenditure}"
-    )
-    assert np.isclose(current_output, current_expenditure), (
-        f"mismatch, output/income GDP: {current_output / current_income}"
-    )
+    assert np.isclose(
+        current_output, current_expenditure
+    ), f"mismatch, output/expenditure GDP: {current_output / current_expenditure}"
+    assert np.isclose(
+        current_output, current_expenditure
+    ), f"mismatch, output/income GDP: {current_output / current_income}"
 
     return ts

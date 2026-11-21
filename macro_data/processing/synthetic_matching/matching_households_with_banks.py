@@ -72,7 +72,8 @@ def match_households_with_banks_random(
     )
     population.household_data["Corresponding Bank ID"] = bank_by_household
     banks.bank_data["Corresponding Households ID"] = [
-        list(np.where(bank_by_household == bank_id)[0]) for bank_id in range(banks.number_of_banks)
+        list(np.where(bank_by_household == bank_id)[0])
+        for bank_id in range(banks.number_of_banks)
     ]
 
 
@@ -106,10 +107,15 @@ def match_households_with_banks_optimal(
     # sum of loans and deposits to households
 
     loans_and_deposits = (
-        banks.bank_data["Deposits from Households"].values + banks.bank_data["Loans to Households"].values
+        banks.bank_data["Deposits from Households"].values
+        + banks.bank_data["Loans to Households"].values
     )
     # number of households by bank
-    number_of_households_by_bank = population.household_data.shape[0] * loans_and_deposits / loans_and_deposits.sum()
+    number_of_households_by_bank = (
+        population.household_data.shape[0]
+        * loans_and_deposits
+        / loans_and_deposits.sum()
+    )
 
     # round down
     number_of_households_by_bank = np.floor(number_of_households_by_bank).astype(int)
@@ -144,11 +150,17 @@ def match_households_with_banks_optimal(
     bank_accounts = np.array(bank_accounts)
 
     banks_by_account = np.concatenate(
-        [np.full(number_of_households_by_bank[bank_id], bank_id) for bank_id in range(banks.number_of_banks)]
+        [
+            np.full(number_of_households_by_bank[bank_id], bank_id)
+            for bank_id in range(banks.number_of_banks)
+        ]
     ).astype(int)
 
     cost = sp.spatial.distance_matrix(
-        (population.household_data["Wealth in Deposits"].values + population.household_data["Debt"].values)[:, None],
+        (
+            population.household_data["Wealth in Deposits"].values
+            + population.household_data["Debt"].values
+        )[:, None],
         bank_accounts[:, None],
     ).astype(float)
 
@@ -161,7 +173,12 @@ def match_households_with_banks_optimal(
     ]
 
 
-def rescale(population: SyntheticPopulation, households_field: str, banks: SyntheticBanks, banks_field: str):
+def rescale(
+    population: SyntheticPopulation,
+    households_field: str,
+    banks: SyntheticBanks,
+    banks_field: str,
+):
     """Reconcile household financial data with bank totals.
 
     This function ensures consistency between sources by:
@@ -183,9 +200,12 @@ def rescale(population: SyntheticPopulation, households_field: str, banks: Synth
     if banks.bank_data[banks_field].values.sum() == 0:
         banks.bank_data[banks_field] = np.full(
             banks.bank_data.shape[0],
-            1.0 / banks.bank_data.shape[0] * population.household_data[households_field].sum(),
+            1.0
+            / banks.bank_data.shape[0]
+            * population.household_data[households_field].sum(),
         )
     else:
         banks.bank_data[banks_field] *= (
-            population.household_data[households_field].sum() / banks.bank_data[banks_field].sum()
+            population.household_data[households_field].sum()
+            / banks.bank_data[banks_field].sum()
         )

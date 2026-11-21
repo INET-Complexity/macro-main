@@ -148,7 +148,8 @@ class PolednaPolicyRate(PolicyRate):
             * (
                 central_bank_states["r_star"]
                 + central_bank_states["targeted_inflation_rate"]
-                + central_bank_states["xi_pi"] * (inflation - central_bank_states["targeted_inflation_rate"])
+                + central_bank_states["xi_pi"]
+                * (inflation - central_bank_states["targeted_inflation_rate"])
                 + central_bank_states["xi_gamma"] * growth
             ),
         )

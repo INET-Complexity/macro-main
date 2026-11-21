@@ -149,10 +149,12 @@ def initial_interest_rates(config: dict[str, Any], country: str) -> dict[str, fl
         "initial_markup_interest_rate_household_consumption_loans"
     ]["value"]
 
-    bank_markup_interest_rate_mortgages = banks_dict["initial_markup_mortgage_interest_rate"]["value"]
-    bank_markup_interest_rate_overdraft_household = banks_dict["initial_markup_interest_rate_overdraft_households"][
-        "value"
-    ]
+    bank_markup_interest_rate_mortgages = banks_dict[
+        "initial_markup_mortgage_interest_rate"
+    ]["value"]
+    bank_markup_interest_rate_overdraft_household = banks_dict[
+        "initial_markup_interest_rate_overdraft_households"
+    ]["value"]
 
     return {
         "bank_markup_interest_rate_household_consumption_loans": bank_markup_interest_rate_household_consumption_loans,

@@ -245,7 +245,9 @@ class DefaultSocialBenefitsSetter(SocialBenefitsSetter):
         """
         if model is None:
             return prev_unemployment_benefits
-        pred = model.predict(np.array([[historic_ppi_inflation[-1], current_unemployment_rate]]))[0]
+        pred = model.predict(
+            np.array([[historic_ppi_inflation[-1], current_unemployment_rate]])
+        )[0]
         return pred
 
     def compute_regular_transfer_to_households(
@@ -269,5 +271,7 @@ class DefaultSocialBenefitsSetter(SocialBenefitsSetter):
         """
         if model is None:
             return prev_regular_transfer_to_households
-        pred = model.predict(np.array([[historic_ppi_inflation[-1], current_unemployment_rate]]))[0]
+        pred = model.predict(
+            np.array([[historic_ppi_inflation[-1], current_unemployment_rate]])
+        )[0]
         return pred

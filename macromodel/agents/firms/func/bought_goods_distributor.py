@@ -116,7 +116,9 @@ class BoughtGoodsDistributorEvenly(BoughtGoodsDistributor):
                 2. Allocated capital investments (remaining quantity)
         """
         real_intermediate_inputs = (
-            desired_intermediate_inputs / (desired_intermediate_inputs + desired_investment) * buy_real
+            desired_intermediate_inputs
+            / (desired_intermediate_inputs + desired_investment)
+            * buy_real
         )
         return (
             real_intermediate_inputs,

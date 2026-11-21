@@ -94,5 +94,8 @@ class DefaultPropertyValueSetter(PropertyValueSetter):
             - The changes follow a normal distribution
         """
         return (
-            1 + np.random.normal(0.0, self.random_fluctuation_std, current_property_values.shape)
+            1
+            + np.random.normal(
+                0.0, self.random_fluctuation_std, current_property_values.shape
+            )
         ) * current_property_values

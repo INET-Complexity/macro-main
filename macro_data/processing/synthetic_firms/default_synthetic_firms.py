@@ -147,9 +147,13 @@ class DefaultSyntheticFirms(SyntheticFirms):
         proxy_country: Optional[Country] = None,
         emission_factors: Optional[EmissionsData] = None,
     ) -> "DefaultSyntheticFirms":
-        n_firms_per_industry = industry_data["industry_vectors"]["Number of Firms"].values
+        n_firms_per_industry = industry_data["industry_vectors"][
+            "Number of Firms"
+        ].values
         # number of firms per industry is at most the number of employees per industry
-        n_firms_per_industry = np.minimum(n_firms_per_industry, n_employees_per_industry)
+        n_firms_per_industry = np.minimum(
+            n_firms_per_industry, n_employees_per_industry
+        )
         n_firms = n_firms_per_industry.sum()
 
         firm_data = pd.DataFrame(index=range(n_firms))
@@ -158,7 +162,8 @@ class DefaultSyntheticFirms(SyntheticFirms):
         tau_sif = readers.oecd_econ.read_tau_sif(country_name, year)
 
         total_firm_deposits = (
-            readers.eurostat.get_total_nonfin_firm_deposits(proxy_country, year) * exchange_rate_from_eur
+            readers.eurostat.get_total_nonfin_firm_deposits(proxy_country, year)
+            * exchange_rate_from_eur
             if proxy_country
             else readers.eurostat.get_total_nonfin_firm_deposits(country_name, year)
         )
@@ -200,13 +205,23 @@ class DefaultSyntheticFirms(SyntheticFirms):
                 )
 
         total_firm_deposits = (
-            readers.eurostat.get_total_nonfin_firm_deposits(country_name, year) * exchange_rate_from_eur
+            readers.eurostat.get_total_nonfin_firm_deposits(country_name, year)
+            * exchange_rate_from_eur
         )
-        total_firm_debt = readers.eurostat.get_total_nonfin_firm_debt(country_name, year) * exchange_rate_from_eur
+        total_firm_debt = (
+            readers.eurostat.get_total_nonfin_firm_debt(country_name, year)
+            * exchange_rate_from_eur
+        )
 
-        capital_inputs_productivity_matrix = industry_data["capital_inputs_productivity_matrix"].values
-        intermediate_inputs_productivity_matrix = industry_data["intermediate_inputs_productivity_matrix"].values
-        capital_inputs_depreciation_matrix = industry_data["capital_inputs_depreciation_matrix"].values
+        capital_inputs_productivity_matrix = industry_data[
+            "capital_inputs_productivity_matrix"
+        ].values
+        intermediate_inputs_productivity_matrix = industry_data[
+            "intermediate_inputs_productivity_matrix"
+        ].values
+        capital_inputs_depreciation_matrix = industry_data[
+            "capital_inputs_depreciation_matrix"
+        ].values
 
         output = industry_data["industry_vectors"]["Output in USD"].values
         labour_productivity = output / n_employees_per_industry
@@ -237,22 +252,31 @@ class DefaultSyntheticFirms(SyntheticFirms):
         if emission_factors is not None:
             emitting_industries = ["B05a", "B05b", "B05c", "C19"]
             # get indices of emitting industries
-            emitting_indices = [list(industries).index(industry) for industry in emitting_industries]
+            emitting_indices = [
+                list(industries).index(industry) for industry in emitting_industries
+            ]
             emitting_intermediate_inputs = used_intermediate_inputs[:, emitting_indices]
-            input_emissions = emitting_intermediate_inputs @ emission_factors.emissions_array
+            input_emissions = (
+                emitting_intermediate_inputs @ emission_factors.emissions_array
+            )
             firm_data["Input Emissions"] = input_emissions
 
-            capital_emissions = used_capital_inputs[:, emitting_indices] @ emission_factors.emissions_array
+            capital_emissions = (
+                used_capital_inputs[:, emitting_indices]
+                @ emission_factors.emissions_array
+            )
             firm_data["Capital Emissions"] = capital_emissions
 
             # decompose emissions of oil, gas, coal and refined products emissions
             for i, name in enumerate(["Coal", "Gas", "Oil", "Refined Products"]):
                 firm_data[f"{name} Input Emissions"] = (
-                    used_intermediate_inputs[:, emitting_indices[i]] * emission_factors.emissions_array[i]
+                    used_intermediate_inputs[:, emitting_indices[i]]
+                    * emission_factors.emissions_array[i]
                 )
                 # same for capital emissions
                 firm_data[f"{name} Capital Emissions"] = (
-                    used_capital_inputs[:, emitting_indices[i]] * emission_factors.emissions_array[i]
+                    used_capital_inputs[:, emitting_indices[i]]
+                    * emission_factors.emissions_array[i]
                 )
 
             firm_data.loc[
@@ -326,7 +350,9 @@ class DefaultSyntheticFirms(SyntheticFirms):
         self.used_capital_inputs = used_capital_inputs
 
     # THINGS TO BE SET AFTER MATCHING
-    def set_taxes_paid_on_production(self, taxes_less_subsidies_rates: np.ndarray) -> None:
+    def set_taxes_paid_on_production(
+        self, taxes_less_subsidies_rates: np.ndarray
+    ) -> None:
         self.firm_data["Taxes paid on Production"] = (
             taxes_less_subsidies_rates[self.firm_data["Industry"].values]
             * self.firm_data["Production"].values
@@ -343,18 +369,25 @@ class DefaultSyntheticFirms(SyntheticFirms):
         # Interest on deposits
         self.firm_data["Interest paid on deposits"] = -interest_rate_on_firm_deposits[
             self.firm_data["Corresponding Bank ID"].values
-        ] * np.maximum(0.0, self.firm_data["Deposits"].values) - overdraft_rate_on_firm_deposits[
+        ] * np.maximum(
+            0.0, self.firm_data["Deposits"].values
+        ) - overdraft_rate_on_firm_deposits[
             self.firm_data["Corresponding Bank ID"].values
-        ] * np.minimum(0.0, self.firm_data["Deposits"].values)
+        ] * np.minimum(
+            0.0, self.firm_data["Deposits"].values
+        )
 
         # Interest paid on loans
-        interest_on_loans = short_term_loan_interest.sum(axis=0) + long_term_loan_interest.sum(axis=0)
+        interest_on_loans = short_term_loan_interest.sum(
+            axis=0
+        ) + long_term_loan_interest.sum(axis=0)
 
         self.firm_data["Interest paid on loans"] = interest_on_loans
 
         # Total interest paid
         self.firm_data["Interest paid"] = (
-            self.firm_data["Interest paid on deposits"] + self.firm_data["Interest paid on loans"]
+            self.firm_data["Interest paid on deposits"]
+            + self.firm_data["Interest paid on loans"]
         )
 
     def set_firm_profits(
@@ -372,7 +405,9 @@ class DefaultSyntheticFirms(SyntheticFirms):
         # Intermediate inputs
         intermediate_inputs_costs = (
             self.firm_data["Production"].values
-            / intermediate_inputs_productivity_matrix[:, self.firm_data["Industry"].values]
+            / intermediate_inputs_productivity_matrix[
+                :, self.firm_data["Industry"].values
+            ]
         ).T.sum(axis=1) * self.firm_data["Price"].values
 
         # Capital inputs
@@ -404,7 +439,9 @@ class DefaultSyntheticFirms(SyntheticFirms):
         # Intermediate inputs
         intermediate_inputs_costs = (
             self.firm_data["Production"].values[:, None]
-            / intermediate_inputs_productivity_matrix[:, self.firm_data["Industry"].values].T
+            / intermediate_inputs_productivity_matrix[
+                :, self.firm_data["Industry"].values
+            ].T
         ).sum(axis=1) * self.firm_data["Price"].values
 
         # Capital inputs
@@ -422,14 +459,18 @@ class DefaultSyntheticFirms(SyntheticFirms):
         ) / self.firm_data["Production"].values
 
     def set_corporate_taxes_paid(self, tau_firm: float) -> None:
-        self.firm_data["Corporate Taxes Paid"] = tau_firm * np.maximum(0.0, self.firm_data["Profits"])
+        self.firm_data["Corporate Taxes Paid"] = tau_firm * np.maximum(
+            0.0, self.firm_data["Profits"]
+        )
 
     def set_firm_debt_installments(
         self,
         long_term_installments: np.ndarray,
         short_term_installments: np.ndarray,
     ) -> None:
-        debt_installments = long_term_installments.sum(axis=0) + short_term_installments.sum(axis=0)
+        debt_installments = long_term_installments.sum(
+            axis=0
+        ) + short_term_installments.sum(axis=0)
         self.firm_data["Debt Installments"] = debt_installments
 
     def set_additional_initial_conditions(
@@ -440,9 +481,15 @@ class DefaultSyntheticFirms(SyntheticFirms):
         short_term_loans: ShorttermLoans,
         tax_data: TaxData,
     ) -> None:
-        taxes_less_subsidies_rates = industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values
-        interest_rate_on_firm_deposits = synthetic_banks.bank_data["Interest Rates on Firm Deposits"].values
-        overdraft_rate_on_firm_deposits = synthetic_banks.bank_data["Overdraft Rate on Firm Deposits"].values
+        taxes_less_subsidies_rates = industry_data["industry_vectors"][
+            "Taxes Less Subsidies Rates"
+        ].values
+        interest_rate_on_firm_deposits = synthetic_banks.bank_data[
+            "Interest Rates on Firm Deposits"
+        ].values
+        overdraft_rate_on_firm_deposits = synthetic_banks.bank_data[
+            "Overdraft Rate on Firm Deposits"
+        ].values
 
         self.set_taxes_paid_on_production(
             taxes_less_subsidies_rates=taxes_less_subsidies_rates,
@@ -455,14 +502,22 @@ class DefaultSyntheticFirms(SyntheticFirms):
         )
 
         self.set_firm_profits(
-            intermediate_inputs_productivity_matrix=industry_data["intermediate_inputs_productivity_matrix"].values,
-            capital_inputs_depreciation_matrix=industry_data["capital_inputs_depreciation_matrix"].values,
+            intermediate_inputs_productivity_matrix=industry_data[
+                "intermediate_inputs_productivity_matrix"
+            ].values,
+            capital_inputs_depreciation_matrix=industry_data[
+                "capital_inputs_depreciation_matrix"
+            ].values,
             tau_sif=tax_data.employer_social_insurance_tax,
         )
 
         self.set_unit_costs(
-            intermediate_inputs_productivity_matrix=industry_data["intermediate_inputs_productivity_matrix"].values,
-            capital_inputs_depreciation_matrix=industry_data["capital_inputs_depreciation_matrix"].values,
+            intermediate_inputs_productivity_matrix=industry_data[
+                "intermediate_inputs_productivity_matrix"
+            ].values,
+            capital_inputs_depreciation_matrix=industry_data[
+                "capital_inputs_depreciation_matrix"
+            ].values,
             tau_sif=tax_data.employer_social_insurance_tax,
         )
 

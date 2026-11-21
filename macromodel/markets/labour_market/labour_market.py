@@ -115,9 +115,14 @@ class LabourMarket:
         #             )
 
         initial_individual_activity = individuals.states["Activity Status"]
-        initial_individual_employment_industry = individuals.states["Employment Industry"]
+        initial_individual_employment_industry = individuals.states[
+            "Employment Industry"
+        ]
 
-        functions = functions_from_model(labour_market_configuration.functions, loc="macromodel.markets.labour_market")
+        functions = functions_from_model(
+            labour_market_configuration.functions,
+            loc="macromodel.markets.labour_market",
+        )
         ts = create_labour_market_timeseries(
             initial_individual_activity=initial_individual_activity,
             initial_individual_employment_industry=initial_individual_employment_industry,
@@ -187,7 +192,11 @@ class LabourMarket:
         Args:
             configuration: New configuration parameters to apply
         """
-        update_functions(model=configuration.functions, loc="macromodel.agents.labour_market", functions=self.functions)
+        update_functions(
+            model=configuration.functions,
+            loc="macromodel.agents.labour_market",
+            functions=self.functions,
+        )
         self.ts.reset()
 
     def clear(

@@ -65,9 +65,15 @@ class HFCSSpoofGenerator:
         self.h_original = pd.read_csv(self.input_dir / "H1.csv", low_memory=False)
         self.d_original = pd.read_csv(self.input_dir / "D1.csv", low_memory=False)
 
-        print(f"Loaded P1: {len(self.p_original)} rows, {len(self.p_original.columns)} cols")
-        print(f"Loaded H1: {len(self.h_original)} rows, {len(self.h_original.columns)} cols")
-        print(f"Loaded D1: {len(self.d_original)} rows, {len(self.d_original.columns)} cols")
+        print(
+            f"Loaded P1: {len(self.p_original)} rows, {len(self.p_original.columns)} cols"
+        )
+        print(
+            f"Loaded H1: {len(self.h_original)} rows, {len(self.h_original.columns)} cols"
+        )
+        print(
+            f"Loaded D1: {len(self.d_original)} rows, {len(self.d_original.columns)} cols"
+        )
 
         # Initialize spoofed dataframes as copies
         self.p_spoofed = self.p_original.copy()
@@ -91,7 +97,9 @@ class HFCSSpoofGenerator:
 
         return preserve
 
-    def spoof_categorical_column(self, df: pd.DataFrame, col: str, inplace: bool = True) -> Optional[pd.Series]:
+    def spoof_categorical_column(
+        self, df: pd.DataFrame, col: str, inplace: bool = True
+    ) -> Optional[pd.Series]:
         """
         Spoof categorical column by resampling from observed distribution.
 
@@ -121,7 +129,9 @@ class HFCSSpoofGenerator:
 
         # Sample from observed distribution
         value_counts = non_missing.value_counts(normalize=True)
-        spoofed_values = np.random.choice(value_counts.index, size=len(non_missing), p=value_counts.values)
+        spoofed_values = np.random.choice(
+            value_counts.index, size=len(non_missing), p=value_counts.values
+        )
 
         # Create spoofed series
         spoofed = pd.Series(index=df.index, dtype=df[col].dtype)
@@ -176,7 +186,9 @@ class HFCSSpoofGenerator:
         if n_unique <= 20:
             # Treat as categorical - resample from observed values
             value_counts = non_missing.value_counts(normalize=True)
-            spoofed_values = np.random.choice(value_counts.index, size=len(non_missing), p=value_counts.values)
+            spoofed_values = np.random.choice(
+                value_counts.index, size=len(non_missing), p=value_counts.values
+            )
 
             # Create spoofed series
             spoofed = pd.Series(index=df.index, dtype=non_missing.dtype)
@@ -225,7 +237,9 @@ class HFCSSpoofGenerator:
 
         elif method == "quantile":
             # Quantile-based resampling (preserves distribution shape exactly)
-            spoofed_values = np.random.choice(non_missing, size=len(non_missing), replace=True)
+            spoofed_values = np.random.choice(
+                non_missing, size=len(non_missing), replace=True
+            )
 
         else:
             # Default: use original values shuffled
@@ -277,7 +291,9 @@ class HFCSSpoofGenerator:
 
             if has_income_mask.sum() > 0:
                 # Get income distribution for this age group
-                income_in_group = pd.to_numeric(df.loc[has_income_mask, "PG0110"], errors="coerce")
+                income_in_group = pd.to_numeric(
+                    df.loc[has_income_mask, "PG0110"], errors="coerce"
+                )
                 income_positive = income_in_group[income_in_group > 0].values
 
                 if len(income_positive) > 0:
@@ -309,12 +325,16 @@ class HFCSSpoofGenerator:
                 if len(flag_values) > 0:
                     # Resample from observed flag distribution
                     flag_dist = df[flag_col].value_counts(normalize=True)
-                    df[flag_col] = np.random.choice(flag_dist.index, size=len(df), p=flag_dist.values)
+                    df[flag_col] = np.random.choice(
+                        flag_dist.index, size=len(df), p=flag_dist.values
+                    )
             # If we can't match to base column, just resample from distribution
             else:
                 if df[flag_col].notna().any():
                     flag_dist = df[flag_col].value_counts(normalize=True)
-                    df[flag_col] = np.random.choice(flag_dist.index, size=len(df), p=flag_dist.values)
+                    df[flag_col] = np.random.choice(
+                        flag_dist.index, size=len(df), p=flag_dist.values
+                    )
 
     def spoof_p1(self):
         """Spoof P1.csv (Personal data)."""
@@ -389,7 +409,9 @@ class HFCSSpoofGenerator:
             if col in self.h_spoofed.columns:
                 self.spoof_categorical_column(self.h_spoofed, col)
             if (i + 1) % 50 == 0:
-                print(f"  Progress: {i + 1}/{len(categorical_cols)} categorical columns")
+                print(
+                    f"  Progress: {i + 1}/{len(categorical_cols)} categorical columns"
+                )
 
         # Spoof numerical columns (HB0300 will determine constraints for some)
         print(f"Spoofing {len(numerical_cols)} numerical columns...")
@@ -397,7 +419,9 @@ class HFCSSpoofGenerator:
             if col in self.h_spoofed.columns:
                 # Detect if should use lognormal (asset/liability columns)
                 if any(prefix in col for prefix in ["HB", "HC", "DA", "DL"]):
-                    self.spoof_numerical_column(self.h_spoofed, col, method="lognormal_with_zeros")
+                    self.spoof_numerical_column(
+                        self.h_spoofed, col, method="lognormal_with_zeros"
+                    )
                 else:
                     self.spoof_numerical_column(self.h_spoofed, col, method="quantile")
 
@@ -406,7 +430,9 @@ class HFCSSpoofGenerator:
 
         # Handle HB0300 (Tenure Status) specially - keep as-is to maintain relationships
         # This is critical because it determines ownership in matching_households_with_houses.py
-        print("  Note: HB0300 (Tenure Status) preserved to maintain ownership relationships")
+        print(
+            "  Note: HB0300 (Tenure Status) preserved to maintain ownership relationships"
+        )
 
         # Regenerate flag columns
         self.spoof_flag_columns(self.h_spoofed, flag_cols)
@@ -446,19 +472,29 @@ class HFCSSpoofGenerator:
         key_derived = [c for c in numerical_cols if c in self.d_spoofed.columns]
 
         # Get tenure status from H1 to maintain consistency
-        tenure_status = self.h_spoofed["HB0300"].values if "HB0300" in self.h_spoofed.columns else None
+        tenure_status = (
+            self.h_spoofed["HB0300"].values
+            if "HB0300" in self.h_spoofed.columns
+            else None
+        )
 
         for i, col in enumerate(key_derived):
             # Special handling for DA1110 (Value of Main Residence)
             # Must be consistent with tenure status
             if col == "DA1110" and tenure_status is not None:
-                print("  Spoofing DA1110 (Main Residence Value) with tenure consistency...")
+                print(
+                    "  Spoofing DA1110 (Main Residence Value) with tenure consistency..."
+                )
                 self.spoof_main_residence_value(tenure_status)
             # Use method based on column type
             elif col.startswith("DA"):  # Asset columns
-                self.spoof_numerical_column(self.d_spoofed, col, method="lognormal_with_zeros")
+                self.spoof_numerical_column(
+                    self.d_spoofed, col, method="lognormal_with_zeros"
+                )
             elif col.startswith("DL"):  # Liability columns
-                self.spoof_numerical_column(self.d_spoofed, col, method="lognormal_with_zeros")
+                self.spoof_numerical_column(
+                    self.d_spoofed, col, method="lognormal_with_zeros"
+                )
             elif col.startswith("DI"):  # Income columns (can be negative)
                 self.spoof_numerical_column(self.d_spoofed, col, method="normal")
             elif col.startswith("DN"):  # Net wealth (can be negative)
@@ -502,7 +538,9 @@ class HFCSSpoofGenerator:
 
             # Generate positive values for all owners
             n_owners = is_owner.sum()
-            spoofed_owner_values = np.random.lognormal(mean=mean_log, sigma=std_log, size=n_owners)
+            spoofed_owner_values = np.random.lognormal(
+                mean=mean_log, sigma=std_log, size=n_owners
+            )
             self.d_spoofed.loc[is_owner, col] = spoofed_owner_values
 
         # Renters should have NaN or 0
@@ -561,7 +599,9 @@ class HFCSSpoofGenerator:
 
             print(f"\n{df_name}.{col_name}:")
             print(f"  Mean:   {orig_vals.mean():>12.2f} → {spoof_vals.mean():>12.2f}")
-            print(f"  Median: {orig_vals.median():>12.2f} → {spoof_vals.median():>12.2f}")
+            print(
+                f"  Median: {orig_vals.median():>12.2f} → {spoof_vals.median():>12.2f}"
+            )
             print(f"  Std:    {orig_vals.std():>12.2f} → {spoof_vals.std():>12.2f}")
             print(f"  Min:    {orig_vals.min():>12.2f} → {spoof_vals.min():>12.2f}")
             print(f"  Max:    {orig_vals.max():>12.2f} → {spoof_vals.max():>12.2f}")
@@ -577,14 +617,20 @@ class HFCSSpoofGenerator:
 
         print("\n📊 D1 (Derived) Key Statistics:")
         if "DA1110" in self.d_original.columns:
-            compare_column(self.d_original, self.d_spoofed, "DA1110", "D1")  # Home value
+            compare_column(
+                self.d_original, self.d_spoofed, "DA1110", "D1"
+            )  # Home value
         if "DI2000" in self.d_original.columns:
-            compare_column(self.d_original, self.d_spoofed, "DI2000", "D1")  # Total income
+            compare_column(
+                self.d_original, self.d_spoofed, "DI2000", "D1"
+            )  # Total income
 
 
 def main():
     """Main function."""
-    parser = argparse.ArgumentParser(description="Generate spoofed HFCS data maintaining statistical properties")
+    parser = argparse.ArgumentParser(
+        description="Generate spoofed HFCS data maintaining statistical properties"
+    )
     parser.add_argument(
         "input_dir",
         type=str,

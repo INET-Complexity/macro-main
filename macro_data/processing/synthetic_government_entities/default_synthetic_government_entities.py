@@ -121,8 +121,12 @@ class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
             DefaultSyntheticGovernmentEntities: Container with preprocessed data
         """
         if exogenous_country_data:
-            total_gov_consumption = exogenous_country_data.national_accounts["Real Government Consumption (Value)"]
-            total_gov_consumption = total_gov_consumption.loc[total_gov_consumption.index < f"{year}-Q{quarter}"]
+            total_gov_consumption = exogenous_country_data.national_accounts[
+                "Real Government Consumption (Value)"
+            ]
+            total_gov_consumption = total_gov_consumption.loc[
+                total_gov_consumption.index < f"{year}-Q{quarter}"
+            ]
             growth_series = 1 + total_gov_consumption.pct_change()
             total_gov_consumption_growth = growth_series.values
             if growth_series.dropna().shape[0] > 0:
@@ -130,13 +134,19 @@ class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
         else:
             total_gov_consumption_growth = None
 
-        govt_consumption_in_usd = industry_data["industry_vectors"]["Government Consumption in USD"].values
-        govt_consumption_in_lcu = industry_data["industry_vectors"]["Government Consumption in LCU"].values
+        govt_consumption_in_usd = industry_data["industry_vectors"][
+            "Government Consumption in USD"
+        ].values
+        govt_consumption_in_lcu = industry_data["industry_vectors"][
+            "Government Consumption in LCU"
+        ].values
         total_va_lcu = industry_data["industry_vectors"]["Value Added in LCU"].sum()
         total_number_of_firms = int(
             readers.oecd_econ.read_business_demography(
                 country=country_name,
-                output=pd.Series(industry_data["industry_vectors"]["Output in USD"].values),
+                output=pd.Series(
+                    industry_data["industry_vectors"]["Output in USD"].values
+                ),
                 year=year,
             ).sum()
         )
@@ -158,20 +168,26 @@ class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
 
         if create_model:
             government_consumption_model = LinearRegression().fit(
-                [[0], [1]], [np.nanmean(total_gov_consumption_growth), np.nanmean(total_gov_consumption_growth)]
+                [[0], [1]],
+                [
+                    np.nanmean(total_gov_consumption_growth),
+                    np.nanmean(total_gov_consumption_growth),
+                ],
             )
         else:
             government_consumption_model = None
 
         if emission_factors is not None:
             array = emission_factors.emissions_array
-            emitting_consumption = industry_data["industry_vectors"]["Government Consumption in LCU"].loc[
-                ["B05a", "B05b", "B05c", "C19"]
-            ]
+            emitting_consumption = industry_data["industry_vectors"][
+                "Government Consumption in LCU"
+            ].loc[["B05a", "B05b", "B05c", "C19"]]
             emissions = emitting_consumption.values @ array
             gov_entity_data["Consumption Emissions"] = emissions
             for i, name in enumerate(["Coal", "Gas", "Oil", "Refined Products"]):
-                gov_entity_data[f"{name} Consumption Emissions"] = emitting_consumption.values[i] * array[i]
+                gov_entity_data[f"{name} Consumption Emissions"] = (
+                    emitting_consumption.values[i] * array[i]
+                )
 
         return cls(
             country_name,

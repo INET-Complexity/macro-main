@@ -3,9 +3,14 @@ import pathlib
 import numpy as np
 import pytest
 
-from macro_data.readers.emissions.emissions_reader import CH4EmissionsDataCAN, CH4EmissionsReaderCAN
+from macro_data.readers.emissions.emissions_reader import (
+    CH4EmissionsDataCAN,
+    CH4EmissionsReaderCAN,
+)
 
-DATA_PATH = pathlib.Path(__file__).parent.parent / "sample_raw_data" / "emission_factors"
+DATA_PATH = (
+    pathlib.Path(__file__).parent.parent / "sample_raw_data" / "emission_factors"
+)
 SAMPLE_CSV = DATA_PATH / "EN-GHG_EconSectByGas-CA_sample.csv"
 
 
@@ -59,23 +64,31 @@ class TestCH4EmissionsDataCAN:
         data = CH4EmissionsDataCAN.from_reader(reader, industries, production)
         assert isinstance(data, CH4EmissionsDataCAN)
 
-    def test__emitting_indices_subset_of_industries(self, reader, industries, production):
+    def test__emitting_indices_subset_of_industries(
+        self, reader, industries, production
+    ):
         data = CH4EmissionsDataCAN.from_reader(reader, industries, production)
         assert all(idx < len(industries) for idx in data.emitting_indices)
 
-    def test__emission_factors_computed_from_production(self, reader, industries, production):
+    def test__emission_factors_computed_from_production(
+        self, reader, industries, production
+    ):
         # A01: 30000 tCO2e / 1000 LCU = 30.0
         data = CH4EmissionsDataCAN.from_reader(reader, industries, production)
         a01_pos = np.where(data.emitting_indices == industries.index("A01"))[0][0]
         assert data.emission_factors[a01_pos] == pytest.approx(30.0)
 
-    def test__emission_factor_zero_when_no_csv_entry(self, reader, industries, production):
+    def test__emission_factor_zero_when_no_csv_entry(
+        self, reader, industries, production
+    ):
         # C19 is in the CH4 emitting list but not in the fixture CSV
         data = CH4EmissionsDataCAN.from_reader(reader, industries, production)
         c19_pos = np.where(data.emitting_indices == industries.index("C19"))[0][0]
         assert data.emission_factors[c19_pos] == pytest.approx(0.0)
 
-    def test__emission_factor_zero_when_production_zero(self, reader, industries, production):
+    def test__emission_factor_zero_when_production_zero(
+        self, reader, industries, production
+    ):
         # C19 has production=0 — should not produce NaN or division error
         data = CH4EmissionsDataCAN.from_reader(reader, industries, production)
         assert not np.any(np.isnan(data.emission_factors))

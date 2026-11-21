@@ -48,6 +48,8 @@ def test_create_bundle_aggregation_matrix():
     bundles = np.array([0, 0, 1, 2, 2])
     matrix = create_bundle_matrix(bundles)
 
-    expected = np.array([[1 / 2, 1 / 2, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 1 / 2, 1 / 2]]).T
+    expected = np.array(
+        [[1 / 2, 1 / 2, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 1 / 2, 1 / 2]]
+    ).T
 
     assert np.allclose(matrix, expected, rtol=1e-5, atol=1e-8)

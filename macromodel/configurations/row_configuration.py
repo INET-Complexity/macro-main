@@ -4,25 +4,33 @@ from pydantic import BaseModel
 
 
 class Exports(BaseModel):
-    name: Literal["GrowthRoWExportsSetter", "DefaultRoWExportsSetter"] = "GrowthRoWExportsSetter"
+    name: Literal["GrowthRoWExportsSetter", "DefaultRoWExportsSetter"] = (
+        "GrowthRoWExportsSetter"
+    )
     path_name: str = "exports"
     parameters: dict = {"consistency": 0.0}
 
 
 class Imports(BaseModel):
-    name: Literal["InflationRoWImportsSetter", "DefaultRoWImportsSetter"] = "InflationRoWImportsSetter"
+    name: Literal["InflationRoWImportsSetter", "DefaultRoWImportsSetter"] = (
+        "InflationRoWImportsSetter"
+    )
     path_name: str = "imports"
     parameters: dict = {"consistency": 1.0}
 
 
 class ExcessDemand(BaseModel):
-    name: Literal["ZeroExcessDemandSetter", "InfinityExcessDemandSetter"] = "InfinityExcessDemandSetter"
+    name: Literal["ZeroExcessDemandSetter", "InfinityExcessDemandSetter"] = (
+        "InfinityExcessDemandSetter"
+    )
     path_name: str = "excess_demand"
     parameters: dict = {}
 
 
 class Prices(BaseModel):
-    name: Literal["InflationRoWPriceSetter", "SectorExogenousROWPriceSetter"] = "InflationRoWPriceSetter"
+    name: Literal["InflationRoWPriceSetter", "SectorExogenousROWPriceSetter"] = (
+        "InflationRoWPriceSetter"
+    )
     path_name: str = "prices"
     parameters: dict = {}
 

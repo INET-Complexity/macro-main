@@ -200,8 +200,12 @@ class CompustatFirmsReader:
         ]
 
         # Clean and filter data
-        annual_data = raw_annual_data.dropna(axis=0, how="all").dropna(axis=1, how="all")
-        quarterly_data = raw_quarterly_data.dropna(axis=0, how="all").dropna(axis=1, how="all")
+        annual_data = raw_annual_data.dropna(axis=0, how="all").dropna(
+            axis=1, how="all"
+        )
+        quarterly_data = raw_quarterly_data.dropna(axis=0, how="all").dropna(
+            axis=1, how="all"
+        )
 
         # Filter for specified countries
         annual_data = annual_data[annual_data["loc"].isin(countries)]
@@ -221,8 +225,12 @@ class CompustatFirmsReader:
         data = data[var_keeping]
 
         # Impute missing values
-        column_selection = [col for col in data.columns if col not in ["Country", "Currency Code"]]
-        data.loc[:, column_selection] = IterativeImputer().fit_transform(data[column_selection].values)
+        column_selection = [
+            col for col in data.columns if col not in ["Country", "Currency Code"]
+        ]
+        data.loc[:, column_selection] = IterativeImputer().fit_transform(
+            data[column_selection].values
+        )
 
         data.set_index("Country", inplace=True)
 
@@ -261,7 +269,9 @@ class CompustatFirmsReader:
             country = country.value
         return self.data.loc[country]
 
-    def get_proxied_firm_data(self, proxy_country: str | Country, exchange_rate: float) -> pd.DataFrame:
+    def get_proxied_firm_data(
+        self, proxy_country: str | Country, exchange_rate: float
+    ) -> pd.DataFrame:
         """
         Get firm-level data from a proxy country with currency conversion.
 

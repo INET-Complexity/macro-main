@@ -70,30 +70,70 @@ def create_exogenous_timeseries(
         ppi=[1.0],
         unemployment_rate=[unemployment_rate_during.values[0]],
         vacancy_rate=[vacancy_rate_during.values[0]],
-        real_house_price_index_growth=[house_price_index_during["Real House Price Index Growth"].values[0]],
-        hpi_inflation=[house_price_index_during["Nominal House Price Index Growth"].values[0]],
-        gross_output=([None] if has_no_na else [national_accounts_during["Gross Output (Value)"].values[0]]),
-        gross_output_growth=([None] if has_no_na else [national_accounts_during["Gross Output (Growth)"].values[0]]),
+        real_house_price_index_growth=[
+            house_price_index_during["Real House Price Index Growth"].values[0]
+        ],
+        hpi_inflation=[
+            house_price_index_during["Nominal House Price Index Growth"].values[0]
+        ],
+        gross_output=(
+            [None]
+            if has_no_na
+            else [national_accounts_during["Gross Output (Value)"].values[0]]
+        ),
+        gross_output_growth=(
+            [None]
+            if has_no_na
+            else [national_accounts_during["Gross Output (Growth)"].values[0]]
+        ),
         total_household_consumption=(
-            [None] if has_no_na else [national_accounts_during["Household Consumption (Value)"].values[0]]
+            [None]
+            if has_no_na
+            else [national_accounts_during["Household Consumption (Value)"].values[0]]
         ),
         total_household_consumption_growth=(
-            [None] if has_no_na else [national_accounts_during["Household Consumption (Growth)"].values[0]]
+            [None]
+            if has_no_na
+            else [national_accounts_during["Household Consumption (Growth)"].values[0]]
         ),
         total_real_government_consumption=(
-            [None] if has_no_na else [national_accounts_during["Real Government Consumption (Value)"].values[0]]
+            [None]
+            if has_no_na
+            else [
+                national_accounts_during["Real Government Consumption (Value)"].values[
+                    0
+                ]
+            ]
         ),
         total_nominal_government_consumption=(
-            [None] if has_no_na else [national_accounts_during["Government Consumption (Value)"].values[0]]
+            [None]
+            if has_no_na
+            else [national_accounts_during["Government Consumption (Value)"].values[0]]
         ),
         total_nominal_government_consumption_growth=(
-            [None] if has_no_na else [national_accounts_during["Government Consumption (Growth)"].values[0]]
+            [None]
+            if has_no_na
+            else [national_accounts_during["Government Consumption (Growth)"].values[0]]
         ),
         total_real_government_consumption_growth=(
-            [None] if has_no_na else [national_accounts_during["Real Government Consumption (Growth)"].values[0]]
+            [None]
+            if has_no_na
+            else [
+                national_accounts_during["Real Government Consumption (Growth)"].values[
+                    0
+                ]
+            ]
         ),
-        total_imports=([None] if has_no_na else [national_accounts_during["Imports (Value)"].values[0]]),
-        total_exports=([None] if has_no_na else [national_accounts_during["Exports (Value)"].values[0]]),
+        total_imports=(
+            [None]
+            if has_no_na
+            else [national_accounts_during["Imports (Value)"].values[0]]
+        ),
+        total_exports=(
+            [None]
+            if has_no_na
+            else [national_accounts_during["Exports (Value)"].values[0]]
+        ),
         exchange_rate=[exchange_rates_data_during.values[0]],
     )
 
@@ -102,10 +142,20 @@ def create_exogenous_timeseries(
     # Update price indices and inflation
     for t in range(1, len(inflation_during["CPI Inflation"].values) - offset):
         exog_ts.cpi_inflation.append([inflation_during["CPI Inflation"].values[t]])
-        exog_ts.cpi.append([exog_ts.current("cpi")[0] * (1 + inflation_during["CPI Inflation"].values[t])])
+        exog_ts.cpi.append(
+            [
+                exog_ts.current("cpi")[0]
+                * (1 + inflation_during["CPI Inflation"].values[t])
+            ]
+        )
     for t in range(1, len(inflation_during["PPI Inflation"].values) - offset):
         exog_ts.ppi_inflation.append([inflation_during["PPI Inflation"].values[t]])
-        exog_ts.ppi.append([exog_ts.current("ppi")[0] * (1 + inflation_during["PPI Inflation"].values[t])])
+        exog_ts.ppi.append(
+            [
+                exog_ts.current("ppi")[0]
+                * (1 + inflation_during["PPI Inflation"].values[t])
+            ]
+        )
 
     # Update labor market metrics
     for t in range(1, len(unemployment_rate_during.values) - offset):
@@ -123,9 +173,12 @@ def create_exogenous_timeseries(
         )
     for t in range(
         1,
-        len(house_price_index_during["Nominal House Price Index Growth"].values) - offset,
+        len(house_price_index_during["Nominal House Price Index Growth"].values)
+        - offset,
     ):
-        exog_ts.hpi_inflation.append([house_price_index_during["Nominal House Price Index Growth"].values[t]])
+        exog_ts.hpi_inflation.append(
+            [house_price_index_during["Nominal House Price Index Growth"].values[t]]
+        )
 
     # Update national accounts if available
     if len(national_accounts_during) > 0:
@@ -133,11 +186,16 @@ def create_exogenous_timeseries(
             1,
             len(national_accounts_during["Gross Output (Value)"].values) - offset,
         ):
-            exog_ts.gross_output.append([national_accounts_during["Gross Output (Value)"].values[t]])
-            exog_ts.gross_output_growth.append([national_accounts_during["Gross Output (Growth)"].values[t]])
+            exog_ts.gross_output.append(
+                [national_accounts_during["Gross Output (Value)"].values[t]]
+            )
+            exog_ts.gross_output_growth.append(
+                [national_accounts_during["Gross Output (Growth)"].values[t]]
+            )
         for t in range(
             1,
-            len(national_accounts_during["Household Consumption (Value)"].values) - offset,
+            len(national_accounts_during["Household Consumption (Value)"].values)
+            - offset,
         ):
             exog_ts.total_household_consumption.append(
                 [national_accounts_during["Household Consumption (Value)"].values[t]]
@@ -147,10 +205,15 @@ def create_exogenous_timeseries(
             )
         for t in range(
             1,
-            len(national_accounts_during["Government Consumption (Value)"].values) - offset,
+            len(national_accounts_during["Government Consumption (Value)"].values)
+            - offset,
         ):
             exog_ts.total_real_government_consumption.append(
-                [national_accounts_during["Real Government Consumption (Value)"].values[t]]
+                [
+                    national_accounts_during[
+                        "Real Government Consumption (Value)"
+                    ].values[t]
+                ]
             )
             exog_ts.total_nominal_government_consumption.append(
                 [national_accounts_during["Government Consumption (Value)"].values[t]]
@@ -158,10 +221,18 @@ def create_exogenous_timeseries(
             exog_ts.total_nominal_government_consumption_growth.append(
                 [national_accounts_during["Government Consumption (Growth)"].values[t]]
             )
-        for t in range(1, len(national_accounts_during["Imports (Value)"].values) - offset):
-            exog_ts.total_imports.append([national_accounts_during["Imports (Value)"].values[t]])
-        for t in range(1, len(national_accounts_during["Exports (Value)"].values) - offset):
-            exog_ts.total_exports.append([national_accounts_during["Exports (Value)"].values[t]])
+        for t in range(
+            1, len(national_accounts_during["Imports (Value)"].values) - offset
+        ):
+            exog_ts.total_imports.append(
+                [national_accounts_during["Imports (Value)"].values[t]]
+            )
+        for t in range(
+            1, len(national_accounts_during["Exports (Value)"].values) - offset
+        ):
+            exog_ts.total_exports.append(
+                [national_accounts_during["Exports (Value)"].values[t]]
+            )
 
     # Update exchange rates with appropriate frequency
     for t in range(1, len(exchange_rates_data_during.values)):

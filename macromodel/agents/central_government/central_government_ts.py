@@ -45,7 +45,8 @@ def create_central_government_timeseries(
     return TimeSeries(
         debt=np.array([float(data["Debt"].iloc[0])]),
         unemployment_benefits_by_individual=[
-            data["Total Unemployment Benefits"].values[0] / number_of_unemployed_individuals
+            data["Total Unemployment Benefits"].values[0]
+            / number_of_unemployed_individuals
         ],
         total_other_benefits=[data["Other Social Benefits"].values[0]],
         #

@@ -28,4 +28,6 @@ class SimulationConfiguration(BaseModel):
     country_configurations: dict[str, CountryConfiguration] = {}
     row_configuration: RestOfTheWorldConfiguration = RestOfTheWorldConfiguration()
     goods_market_configuration: GoodsMarketConfiguration = GoodsMarketConfiguration()
-    exchange_rates_configuration: ExchangeRatesConfiguration = ExchangeRatesConfiguration()
+    exchange_rates_configuration: ExchangeRatesConfiguration = (
+        ExchangeRatesConfiguration()
+    )

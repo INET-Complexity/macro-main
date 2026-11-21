@@ -1,7 +1,9 @@
 import pandas as pd
 
 
-def aggregate_df(aggregation: dict, country_agg_dict: dict, df: pd.DataFrame) -> pd.DataFrame:
+def aggregate_df(
+    aggregation: dict, country_agg_dict: dict, df: pd.DataFrame
+) -> pd.DataFrame:
     """
     Aggregate a DataFrame based on given aggregation and country aggregation dictionaries.
 
@@ -22,13 +24,20 @@ def aggregate_df(aggregation: dict, country_agg_dict: dict, df: pd.DataFrame) ->
     for key, values in aggregation.items():
         for value in values:
             agg_dict_full[value] = key
-    stacked = df.stack(future_stack=True).stack(future_stack=True).reset_index().rename(columns={0: "Value"})
+    stacked = (
+        df.stack(future_stack=True)
+        .stack(future_stack=True)
+        .reset_index()
+        .rename(columns={0: "Value"})
+    )
     stacked["NewCountryInd"] = stacked["CountryInd"].map(country_agg_dict)
     stacked["NewindustryInd"] = stacked["industryInd"].map(agg_dict_full)
     stacked["NewindustryCol"] = stacked["industryCol"].map(agg_dict_full)
     stacked["NewCountryCol"] = stacked["CountryCol"].map(country_agg_dict)
     aggregated: pd.DataFrame = (
-        stacked.groupby(["NewCountryInd", "NewindustryInd", "NewindustryCol", "NewCountryCol"])["Value"]
+        stacked.groupby(
+            ["NewCountryInd", "NewindustryInd", "NewindustryCol", "NewCountryCol"]
+        )["Value"]
         .sum()
         .unstack()
         .unstack()

@@ -42,7 +42,9 @@ class HFCSExplorer:
         self.p_df = pd.read_csv(self.data_dir / "P1.csv")
         self.h_df = pd.read_csv(self.data_dir / "H1.csv", low_memory=False)
         self.d_df = pd.read_csv(self.data_dir / "D1.csv", low_memory=False)
-        print(f"Loaded P1: {len(self.p_df)} rows, H1: {len(self.h_df)} rows, D1: {len(self.d_df)} rows\n")
+        print(
+            f"Loaded P1: {len(self.p_df)} rows, H1: {len(self.h_df)} rows, D1: {len(self.d_df)} rows\n"
+        )
 
     def analyze_column_types(self, df: pd.DataFrame, file_name: str):
         """
@@ -182,7 +184,9 @@ class HFCSExplorer:
                 print(f"    Range: [{info['min']:.2f}, {info['max']:.2f}]")
                 print(f"    Mean: {info['mean']:.2f}, Median: {info['median']:.2f}")
                 print(f"    Std: {info['std']:.2f}")
-                print(f"    Has negatives: {info['has_negatives']}, Has zeros: {info['has_zeros']}")
+                print(
+                    f"    Has negatives: {info['has_negatives']}, Has zeros: {info['has_zeros']}"
+                )
                 print(f"    Unique values: {info['n_unique']}")
                 if info["missing_pct"] > 0:
                     print(f"    Missing: {info['missing_pct']}%")
@@ -204,7 +208,9 @@ class HFCSExplorer:
 
         # Country, survey codes - preserve
         preserve_cols = ["SA0100", "SA0010", "survey", "IM0100"]
-        strategies["preserve"].extend([col for col in preserve_cols if col in results["categorical_columns"]])
+        strategies["preserve"].extend(
+            [col for col in preserve_cols if col in results["categorical_columns"]]
+        )
 
         # Low-cardinality categorical - resample
         for col, info in results["categorical_columns"].items():
@@ -232,13 +238,19 @@ class HFCSExplorer:
         if strategies["permute"]:
             print(f"    Examples: {strategies['permute'][:5]}")
 
-        print(f"\n  Sample from distribution: {len(strategies['sample_from_distribution'])} columns")
+        print(
+            f"\n  Sample from distribution: {len(strategies['sample_from_distribution'])} columns"
+        )
         print(f"    Examples: {strategies['sample_from_distribution'][:5]}")
 
-        print(f"\n  Resample categorical: {len(strategies['categorical_resample'])} columns")
+        print(
+            f"\n  Resample categorical: {len(strategies['categorical_resample'])} columns"
+        )
         print(f"    Examples: {strategies['categorical_resample'][:5]}")
 
-        print(f"\n  Linked/dependent: {len(strategies['linked'])} columns (maintain relationships)")
+        print(
+            f"\n  Linked/dependent: {len(strategies['linked'])} columns (maintain relationships)"
+        )
         print(f"    Examples: {strategies['linked'][:5]}")
 
         self.exploration_results[f"{file_name}_strategies"] = strategies
@@ -257,8 +269,12 @@ class HFCSExplorer:
         # Check if D columns are derived from H columns
         # For example, check if DA columns (assets) might be sums
         if "DA1000" in self.d_df.columns:  # Total real assets
-            print("\n💰 Checking if derived columns are aggregations from household data...")
-            print("  Note: D file contains derived variables that may be calculated from H and P")
+            print(
+                "\n💰 Checking if derived columns are aggregations from household data..."
+            )
+            print(
+                "  Note: D file contains derived variables that may be calculated from H and P"
+            )
             print("  Strategy: Regenerate D file after spoofing H and P")
 
     def save_results(self, output_path: Path):

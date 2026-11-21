@@ -331,7 +331,9 @@ class WorldBankReader:
         df = df.loc[df["Country Code"] == country].iloc[:, 4:]
         return df.loc[:, str(year)].values[0] * ratio
 
-    def get_current_scaled_gdp(self, country: Country, year: int, rescale_factor: float = 4.0) -> float:
+    def get_current_scaled_gdp(
+        self, country: Country, year: int, rescale_factor: float = 4.0
+    ) -> float:
         """
         Get scaled current GDP value for a country and year.
 
@@ -351,7 +353,9 @@ class WorldBankReader:
         """
         return self.get_historic_gdp(country, year) / rescale_factor
 
-    def get_log_inflation(self, country: Country, start_year: int = 1970, end_year: int = 2024) -> pd.DataFrame:
+    def get_log_inflation(
+        self, country: Country, start_year: int = 1970, end_year: int = 2024
+    ) -> pd.DataFrame:
         """
         Retrieves the log inflation data for a specific country within a given time range.
 
@@ -387,7 +391,9 @@ class WorldBankReader:
         data_cpi.sort_index(inplace=True)
         data_ppi.sort_index(inplace=True)
 
-        inflation_data = pd.merge_asof(data_cpi, data_ppi, left_index=True, right_index=True)
+        inflation_data = pd.merge_asof(
+            data_cpi, data_ppi, left_index=True, right_index=True
+        )
 
         # Calculate log inflation
         inflation_data = np.log(inflation_data).diff()
@@ -416,7 +422,15 @@ class WorldBankReader:
             country = country.parent_country
         df = self.data["unemployment"]
         df = df.loc[df["Country Code"] == country]
-        df = df.drop(columns=["Country Code", "Country Name", "Indicator Name", "Indicator Code", "Unnamed: 66"])
+        df = df.drop(
+            columns=[
+                "Country Code",
+                "Country Name",
+                "Indicator Name",
+                "Indicator Code",
+                "Unnamed: 66",
+            ]
+        )
         df = df.T
         df.index = pd.to_datetime(df.index, format="%Y")
         df.columns = ["Unemployment Rate"]
@@ -432,7 +446,9 @@ class WorldBankReader:
             inflation_arg = 1.0 + self.data["inflation_arg"].set_index("Date") / 100.0
             inflation_arg.index = pd.to_datetime(inflation_arg.index)
             inflation_arg = inflation_arg.groupby(pd.Grouper(freq="QE")).cumprod() - 1.0
-            inflation_arg.index = pd.to_datetime([d + pd.Timedelta(days=1) for d in inflation_arg.index.values])
+            inflation_arg.index = pd.to_datetime(
+                [d + pd.Timedelta(days=1) for d in inflation_arg.index.values]
+            )
             inflation_arg = inflation_arg.iloc[2:].iloc[::3]
             inflation_arg = inflation_arg[["Amount", "Amount"]]
             inflation_arg.columns = ["CPI Inflation", "PPI Inflation"]
@@ -476,9 +492,15 @@ class WorldBankReader:
                 "PPI Inflation": vals_ppi,
             },
         )
-        data_df["CPI Inflation"] = np.log(data_df["CPI Inflation"] / data_df["CPI Inflation"].shift(1))
-        data_df["PPI Inflation"] = np.log(data_df["PPI Inflation"] / data_df["PPI Inflation"].shift(1))
-        data_df.index = [pd.Timestamp(int(ind[0:4]), 3 * int(ind[6]) - 2, 1) for ind in data_df.index]  # noqa
+        data_df["CPI Inflation"] = np.log(
+            data_df["CPI Inflation"] / data_df["CPI Inflation"].shift(1)
+        )
+        data_df["PPI Inflation"] = np.log(
+            data_df["PPI Inflation"] / data_df["PPI Inflation"].shift(1)
+        )
+        data_df.index = [
+            pd.Timestamp(int(ind[0:4]), 3 * int(ind[6]) - 2, 1) for ind in data_df.index
+        ]  # noqa
 
         return data_df.astype(float)
 
@@ -511,7 +533,10 @@ class WorldBankReader:
                     # Check if column can be transformed in a date
                     dates = pd.to_datetime(value[col], errors="coerce", format="mixed")
                     if dates.isnull().sum() == 0:
-                        logging.log(level=logging.DEBUG, msg=f"WBank: NAT dates {dates.isna().sum()}.")
+                        logging.log(
+                            level=logging.DEBUG,
+                            msg=f"WBank: NAT dates {dates.isna().sum()}.",
+                        )
                         mask = dates >= pd.to_datetime(prune_date)
                         if mask.sum() == 0:
                             warnings.warn(
@@ -519,7 +544,8 @@ class WorldBankReader:
                                 DataFilterWarning,
                             )
                         logging.log(
-                            level=logging.DEBUG, msg=f"WBank: Keeping {mask.sum()} rows for prune date {prune_date}."
+                            level=logging.DEBUG,
+                            msg=f"WBank: Keeping {mask.sum()} rows for prune date {prune_date}.",
                         )
                         self.data[key] = value.loc[mask, :]
                         break
@@ -531,7 +557,9 @@ class WorldBankReader:
     def get_npl_ratios(self, country: Country | str) -> pd.DataFrame:
         if isinstance(country, Region):
             country = country.parent_country
-        npl_ratio = self.data["npl_ratios"].set_index("Country Code", drop=True).loc[[country]]
+        npl_ratio = (
+            self.data["npl_ratios"].set_index("Country Code", drop=True).loc[[country]]
+        )
         new_cols = [str(y) + " [YR" + str(y) + "]" for y in range(1960, 2022)]
         npl_ratio = npl_ratio.loc[:, new_cols]
         npl_ratio.columns = [str(y) for y in range(1960, 2022)]

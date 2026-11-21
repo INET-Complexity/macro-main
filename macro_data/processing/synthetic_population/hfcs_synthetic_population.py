@@ -214,24 +214,39 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             cls: The synthetic population object.
         """
 
-        n_households = int(readers.eurostat.number_of_households(country_name, year) * population_ratio / scale)
+        n_households = int(
+            readers.eurostat.number_of_households(country_name, year)
+            * population_ratio
+            / scale
+        )
         hfcs_individuals_data = readers.hfcs[country_name].individuals_df
         hfcs_households_data = readers.hfcs[country_name].households_df
 
         if set(industries).issubset(ALL_INDUSTRIES):
-            queried_country = proxied_country if proxied_country is not None else country_name
+            queried_country = (
+                proxied_country if proxied_country is not None else country_name
+            )
             output_shares = readers.icio[year].get_output_shares_dict(queried_country)
         else:
             output_shares = None
 
         household_data, individual_data = sample_households(
-            hfcs_households_data, hfcs_individuals_data, n_households, output_shares=output_shares
+            hfcs_households_data,
+            hfcs_individuals_data,
+            n_households,
+            output_shares=output_shares,
         )
 
-        unemployment_rate = exogenous_data.labour_stats.loc[f"{year}-Q{quarter}", "Unemployment Rate (Value)"].iloc[0]
-        participation_rate = exogenous_data.labour_stats.loc[f"{year}-Q{quarter}", "Participation Rate (Value)"].iloc[0]
+        unemployment_rate = exogenous_data.labour_stats.loc[
+            f"{year}-Q{quarter}", "Unemployment Rate (Value)"
+        ].iloc[0]
+        participation_rate = exogenous_data.labour_stats.loc[
+            f"{year}-Q{quarter}", "Participation Rate (Value)"
+        ].iloc[0]
 
-        n_firms_by_industry = industry_data["industry_vectors"]["Number of Firms"].values
+        n_firms_by_industry = industry_data["industry_vectors"][
+            "Number of Firms"
+        ].values
 
         individual_data = process_individual_data(
             individual_data,
@@ -256,12 +271,18 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
         if exch_rate != 1.0:
             # make sure all the columns are floats
-            household_data.loc[:, CONVERT_HH_COLS] = household_data.loc[:, CONVERT_HH_COLS].astype(float)
-            individual_data.loc[:, CONVERT_IND_COLS] = individual_data.loc[:, CONVERT_IND_COLS].astype(float)
+            household_data.loc[:, CONVERT_HH_COLS] = household_data.loc[
+                :, CONVERT_HH_COLS
+            ].astype(float)
+            individual_data.loc[:, CONVERT_IND_COLS] = individual_data.loc[
+                :, CONVERT_IND_COLS
+            ].astype(float)
             household_data.loc[:, CONVERT_HH_COLS] *= exch_rate
             individual_data.loc[:, CONVERT_IND_COLS] *= exch_rate
 
-        household_data = household_data.loc[household_data["Corresponding Individuals ID"].notna()]
+        household_data = household_data.loc[
+            household_data["Corresponding Individuals ID"].notna()
+        ]
 
         household_data = set_household_types(household_data, individual_data)
 
@@ -269,7 +290,9 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         # we set them to 0, must be checked!!!
         if total_unemployment_benefits is None:
             total_unemployment_benefits = 0.0
-            logging.warning("Total unemployment benefits not provided, setting them to 0.0")
+            logging.warning(
+                "Total unemployment benefits not provided, setting them to 0.0"
+            )
 
         household_data = set_household_housing_data(
             household_data,
@@ -292,19 +315,31 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         for field in non_initialised_fields:
             household_data[field] = np.nan
 
-        social_housing_rent = rent_as_fraction_of_unemployment_rate * total_unemployment_benefits / n_unemployed
-        consumption_weights = industry_data["industry_vectors"]["Household Consumption Weights"].values
-        consumption_weights_by_income = np.zeros((n_quantiles, len(consumption_weights)))
+        social_housing_rent = (
+            rent_as_fraction_of_unemployment_rate
+            * total_unemployment_benefits
+            / n_unemployed
+        )
+        consumption_weights = industry_data["industry_vectors"][
+            "Household Consumption Weights"
+        ].values
+        consumption_weights_by_income = np.zeros(
+            (n_quantiles, len(consumption_weights))
+        )
         for i in range(n_quantiles):
             consumption_weights_by_income[i] = consumption_weights
 
-        household_investment = industry_data["industry_vectors"]["Household Capital Inputs in LCU"].values
+        household_investment = industry_data["industry_vectors"][
+            "Household Capital Inputs in LCU"
+        ].values
 
         investment = household_investment
 
         individual_data["Corresponding Firm ID"] = np.nan
 
-        individual_data = ensure_minimum_workers_in_industries(individual_data, n_industries=len(industries))
+        individual_data = ensure_minimum_workers_in_industries(
+            individual_data, n_industries=len(industries)
+        )
 
         return cls(
             country_name=country_name,
@@ -324,7 +359,9 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
     def restrict(self) -> None:
         self.household_data = self.household_data[RESTRICT_COLS]
 
-    def compute_household_wealth(self, independents: Optional[list[str]] = None) -> None:
+    def compute_household_wealth(
+        self, independents: Optional[list[str]] = None
+    ) -> None:
         """
         Computes the household wealth based on the given independent variables.
 
@@ -403,26 +440,36 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         )
 
     def set_household_deposits(self) -> None:
-        self.household_data.loc[self.household_data["Wealth in Deposits"].isna(), "Wealth in Deposits"] = 0.0
+        self.household_data.loc[
+            self.household_data["Wealth in Deposits"].isna(), "Wealth in Deposits"
+        ] = 0.0
         self.household_data.loc[:, "Outstanding Balance of Credit Line"] = 0.0
         self.household_data.loc[:, "Outstanding Balance of Credit Card Debt"] = 0.0
         self.household_data.loc[:, "Wealth in Deposits"] *= self.scale
 
     def set_household_other_financial_assets(self) -> None:
-        self.household_data.loc[self.household_data["Mutual Funds"].isna(), "Mutual Funds"] = 0.0
+        self.household_data.loc[
+            self.household_data["Mutual Funds"].isna(), "Mutual Funds"
+        ] = 0.0
         self.household_data.loc[self.household_data["Bonds"].isna(), "Bonds"] = 0.0
         self.household_data.loc[
             self.household_data["Value of Private Businesses"].isna(),
             "Value of Private Businesses",
         ] = 0.0
         self.household_data.loc[self.household_data["Shares"].isna(), "Shares"] = 0.0
-        self.household_data.loc[self.household_data["Managed Accounts"].isna(), "Managed Accounts"] = 0.0
+        self.household_data.loc[
+            self.household_data["Managed Accounts"].isna(), "Managed Accounts"
+        ] = 0.0
         self.household_data.loc[
             self.household_data["Money owed to Households"].isna(),
             "Money owed to Households",
         ] = 0.0
-        self.household_data.loc[self.household_data["Other Assets"].isna(), "Other Assets"] = 0.0
-        self.household_data.loc[self.household_data["Voluntary Pension"].isna(), "Voluntary Pension"] = 0.0
+        self.household_data.loc[
+            self.household_data["Other Assets"].isna(), "Other Assets"
+        ] = 0.0
+        self.household_data.loc[
+            self.household_data["Voluntary Pension"].isna(), "Voluntary Pension"
+        ] = 0.0
 
         self.household_data["Wealth in Other Financial Assets"] = (
             self.household_data["Mutual Funds"]
@@ -438,12 +485,14 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
     def set_household_financial_assets(self) -> None:
         self.household_data["Wealth in Financial Assets"] = (
-            self.household_data["Wealth in Deposits"] + self.household_data["Wealth in Other Financial Assets"]
+            self.household_data["Wealth in Deposits"]
+            + self.household_data["Wealth in Other Financial Assets"]
         )
 
     def set_household_wealth(self) -> None:
         self.household_data["Wealth"] = (
-            self.household_data["Wealth in Real Assets"] + self.household_data["Wealth in Financial Assets"]
+            self.household_data["Wealth in Real Assets"]
+            + self.household_data["Wealth in Financial Assets"]
         )
 
     def set_household_mortgage_debt(self) -> None:
@@ -452,28 +501,41 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             "Outstanding Balance of HMR Mortgages",
         ] = 0.0
         self.household_data.loc[
-            self.household_data["Outstanding Balance of Mortgages on other Properties"].isna(),
+            self.household_data[
+                "Outstanding Balance of Mortgages on other Properties"
+            ].isna(),
             "Outstanding Balance of Mortgages on other Properties",
         ] = 0.0
         self.household_data.loc[:, "Outstanding Balance of HMR Mortgages"] *= self.scale
-        self.household_data.loc[:, "Outstanding Balance of Mortgages on other Properties"] *= self.scale
+        self.household_data.loc[
+            :, "Outstanding Balance of Mortgages on other Properties"
+        ] *= self.scale
 
     def set_household_other_debt(self) -> None:
         self.household_data.loc[
-            self.household_data["Outstanding Balance of other Non-Mortgage Loans"].isna(),
+            self.household_data[
+                "Outstanding Balance of other Non-Mortgage Loans"
+            ].isna(),
             "Outstanding Balance of other Non-Mortgage Loans",
         ] = 0.0
-        self.household_data.loc[:, "Outstanding Balance of other Non-Mortgage Loans"] *= self.scale
+        self.household_data.loc[
+            :, "Outstanding Balance of other Non-Mortgage Loans"
+        ] *= self.scale
 
     def set_household_debt(self) -> None:
         self.household_data["Debt"] = (
             self.household_data["Outstanding Balance of HMR Mortgages"]
-            + self.household_data["Outstanding Balance of Mortgages on other Properties"]
+            + self.household_data[
+                "Outstanding Balance of Mortgages on other Properties"
+            ]
             + self.household_data["Outstanding Balance of other Non-Mortgage Loans"]
         )
 
     def set_debt_installments(
-        self, consumption_installments: np.ndarray, ce_installments: np.ndarray, mortgage_installments: np.ndarray
+        self,
+        consumption_installments: np.ndarray,
+        ce_installments: np.ndarray,
+        mortgage_installments: np.ndarray,
     ) -> None:
         """
         Sets the debt installments for each household based on the credit market data.
@@ -487,7 +549,9 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             None
         """
         debt_installments = (
-            consumption_installments.sum(axis=0) + ce_installments.sum(axis=0) + mortgage_installments.sum(axis=0)
+            consumption_installments.sum(axis=0)
+            + ce_installments.sum(axis=0)
+            + mortgage_installments.sum(axis=0)
         )
         self.household_data["Debt Installments"] = debt_installments
 
@@ -500,9 +564,13 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         Returns:
             None
         """
-        self.household_data["Net Wealth"] = self.household_data["Wealth"] - self.household_data["Debt"]
+        self.household_data["Net Wealth"] = (
+            self.household_data["Wealth"] - self.household_data["Debt"]
+        )
 
-    def set_wealth_distribution_function(self, independents: Optional[list[str]] = None) -> None:
+    def set_wealth_distribution_function(
+        self, independents: Optional[list[str]] = None
+    ) -> None:
         """
         Sets the wealth distribution function based on the given independent variables.
 
@@ -519,7 +587,8 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             self.household_data["Wealth in Deposits"].values.astype(float),
             self.household_data["Wealth in Financial Assets"].values.astype(float),
             out=np.ones_like(self.household_data["Wealth in Deposits"].values),
-            where=self.household_data["Wealth in Financial Assets"].values.astype(float) != 0.0,
+            where=self.household_data["Wealth in Financial Assets"].values.astype(float)
+            != 0.0,
         )
         fit_linear(
             data=self.household_data,
@@ -530,7 +599,9 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
     def set_household_employee_income(self) -> None:
         self.household_data["Employee Income"] = [
-            self.individual_data.loc[self.household_data["Corresponding Individuals ID"][i], "Income"].sum()
+            self.individual_data.loc[
+                self.household_data["Corresponding Individuals ID"][i], "Income"
+            ].sum()
             for i in range(len(self.household_data))
         ]
 
@@ -562,12 +633,16 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         )
 
         # Aggregate
-        self.household_data["Regular Social Transfers"] += self.household_data["Income from Pensions"].values
+        self.household_data["Regular Social Transfers"] += self.household_data[
+            "Income from Pensions"
+        ].values
 
         self.household_data["Income from Pensions"] = 0.0
 
         # Social transfers for each household group
-        self.household_data["Regular Social Transfers"] /= self.household_data["Regular Social Transfers"].sum()
+        self.household_data["Regular Social Transfers"] /= self.household_data[
+            "Regular Social Transfers"
+        ].sum()
         social_transfers = fit_linear(
             data=self.household_data,
             independents=independents,
@@ -579,7 +654,8 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
         # Rescale them
         self.household_data["Regular Social Transfers"] *= (
-            total_social_transfers / self.household_data["Regular Social Transfers"].sum()
+            total_social_transfers
+            / self.household_data["Regular Social Transfers"].sum()
         )
 
     def set_household_income_from_financial_assets(self) -> None:
@@ -593,13 +669,25 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         Returns:
             None
         """
-        fa_mask = np.logical_not(np.isnan(self.household_data["Income from Financial Assets"].values.astype(float)))
+        fa_mask = np.logical_not(
+            np.isnan(
+                self.household_data["Income from Financial Assets"].values.astype(float)
+            )
+        )
         self.household_data["Income from Financial Assets"] *= self.scale
         self.coefficient_fa_income = (
-            self.household_data["Income from Financial Assets"].values.astype(float)[fa_mask].sum() / self.yearly_factor
-        ) / (self.household_data["Wealth in Other Financial Assets"].values.astype(float)[fa_mask]).sum()
+            self.household_data["Income from Financial Assets"]
+            .values.astype(float)[fa_mask]
+            .sum()
+            / self.yearly_factor
+        ) / (
+            self.household_data["Wealth in Other Financial Assets"].values.astype(
+                float
+            )[fa_mask]
+        ).sum()
         self.household_data["Income from Financial Assets"] = (
-            self.coefficient_fa_income * self.household_data["Wealth in Other Financial Assets"].values
+            self.coefficient_fa_income
+            * self.household_data["Wealth in Other Financial Assets"].values
         )
 
     def set_household_income(self) -> None:
@@ -645,20 +733,22 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         income = self.household_data["Income"].values
         investment_weights = self.investment_weights
 
-        current_investment = np.outer(investment_weights, default_investment_rates * income) / (
-            1 + capital_formation_taxrate
-        )
+        current_investment = np.outer(
+            investment_weights, default_investment_rates * income
+        ) / (1 + capital_formation_taxrate)
 
         factor = self.investment.sum() / current_investment.sum()
 
         self.household_data["Investment Rate"] = factor * default_investment_rates
 
         # set initial investment
-        self.household_data["Investment"] = (self.household_data["Income"] * self.household_data["Investment Rate"]) / (
-            1 + capital_formation_taxrate
-        )
+        self.household_data["Investment"] = (
+            self.household_data["Income"] * self.household_data["Investment Rate"]
+        ) / (1 + capital_formation_taxrate)
 
-    def set_household_saving_rates(self, independents: Optional[list[str]] = None) -> None:
+    def set_household_saving_rates(
+        self, independents: Optional[list[str]] = None
+    ) -> None:
         """
         Sets the saving rates for each household based on the given independent variables.
         This method imputes missing values in household data, and then defines the saving rates as 1 minus the consumption share.
@@ -674,23 +764,38 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             independents = ["Income", "Debt"]
         # Some obvious cleaning
         self.household_data.loc[
-            self.household_data["Consumption of Consumer Goods/Services as a Share of Income"].isin(["A"]),
+            self.household_data[
+                "Consumption of Consumer Goods/Services as a Share of Income"
+            ].isin(["A"]),
             "Consumption of Consumer Goods/Services as a Share of Income",
         ] = np.nan
-        self.household_data.loc[:, "Consumption of Consumer Goods/Services as a Share of Income"] = self.household_data[
-            "Consumption of Consumer Goods/Services as a Share of Income"
-        ].astype(float)
         self.household_data.loc[
-            self.household_data["Consumption of Consumer Goods/Services as a Share of Income"] > 1.0,
+            :, "Consumption of Consumer Goods/Services as a Share of Income"
+        ] = self.household_data[
+            "Consumption of Consumer Goods/Services as a Share of Income"
+        ].astype(
+            float
+        )
+        self.household_data.loc[
+            self.household_data[
+                "Consumption of Consumer Goods/Services as a Share of Income"
+            ]
+            > 1.0,
             "Consumption of Consumer Goods/Services as a Share of Income",
         ] = np.nan
 
-        self.household_data["Consumption of Consumer Goods/Services as a Share of Income"] = self.household_data[
+        self.household_data[
             "Consumption of Consumer Goods/Services as a Share of Income"
-        ].astype(float)
+        ] = self.household_data[
+            "Consumption of Consumer Goods/Services as a Share of Income"
+        ].astype(
+            float
+        )
 
         # Impute missing values
-        imputed_consumption_share = IterativeImputer(min_value=0, max_value=1).fit_transform(
+        imputed_consumption_share = IterativeImputer(
+            min_value=0, max_value=1
+        ).fit_transform(
             self.household_data[
                 [
                     "Type",
@@ -700,7 +805,9 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
                     "Consumption of Consumer Goods/Services as a Share of Income",
                 ]
             ].values
-        )[:, 4]
+        )[
+            :, 4
+        ]
         self.household_data["Saving Rate"] = 1.0 - imputed_consumption_share
 
         # Fit a model
@@ -714,14 +821,20 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         self.household_data["Saving Rate"] = saving_rates
 
     def normalise_household_investment(
-        self, tau_cf: float, iot_hh_investment: np.ndarray | pd.Series, positive_investment_rates: bool = True
+        self,
+        tau_cf: float,
+        iot_hh_investment: np.ndarray | pd.Series,
+        positive_investment_rates: bool = True,
     ):
         inv_weights = iot_hh_investment / iot_hh_investment.sum()
         income = self.household_data["Income"].values
         investment_rate = self.household_data["Investment Rate"].values
 
         current_hh_investment = default_target_investment(
-            income_=income, investment_rate=investment_rate, tau_cf_=tau_cf, investment_weights_=inv_weights
+            income_=income,
+            investment_rate=investment_rate,
+            tau_cf_=tau_cf,
+            investment_weights_=inv_weights,
         )
 
         factor = iot_hh_investment.sum() / current_hh_investment.sum()
@@ -731,9 +844,9 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         self.investment = self.investment * factor
 
         # set initial investment
-        self.household_data["Investment"] = (self.household_data["Income"] * self.household_data["Investment Rate"]) / (
-            1 + tau_cf
-        )
+        self.household_data["Investment"] = (
+            self.household_data["Income"] * self.household_data["Investment Rate"]
+        ) / (1 + tau_cf)
 
     def normalise_household_consumption(
         self,
@@ -776,7 +889,9 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
         # Adjust saving rates
         factor = iot_hh_consumption.sum() / current_hh_consumption.sum()
-        self.household_data["Saving Rate"] = 1 - (1 - self.household_data["Saving Rate"]) * factor
+        self.household_data["Saving Rate"] = (
+            1 - (1 - self.household_data["Saving Rate"]) * factor
+        )
         if positive_saving_rates_only:
             sr = self.household_data["Saving Rate"].to_numpy(copy=True)
             sr[sr < 0] = 0.0
@@ -792,7 +907,10 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             self.household_data["Saving Rate"] = factor * sr
 
         self.household_data["Consumption"] = (
-            1 / (1 + vat) * (1 - self.household_data["Saving Rate"]) * self.household_data["Income"]
+            1
+            / (1 + vat)
+            * (1 - self.household_data["Saving Rate"])
+            * self.household_data["Income"]
         )
 
         # Overwrite the model
@@ -825,15 +943,21 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
     ) -> None:
         n_quantiles = weights_by_income.shape[1]
         if isinstance(iot_hh_consumption, pd.Series):
-            iot_hh_consumption_norm = (iot_hh_consumption / iot_hh_consumption.sum()).values
+            iot_hh_consumption_norm = (
+                iot_hh_consumption / iot_hh_consumption.sum()
+            ).values
             iot_hh_consumption = iot_hh_consumption.values
         else:
-            iot_hh_consumption_norm = iot_hh_consumption / iot_hh_consumption.sum(axis=0)
+            iot_hh_consumption_norm = iot_hh_consumption / iot_hh_consumption.sum(
+                axis=0
+            )
         if isinstance(weights_by_income, pd.DataFrame):
             weights_by_income = weights_by_income.values
         quintiles = pd.qcut(self.household_data["Income"], n_quantiles, labels=False)
         disposable_income_by_quantile = (
-            self.household_data.groupby(quintiles).apply(lambda x: ((1 - x["Saving Rate"]) * x["Income"]).sum()).values
+            self.household_data.groupby(quintiles)
+            .apply(lambda x: ((1 - x["Saving Rate"]) * x["Income"]).sum())
+            .values
         )
 
         # set up optimisation
@@ -842,7 +966,10 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
         def consumption_difference(alpha):
             return (
-                np.dot(homogeneous_weights * alpha + weights_by_income * (1 - alpha), disposable_income_by_quantile)
+                np.dot(
+                    homogeneous_weights * alpha + weights_by_income * (1 - alpha),
+                    disposable_income_by_quantile,
+                )
                 / (1 + vat)
                 - iot_hh_consumption
             )
@@ -853,7 +980,9 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             return np.dot(diff, diff) / iot_hh_consumption.sum()
 
         initial_guess = np.zeros(n_quantiles)  # Initial guess for alphas
-        bounds = [(0, 1 - consumption_variance)] * n_quantiles  # Each alpha[q] is between 0 and 1-consumption_variance
+        bounds = [
+            (0, 1 - consumption_variance)
+        ] * n_quantiles  # Each alpha[q] is between 0 and 1-consumption_variance
 
         result = minimize(
             cost_fct,
@@ -864,7 +993,10 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
         # Apply the correction factors
         alphas_solution = result.x
-        corrected_weights = homogeneous_weights * alphas_solution + weights_by_income * (1 - alphas_solution)
+        corrected_weights = (
+            homogeneous_weights * alphas_solution
+            + weights_by_income * (1 - alphas_solution)
+        )
         # Set the consumption weights
         # note that the weights are transposed, [quantile, industry]
 
@@ -925,7 +1057,9 @@ def sample_households(
     """
     # Step 1: Sample households with replacement
     weights = hfcs_households_data["Weight"] / hfcs_households_data["Weight"].sum()
-    sampled_household_indices = np.random.choice(hfcs_households_data.index, n_households, p=weights, replace=True)
+    sampled_household_indices = np.random.choice(
+        hfcs_households_data.index, n_households, p=weights, replace=True
+    )
 
     # Create a list of DataFrames for each sampled household with a new unique ID
     household_dataframes = []
@@ -942,7 +1076,9 @@ def sample_households(
             hfcs_individuals_data["Corresponding Household ID"] == old_household_id
         ].copy()
         individuals["New Household ID"] = new_household_id
-        individuals["New Individual ID"] = range(new_individual_id, new_individual_id + len(individuals))
+        individuals["New Individual ID"] = range(
+            new_individual_id, new_individual_id + len(individuals)
+        )
         new_individual_id += len(individuals)
         individual_dataframes.append(individuals)
 
@@ -951,11 +1087,15 @@ def sample_households(
     individual_selection = pd.concat(individual_dataframes).reset_index(drop=True)
 
     # Step 4: Update the household_selection DataFrame
-    corresponding_individuals = individual_selection.groupby("New Household ID")["New Individual ID"].apply(list)
+    corresponding_individuals = individual_selection.groupby("New Household ID")[
+        "New Individual ID"
+    ].apply(list)
     household_selection.set_index("New Household ID", inplace=True)
     household_selection["Corresponding Individuals ID"] = corresponding_individuals
 
-    individual_selection["Corresponding Household ID"] = individual_selection["New Household ID"]
+    individual_selection["Corresponding Household ID"] = individual_selection[
+        "New Household ID"
+    ]
 
     if output_shares is not None:
         individual_selection = reassign_industries(individual_selection, output_shares)
@@ -963,7 +1103,9 @@ def sample_households(
     return household_selection, individual_selection
 
 
-def reassign_industries(individuals_df: pd.DataFrame, output_shares: dict[str, pd.Series]) -> pd.DataFrame:
+def reassign_industries(
+    individuals_df: pd.DataFrame, output_shares: dict[str, pd.Series]
+) -> pd.DataFrame:
     """
     Reassigns the industry of individuals based on the output shares of the disaggregated industries.
     For example, individuals in "A" will be assigned to "A01" and "A02" depending on the relative shares of outputs
@@ -982,14 +1124,18 @@ def reassign_industries(individuals_df: pd.DataFrame, output_shares: dict[str, p
     )
 
     # create a temporary column called "Disaggregated Employment Industry"
-    individuals_df["Disaggregated Employment Industry"] = individuals_df["Employment Industry"]
+    individuals_df["Disaggregated Employment Industry"] = individuals_df[
+        "Employment Industry"
+    ]
 
     aggregate_industries = individuals_df["Employment Industry"].dropna().unique()
 
     for agg_sector in aggregate_industries:
         # don't do anything if the shape of the output shares is not >=2
 
-        indices = individuals_df[individuals_df["Employment Industry"] == agg_sector].index
+        indices = individuals_df[
+            individuals_df["Employment Industry"] == agg_sector
+        ].index
         N = len(indices)
 
         if N == 0:
@@ -1041,7 +1187,9 @@ def reassign_industries(individuals_df: pd.DataFrame, output_shares: dict[str, p
         for sub_sector_code, count in zip(subsector_codes, counts):
             end_idx = start_idx + count
             selected_indices = indices[start_idx:end_idx]
-            individuals_df.loc[selected_indices, "Disaggregated Industry"] = sub_sector_code
+            individuals_df.loc[selected_indices, "Disaggregated Industry"] = (
+                sub_sector_code
+            )
             start_idx = end_idx
 
     individuals_df["Employment Industry"] = np.where(
@@ -1059,7 +1207,11 @@ def default_desired_consumption(
     saving_rates_: np.ndarray,
     tau_vat_: float,
 ) -> np.ndarray:
-    return 1.0 / (1 + tau_vat_) * np.outer(consumption_weights_, (1 - saving_rates_) * income_).T
+    return (
+        1.0
+        / (1 + tau_vat_)
+        * np.outer(consumption_weights_, (1 - saving_rates_) * income_).T
+    )
 
 
 def set_initial_values(household_data: pd.DataFrame, scale: int):

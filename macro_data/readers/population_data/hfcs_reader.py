@@ -218,9 +218,18 @@ class HFCSReader:
         - Derived data is joined with household data
         """
         # Take default paths
-        individuals_paths = [hfcs_data_path / str(year) / ("P" + str(i) + ".csv") for i in range(1, num_surveys + 1)]
-        households_paths = [hfcs_data_path / str(year) / ("H" + str(i) + ".csv") for i in range(1, num_surveys + 1)]
-        derived_paths = [hfcs_data_path / str(year) / ("D" + str(i) + ".csv") for i in range(1, num_surveys + 1)]
+        individuals_paths = [
+            hfcs_data_path / str(year) / ("P" + str(i) + ".csv")
+            for i in range(1, num_surveys + 1)
+        ]
+        households_paths = [
+            hfcs_data_path / str(year) / ("H" + str(i) + ".csv")
+            for i in range(1, num_surveys + 1)
+        ]
+        derived_paths = [
+            hfcs_data_path / str(year) / ("D" + str(i) + ".csv")
+            for i in range(1, num_surveys + 1)
+        ]
 
         # Read data on individuals
         if len(individuals_paths) > 0:
@@ -339,7 +348,9 @@ class HFCSReader:
 
         # Convert monetary values to local currency
         var_numerical_union = [v for v in var_numerical if v in df.columns]
-        df.loc[:, var_numerical_union] = df.loc[:, var_numerical_union].replace(["A", "M"], np.nan).astype(float)
+        df.loc[:, var_numerical_union] = (
+            df.loc[:, var_numerical_union].replace(["A", "M"], np.nan).astype(float)
+        )
         df.loc[:, var_numerical_union] = exchange_rates.from_eur_to_lcu(
             country=country_name,
             year=year,

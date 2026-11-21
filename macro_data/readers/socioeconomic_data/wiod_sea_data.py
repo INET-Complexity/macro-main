@@ -88,32 +88,47 @@ class WIODSEAReader:
 
         # Convert to USD
         stacked["Value"] = np.maximum(1.0, stacked["Value"])  # minimum value
-        stacked["Value"] /= stacked["country"].map(exchange_rates.exchange_rates_dict(year))
+        stacked["Value"] /= stacked["country"].map(
+            exchange_rates.exchange_rates_dict(year)
+        )
         stacked["Value"] *= 1e6
 
         # Aggregate
         stacked["new_code"] = stacked["code"].map(agg_dict_full)
 
         # Unstack things
-        sea = stacked.groupby(["country", "new_code", "variable"])["Value"].sum().unstack()
+        sea = (
+            stacked.groupby(["country", "new_code", "variable"])["Value"]
+            .sum()
+            .unstack()
+        )
 
         # Cosmetics
         sea = sea.loc[sea.index.get_level_values(0).isin(country_names)]
 
         sea_industries = sea.index.get_level_values(1).unique()
-        not_present_industries = [industry for industry in sea_industries if industry not in industries]
+        not_present_industries = [
+            industry for industry in sea_industries if industry not in industries
+        ]
 
         industry_to_fix = [
-            any([ind.startswith(sea_ind[0]) for ind in industries]) for sea_ind in not_present_industries
+            any([ind.startswith(sea_ind[0]) for ind in industries])
+            for sea_ind in not_present_industries
         ]
 
         for sea_industry, should_fix in zip(not_present_industries, industry_to_fix):
-            sub_industries = [ind for ind in industries if ind.startswith(sea_industry[0])]
+            sub_industries = [
+                ind for ind in industries if ind.startswith(sea_industry[0])
+            ]
             for country in country_names:
-                factors = value_added_dict[country].loc[sub_industries].to_numpy(copy=True)
+                factors = (
+                    value_added_dict[country].loc[sub_industries].to_numpy(copy=True)
+                )
                 factors /= factors.sum()
                 for sub_industry, factor in zip(sub_industries, factors):
-                    sea.loc[(country, sub_industry), :] = sea.loc[(country, sea_industry), :] * factor
+                    sea.loc[(country, sub_industry), :] = (
+                        sea.loc[(country, sea_industry), :] * factor
+                    )
 
         sea = sea.loc[sea.index.get_level_values(1).isin(industries)]
 
@@ -134,14 +149,23 @@ class WIODSEAReader:
         for country in country_names:
             scale = value_added_dict[country] / sea.loc[country, "Value Added"]
             scale = np.copy(scale.values)
-            for field in ["Value Added", "Labour Compensation", "Capital Compensation", "Capital Stock"]:
+            for field in [
+                "Value Added",
+                "Labour Compensation",
+                "Capital Compensation",
+                "Capital Stock",
+            ]:
                 sea.loc[country, field] = (sea.loc[country, field] * scale).values
 
         if regions_dict is not None:
             for country, regions in regions_dict.items():
                 for region in regions:
-                    ratios = (value_added_dict[region] / value_added_dict[country]).values
-                    region._va_ratio = value_added_dict[region].sum() / value_added_dict[country].sum()
+                    ratios = (
+                        value_added_dict[region] / value_added_dict[country]
+                    ).values
+                    region._va_ratio = (
+                        value_added_dict[region].sum() / value_added_dict[country].sum()
+                    )
                     new = (sea.loc[country].copy().T * ratios).T
                     new = pd.concat([new], keys=[region])
                     new.index.names = sea.index.names
@@ -166,7 +190,9 @@ class WIODSEAReader:
         """
         Clean the socioeconomic data by overwriting negative capital compensation with zero.
         """
-        self.df.loc[:, "Capital Compensation"] = np.maximum(0.0, self.df.loc[:, "Capital Compensation"])
+        self.df.loc[:, "Capital Compensation"] = np.maximum(
+            0.0, self.df.loc[:, "Capital Compensation"]
+        )
 
     def get_values_in_usd(self, country: str, field: str) -> np.ndarray:
         """

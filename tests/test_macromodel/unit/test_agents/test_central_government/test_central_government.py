@@ -27,11 +27,17 @@ class TestCentralGovernment:
         ]:
             assert ts_key in test_central_government.ts.get_keys()
 
-    def test__distribute_unemployment_benefits_to_individuals(self, test_central_government):
-        benefits = test_central_government.ts.current("unemployment_benefits_by_individual")
+    def test__distribute_unemployment_benefits_to_individuals(
+        self, test_central_government
+    ):
+        benefits = test_central_government.ts.current(
+            "unemployment_benefits_by_individual"
+        )
         assert np.allclose(
             test_central_government.distribute_unemployment_benefits_to_individuals(
-                current_individual_activity_status=np.array([ActivityStatus.EMPLOYED, ActivityStatus.UNEMPLOYED]),
+                current_individual_activity_status=np.array(
+                    [ActivityStatus.EMPLOYED, ActivityStatus.UNEMPLOYED]
+                ),
             ),
             np.array([0.0, benefits[0]]),
         )

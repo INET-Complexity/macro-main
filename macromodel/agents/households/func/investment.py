@@ -145,7 +145,11 @@ class DefaultHouseholdInvestment(HouseholdInvestment):
         Returns:
             np.ndarray: Target investment by household and industry
         """
-        return 1.0 / (1 + tau_cf) * np.outer(investment_weights, investment_rate * income).T
+        return (
+            1.0
+            / (1 + tau_cf)
+            * np.outer(investment_weights, investment_rate * income).T
+        )
 
 
 class ExogenousHouseholdInvestment(HouseholdInvestment):
@@ -194,7 +198,11 @@ class ExogenousHouseholdInvestment(HouseholdInvestment):
         """
         target_investment = np.maximum(
             0.0,
-            (1.0 / (1 + tau_cf) * np.outer(investment_weights, investment_rate * income).T),
+            (
+                1.0
+                / (1 + tau_cf)
+                * np.outer(investment_weights, investment_rate * income).T
+            ),
         )
         return (
             (1 + expected_inflation)

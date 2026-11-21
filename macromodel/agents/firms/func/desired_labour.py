@@ -36,7 +36,9 @@ class DesiredLabourSetter(ABC):
             consider_capital_inputs (float): Weight for capital input constraints
                 Will be clipped to range [0,1]
         """
-        self.consider_intermediate_inputs = max(0.0, min(1.0, consider_intermediate_inputs))
+        self.consider_intermediate_inputs = max(
+            0.0, min(1.0, consider_intermediate_inputs)
+        )
         self.consider_capital_inputs = max(0.0, min(1.0, consider_capital_inputs))
 
     @abstractmethod
@@ -98,11 +100,13 @@ class DefaultDesiredLabourSetter(DesiredLabourSetter):
         current_target_production = np.minimum(
             current_target_production,
             current_target_production
-            + self.consider_intermediate_inputs * (current_limiting_intermediate_inputs - current_target_production),
+            + self.consider_intermediate_inputs
+            * (current_limiting_intermediate_inputs - current_target_production),
         )
         current_target_production = np.minimum(
             current_target_production,
             current_target_production
-            + self.consider_capital_inputs * (current_limiting_capital_inputs - current_target_production),
+            + self.consider_capital_inputs
+            * (current_limiting_capital_inputs - current_target_production),
         )
         return current_target_production

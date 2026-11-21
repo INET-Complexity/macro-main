@@ -144,12 +144,18 @@ class ExchangeRates:
 
         match self.exchange_rate_type:
             case "constant":
-                return self.historic_exchange_rate_data.loc[data_country, str(self.initial_year)]
+                return self.historic_exchange_rate_data.loc[
+                    data_country, str(self.initial_year)
+                ]
             case "exogenous":
-                return self.historic_exchange_rate_data.loc[data_country, str(current_year)]
+                return self.historic_exchange_rate_data.loc[
+                    data_country, str(current_year)
+                ]
             case "model":
                 if self.exchange_rates_model[data_country] is None:
                     raise ValueError("Exchange rates model is not provided")
-                return self.exchange_rates_model[data_country].predict(np.array([prev_inflation, prev_growth]))
+                return self.exchange_rates_model[data_country].predict(
+                    np.array([prev_inflation, prev_growth])
+                )
             case _:
                 raise ValueError("Unknown Exchange Rates Type")

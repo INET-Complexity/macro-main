@@ -240,7 +240,9 @@ class SyntheticPopulation(ABC):
             for firm_id in range(firm_production.shape[0]):
                 self.individual_data.loc[firm_employees[firm_id], "Labour Inputs"] = (
                     self.individual_data.loc[firm_employees[firm_id], "Employee Income"]
-                    / self.individual_data.loc[firm_employees[firm_id], "Employee Income"].sum()
+                    / self.individual_data.loc[
+                        firm_employees[firm_id], "Employee Income"
+                    ].sum()
                     * firm_production[firm_id]
                 )
 
@@ -354,7 +356,10 @@ class SyntheticPopulation(ABC):
 
     @abstractmethod
     def set_debt_installments(
-        self, consumption_installments: np.ndarray, ce_installments: np.ndarray, mortgage_installments: np.ndarray
+        self,
+        consumption_installments: np.ndarray,
+        ce_installments: np.ndarray,
+        mortgage_installments: np.ndarray,
     ) -> None:
         """Set household debt installment payments.
 
@@ -373,7 +378,9 @@ class SyntheticPopulation(ABC):
         pass
 
     @abstractmethod
-    def set_household_saving_rates(self, independents: Optional[list[str]] = None) -> None:
+    def set_household_saving_rates(
+        self, independents: Optional[list[str]] = None
+    ) -> None:
         """Compute and set household saving rates.
 
         This method should:
@@ -390,7 +397,9 @@ class SyntheticPopulation(ABC):
         pass
 
     @abstractmethod
-    def compute_household_wealth(self, independents: Optional[list[str]] = None) -> None:
+    def compute_household_wealth(
+        self, independents: Optional[list[str]] = None
+    ) -> None:
         """Compute and update household wealth components.
 
         This method should:
@@ -416,7 +425,9 @@ class SyntheticPopulation(ABC):
         """
         self.individual_data["Income"] = (
             self.individual_data["Employee Income"].fillna(0.0).values
-            + self.individual_data["Income from Unemployment Benefits"].fillna(0.0).values
+            + self.individual_data["Income from Unemployment Benefits"]
+            .fillna(0.0)
+            .values
         )
 
     @abstractmethod
@@ -476,14 +487,20 @@ class SyntheticPopulation(ABC):
         self.household_data["Investment Rate"] = default_investment_rates
 
     def normalise_household_investment(
-        self, tau_cf: float, iot_hh_investment: np.ndarray | pd.Series, positive_investment_rates: bool = True
+        self,
+        tau_cf: float,
+        iot_hh_investment: np.ndarray | pd.Series,
+        positive_investment_rates: bool = True,
     ) -> None:
         inv_weights = iot_hh_investment / iot_hh_investment.sum()
         income = self.household_data["Income"].values
         investment_rate = self.household_data["Investment Rate"].values
 
         current_hh_investment = default_target_investment(
-            income_=income, investment_rate=investment_rate, tau_cf_=tau_cf, investment_weights_=inv_weights
+            income_=income,
+            investment_rate=investment_rate,
+            tau_cf_=tau_cf,
+            investment_weights_=inv_weights,
         )
 
         factor = iot_hh_investment.sum() / current_hh_investment.sum()
@@ -493,9 +510,9 @@ class SyntheticPopulation(ABC):
         self.investment *= factor
 
         # set initial investment
-        self.household_data["Investment"] = (self.household_data["Income"] * self.household_data["Investment Rate"]) / (
-            1 + tau_cf
-        )
+        self.household_data["Investment"] = (
+            self.household_data["Income"] * self.household_data["Investment Rate"]
+        ) / (1 + tau_cf)
 
     def get_current_hh_investment_by_industry(self, tau_cf: float) -> np.ndarray:
         """Calculate current household investment by industry.
@@ -512,7 +529,10 @@ class SyntheticPopulation(ABC):
         income = self.household_data["Income"].values
         investment_rate = self.household_data["Investment Rate"].values
         return default_target_investment(
-            income_=income, investment_rate=investment_rate, tau_cf_=tau_cf, investment_weights_=self.investment_weights
+            income_=income,
+            investment_rate=investment_rate,
+            tau_cf_=tau_cf,
+            investment_weights_=self.investment_weights,
         )
 
     def match_consumption_weights_by_income(
@@ -523,10 +543,15 @@ class SyntheticPopulation(ABC):
         consumption_variance: float = 0.1,
     ) -> None: ...
 
-    def set_wealth_distribution_function(self, independents: Optional[list[str]] = None) -> None: ...
+    def set_wealth_distribution_function(
+        self, independents: Optional[list[str]] = None
+    ) -> None: ...
 
     def add_emissions(
-        self, emission_factors_array: np.ndarray, emitting_indices: list[int] | np.ndarray, tau_cf: float
+        self,
+        emission_factors_array: np.ndarray,
+        emitting_indices: list[int] | np.ndarray,
+        tau_cf: float,
     ) -> None:
         """Calculate and add emissions data to household records.
 
@@ -540,11 +565,15 @@ class SyntheticPopulation(ABC):
             emitting_indices (list[int] | np.ndarray): Indices of emitting sectors
             tau_cf (float): Capital formation tax rate
         """
-        consumption_emissions = self.industry_consumption_before_vat[:, emitting_indices] @ emission_factors_array
+        consumption_emissions = (
+            self.industry_consumption_before_vat[:, emitting_indices]
+            @ emission_factors_array
+        )
         self.household_data["Consumption Emissions"] = consumption_emissions
 
         investment_emissions = (
-            self.get_current_hh_investment_by_industry(tau_cf)[:, emitting_indices] @ emission_factors_array
+            self.get_current_hh_investment_by_industry(tau_cf)[:, emitting_indices]
+            @ emission_factors_array
         )
 
         self.household_data["Investment Emissions"] = investment_emissions
@@ -552,11 +581,15 @@ class SyntheticPopulation(ABC):
         # decompose in oil, gas, coal and refined products emissions
         for i, name in enumerate(["Coal", "Gas", "Oil", "Refined Products"]):
             self.household_data[f"{name} Consumption Emissions"] = (
-                self.industry_consumption_before_vat[:, emitting_indices[i]] * emission_factors_array[i]
+                self.industry_consumption_before_vat[:, emitting_indices[i]]
+                * emission_factors_array[i]
             )
             # investment
             self.household_data[f"{name} Investment Emissions"] = (
-                self.get_current_hh_investment_by_industry(tau_cf)[:, emitting_indices[i]] * emission_factors_array[i]
+                self.get_current_hh_investment_by_industry(tau_cf)[
+                    :, emitting_indices[i]
+                ]
+                * emission_factors_array[i]
             )
 
     @property
@@ -566,7 +599,10 @@ class SyntheticPopulation(ABC):
         Returns:
             float: Sum of consumption and investment emissions
         """
-        return self.household_data["Consumption Emissions"] + self.household_data["Investment Emissions"]
+        return (
+            self.household_data["Consumption Emissions"]
+            + self.household_data["Investment Emissions"]
+        )
 
 
 def default_target_investment(
@@ -589,4 +625,6 @@ def default_target_investment(
     Returns:
         np.ndarray: Target investment values by industry
     """
-    return 1.0 / (1 + tau_cf_) * np.outer(investment_weights_, investment_rate * income_).T
+    return (
+        1.0 / (1 + tau_cf_) * np.outer(investment_weights_, investment_rate * income_).T
+    )

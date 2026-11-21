@@ -150,10 +150,19 @@ class DefaultSyntheticRestOfTheWorld(SyntheticRestOfTheWorld):
         row_industry_data = industry_data["ROW"]
 
         total_imports = sum(
-            [industry_data[c]["industry_vectors"]["Imports in USD"].sum() for c in industry_data if c != "ROW"]
+            [
+                industry_data[c]["industry_vectors"]["Imports in USD"].sum()
+                for c in industry_data
+                if c != "ROW"
+            ]
         )
         exports_by_industry = np.sum(
-            [industry_data[c]["industry_vectors"]["Exports in USD"].values for c in industry_data if c != "ROW"], axis=1
+            [
+                industry_data[c]["industry_vectors"]["Exports in USD"].values
+                for c in industry_data
+                if c != "ROW"
+            ],
+            axis=1,
         )
 
         row_exports = row_industry_data["industry_vectors"]["Exports in USD"]
@@ -175,7 +184,9 @@ class DefaultSyntheticRestOfTheWorld(SyntheticRestOfTheWorld):
             if row_exports_growth is None:
                 raise ValueError("Exports growth data is required.")
             exports_model = LinearRegression()
-            exports_model.fit([[0], [1]], [row_exports_growth.mean(), row_exports_growth.mean()])
+            exports_model.fit(
+                [[0], [1]], [row_exports_growth.mean(), row_exports_growth.mean()]
+            )
         else:
             exports_model = None
 
@@ -183,7 +194,9 @@ class DefaultSyntheticRestOfTheWorld(SyntheticRestOfTheWorld):
             if row_imports_growth is None:
                 raise ValueError("Imports growth data is required.")
             imports_model = LinearRegression()
-            imports_model.fit([[0], [1]], [row_imports_growth.mean(), row_imports_growth.mean()])
+            imports_model.fit(
+                [[0], [1]], [row_imports_growth.mean(), row_imports_growth.mean()]
+            )
         else:
             imports_model = None
 
@@ -194,7 +207,9 @@ class DefaultSyntheticRestOfTheWorld(SyntheticRestOfTheWorld):
                 1, row_data["Exports"] / exports_by_industry * n_sellers_by_industry
             ).astype(int)
 
-        n_importers = int(max(1, row_data["Imports in USD"].sum() / total_imports * n_buyers))
+        n_importers = int(
+            max(1, row_data["Imports in USD"].sum() / total_imports * n_buyers)
+        )
 
         return cls(
             year=year,

@@ -33,7 +33,9 @@ from macro_data.processing.synthetic_population.synthetic_population import (
 )
 
 
-def create_firm_loan_df(firms: SyntheticFirms, banks: SyntheticBanks, firm_loan_maturity: int = 60) -> pd.DataFrame:
+def create_firm_loan_df(
+    firms: SyntheticFirms, banks: SyntheticBanks, firm_loan_maturity: int = 60
+) -> pd.DataFrame:
     """Preprocess firm loan relationship data.
 
     This function organizes initial firm loan data by:
@@ -73,13 +75,18 @@ def create_firm_loan_df(firms: SyntheticFirms, banks: SyntheticBanks, firm_loan_
         right_index=True,
     )
 
-    loan_df.rename(columns={"Long-Term Interest Rates on Firm Loans": "loan_interest_rate"}, inplace=True)
+    loan_df.rename(
+        columns={"Long-Term Interest Rates on Firm Loans": "loan_interest_rate"},
+        inplace=True,
+    )
     loan_df["loan_maturity"] = firm_loan_maturity
     return loan_df
 
 
 def create_household_loan_df(
-    synthetic_population: SyntheticPopulation, synthetic_banks: SyntheticBanks, consumption_loan_maturity: int = 12
+    synthetic_population: SyntheticPopulation,
+    synthetic_banks: SyntheticBanks,
+    consumption_loan_maturity: int = 12,
 ) -> pd.DataFrame:
     """Preprocess household consumer loan relationship data.
 
@@ -116,18 +123,25 @@ def create_household_loan_df(
 
     loan_df = pd.merge(
         left=loan_df,
-        right=synthetic_banks.bank_data["Interest Rates on Household Consumption Loans"],
+        right=synthetic_banks.bank_data[
+            "Interest Rates on Household Consumption Loans"
+        ],
         left_on="loan_bank_id",
         right_index=True,
     )
 
-    loan_df.rename(columns={"Interest Rates on Household Consumption Loans": "loan_interest_rate"}, inplace=True)
+    loan_df.rename(
+        columns={"Interest Rates on Household Consumption Loans": "loan_interest_rate"},
+        inplace=True,
+    )
     loan_df["loan_maturity"] = consumption_loan_maturity
     return loan_df
 
 
 def create_mortgage_loan_df(
-    synthetic_population: SyntheticPopulation, synthetic_banks: SyntheticBanks, mortgage_loan_maturity: int = 120
+    synthetic_population: SyntheticPopulation,
+    synthetic_banks: SyntheticBanks,
+    mortgage_loan_maturity: int = 120,
 ) -> pd.DataFrame:
     """Preprocess household mortgage loan relationship data.
 
@@ -151,7 +165,10 @@ def create_mortgage_loan_df(
     Returns:
         pd.DataFrame: Preprocessed mortgage relationship data
     """
-    debt_columns = ["Outstanding Balance of HMR Mortgages", "Outstanding Balance of Mortgages on other Properties"]
+    debt_columns = [
+        "Outstanding Balance of HMR Mortgages",
+        "Outstanding Balance of Mortgages on other Properties",
+    ]
 
     total_debt = synthetic_population.household_data[debt_columns].sum(axis=1)
     selection = total_debt > 0
@@ -171,6 +188,8 @@ def create_mortgage_loan_df(
         right_index=True,
     )
 
-    loan_df.rename(columns={"Interest Rates on Mortgages": "loan_interest_rate"}, inplace=True)
+    loan_df.rename(
+        columns={"Interest Rates on Mortgages": "loan_interest_rate"}, inplace=True
+    )
     loan_df["loan_maturity"] = mortgage_loan_maturity
     return loan_df

@@ -39,8 +39,13 @@ from macro_data.readers.economic_data.oecd_economic_data import OECDEconData
 from macro_data.readers.economic_data.ons_reader import ONSReader
 from macro_data.readers.economic_data.policy_rates import PolicyRatesReader
 from macro_data.readers.economic_data.world_bank_reader import WorldBankReader
-from macro_data.readers.emission_fraction.emission_fraction_reader import EmissionsFractionReader
-from macro_data.readers.emissions.emissions_reader import CH4EmissionsReaderCAN, EmissionsReader
+from macro_data.readers.emission_fraction.emission_fraction_reader import (
+    EmissionsFractionReader,
+)
+from macro_data.readers.emissions.emissions_reader import (
+    CH4EmissionsReaderCAN,
+    EmissionsReader,
+)
 from macro_data.readers.exo_prices.exo_prices_reader import SectorExoPricesReader
 from macro_data.readers.icio_sea_matching import (
     add_investment_matrix_to_icio,
@@ -126,23 +131,38 @@ class DataPaths:
             DataPaths: Configured paths for all data sources
         """
         return cls(
-            goods_criticality_path=raw_data_path / "ihs_markit_goods_criticality" / "UK_2020.csv",
+            goods_criticality_path=raw_data_path
+            / "ihs_markit_goods_criticality"
+            / "UK_2020.csv",
             exchange_rates_path=raw_data_path / "exchange_rates" / "exchange_rates.csv",
             eurostat_path=raw_data_path / "eurostat",
             hfcs_path=raw_data_path / "hfcs",
-            icio_paths={year: raw_data_path / "icio" / f"{year}_SML.csv" for year in icio_years},
-            icio_pivot_paths={year: raw_data_path / "icio" / f"{year}_SML_P.csv" for year in icio_years},
+            icio_paths={
+                year: raw_data_path / "icio" / f"{year}_SML.csv" for year in icio_years
+            },
+            icio_pivot_paths={
+                year: raw_data_path / "icio" / f"{year}_SML_P.csv"
+                for year in icio_years
+            },
             wiod_sea_path=raw_data_path / "wiod_sea" / "wiod_sea.csv",
             oecd_econ_path=raw_data_path / "oecd_econ",
             oecd_econ_mapping_path=raw_data_path / "oecd_econ" / "mappings.json",
-            policy_rates_path=raw_data_path / "policy_rates" / "bis_cb_policy_rates.csv",
-            country_codes_path=raw_data_path / "notation" / "wikipedia-iso-country-codes.csv",
+            policy_rates_path=raw_data_path
+            / "policy_rates"
+            / "bis_cb_policy_rates.csv",
+            country_codes_path=raw_data_path
+            / "notation"
+            / "wikipedia-iso-country-codes.csv",
             imf_path=raw_data_path / "imf",
             ons_path=raw_data_path / "ons",
             world_bank_path=raw_data_path / "world_bank",
             ecb_path=raw_data_path / "ecb",
-            compustat_firms_annual_path=raw_data_path / "compustat" / "firms_annual.csv",
-            compustat_firms_quarterly_path=raw_data_path / "compustat" / "firms_quarterly.csv",
+            compustat_firms_annual_path=raw_data_path
+            / "compustat"
+            / "firms_annual.csv",
+            compustat_firms_quarterly_path=raw_data_path
+            / "compustat"
+            / "firms_quarterly.csv",
             compustat_banks_path=raw_data_path / "compustat" / "banks.csv",
             emissions_path=raw_data_path / "emissions",
             emissions_fraction_path=raw_data_path / "emission_factors",
@@ -228,7 +248,9 @@ class DataReaders:
         regions_dict: dict[Country, list[Region]] = None,
     ):
         if regions_dict:
-            all_regions = [region for regions in regions_dict.values() for region in regions]
+            all_regions = [
+                region for regions in regions_dict.values() for region in regions
+            ]
             country_names = list(set(country_names) - set(all_regions))
 
         if proxy_country_dict is None:
@@ -242,20 +264,30 @@ class DataReaders:
 
         datapaths = DataPaths.default_paths(raw_data_path, all_years)
 
-        goods_criticality = GoodsCriticalityReader.from_csv(path=datapaths.goods_criticality_path)
-        exchange_rates = ExchangeRatesReader.from_csv(path=datapaths.exchange_rates_path)
+        goods_criticality = GoodsCriticalityReader.from_csv(
+            path=datapaths.goods_criticality_path
+        )
+        exchange_rates = ExchangeRatesReader.from_csv(
+            path=datapaths.exchange_rates_path
+        )
 
-        eurostat = EuroStatReader(path=datapaths.eurostat_path, country_code_path=datapaths.country_codes_path)
+        eurostat = EuroStatReader(
+            path=datapaths.eurostat_path, country_code_path=datapaths.country_codes_path
+        )
 
         eu_only = [country for country in country_names if country.is_eu_country]
         proxy_eu = list(proxy_country_dict.values())
 
         eu_only = list(set(eu_only).union(set(proxy_eu)))
 
-        def get_investment_year(year: int, country_names_: Optional[list[Country | Region]] = None):
+        def get_investment_year(
+            year: int, country_names_: Optional[list[Country | Region]] = None
+        ):
             if country_names_ is None:
                 country_names_ = country_names
-            return get_investment_fractions(country_names_, eurostat, proxy_country_dict, year)
+            return get_investment_fractions(
+                country_names_, eurostat, proxy_country_dict, year
+            )
 
         icio = {
             year: ICIOReader.agg_from_csv(
@@ -265,7 +297,9 @@ class DataReaders:
                 industries=industries,
                 year=year,
                 exchange_rates=exchange_rates,
-                imputed_rent_fraction=eurostat.get_imputed_rent_fraction(eu_only, imputed_rent_year),
+                imputed_rent_fraction=eurostat.get_imputed_rent_fraction(
+                    eu_only, imputed_rent_year
+                ),
                 investment_fractions=get_investment_year(year),
                 proxy_country_dict=proxy_country_dict,
                 aggregation_type="Aggregate" if aggregate_industries else "All",
@@ -275,13 +309,20 @@ class DataReaders:
 
         total_output = {}
         for country in country_names:
-            total_output[country] = icio[simulation_year].get_total_output(country).sum()
+            total_output[country] = (
+                icio[simulation_year].get_total_output(country).sum()
+            )
 
         eurostat = EuroStatReader(
-            path=datapaths.eurostat_path, country_code_path=datapaths.country_codes_path, total_output=total_output
+            path=datapaths.eurostat_path,
+            country_code_path=datapaths.country_codes_path,
+            total_output=total_output,
         )
 
-        proxified = [country if country.is_eu_country else proxy_country_dict[country] for country in country_names]
+        proxified = [
+            country if country.is_eu_country else proxy_country_dict[country]
+            for country in country_names
+        ]
 
         hfcs = {
             proxy_country: HFCSReader.from_csv(
@@ -311,7 +352,9 @@ class DataReaders:
                     considered_countries=[Country("CAN")],
                     industries=industries,
                     iot=df,
-                    investment_fractions=get_investment_year(simulation_year, [Country("CAN")]),
+                    investment_fractions=get_investment_year(
+                        simulation_year, [Country("CAN")]
+                    ),
                 )
             icio[simulation_year].iot = df
             icio[simulation_year].industries = industries
@@ -333,7 +376,9 @@ class DataReaders:
             for key, value in regions_dict.items():
                 all_provinces.extend(value)
 
-            countries_set = set(all_provinces).union(set(country_names)) - set(regions_dict.keys())
+            countries_set = set(all_provinces).union(set(country_names)) - set(
+                regions_dict.keys()
+            )
             # countries_set = countries_set.union(Country("ROW"))
 
             countries_and_regions = list(countries_set)
@@ -348,7 +393,9 @@ class DataReaders:
             industry_cols = df.columns.get_level_values(1).isin(industries)
             non_total_rows = df.index.get_level_values(0) != "TOTAL"
 
-            df.loc[("TOTAL", "Intermediate Inputs"), industry_cols] = df.loc[non_total_rows, industry_cols].sum(axis=0)
+            df.loc[("TOTAL", "Intermediate Inputs"), industry_cols] = df.loc[
+                non_total_rows, industry_cols
+            ].sum(axis=0)
 
             outputs = df.loc[("TOTAL", "Output"), industry_cols].groupby(level=0).sum()
 
@@ -362,7 +409,9 @@ class DataReaders:
                 considered_countries=countries_and_regions,
                 industries=industries,
                 iot=df,
-                investment_fractions=get_investment_year(simulation_year, countries_and_regions),
+                investment_fractions=get_investment_year(
+                    simulation_year, countries_and_regions
+                ),
             )
 
             icio[simulation_year].iot = df.sort_index()
@@ -371,7 +420,8 @@ class DataReaders:
             for large_country, regions in regions_dict.items():
                 for region in regions:
                     icio[simulation_year].imputed_rents[region] = (
-                        icio[simulation_year].imputed_rents[large_country] * renorm_output[region]
+                        icio[simulation_year].imputed_rents[large_country]
+                        * renorm_output[region]
                     )
                 del icio[simulation_year].imputed_rents[large_country]
 
@@ -392,7 +442,9 @@ class DataReaders:
                 for country_name in countries_and_regions
             }
             for key, value in regions_dict.items():
-                value_added_dict[key] = sum([value_added_dict[region] for region in value])
+                value_added_dict[key] = sum(
+                    [value_added_dict[region] for region in value]
+                )
 
         wiod_sea = WIODSEAReader.agg_from_csv(
             path=datapaths.wiod_sea_path,
@@ -432,10 +484,13 @@ class DataReaders:
         )
 
         policy_rates = PolicyRatesReader(
-            path=datapaths.policy_rates_path, country_code_path=datapaths.country_codes_path
+            path=datapaths.policy_rates_path,
+            country_code_path=datapaths.country_codes_path,
         )
 
-        imf_reader = IMFReader.from_data(data_path=datapaths.imf_path, scale_dict=scale_dict)
+        imf_reader = IMFReader.from_data(
+            data_path=datapaths.imf_path, scale_dict=scale_dict
+        )
 
         ons_reader = ONSReader(path=datapaths.ons_path)
 
@@ -454,7 +509,10 @@ class DataReaders:
         )
 
         compustat_banks = CompustatBanksReader.from_raw_data(
-            year=simulation_year, quarter=1, raw_quarterly_path=datapaths.compustat_banks_path, countries=all_countries
+            year=simulation_year,
+            quarter=1,
+            raw_quarterly_path=datapaths.compustat_banks_path,
+            countries=all_countries,
         )
 
         if prune_date:
@@ -470,16 +528,31 @@ class DataReaders:
         emissions = EmissionsReader.read_price_data(datapaths.emissions_path)
 
         emission_fractions = None
-        if datapaths.emissions_fraction_path is not None and datapaths.emissions_fraction_path.exists():
-            emission_fractions = EmissionsFractionReader.read_fraction_data(datapaths.emissions_fraction_path)
+        if (
+            datapaths.emissions_fraction_path is not None
+            and datapaths.emissions_fraction_path.exists()
+        ):
+            emission_fractions = EmissionsFractionReader.read_fraction_data(
+                datapaths.emissions_fraction_path
+            )
 
         exo_prices = None
-        if datapaths.firm_prices_path is not None and datapaths.firm_prices_path.exists():
-            exo_prices = SectorExoPricesReader.read_from_raw_data(datapaths.firm_prices_path)
+        if (
+            datapaths.firm_prices_path is not None
+            and datapaths.firm_prices_path.exists()
+        ):
+            exo_prices = SectorExoPricesReader.read_from_raw_data(
+                datapaths.firm_prices_path
+            )
 
         ch4_emissions = None
-        if datapaths.ch4_emissions_path is not None and datapaths.ch4_emissions_path.exists():
-            ch4_emissions = CH4EmissionsReaderCAN.read_data(datapaths.ch4_emissions_path)
+        if (
+            datapaths.ch4_emissions_path is not None
+            and datapaths.ch4_emissions_path.exists()
+        ):
+            ch4_emissions = CH4EmissionsReaderCAN.read_data(
+                datapaths.ch4_emissions_path
+            )
 
         return cls(
             icio=icio,
@@ -529,12 +602,16 @@ class DataReaders:
         investment_fractions = {}
         for country_name in country_names:
             if country_name.is_eu_country:
-                investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(
-                    country_name, year=year
+                investment_fractions[country_name] = (
+                    eurostat.get_investment_fractions_of_country(
+                        country_name, year=year
+                    )
                 )
             else:
-                investment_fractions[country_name] = eurostat.get_investment_fractions_of_country(
-                    proxy_country_dict[country_name], year=year
+                investment_fractions[country_name] = (
+                    eurostat.get_investment_fractions_of_country(
+                        proxy_country_dict[country_name], year=year
+                    )
                 )
         return investment_fractions
 
@@ -558,13 +635,19 @@ class DataReaders:
                 "unemployment_rate": self.oecd_econ.get_unemployment_rate(country_name),
                 "house_price_index": self.oecd_econ.get_house_price_index(country_name),
                 "vacancy_rate": self.oecd_econ.get_vacancy_rate(country_name),
-                "total_firm_deposits_and_debt": self.eurostat.get_total_industry_debt_and_deposits(country_name),
+                "total_firm_deposits_and_debt": self.eurostat.get_total_industry_debt_and_deposits(
+                    country_name
+                ),
             }
         except KeyError:
             return None
 
     def get_benefits_inflation_data(
-        self, country_name: Country, year_min: int, year_max: int, exogenous_data: dict[str, Any]
+        self,
+        country_name: Country,
+        year_min: int,
+        year_max: int,
+        exogenous_data: dict[str, Any],
     ) -> pd.DataFrame:
         """Calculate benefits and inflation data for a country.
 
@@ -606,12 +689,20 @@ class DataReaders:
         )
 
         benefits_data = benefits_data.resample("QE").interpolate("linear")
-        benefits_data.index = pd.DatetimeIndex([pd.Timestamp(d.year, d.month, 1) for d in benefits_data.index])
+        benefits_data.index = pd.DatetimeIndex(
+            [pd.Timestamp(d.year, d.month, 1) for d in benefits_data.index]
+        )
         log_inflation = exogenous_data["log_inflation"]["Real CPI Inflation"].copy()
         log_inflation.index = pd.to_datetime(log_inflation.index, format="%Y-%m")
-        data = pd.merge_asof(benefits_data, log_inflation, left_index=True, right_index=True)
-        unemployment_rate = exogenous_data["unemployment_rate"]["Unemployment Rate"].copy()
-        unemployment_rate.index = pd.to_datetime(unemployment_rate.index, format="%Y-%m")
+        data = pd.merge_asof(
+            benefits_data, log_inflation, left_index=True, right_index=True
+        )
+        unemployment_rate = exogenous_data["unemployment_rate"][
+            "Unemployment Rate"
+        ].copy()
+        unemployment_rate.index = pd.to_datetime(
+            unemployment_rate.index, format="%Y-%m"
+        )
         data = pd.merge_asof(data, unemployment_rate, left_index=True, right_index=True)
         return data
 
@@ -628,11 +719,13 @@ class DataReaders:
         Returns:
             float: Total benefits in local currency units
         """
-        return self.oecd_econ.all_benefits_gdp_pct(country_name, year) * self.world_bank.get_current_scaled_gdp(
+        return self.oecd_econ.all_benefits_gdp_pct(
             country_name, year
-        )
+        ) * self.world_bank.get_current_scaled_gdp(country_name, year)
 
-    def get_total_unemployment_benefits_lcu(self, country_name: Country, year: int) -> float:
+    def get_total_unemployment_benefits_lcu(
+        self, country_name: Country, year: int
+    ) -> float:
         """Calculate total unemployment benefits in local currency units.
 
         This method computes the total unemployment benefits for a country
@@ -662,7 +755,9 @@ class DataReaders:
         Returns:
             float: Government debt in local currency units
         """
-        return self.oecd_econ.general_gov_debt(country, year) * self.exchange_rates.from_usd_to_lcu(country, year)
+        return self.oecd_econ.general_gov_debt(
+            country, year
+        ) * self.exchange_rates.from_usd_to_lcu(country, year)
 
     def get_export_taxes(self, country: Country, year: int) -> float:
         """Calculate export taxes for a country.
@@ -704,7 +799,9 @@ class DataReaders:
         oecd_growth = oecd_growth[oecd_growth.columns.difference(imf_growth.columns)]
 
         # merge the two dataframes, ensuring that imf growth has the index
-        merged = pd.merge_asof(imf_growth, oecd_growth, left_index=True, right_index=True)
+        merged = pd.merge_asof(
+            imf_growth, oecd_growth, left_index=True, right_index=True
+        )
         merged = merged.loc[imf_growth.index]
         return merged
 
@@ -722,11 +819,15 @@ class DataReaders:
         Returns:
             pd.DataFrame: Consumption weights by industry and income quantile
         """
-        weights_by_income = self.oecd_econ.get_household_consumption_by_income_quantile(country=country, year=year)
+        weights_by_income = self.oecd_econ.get_household_consumption_by_income_quantile(
+            country=country, year=year
+        )
         weights_by_income.index = AGGREGATED_INDUSTRIES
         consumption_shares = self.icio[year].get_consumption_shares_series(country)
 
-        weights_by_income_all = pd.DataFrame(index=consumption_shares.index, columns=weights_by_income.columns)
+        weights_by_income_all = pd.DataFrame(
+            index=consumption_shares.index, columns=weights_by_income.columns
+        )
 
         dictionary = self.icio[year].get_updated_dictionary()
 
@@ -735,13 +836,17 @@ class DataReaders:
             if not sub_industries:
                 continue
 
-            sub_industries = [s_ind for s_ind in sub_industries if s_ind in consumption_shares.index]
+            sub_industries = [
+                s_ind for s_ind in sub_industries if s_ind in consumption_shares.index
+            ]
 
             shares = consumption_shares.loc[sub_industries]
             shares /= shares.sum()
             agg_weights = weights_by_income.loc[aggregate_industry]
             sub_weights = pd.DataFrame(
-                np.outer(shares.values, agg_weights.values), index=sub_industries, columns=weights_by_income.columns
+                np.outer(shares.values, agg_weights.values),
+                index=sub_industries,
+                columns=weights_by_income.columns,
             )
             weights_by_income_all.loc[sub_industries] = sub_weights
 
@@ -765,7 +870,9 @@ def prune_icio_dict(icio_dict: dict[int, Any], prune_date: date):
     """
     # make sure prune date is the year in int format
 
-    icio_dict = {year: icio for year, icio in icio_dict.items() if year >= prune_date.year}
+    icio_dict = {
+        year: icio for year, icio in icio_dict.items() if year >= prune_date.year
+    }
 
     if not icio_dict:
         warnings.warn(

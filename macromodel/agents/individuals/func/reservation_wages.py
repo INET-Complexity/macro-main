@@ -52,7 +52,9 @@ class ReservationWageSetter(ABC):
             unemployed_reservation_wage_timespan (int): Number of periods
                 to consider for unemployed individuals' wage history
         """
-        self.unemployed_reservation_wage_timespan = int(unemployed_reservation_wage_timespan)
+        self.unemployed_reservation_wage_timespan = int(
+            unemployed_reservation_wage_timespan
+        )
 
     @abstractmethod
     def compute_reservation_wages(
@@ -121,23 +123,29 @@ class DefaultReservationWageSetter(ReservationWageSetter):
         reservation_wages = np.zeros_like(current_individuals_activity)
 
         # For employed individuals
-        reservation_wages[current_individuals_activity == ActivityStatus.EMPLOYED] = historic_wages[-1][
-            current_individuals_activity == ActivityStatus.EMPLOYED
-        ]
+        reservation_wages[current_individuals_activity == ActivityStatus.EMPLOYED] = (
+            historic_wages[-1][current_individuals_activity == ActivityStatus.EMPLOYED]
+        )
 
         # For unemployed individuals
         if self.unemployed_reservation_wage_timespan == 0:
-            reservation_wages[current_individuals_activity == ActivityStatus.UNEMPLOYED] = (
-                current_unemployment_benefits_by_individual
-            )
+            reservation_wages[
+                current_individuals_activity == ActivityStatus.UNEMPLOYED
+            ] = current_unemployment_benefits_by_individual
         else:
             if np.sum(current_individuals_activity == ActivityStatus.UNEMPLOYED) > 0:
-                reservation_wages[current_individuals_activity == ActivityStatus.UNEMPLOYED] = np.maximum(
+                reservation_wages[
+                    current_individuals_activity == ActivityStatus.UNEMPLOYED
+                ] = np.maximum(
                     current_unemployment_benefits_by_individual,
-                    np.array(historic_wages[-self.unemployed_reservation_wage_timespan :])[
+                    np.array(
+                        historic_wages[-self.unemployed_reservation_wage_timespan :]
+                    )[
                         :,
                         current_individuals_activity == ActivityStatus.UNEMPLOYED,
-                    ].mean(axis=0),
+                    ].mean(
+                        axis=0
+                    ),
                 )
 
         return reservation_wages

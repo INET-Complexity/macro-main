@@ -3,7 +3,9 @@ from typing import Any, Literal, Optional
 from pydantic import BaseModel
 
 
-def create_household_bundle(n_industries: int, bundles: Optional[list[list[int]]] = None) -> list:
+def create_household_bundle(
+    n_industries: int, bundles: Optional[list[list[int]]] = None
+) -> list:
     """Assign bundle indices to industries based on substitution groups for households.
 
     For a given number of industries, assign each industry to a bundle index.
@@ -87,9 +89,11 @@ class ConsumptionFunction(BaseModel):
     """
 
     path_name: str = "consumption"
-    name: Literal["DefaultHouseholdConsumption", "ExogenousHouseholdConsumption", "CESHouseholdConsumption"] = (
-        "DefaultHouseholdConsumption"
-    )
+    name: Literal[
+        "DefaultHouseholdConsumption",
+        "ExogenousHouseholdConsumption",
+        "CESHouseholdConsumption",
+    ] = "DefaultHouseholdConsumption"
     parameters: dict[str, Any] = {
         "consumption_smoothing_fraction": 0.0,
         "consumption_smoothing_window": 12,
@@ -104,7 +108,9 @@ class InvestmentFunction(BaseModel):
     """
 
     path_name: str = "investment"
-    name: Literal["DefaultHouseholdInvestment", "NoHouseholdInvestment"] = "DefaultHouseholdInvestment"
+    name: Literal["DefaultHouseholdInvestment", "NoHouseholdInvestment"] = (
+        "DefaultHouseholdInvestment"
+    )
     parameters: dict[str, Any] = {}
 
 
@@ -114,7 +120,9 @@ class InsolvencyFunction(BaseModel):
     """
 
     path_name: str = "insolvency"
-    name: Literal["DefaultHouseholdInsolvencyHandler"] = "DefaultHouseholdInsolvencyHandler"
+    name: Literal["DefaultHouseholdInsolvencyHandler"] = (
+        "DefaultHouseholdInsolvencyHandler"
+    )
     parameters: dict[str, Any] = {}
 
 
@@ -124,7 +132,9 @@ class PropertyFunction(BaseModel):
     """
 
     path_name: str = "property"
-    name: Literal["DefaultHouseholdDemandForProperty"] = "DefaultHouseholdDemandForProperty"
+    name: Literal["DefaultHouseholdDemandForProperty"] = (
+        "DefaultHouseholdDemandForProperty"
+    )
     parameters: dict[str, Any] = {
         "cost_comparison_temperature": 1.0,
         "maximum_price_income_coefficient": 5.0,
@@ -155,9 +165,11 @@ class SavingRatesFunction(BaseModel):
     """
 
     path_name: str = "saving_rates"
-    name: Literal["AverageSavingRatesSetter", "ConstantSavingRatesSetter", "DefaultSavingRatesSetter"] = (
-        "AverageSavingRatesSetter"
-    )
+    name: Literal[
+        "AverageSavingRatesSetter",
+        "ConstantSavingRatesSetter",
+        "DefaultSavingRatesSetter",
+    ] = "AverageSavingRatesSetter"
     parameters: dict[str, Any] = {
         "independents": ["Income", "Debt"],
     }
@@ -217,9 +229,11 @@ class SocialTransfersFunction(BaseModel):
     """
 
     path_name: str = "social_transfers"
-    name: Literal["EqualSocialTransfersSetter", "ConstantSocialTransfersSetter", "DefaultSocialTransfersSetter"] = (
-        "EqualSocialTransfersSetter"
-    )
+    name: Literal[
+        "EqualSocialTransfersSetter",
+        "ConstantSocialTransfersSetter",
+        "DefaultSocialTransfersSetter",
+    ] = "EqualSocialTransfersSetter"
     parameters: dict[str, Any] = {
         "independents": ["Income", "Debt"],
     }
@@ -253,7 +267,9 @@ class HouseholdsConfiguration(BaseModel):
     substitution_bundles: list = DEFAULT_HOUSEHOLD_BUNDLE
 
     @classmethod
-    def n_industries_default(cls, n_industries: int, bundles: Optional[list[list[int]]] = None):
+    def n_industries_default(
+        cls, n_industries: int, bundles: Optional[list[list[int]]] = None
+    ):
         """Create households configuration with specified number of industries and substitution bundles.
 
         Args:
@@ -268,11 +284,15 @@ class HouseholdsConfiguration(BaseModel):
             bundles = []
 
         if len(bundles) > 0:
-            functions = HouseholdsFunctions(consumption=ConsumptionFunction(name="CESHouseholdConsumption"))
+            functions = HouseholdsFunctions(
+                consumption=ConsumptionFunction(name="CESHouseholdConsumption")
+            )
         else:
             functions = HouseholdsFunctions()
 
-        bundles_grouped = create_household_bundle(n_industries=n_industries, bundles=bundles)
+        bundles_grouped = create_household_bundle(
+            n_industries=n_industries, bundles=bundles
+        )
         return cls(
             functions=functions,
             parameters=HouseholdsParameters(),

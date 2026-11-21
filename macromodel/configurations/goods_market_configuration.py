@@ -4,9 +4,11 @@ from pydantic import BaseModel
 
 
 class Clearing(BaseModel):
-    name: Literal["NoGoodsMarketClearer", "DefaultGoodsMarketClearer", "WaterBucketGoodsMarketClearer"] = (
-        "WaterBucketGoodsMarketClearer"
-    )
+    name: Literal[
+        "NoGoodsMarketClearer",
+        "DefaultGoodsMarketClearer",
+        "WaterBucketGoodsMarketClearer",
+    ] = "WaterBucketGoodsMarketClearer"
     path_name: str = "clearing"
     parameters: dict = {
         "consider_trade_proportions": True,

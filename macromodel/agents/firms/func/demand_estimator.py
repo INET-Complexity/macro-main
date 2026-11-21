@@ -36,7 +36,9 @@ class DemandEstimator(ABC):
                 Will be clipped to range [0,1]
         """
         self.sectoral_growth_adjustment_speed = sectoral_growth_adjustment_speed
-        self.firm_growth_adjustment_speed = max(0.0, min(1.0, firm_growth_adjustment_speed))
+        self.firm_growth_adjustment_speed = max(
+            0.0, min(1.0, firm_growth_adjustment_speed)
+        )
         self.firm_growth_adjustment_speed = firm_growth_adjustment_speed
 
     @abstractmethod

@@ -25,8 +25,12 @@ class CountryConfiguration(BaseModel):
     individuals: IndividualsConfiguration = IndividualsConfiguration()
     households: HouseholdsConfiguration = HouseholdsConfiguration()
     firms: FirmsConfiguration = FirmsConfiguration()
-    government_entities: GovernmentEntitiesConfiguration = GovernmentEntitiesConfiguration()
-    central_government: CentralGovernmentConfiguration = CentralGovernmentConfiguration()
+    government_entities: GovernmentEntitiesConfiguration = (
+        GovernmentEntitiesConfiguration()
+    )
+    central_government: CentralGovernmentConfiguration = (
+        CentralGovernmentConfiguration()
+    )
     central_bank: CentralBankConfiguration = CentralBankConfiguration()
     banks: BanksConfiguration = BanksConfiguration()
     exchange_rates: ExchangeRatesConfiguration = ExchangeRatesConfiguration()
@@ -47,7 +51,9 @@ class CountryConfiguration(BaseModel):
         firms_bundles: Optional[list[list[int]]] = None,
         household_bundles: Optional[list[list[int]]] = None,
     ):
-        firms_configuration = FirmsConfiguration.n_industries_default(n_industries=n_industries, bundles=firms_bundles)
+        firms_configuration = FirmsConfiguration.n_industries_default(
+            n_industries=n_industries, bundles=firms_bundles
+        )
         households_configuration = HouseholdsConfiguration.n_industries_default(
             n_industries=n_industries, bundles=household_bundles
         )

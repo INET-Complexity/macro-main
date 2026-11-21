@@ -85,7 +85,10 @@ class LongtermLoans(LoanData):
 
     @classmethod
     def from_agent_data(
-        cls, bank_data: pd.DataFrame, firm_data: pd.DataFrame, firm_loan_maturity: int = 60
+        cls,
+        bank_data: pd.DataFrame,
+        firm_data: pd.DataFrame,
+        firm_loan_maturity: int = 60,
     ) -> "LongtermLoans":
         """Create a preprocessed long-term loan data container.
 
@@ -112,10 +115,14 @@ class LongtermLoans(LoanData):
         for firm_id in range(firm_debt.shape[0]):
             principal[firms_corresponding_bank[firm_id], firm_id] = firm_debt[firm_id]
             interest[firms_corresponding_bank[firm_id], firm_id] = (
-                bank_data["Long-Term Interest Rates on Firm Loans"].values[firms_corresponding_bank[firm_id]]
+                bank_data["Long-Term Interest Rates on Firm Loans"].values[
+                    firms_corresponding_bank[firm_id]
+                ]
                 * firm_debt[firm_id]
             )
-            discount[firms_corresponding_bank[firm_id], firm_id] = 1.0 / firm_loan_maturity * firm_debt[firm_id]
+            discount[firms_corresponding_bank[firm_id], firm_id] = (
+                1.0 / firm_loan_maturity * firm_debt[firm_id]
+            )
 
         return cls(principal, interest, discount)
 
@@ -136,7 +143,10 @@ class ShorttermLoans(LoanData):
 
     @classmethod
     def from_agent_data(
-        cls, bank_data: pd.DataFrame, firm_data: pd.DataFrame, firm_loan_maturity: int = 60
+        cls,
+        bank_data: pd.DataFrame,
+        firm_data: pd.DataFrame,
+        firm_loan_maturity: int = 60,
     ) -> "ShorttermLoans":
         """Create a preprocessed short-term loan data container.
 
@@ -178,7 +188,10 @@ class ConsumptionExpansionLoans(LoanData):
 
     @classmethod
     def from_agent_data(
-        cls, bank_data: pd.DataFrame, household_data: pd.DataFrame, consumption_loan_maturity: int = 1
+        cls,
+        bank_data: pd.DataFrame,
+        household_data: pd.DataFrame,
+        consumption_loan_maturity: int = 1,
     ) -> "ConsumptionExpansionLoans":
         """Create a preprocessed consumer loan data container.
 
@@ -195,7 +208,9 @@ class ConsumptionExpansionLoans(LoanData):
         Returns:
             ConsumptionExpansionLoans: Container with preprocessed loan data
         """
-        household_other_debt = household_data["Outstanding Balance of other Non-Mortgage Loans"].values
+        household_other_debt = household_data[
+            "Outstanding Balance of other Non-Mortgage Loans"
+        ].values
         households_corresponding_bank = household_data["Corresponding Bank ID"].values
 
         principal = np.zeros((bank_data.shape[0], household_other_debt.shape[0]))
@@ -203,7 +218,9 @@ class ConsumptionExpansionLoans(LoanData):
         discount = np.zeros((bank_data.shape[0], household_other_debt.shape[0]))
 
         for household_id in range(household_other_debt.shape[0]):
-            principal[households_corresponding_bank[household_id], household_id] = household_other_debt[household_id]
+            principal[households_corresponding_bank[household_id], household_id] = (
+                household_other_debt[household_id]
+            )
             interest[households_corresponding_bank[household_id], household_id] = (
                 bank_data["Interest Rates on Household Consumption Loans"].values[
                     households_corresponding_bank[household_id]
@@ -233,7 +250,10 @@ class PaydayLoans(LoanData):
 
     @classmethod
     def from_agent_data(
-        cls, bank_data: pd.DataFrame, household_data: pd.DataFrame, payday_loan_maturity: int = 1
+        cls,
+        bank_data: pd.DataFrame,
+        household_data: pd.DataFrame,
+        payday_loan_maturity: int = 1,
     ) -> "PaydayLoans":
         """Create a preprocessed payday loan data container.
 
@@ -272,7 +292,12 @@ class MortgageLoans(LoanData):
     """
 
     @classmethod
-    def from_agent_data(cls, bank_data: pd.DataFrame, household_data: pd.DataFrame, mortgage_maturity: int = 120):
+    def from_agent_data(
+        cls,
+        bank_data: pd.DataFrame,
+        household_data: pd.DataFrame,
+        mortgage_maturity: int = 120,
+    ):
         """Create a preprocessed mortgage loan data container.
 
         This method:
@@ -288,7 +313,9 @@ class MortgageLoans(LoanData):
         Returns:
             MortgageLoans: Container with preprocessed loan data
         """
-        household_mortgage_debt = household_data["Outstanding Balance of HMR Mortgages"].values
+        household_mortgage_debt = household_data[
+            "Outstanding Balance of HMR Mortgages"
+        ].values
         households_corresponding_bank = household_data["Corresponding Bank ID"].values
 
         principal = np.zeros((bank_data.shape[0], household_mortgage_debt.shape[0]))
@@ -296,9 +323,13 @@ class MortgageLoans(LoanData):
         discount = np.zeros((bank_data.shape[0], household_mortgage_debt.shape[0]))
 
         for household_id in range(household_mortgage_debt.shape[0]):
-            principal[households_corresponding_bank[household_id], household_id] = household_mortgage_debt[household_id]
+            principal[households_corresponding_bank[household_id], household_id] = (
+                household_mortgage_debt[household_id]
+            )
             interest[households_corresponding_bank[household_id], household_id] = (
-                bank_data["Interest Rates on Mortgages"].values[households_corresponding_bank[household_id]]
+                bank_data["Interest Rates on Mortgages"].values[
+                    households_corresponding_bank[household_id]
+                ]
                 * household_mortgage_debt[household_id]
             )
             discount[households_corresponding_bank[household_id], household_id] = (

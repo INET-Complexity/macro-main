@@ -93,7 +93,9 @@ class TestSyntheticPopulation:
 
 
 @pytest.mark.parametrize("country", [Country("CAN"), Country("USA")])
-def test__household_consumption(multic_readers, multic_industry_data, configuration, country, exogenous_data):
+def test__household_consumption(
+    multic_readers, multic_industry_data, configuration, country, exogenous_data
+):
     industries = AGGREGATED_INDUSTRIES
 
     proxy_country = Country("FRA")
@@ -102,7 +104,9 @@ def test__household_consumption(multic_readers, multic_industry_data, configurat
         country=country, year=year
     ) / multic_readers.world_bank.get_population(country=proxy_country, year=year)
 
-    exch_rate_proxy_to_lcu = multic_readers.exchange_rates.from_eur_to_lcu(country, year)
+    exch_rate_proxy_to_lcu = multic_readers.exchange_rates.from_eur_to_lcu(
+        country, year
+    )
 
     SyntheticHFCSPopulation.from_readers(
         readers=multic_readers,
@@ -127,7 +131,9 @@ def test__household_sampling(readers):
     country_name = "FRA"
     year = 2014
     scale = 10_000
-    n_households = int(readers.eurostat.number_of_households(country_name, year) / scale)
+    n_households = int(
+        readers.eurostat.number_of_households(country_name, year) / scale
+    )
     hfcs_individuals_data = readers.hfcs[country_name].individuals_df
     hfcs_households_data = readers.hfcs[country_name].households_df
 
@@ -142,12 +148,21 @@ def test__household_sampling(readers):
         == household_selection["Corresponding Individuals ID"].apply(len)
     )
 
-    large_households = household_selection["Corresponding Individuals ID"].apply(len) > 2
+    large_households = (
+        household_selection["Corresponding Individuals ID"].apply(len) > 2
+    )
 
     sample = np.random.choice(household_selection.index[large_households], size=10)
 
     for i in sample:
         individuals = household_selection.loc[i, "Corresponding Individuals ID"]
-        assert individual_selection.loc[individuals, "Corresponding Household ID"].nunique() == 1
-        assert np.all(individual_selection.loc[individuals, "Corresponding Household ID"] == i)
+        assert (
+            individual_selection.loc[
+                individuals, "Corresponding Household ID"
+            ].nunique()
+            == 1
+        )
+        assert np.all(
+            individual_selection.loc[individuals, "Corresponding Household ID"] == i
+        )
     assert True

@@ -82,7 +82,8 @@ class InflationRoWPriceSetter(RoWPriceSetter):
         """
         return np.maximum(
             1e-3,
-            (1.0 + adjustment_speed * (aggregate_country_price_index - 1.0)) * initial_price,
+            (1.0 + adjustment_speed * (aggregate_country_price_index - 1.0))
+            * initial_price,
         )
 
 
@@ -166,14 +167,22 @@ class SectorExogenousROWPriceSetter(InflationRoWPriceSetter):
         current_quarter = self._call_count
         self._call_count += 1
 
-        if self.firm_exo_prices is None or self.firm_exo_prices.prices is None or len(self.overriden_industries) == 0:
+        if (
+            self.firm_exo_prices is None
+            or self.firm_exo_prices.prices is None
+            or len(self.overriden_industries) == 0
+        ):
             return price
 
         for industry_name in self.firm_exo_prices.prices.columns:
             if industry_name not in self.overriden_industries:
                 continue
             ratio = self._normalised_price(industry_name, current_quarter)
-            for idx in [i for i, name in enumerate(self.overriden_industries) if name == industry_name]:
+            for idx in [
+                i
+                for i, name in enumerate(self.overriden_industries)
+                if name == industry_name
+            ]:
                 price[idx] = initial_price[idx] * ratio
 
         return price

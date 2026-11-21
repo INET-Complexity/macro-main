@@ -269,7 +269,9 @@ def get_random_buyer_type(
         n_buyers_keys = list(n_buyers_by_agent.keys())
         n_buyers_vals = list(n_buyers_by_agent.values())
         if np.sum(n_buyers_vals) > 0:
-            return np.random.choice(n_buyers_keys, p=np.array(n_buyers_vals) / np.sum(n_buyers_vals))
+            return np.random.choice(
+                n_buyers_keys, p=np.array(n_buyers_vals) / np.sum(n_buyers_vals)
+            )
 
     # Considering all agents
     n_buyers_by_agent = {
@@ -278,7 +280,9 @@ def get_random_buyer_type(
     }
     n_buyers_keys = list(n_buyers_by_agent.keys())
     n_buyers_vals = list(n_buyers_by_agent.values())
-    return np.random.choice(n_buyers_keys, p=np.array(n_buyers_vals) / np.sum(n_buyers_vals))
+    return np.random.choice(
+        n_buyers_keys, p=np.array(n_buyers_vals) / np.sum(n_buyers_vals)
+    )
 
 
 def get_random_buyer(
@@ -346,9 +350,14 @@ def get_random_buyer(
     # Prioritise firms
     firm_agents = None
     for i in range(len(goods_market_participants[country])):
-        if goods_market_participants[country][i].transactor_buyer_states["Priority"] == 1:
+        if (
+            goods_market_participants[country][i].transactor_buyer_states["Priority"]
+            == 1
+        ):
             firm_agents = goods_market_participants[country][i]
-    buying_firms = np.where(firm_agents.transactor_buyer_states[field][:, industry] > 0.0)[0]
+    buying_firms = np.where(
+        firm_agents.transactor_buyer_states[field][:, industry] > 0.0
+    )[0]
     if len(buying_firms) > 0:
         return firm_agents, np.random.choice(buying_firms)
 
@@ -358,19 +367,31 @@ def get_random_buyer(
         [
             np.sum(
                 [
-                    np.sum(goods_market_participants[c][i].transactor_buyer_states[field][:, industry] > 0.0)
+                    np.sum(
+                        goods_market_participants[c][i].transactor_buyer_states[field][
+                            :, industry
+                        ]
+                        > 0.0
+                    )
                     for i in range(len(goods_market_participants[c]))
                 ]
             )
             for c in gmps
         ]
     )
-    chosen_country = np.random.choice(gmps, p=n_buyers_by_country / np.sum(n_buyers_by_country))
+    chosen_country = np.random.choice(
+        gmps, p=n_buyers_by_country / np.sum(n_buyers_by_country)
+    )
 
     # Then choose the type of buyer
     n_buyers_by_agent = np.array(
         [
-            np.sum(goods_market_participants[chosen_country][i].transactor_buyer_states[field][:, industry] > 0.0)
+            np.sum(
+                goods_market_participants[chosen_country][i].transactor_buyer_states[
+                    field
+                ][:, industry]
+                > 0.0
+            )
             for i in range(len(goods_market_participants[chosen_country]))
         ]
     )
@@ -382,7 +403,10 @@ def get_random_buyer(
     # Finally, choose the specific agent
     return goods_market_participants[chosen_country][chosen_agent], np.random.choice(
         np.where(
-            goods_market_participants[chosen_country][chosen_agent].transactor_buyer_states[field][:, industry] > 0.0
+            goods_market_participants[chosen_country][
+                chosen_agent
+            ].transactor_buyer_states[field][:, industry]
+            > 0.0
         )[0]
     )
 
@@ -455,12 +479,20 @@ def pick_previous_seller(
             and chosen_buyer_ind in previous_supply_chain[industry][chosen_buyer].keys()
         ):
             possible_sc_sellers, possible_sc_sellers_ind = [], []
-            for sc_seller, sc_seller_ind in previous_supply_chain[industry][chosen_buyer][chosen_buyer_ind]:
+            for sc_seller, sc_seller_ind in previous_supply_chain[industry][
+                chosen_buyer
+            ][chosen_buyer_ind]:
                 if (
                     sc_seller.transactor_seller_states[field][sc_seller_ind] > 0
                     and (not prio_real_countries or sc_seller.country_name != "ROW")
-                    and (not prio_high_prio or sc_seller.transactor_seller_states["Priority"] == 1)
-                    and (not prio_domestic_sellers or chosen_buyer.country_name == sc_seller.country_name)
+                    and (
+                        not prio_high_prio
+                        or sc_seller.transactor_seller_states["Priority"] == 1
+                    )
+                    and (
+                        not prio_domestic_sellers
+                        or chosen_buyer.country_name == sc_seller.country_name
+                    )
                 ):
                     possible_sc_sellers.append(sc_seller)
                     possible_sc_sellers_ind.append(sc_seller_ind)
@@ -551,7 +583,9 @@ def get_random_seller_based_on_distribution(
         )[0]
         agent_ls.extend([agent] * len(valid_agent_ind))
         agent_ind_ls.extend(valid_agent_ind)
-        agent_prod_ls.extend(agent.transactor_seller_states["Initial Goods"][valid_agent_ind])
+        agent_prod_ls.extend(
+            agent.transactor_seller_states["Initial Goods"][valid_agent_ind]
+        )
         agent_price_ls.extend(agent.transactor_seller_states["Prices"][valid_agent_ind])
     agent_prod_ls = np.array(agent_prod_ls)
     agent_price_ls = np.array(agent_price_ls)
@@ -742,13 +776,18 @@ def handle_transaction(
             seller.transactor_seller_states["Remaining Goods"][seller_ind],
             buyer.transactor_buyer_states["Remaining Goods"][buyer_ind, industry],
         )
-        buyer.transactor_buyer_states["Remaining Goods"][buyer_ind, industry] -= real_value
+        buyer.transactor_buyer_states["Remaining Goods"][
+            buyer_ind, industry
+        ] -= real_value
     else:
         real_value = min(
             seller.transactor_seller_states["Remaining Goods"][seller_ind],
-            buyer.transactor_buyer_states["Remaining Goods"][buyer_ind, industry] / price,
+            buyer.transactor_buyer_states["Remaining Goods"][buyer_ind, industry]
+            / price,
         )
-        buyer.transactor_buyer_states["Remaining Goods"][buyer_ind, industry] -= price * real_value
+        buyer.transactor_buyer_states["Remaining Goods"][buyer_ind, industry] -= (
+            price * real_value
+        )
 
     # Check if we're close to 0 for the buyer
     if (
@@ -762,20 +801,31 @@ def handle_transaction(
 
     # Record the transaction for the seller
     seller.transactor_seller_states["Remaining Goods"][seller_ind] -= real_value
-    if np.round(seller.transactor_seller_states["Remaining Goods"][seller_ind], 6) == 0.0:
+    if (
+        np.round(seller.transactor_seller_states["Remaining Goods"][seller_ind], 6)
+        == 0.0
+    ):
         seller.transactor_seller_states["Remaining Goods"][seller_ind] = 0.0
 
     # Record the amount sold by the seller
     seller.transactor_seller_states["Real Amount sold"][seller_ind] += real_value
-    seller.transactor_seller_states["Real Amount sold to " + buyer.country_name][seller_ind] += real_value
+    seller.transactor_seller_states["Real Amount sold to " + buyer.country_name][
+        seller_ind
+    ] += real_value
 
     # Record the amount spent by the buyer
-    buyer.transactor_buyer_states["Nominal Amount spent"][buyer_ind, industry] += price * real_value
-    buyer.transactor_buyer_states["Nominal Amount spent on Goods from " + seller.country_name][buyer_ind, industry] += (
+    buyer.transactor_buyer_states["Nominal Amount spent"][buyer_ind, industry] += (
         price * real_value
     )
-    buyer.transactor_buyer_states["Real Amount bought"][buyer_ind, industry] += real_value
-    buyer.transactor_buyer_states["Real Amount bought from " + seller.country_name][buyer_ind, industry] += real_value
+    buyer.transactor_buyer_states[
+        "Nominal Amount spent on Goods from " + seller.country_name
+    ][buyer_ind, industry] += (price * real_value)
+    buyer.transactor_buyer_states["Real Amount bought"][
+        buyer_ind, industry
+    ] += real_value
+    buyer.transactor_buyer_states["Real Amount bought from " + seller.country_name][
+        buyer_ind, industry
+    ] += real_value
 
 
 def handle_hypothetical_transaction(
@@ -838,20 +888,31 @@ def handle_hypothetical_transaction(
     # Process the transaction
     if buyer.transactor_buyer_states["Value Type"] == ValueType.REAL:
         real_min = min(
-            buyer.transactor_buyer_states["Remaining Excess Goods"][buyer_ind, industry],
+            buyer.transactor_buyer_states["Remaining Excess Goods"][
+                buyer_ind, industry
+            ],
             seller.transactor_seller_states["Remaining Excess Goods"][seller_ind],
         )
         seller.transactor_seller_states["Real Excess Demand"][seller_ind] += real_min
-        seller.transactor_seller_states["Remaining Excess Goods"][seller_ind] -= real_min
-        buyer.transactor_buyer_states["Remaining Excess Goods"][buyer_ind, industry] -= real_min
+        seller.transactor_seller_states["Remaining Excess Goods"][
+            seller_ind
+        ] -= real_min
+        buyer.transactor_buyer_states["Remaining Excess Goods"][
+            buyer_ind, industry
+        ] -= real_min
     elif buyer.transactor_buyer_states["Value Type"] == ValueType.NOMINAL:
         real_min = min(
-            buyer.transactor_buyer_states["Remaining Excess Goods"][buyer_ind, industry] / price,
+            buyer.transactor_buyer_states["Remaining Excess Goods"][buyer_ind, industry]
+            / price,
             seller.transactor_seller_states["Remaining Excess Goods"][seller_ind],
         )
         seller.transactor_seller_states["Real Excess Demand"][seller_ind] += real_min
-        seller.transactor_seller_states["Remaining Excess Goods"][seller_ind] -= real_min
-        buyer.transactor_buyer_states["Remaining Excess Goods"][buyer_ind, industry] -= real_min * price
+        seller.transactor_seller_states["Remaining Excess Goods"][
+            seller_ind
+        ] -= real_min
+        buyer.transactor_buyer_states["Remaining Excess Goods"][
+            buyer_ind, industry
+        ] -= (real_min * price)
 
 
 def update_supply_chain(
@@ -914,7 +975,9 @@ def update_supply_chain(
         current_supply_chain[industry][buyer][buyer_ind] = [(seller, seller_ind)]
 
 
-def clean_rounding_errors(goods_market_participants: dict[str, list[Agent]], decimals: int = 12) -> None:
+def clean_rounding_errors(
+    goods_market_participants: dict[str, list[Agent]], decimals: int = 12
+) -> None:
     """Clean up numerical rounding errors in credit market state variables.
 
     This function addresses floating-point arithmetic precision issues that can
@@ -965,9 +1028,11 @@ def clean_rounding_errors(goods_market_participants: dict[str, list[Agent]], dec
                 transactor.transactor_buyer_states["Remaining Goods"], decimals
             )
             if "Remaining Excess Goods" in transactor.transactor_seller_states.keys():
-                transactor.transactor_seller_states["Remaining Excess Goods"] = np.round(
-                    transactor.transactor_seller_states["Remaining Excess Goods"],
-                    decimals,
+                transactor.transactor_seller_states["Remaining Excess Goods"] = (
+                    np.round(
+                        transactor.transactor_seller_states["Remaining Excess Goods"],
+                        decimals,
+                    )
                 )
             if "Remaining Excess Goods" in transactor.transactor_buyer_states.keys():
                 transactor.transactor_buyer_states["Remaining Excess Goods"] = np.round(

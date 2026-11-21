@@ -86,11 +86,19 @@ class TestCreator:
         # not necessary to do the country splitting here
         # since the fixture used only has one country key
         configuration = DataConfiguration(**config_dict)
-        configuration.country_configs[Country("FRA")].firms_configuration.constructor = "Default"
-        configuration.country_configs[Country("FRA")].banks_configuration.constructor = "Default"
+        configuration.country_configs[
+            Country("FRA")
+        ].firms_configuration.constructor = "Default"
+        configuration.country_configs[
+            Country("FRA")
+        ].banks_configuration.constructor = "Default"
         configuration.country_configs[Country("FRA")].single_bank = False
-        configuration.country_configs[Country("FRA")].firms_configuration.zero_initial_deposits = False
-        configuration.country_configs[Country("FRA")].firms_configuration.zero_initial_debt = False
+        configuration.country_configs[
+            Country("FRA")
+        ].firms_configuration.zero_initial_deposits = False
+        configuration.country_configs[
+            Country("FRA")
+        ].firms_configuration.zero_initial_debt = False
         raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
         configuration.prune_date = None
         creator = DataWrapper.from_config(
@@ -122,8 +130,12 @@ class TestCreator:
         # not necessary to do the country splitting here
         # since the fixture used only has one country key
         configuration = DataConfiguration(**config_dict)
-        configuration.country_configs[Country("FRA")].firms_configuration.zero_initial_deposits = True
-        configuration.country_configs[Country("FRA")].firms_configuration.zero_initial_debt = True
+        configuration.country_configs[
+            Country("FRA")
+        ].firms_configuration.zero_initial_deposits = True
+        configuration.country_configs[
+            Country("FRA")
+        ].firms_configuration.zero_initial_debt = True
         raw_data_path = TEST_PATH / "unit" / "sample_raw_data"
         configuration.prune_date = None
         creator = DataWrapper.from_config(
@@ -152,7 +164,9 @@ class TestCreator:
         # by setting their configurations to be the same as France
         # and by setting their EU proxy country to be France
 
-        configuration.country_configs[united_states] = configuration.country_configs[france]
+        configuration.country_configs[united_states] = configuration.country_configs[
+            france
+        ]
 
         configuration.country_configs[canada] = configuration.country_configs[france]
 
@@ -177,7 +191,9 @@ class TestCreator:
         check_country_credit(creator.synthetic_countries["CAN"])
 
         for country_name in [france, united_states, canada]:
-            exch_rate = multic_readers.exchange_rates.from_usd_to_lcu(country_name, 2014)
+            exch_rate = multic_readers.exchange_rates.from_usd_to_lcu(
+                country_name, 2014
+            )
             usd_consumption = multic_readers.icio[2014].get_hh_consumption(country_name)
 
             total_consumption = usd_consumption.sum()
@@ -189,24 +205,38 @@ class TestCreator:
 
             total_disposable_income = disposable_income.sum()
 
-            govt_consumption = country.government_entities.gov_entity_data["Consumption in LCU"].sum()
+            govt_consumption = country.government_entities.gov_entity_data[
+                "Consumption in LCU"
+            ].sum()
 
             govt_consumption_usd = govt_consumption / exch_rate
 
-            assert total_disposable_income / (1 + vat) == pytest.approx(total_consumption * exch_rate, rel=5e-2)
+            assert total_disposable_income / (1 + vat) == pytest.approx(
+                total_consumption * exch_rate, rel=5e-2
+            )
 
-            govt_consumption_reader = multic_readers.icio[2014].get_govt_consumption(country_name)
+            govt_consumption_reader = multic_readers.icio[2014].get_govt_consumption(
+                country_name
+            )
 
-            assert govt_consumption_reader.sum() == pytest.approx(govt_consumption_usd, rel=5e-2)
+            assert govt_consumption_reader.sum() == pytest.approx(
+                govt_consumption_usd, rel=5e-2
+            )
 
-            employee_social_contribution_taxes = country.tax_data.employee_social_insurance_tax
+            employee_social_contribution_taxes = (
+                country.tax_data.employee_social_insurance_tax
+            )
             income_tax = country.tax_data.income_tax
 
-            employee_income = country.population.individual_data["Employee Income"].sum()
+            employee_income = country.population.individual_data[
+                "Employee Income"
+            ].sum()
             wages = country.firms.firm_data["Total Wages"].sum()
 
             assert wages * (
-                1 - employee_social_contribution_taxes - income_tax * (1 - employee_social_contribution_taxes)
+                1
+                - employee_social_contribution_taxes
+                - income_tax * (1 - employee_social_contribution_taxes)
             ) == pytest.approx(employee_income, rel=5e-2)
 
     def test_create_us_can_all_industries(self, data_config_path):
@@ -228,7 +258,9 @@ class TestCreator:
         # by setting their configurations to be the same as France
         # and by setting their EU proxy country to be France
 
-        configuration.country_configs[united_states] = configuration.country_configs[france]
+        configuration.country_configs[united_states] = configuration.country_configs[
+            france
+        ]
 
         configuration.country_configs[canada] = configuration.country_configs[france]
 
@@ -297,7 +329,9 @@ class TestCreator:
         configuration.country_configs[france].single_bank = True
         configuration.country_configs[france].single_government_entity = True
 
-        configuration.country_configs[united_states] = configuration.country_configs[france]
+        configuration.country_configs[united_states] = configuration.country_configs[
+            france
+        ]
 
         configuration.country_configs[united_states].eu_proxy_country = france
 
@@ -374,15 +408,21 @@ class TestCreator:
         assert firm_input_emissions > 0
         assert firm_capital_emissions > 0
 
-        household_emissions = canada.population.household_data["Consumption Emissions"].sum()
+        household_emissions = canada.population.household_data[
+            "Consumption Emissions"
+        ].sum()
 
         assert household_emissions > 0
 
-        household_investment_emissions = canada.population.household_data["Investment Emissions"].sum()
+        household_investment_emissions = canada.population.household_data[
+            "Investment Emissions"
+        ].sum()
 
         assert household_investment_emissions > 0
 
-        government_consumption_emissions = canada.government_entities.gov_entity_data["Consumption Emissions"].sum()
+        government_consumption_emissions = canada.government_entities.gov_entity_data[
+            "Consumption Emissions"
+        ].sum()
 
         assert government_consumption_emissions > 0
 
@@ -399,9 +439,9 @@ class TestCreator:
             check_country_gdp(country)
             check_country_credit(country)
 
-            assert np.all(country.population.individual_data["Employee Income"] >= 0), (
-                f"Negative employee income for {country_name}"
-            )
+            assert np.all(
+                country.population.individual_data["Employee Income"] >= 0
+            ), f"Negative employee income for {country_name}"
 
 
 def check_country_credit(country: SyntheticCountry):
@@ -409,7 +449,9 @@ def check_country_credit(country: SyntheticCountry):
     firm_debt = country.firms.firm_data["Debt"].sum()
 
     firm_deposits_in_bank = country.banks.bank_data["Deposits from Firms"].sum()
-    household_deposits_in_bank = country.banks.bank_data["Deposits from Households"].sum()
+    household_deposits_in_bank = country.banks.bank_data[
+        "Deposits from Households"
+    ].sum()
 
     household_deposits = country.population.household_data["Wealth in Deposits"].sum()
     firm_deposits = country.firms.firm_data["Deposits"].sum()
@@ -464,22 +506,28 @@ def check_country_rent_consistency(country: SyntheticCountry):
     non_zero_rent_renters = (renter_rent_paid > 0).sum()
     total_renters = renters.sum()
 
-    assert non_zero_rent_renters / total_renters > 0.5, (
-        f"Too many renters with zero rent: {total_renters - non_zero_rent_renters}/{total_renters}"
-    )
+    assert (
+        non_zero_rent_renters / total_renters > 0.5
+    ), f"Too many renters with zero rent: {total_renters - non_zero_rent_renters}/{total_renters}"
 
     # Test 3: Check owners should have zero rent paid (they don't pay rent)
     owner_rent_paid = household_data.loc[owners, "Rent Paid"]
-    assert (owner_rent_paid == 0).all(), "Owner-occupied households should have zero rent paid"
+    assert (
+        owner_rent_paid == 0
+    ).all(), "Owner-occupied households should have zero rent paid"
 
     # Test 4: Check housing market rent consistency
     # Get households that are mapped to houses
-    household_house_mapping = household_data["Corresponding Inhabited House ID"].dropna()
+    household_house_mapping = household_data[
+        "Corresponding Inhabited House ID"
+    ].dropna()
 
     if len(household_house_mapping) > 0:
         # Check that house IDs exist in housing data
         valid_house_ids = household_house_mapping.isin(housing_data.index)
-        assert valid_house_ids.all(), "Some household house IDs don't exist in housing market data"
+        assert (
+            valid_house_ids.all()
+        ), "Some household house IDs don't exist in housing market data"
 
         # Check rental properties have reasonable rent values
         rental_properties = housing_data[~housing_data["Is Owner-Occupied"]]
@@ -502,6 +550,6 @@ def check_country_rent_consistency(country: SyntheticCountry):
 
     # Rent should be between 0.5% and 40% of total income (generous bounds)
     # Lower bound relaxed for spoofed test data which may have altered distributions
-    assert 0.005 <= rent_to_income_ratio <= 0.40, (
-        f"Rent-to-income ratio {rent_to_income_ratio:.3f} is outside reasonable bounds [0.005, 0.40]"
-    )
+    assert (
+        0.005 <= rent_to_income_ratio <= 0.40
+    ), f"Rent-to-income ratio {rent_to_income_ratio:.3f} is outside reasonable bounds [0.005, 0.40]"

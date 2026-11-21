@@ -133,39 +133,66 @@ class SyntheticCentralGovernment(ABC):
             synthetic_banks (SyntheticBanks): Bank data container
             industry_data (dict[str, pd.DataFrame]): Industry-level economic data
         """
-        in_social_housing = synthetic_population.household_data["Tenure Status of the Main Residence"] == -1
-        total_social_housing_rent = synthetic_population.social_housing_rent * in_social_housing.sum()
-        firm_taxes_and_subsidies = float(synthetic_firms.firm_data["Taxes paid on Production"].sum())
-        firm_corporate_taxes = float(synthetic_firms.firm_data["Corporate Taxes Paid"].sum())
-        bank_corporate_taxes = float(synthetic_banks.bank_data["Corporate Taxes Paid"].sum())
+        in_social_housing = (
+            synthetic_population.household_data["Tenure Status of the Main Residence"]
+            == -1
+        )
+        total_social_housing_rent = (
+            synthetic_population.social_housing_rent * in_social_housing.sum()
+        )
+        firm_taxes_and_subsidies = float(
+            synthetic_firms.firm_data["Taxes paid on Production"].sum()
+        )
+        firm_corporate_taxes = float(
+            synthetic_firms.firm_data["Corporate Taxes Paid"].sum()
+        )
+        bank_corporate_taxes = float(
+            synthetic_banks.bank_data["Corporate Taxes Paid"].sum()
+        )
 
-        total_employee_income = synthetic_population.individual_data["Employee Income"].sum()
+        total_employee_income = synthetic_population.individual_data[
+            "Employee Income"
+        ].sum()
 
-        firm_employer_si_tax = tax_data.employer_social_insurance_tax * total_employee_income
+        firm_employer_si_tax = (
+            tax_data.employer_social_insurance_tax * total_employee_income
+        )
 
         # NOTE different to what was previously done, where consumption was computed using industry_data
 
         household_vat = (
-            tax_data.value_added_tax * industry_data["industry_vectors"]["Household Consumption in LCU"].sum()
+            tax_data.value_added_tax
+            * industry_data["industry_vectors"]["Household Consumption in LCU"].sum()
         )
 
-        export_tax = tax_data.export_tax * industry_data["industry_vectors"]["Exports in LCU"].sum()
+        export_tax = (
+            tax_data.export_tax
+            * industry_data["industry_vectors"]["Exports in LCU"].sum()
+        )
 
         employee_si_tax = tax_data.employee_social_insurance_tax * total_employee_income
 
-        employee_income_tax = tax_data.income_tax * (1 - tax_data.employee_social_insurance_tax) * total_employee_income
+        employee_income_tax = (
+            tax_data.income_tax
+            * (1 - tax_data.employee_social_insurance_tax)
+            * total_employee_income
+        )
 
         total_rent_paid = synthetic_population.household_data["Rent Paid"].sum()
         rental_income_tax = tax_data.income_tax * total_rent_paid
 
-        financial_assets_income = synthetic_population.household_data["Income from Financial Assets"].sum()
+        financial_assets_income = synthetic_population.household_data[
+            "Income from Financial Assets"
+        ].sum()
         financial_income_tax = tax_data.income_tax * financial_assets_income
 
         income_tax = employee_income_tax + rental_income_tax + financial_income_tax
 
         cf_tax = tax_data.capital_formation_tax
 
-        household_gross_capital_inputs = industry_data["industry_vectors"]["Household Capital Inputs in LCU"].sum()
+        household_gross_capital_inputs = industry_data["industry_vectors"][
+            "Household Capital Inputs in LCU"
+        ].sum()
 
         self.set_revenue(
             total_social_housing_rent=total_social_housing_rent,
@@ -227,9 +254,13 @@ class SyntheticCentralGovernment(ABC):
         self.central_gov_data["Total Social Housing Rent"] = [total_social_housing_rent]
         self.central_gov_data["Taxes on Production"] = [firm_taxes_and_subsidies]
         self.central_gov_data["VAT"] = [household_vat]
-        self.central_gov_data["Capital Formation Taxes"] = [cf_tax * household_gross_capital_inputs]
+        self.central_gov_data["Capital Formation Taxes"] = [
+            cf_tax * household_gross_capital_inputs
+        ]
         self.central_gov_data["Export Taxes"] = [export_tax]
-        self.central_gov_data["Corporate Taxes"] = [firm_corporate_taxes + bank_corporate_taxes]
+        self.central_gov_data["Corporate Taxes"] = [
+            firm_corporate_taxes + bank_corporate_taxes
+        ]
         self.central_gov_data["Employer SI Tax"] = [firm_employer_si_tax]
         self.central_gov_data["Employee SI Tax"] = [employee_si_tax]
         self.central_gov_data["Income Taxes"] = [income_tax]
@@ -247,5 +278,8 @@ class SyntheticCentralGovernment(ABC):
             + income_tax
         ]
         self.central_gov_data["Taxes on Products"] = [
-            firm_taxes_and_subsidies + household_vat + cf_tax * household_gross_capital_inputs + export_tax
+            firm_taxes_and_subsidies
+            + household_vat
+            + cf_tax * household_gross_capital_inputs
+            + export_tax
         ]

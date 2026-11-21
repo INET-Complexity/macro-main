@@ -231,13 +231,21 @@ class WorkEffortFirmWageSetter(FirmWageSetter):
             rel_failures += np.maximum(
                 0.0,
                 np.divide(
-                    (historic_desired_labour_inputs[-t] - historic_realised_labour_inputs[-t]),
+                    (
+                        historic_desired_labour_inputs[-t]
+                        - historic_realised_labour_inputs[-t]
+                    ),
                     historic_desired_labour_inputs[-t],
                     out=np.zeros(historic_desired_labour_inputs[0].shape),
                     where=historic_desired_labour_inputs[-t] != 0.0,
                 ),
             )
-        return self.labour_market_tightness_markup_scale * 1.0 / self.markup_time_span * rel_failures
+        return (
+            self.labour_market_tightness_markup_scale
+            * 1.0
+            / self.markup_time_span
+            * rel_failures
+        )
 
     def set_employee_income(
         self,
@@ -279,7 +287,9 @@ class WorkEffortFirmWageSetter(FirmWageSetter):
             np.ndarray: Updated employee incomes adjusted for all factors
         """
         tax = (1.0 + employer_social_insurance_tax) / (
-            1 - employee_social_insurance_tax - income_taxes * (1 - employee_social_insurance_tax)
+            1
+            - employee_social_insurance_tax
+            - income_taxes * (1 - employee_social_insurance_tax)
         )
 
         """
@@ -313,7 +323,9 @@ class WorkEffortFirmWageSetter(FirmWageSetter):
             * current_labour_productivity_factor
             * initial_wage_per_capita
         )
-        scaled_real_wages_by_individual[emp_ind] = scaled_real_wages[corresponding_firm[emp_ind]]
+        scaled_real_wages_by_individual[emp_ind] = scaled_real_wages[
+            corresponding_firm[emp_ind]
+        ]
         return scaled_real_wages_by_individual / tax
 
     def get_offered_wage_given_labour_inputs_function(

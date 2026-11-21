@@ -255,7 +255,8 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
             np.ndarray: New short-term firm loan rates by bank
         """
         return prev_interest_rates_on_short_term_firm_loans + firm_ect * (
-            prev_interest_rates_on_short_term_firm_loans - firm_pt * central_bank_policy_rate
+            prev_interest_rates_on_short_term_firm_loans
+            - firm_pt * central_bank_policy_rate
         )
 
     def get_interest_rates_on_long_term_firm_loans(
@@ -284,7 +285,8 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
             np.ndarray: New long-term firm loan rates by bank
         """
         return prev_interest_rates_on_long_term_firm_loans + firm_ect * (
-            prev_interest_rates_on_long_term_firm_loans - firm_pt * central_bank_policy_rate
+            prev_interest_rates_on_long_term_firm_loans
+            - firm_pt * central_bank_policy_rate
         )
 
     def get_interest_rates_on_household_consumption_loans(
@@ -313,7 +315,8 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
             np.ndarray: New household consumption loan rates by bank
         """
         return prev_interest_rate_on_hh_consumption_loans + hh_cons_ect * (
-            prev_interest_rate_on_hh_consumption_loans - hh_cons_pt * central_bank_policy_rate
+            prev_interest_rate_on_hh_consumption_loans
+            - hh_cons_pt * central_bank_policy_rate
         )
 
     def get_interest_rate_on_mortgages(
@@ -366,7 +369,9 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
         Returns:
             np.ndarray: New firm deposit rates by bank
         """
-        return np.full(prev_interest_rate_on_firm_deposits.shape, central_bank_policy_rate)
+        return np.full(
+            prev_interest_rate_on_firm_deposits.shape, central_bank_policy_rate
+        )
 
     def compute_overdraft_rate_on_firm_deposits(
         self,
@@ -418,7 +423,9 @@ class DefaultInterestRatesSetter(InterestRatesSetter):
         Returns:
             np.ndarray: New household deposit rates by bank
         """
-        return np.full(prev_interest_rate_on_hh_deposits.shape, central_bank_policy_rate)
+        return np.full(
+            prev_interest_rate_on_hh_deposits.shape, central_bank_policy_rate
+        )
 
     def compute_overdraft_rate_on_household_deposits(
         self,

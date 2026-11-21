@@ -162,7 +162,9 @@ class DefaultHousingMarketClearer(HousingMarketClearer):
         )
 
         # Combine both
-        all_transactions = pd.concat((matching_sales, matching_rental), axis=0).reset_index(drop=True)
+        all_transactions = pd.concat(
+            (matching_sales, matching_rental), axis=0
+        ).reset_index(drop=True)
         all_transactions["property_id"] = all_transactions["property_id"].astype(int)
         all_transactions["seller_id"] = all_transactions["seller_id"].astype(int)
         all_transactions["buyer_id"] = all_transactions["buyer_id"].astype(int)
@@ -247,8 +249,12 @@ class DefaultHousingMarketClearer(HousingMarketClearer):
             if is_rental_market:
                 new_price_or_rent.append(float(housing_data.loc[property_id, "Rent"]))
             else:
-                new_price_or_rent.append(float(housing_data.loc[property_id, "Sale Price"]))
-            new_seller_id.append(int(housing_data.loc[property_id, "Corresponding Owner Household ID"]))
+                new_price_or_rent.append(
+                    float(housing_data.loc[property_id, "Sale Price"])
+                )
+            new_seller_id.append(
+                int(housing_data.loc[property_id, "Corresponding Owner Household ID"])
+            )
             new_buyer_id.append(int(household_id))
 
         # Return new (potential!) transactions
@@ -312,7 +318,9 @@ class AutomaticHousingMarketClearer(HousingMarketClearer):
         )
 
         # Combine both
-        all_transactions = pd.concat((matching_sales, matching_rental), axis=0).reset_index(drop=True)
+        all_transactions = pd.concat(
+            (matching_sales, matching_rental), axis=0
+        ).reset_index(drop=True)
         all_transactions["property_id"] = all_transactions["property_id"].astype(int)
         all_transactions["seller_id"] = all_transactions["seller_id"].astype(int)
         all_transactions["buyer_id"] = all_transactions["buyer_id"].astype(int)
@@ -403,7 +411,9 @@ class AutomaticHousingMarketClearer(HousingMarketClearer):
                 "property_id": abs_properties,
                 "property_value": housing_data.loc[abs_properties, "Value"].values,
                 "price_or_rent": housing_data.loc[abs_properties, price_field].values,
-                "seller_id": housing_data.loc[abs_properties, "Corresponding Owner Household ID"].values,
+                "seller_id": housing_data.loc[
+                    abs_properties, "Corresponding Owner Household ID"
+                ].values,
                 "buyer_id": abs_households,
             }
         )

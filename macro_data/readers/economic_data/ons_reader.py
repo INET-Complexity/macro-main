@@ -116,7 +116,9 @@ class ONSReader:
         """
         # get shape parameters for zeta distribution
         firms_df = self.data["uk_firm_sizes"]
-        group_means = [np.mean([int(val) for val in c.split("-")]) for c in firms_df.columns[:-1]]
+        group_means = [
+            np.mean([int(val) for val in c.split("-")]) for c in firms_df.columns[:-1]
+        ]
         shapes = {}
         for i, row in firms_df.iterrows():
             freq = row[:-1].map(lambda x: int(x.replace(",", "")))

@@ -46,7 +46,9 @@ class Sampler:
         simulation_configuration: SimulationConfiguration,
         datawrapper: DataWrapper,
         n_cores: int,
-        configuration_updater: Callable[[SimulationConfiguration, np.ndarray], SimulationConfiguration],
+        configuration_updater: Callable[
+            [SimulationConfiguration, np.ndarray], SimulationConfiguration
+        ],
         observer: Callable[[Simulation], np.ndarray],
     ):
         self.base_configuration = simulation_configuration
@@ -109,7 +111,9 @@ class Sampler:
             country_conf = CountryConfiguration.n_industry_default(data.n_industries)
         country_configurations = {country: country_conf for country in countries}
 
-        configuration = SimulationConfiguration(country_configurations=country_configurations, t_max=15, seed=0)
+        configuration = SimulationConfiguration(
+            country_configurations=country_configurations, t_max=15, seed=0
+        )
 
         if n_cores is None:
             n_cores = os.cpu_count() // 2
@@ -132,7 +136,9 @@ class Sampler:
         )
         return model
 
-    def simulator_from_model(self, model: Simulation) -> Callable[[np.ndarray], np.ndarray]:
+    def simulator_from_model(
+        self, model: Simulation
+    ) -> Callable[[np.ndarray], np.ndarray]:
         """
         Returns a simulator function that takes a vector of new parameters and returns a vector of observables,
         computed using those parameters. The observables are computed from a simulation run using the observer function.
@@ -149,7 +155,9 @@ class Sampler:
         """
 
         def simulator(theta: np.ndarray) -> np.ndarray:
-            new_configuration = self.configuration_updater(self.base_configuration, theta)
+            new_configuration = self.configuration_updater(
+                self.base_configuration, theta
+            )
             model.reset(configuration=new_configuration)
             model.run()
             return self.observer(model)
@@ -179,7 +187,9 @@ class Sampler:
         simulations = [sim(theta) for theta in thetas]
         return {"thetas": thetas, "simulations": simulations}
 
-    def parallel_run(self, n_runs: int, prior_sampler: PriorSampler) -> list[np.ndarray]:
+    def parallel_run(
+        self, n_runs: int, prior_sampler: PriorSampler
+    ) -> list[np.ndarray]:
         """
         Runs the simulation in parallel in all cores.
 
@@ -204,7 +214,9 @@ class Sampler:
         # dic_list = [self.core_run(n_runs, prior_sampler) for _ in range(self.n_cores)]
         return dic_list
 
-    def simple_run(self, theta: np.ndarray, model: Optional[Simulation] = None) -> Simulation:
+    def simple_run(
+        self, theta: np.ndarray, model: Optional[Simulation] = None
+    ) -> Simulation:
         """
         Runs a single simulation with a given set of parameters.
 

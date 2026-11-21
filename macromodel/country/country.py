@@ -250,18 +250,26 @@ class Country:
         scale = synthetic_country.scale
 
         emission_industries = ["B05a", "B05b", "B05c", "C19"]
-        add_emissions = all([industry in industries for industry in emission_industries])
+        add_emissions = all(
+            [industry in industries for industry in emission_industries]
+        )
 
         if add_emissions:
-            emitting_indices = np.array([list(industries).index(industry) for industry in emission_industries])
+            emitting_indices = np.array(
+                [list(industries).index(industry) for industry in emission_industries]
+            )
             emission_factors_lcu = synthetic_country.emission_factors.emissions_array
         else:
             emitting_indices = None
             emission_factors_lcu = None
 
         if synthetic_country.emission_factors_ch4 is not None:
-            emission_factors_lcu_ch4 = synthetic_country.emission_factors_ch4.emission_factors
-            emitting_indices_ch4 = synthetic_country.emission_factors_ch4.emitting_indices
+            emission_factors_lcu_ch4 = (
+                synthetic_country.emission_factors_ch4.emission_factors
+            )
+            emitting_indices_ch4 = (
+                synthetic_country.emission_factors_ch4.emitting_indices
+            )
         else:
             emission_factors_lcu_ch4 = None
             emitting_indices_ch4 = None
@@ -278,9 +286,9 @@ class Country:
             scale=scale,
         )
 
-        initial_consumption_by_industry = synthetic_country.industry_data["industry_vectors"][
-            "Household Consumption in LCU"
-        ]
+        initial_consumption_by_industry = synthetic_country.industry_data[
+            "industry_vectors"
+        ]["Household Consumption in LCU"]
         emission_fractions = synthetic_country.emission_fractions
 
         households = Households.from_pickled_agent(
@@ -297,7 +305,9 @@ class Country:
             emission_fractions=emission_fractions,
         )
 
-        average_initial_price = synthetic_country.industry_data["industry_vectors"]["Average Initial Price"].values
+        average_initial_price = synthetic_country.industry_data["industry_vectors"][
+            "Average Initial Price"
+        ].values
         firm_exo_prices = synthetic_country.firm_exo_prices
         if firm_exo_prices is not None:
             firm_exo_prices.initial_year = initial_year
@@ -315,9 +325,13 @@ class Country:
             firm_exo_prices=firm_exo_prices,
         )
 
-        taxes_less_subsidies = synthetic_country.industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values
+        taxes_less_subsidies = synthetic_country.industry_data["industry_vectors"][
+            "Taxes Less Subsidies Rates"
+        ].values
 
-        n_unemployed = (individuals.states["Activity Status"] == ActivityStatus.UNEMPLOYED).sum()
+        n_unemployed = (
+            individuals.states["Activity Status"] == ActivityStatus.UNEMPLOYED
+        ).sum()
 
         central_government = CentralGovernment.from_pickled_agent(
             synthetic_central_government=synthetic_country.central_government,
@@ -477,11 +491,17 @@ class Country:
         economic variables used in decision-making.
         """
         self.economy.set_estimates(
-            exogenous_growth=self.exogenous.national_accounts_before["Real Gross Output (Growth)"].values,
+            exogenous_growth=self.exogenous.national_accounts_before[
+                "Real Gross Output (Growth)"
+            ].values,
             exogenous_inflation=self.exogenous.inflation_before,
             exogenous_hpi_growth=self.exogenous.house_price_index_before,
-            exogenous_ppi_inflation_during=self.exogenous.national_accounts_during["PPI (Growth)"].values.flatten(),
-            exogenous_cpi_inflation_during=self.exogenous.national_accounts_during["CPI (Growth)"].values.flatten(),
+            exogenous_ppi_inflation_during=self.exogenous.national_accounts_during[
+                "PPI (Growth)"
+            ].values.flatten(),
+            exogenous_cpi_inflation_during=self.exogenous.national_accounts_during[
+                "CPI (Growth)"
+            ].values.flatten(),
             exogenous_growth_during=self.exogenous.national_accounts_during[
                 "Real Gross Output (Growth)"
             ].values.flatten(),
@@ -502,7 +522,9 @@ class Country:
         """
         # Firms set production targets
         self.firms.set_targets(
-            bank_overdraft_rate_on_firm_deposits=self.banks.ts.current("overdraft_rate_on_firm_deposits"),
+            bank_overdraft_rate_on_firm_deposits=self.banks.ts.current(
+                "overdraft_rate_on_firm_deposits"
+            ),
             estimated_growth=self.economy.ts.current("estimated_growth")[0],
             estimated_inflation=self.economy.ts.current("estimated_ppi_inflation")[0],
             current_good_prices=self.economy.ts.current("good_prices"),
@@ -559,7 +581,9 @@ class Country:
         self.firms.ts.expected_profits.append(
             self.firms.compute_estimated_profits(
                 estimated_growth=self.economy.ts.current("estimated_growth")[0],
-                estimated_inflation=self.economy.ts.current("estimated_ppi_inflation")[0],
+                estimated_inflation=self.economy.ts.current("estimated_ppi_inflation")[
+                    0
+                ],
             )
         )
 
@@ -567,7 +591,9 @@ class Country:
         self.banks.ts.expected_profits.append(
             self.banks.compute_estimated_profits(
                 estimated_growth=self.economy.ts.current("estimated_growth")[0],
-                estimated_inflation=self.economy.ts.current("estimated_ppi_inflation")[0],
+                estimated_inflation=self.economy.ts.current("estimated_ppi_inflation")[
+                    0
+                ],
             )
         )
 
@@ -575,15 +601,21 @@ class Country:
         self.firms.ts.expected_capital_inputs_stock_value.append(
             self.firms.compute_expected_capital_inputs_stock_value(
                 current_good_prices=self.economy.ts.current("good_prices"),
-                estimated_inflation=self.economy.ts.current("estimated_ppi_inflation")[0],
+                estimated_inflation=self.economy.ts.current("estimated_ppi_inflation")[
+                    0
+                ],
             )
         )
 
         # The central government updates unemployment benefits paid to individuals and social transfers to households
         self.central_government.update_benefits(
             historic_ppi_inflation=self.economy.ts.historic("ppi_inflation"),
-            exogenous_ppi_inflation=self.exogenous.inflation_before["PPI Inflation"].values,
-            current_estimated_ppi_inflation=self.economy.ts.current("estimated_ppi_inflation")[0],
+            exogenous_ppi_inflation=self.exogenous.inflation_before[
+                "PPI Inflation"
+            ].values,
+            current_estimated_ppi_inflation=self.economy.ts.current(
+                "estimated_ppi_inflation"
+            )[0],
             current_unemployment_rate=self.economy.ts.current("unemployment_rate")[0],
             current_estimated_growth=self.economy.ts.current("estimated_growth")[0],
         )
@@ -591,12 +623,16 @@ class Country:
         # Individuals update their income from unemployment benefits
         self.individuals.ts.income_from_unemployment_benefits.append(
             self.central_government.distribute_unemployment_benefits_to_individuals(
-                current_individual_activity_status=self.individuals.states["Activity Status"],
+                current_individual_activity_status=self.individuals.states[
+                    "Activity Status"
+                ],
             )
         )
 
         # Individual labour inputs
-        self.individuals.ts.labour_inputs.append(self.individuals.compute_labour_inputs())
+        self.individuals.ts.labour_inputs.append(
+            self.individuals.compute_labour_inputs()
+        )
 
         # Central bank policy rate
         self.central_bank.ts.policy_rate.append(
@@ -619,7 +655,8 @@ class Country:
         )
         self.firms.ts.output_by_employee_histogram.append(
             get_histogram(
-                self.firms.ts.current("production") / self.firms.ts.current("number_of_employees"),
+                self.firms.ts.current("production")
+                / self.firms.ts.current("number_of_employees"),
                 None,
             )
         )
@@ -634,15 +671,27 @@ class Country:
         self.individuals.ts.employee_income.append(
             self.firms.set_employee_income(
                 corresponding_firm=self.individuals.states["Corresponding Firm ID"],
-                current_individual_labour_inputs=self.individuals.ts.current("labour_inputs"),
-                current_individual_stating_new_job=self.individuals.states["Started New Job"],
+                current_individual_labour_inputs=self.individuals.ts.current(
+                    "labour_inputs"
+                ),
+                current_individual_stating_new_job=self.individuals.states[
+                    "Started New Job"
+                ],
                 current_employee_income=self.individuals.ts.current("employee_income"),
-                current_individual_offered_wage=self.individuals.states["Offered Wage of Accepted Job"],
+                current_individual_offered_wage=self.individuals.states[
+                    "Offered Wage of Accepted Job"
+                ],
                 labour_inputs_from_employees=labour_inputs_from_employees,
-                estimated_ppi_inflation=self.economy.ts.current("estimated_ppi_inflation")[0],
+                estimated_ppi_inflation=self.economy.ts.current(
+                    "estimated_ppi_inflation"
+                )[0],
                 income_taxes=self.central_government.states["Income Tax"],
-                employee_social_insurance_tax=self.central_government.states["Employee Social Insurance Tax"],
-                employer_social_insurance_tax=self.central_government.states["Employer Social Insurance Tax"],
+                employee_social_insurance_tax=self.central_government.states[
+                    "Employee Social Insurance Tax"
+                ],
+                employer_social_insurance_tax=self.central_government.states[
+                    "Employer Social Insurance Tax"
+                ],
             )
         )
         self.individuals.ts.employee_income_histogram.append(
@@ -660,15 +709,21 @@ class Country:
             self.firms.ts.production.append(self.firms.ts.initial("production"))
         else:
             self.firms.ts.production.append(self.firms.compute_production())
-        self.firms.ts.production_histogram.append(get_histogram(self.firms.ts.current("production"), None))
+        self.firms.ts.production_histogram.append(
+            get_histogram(self.firms.ts.current("production"), None)
+        )
 
         # Firm prices
         if not self.assume_zero_growth:
             self.firms.ts.price.append(
                 self.firms.compute_price(
-                    current_estimated_ppi_inflation=self.economy.ts.current("estimated_ppi_inflation")[0],
+                    current_estimated_ppi_inflation=self.economy.ts.current(
+                        "estimated_ppi_inflation"
+                    )[0],
                     previous_average_good_prices=self.economy.ts.current("good_prices"),
-                    ppi_during=self.exogenous.national_accounts_during["PPI (Value)"].values.flatten(),
+                    ppi_during=self.exogenous.national_accounts_during[
+                        "PPI (Value)"
+                    ].values.flatten(),
                 )
             )
 
@@ -700,7 +755,9 @@ class Country:
                 expected_firm_profits=self.firms.ts.current("expected_profits"),
                 expected_bank_profits=self.banks.ts.current("expected_profits"),
                 cpi=self.economy.ts.current("cpi")[0],
-                expected_inflation=self.economy.ts.current("estimated_cpi_inflation")[0],
+                expected_inflation=self.economy.ts.current("estimated_cpi_inflation")[
+                    0
+                ],
                 income_taxes=self.central_government.states["Income Tax"],
                 tau_firm=self.central_government.states["Profit Tax"],
             )
@@ -715,9 +772,13 @@ class Country:
         )
         self.households.ts.expected_income_social_transfers.append(
             self.households.compute_expected_social_transfer_income(
-                total_other_social_transfers=self.central_government.ts.current("total_other_benefits")[0],
+                total_other_social_transfers=self.central_government.ts.current(
+                    "total_other_benefits"
+                )[0],
                 cpi=self.economy.ts.current("cpi")[0],
-                expected_inflation=self.economy.ts.current("estimated_cpi_inflation")[0],
+                expected_inflation=self.economy.ts.current("estimated_cpi_inflation")[
+                    0
+                ],
             )
         )
         self.households.ts.income_rental.append(
@@ -726,11 +787,15 @@ class Country:
                 income_taxes=self.central_government.states["Income Tax"],
             )
         )
-        self.households.ts.total_income_rental.append([self.households.ts.current("income_rental").sum()])
+        self.households.ts.total_income_rental.append(
+            [self.households.ts.current("income_rental").sum()]
+        )
         self.households.ts.expected_income_financial_assets.append(
             self.households.compute_expected_income_from_financial_assets()
         )
-        self.households.ts.expected_income.append(self.households.compute_expected_income())
+        self.households.ts.expected_income.append(
+            self.households.compute_expected_income()
+        )
 
         # Household target consumption
         # Note: For CES substitution, we track additional taxes (like carbon tax) similar to firms
@@ -741,7 +806,9 @@ class Country:
 
         self.households.ts.target_consumption.append(
             self.households.compute_target_consumption(
-                expected_inflation=self.economy.ts.current("estimated_cpi_inflation")[0],
+                expected_inflation=self.economy.ts.current("estimated_cpi_inflation")[
+                    0
+                ],
                 current_cpi=self.economy.ts.current("cpi")[0],
                 initial_cpi=self.economy.ts.initial("cpi")[0],
                 exogenous_total_consumption=self.exogenous.national_accounts_during[
@@ -762,7 +829,9 @@ class Country:
         # Household target investment
         self.households.ts.target_investment.append(
             self.households.compute_target_investment(
-                expected_inflation=self.economy.ts.current("estimated_cpi_inflation")[0],
+                expected_inflation=self.economy.ts.current("estimated_cpi_inflation")[
+                    0
+                ],
                 current_cpi=self.economy.ts.current("cpi")[0],
                 initial_cpi=self.economy.ts.initial("cpi")[0],
                 exogenous_total_investment=self.exogenous.national_accounts_during[
@@ -785,8 +854,12 @@ class Country:
         # Decide on whether to remain, rent or buy
         self.households.prepare_housing_market_clearing(
             housing_data=self.housing_market.states["properties"],
-            observed_fraction_value_price=self.housing_market.ts.current("observed_fraction_value_price"),
-            observed_fraction_rent_value=self.housing_market.ts.current("observed_fraction_rent_value"),
+            observed_fraction_value_price=self.housing_market.ts.current(
+                "observed_fraction_value_price"
+            ),
+            observed_fraction_rent_value=self.housing_market.ts.current(
+                "observed_fraction_rent_value"
+            ),
             expected_hpi_growth=self.economy.ts.current("estimated_hpi_inflation")[0],
             assumed_mortgage_maturity=self.banks.parameters.mortgage_maturity,
             rental_income_taxes=self.central_government.states["Income Tax"],
@@ -796,7 +869,9 @@ class Country:
         self.households.update_rent(
             housing_data=self.housing_market.states["properties"],
             historic_inflation=self.economy.ts.historic("cpi_inflation"),
-            exogenous_inflation_before=self.exogenous.inflation_before["CPI Inflation"].values,
+            exogenous_inflation_before=self.exogenous.inflation_before[
+                "CPI Inflation"
+            ].values,
         )
 
     def clear_housing_market(self) -> None:
@@ -806,9 +881,15 @@ class Country:
         property transactions.
         """
         self.housing_market.clear(
-            household_main_residence_tenure_status=self.households.states["Tenure Status of the Main Residence"],
-            max_price_willing_to_pay=self.households.ts.current("max_price_willing_to_pay"),
-            max_rent_willing_to_pay=self.households.ts.current("max_rent_willing_to_pay"),
+            household_main_residence_tenure_status=self.households.states[
+                "Tenure Status of the Main Residence"
+            ],
+            max_price_willing_to_pay=self.households.ts.current(
+                "max_price_willing_to_pay"
+            ),
+            max_rent_willing_to_pay=self.households.ts.current(
+                "max_rent_willing_to_pay"
+            ),
         )
 
     def prepare_credit_market_clearing(self) -> None:
@@ -825,7 +906,9 @@ class Country:
                 self.housing_market.states["current_sales"]["sales_types"] == "Rental"
             ],
         )
-        self.banks.set_interest_rates(central_bank_policy_rate=self.central_bank.ts.current("policy_rate")[0])
+        self.banks.set_interest_rates(
+            central_bank_policy_rate=self.central_bank.ts.current("policy_rate")[0]
+        )
 
     def clear_credit_market(self) -> None:
         """Execute credit market clearing.
@@ -856,8 +939,12 @@ class Country:
         )
         self.housing_market.process_housing_market_clearing(
             household_states=self.households.states,
-            household_received_mortgages=self.households.ts.current("received_mortgages"),
-            household_financial_wealth=self.households.ts.current("wealth_financial_assets"),
+            household_received_mortgages=self.households.ts.current(
+                "received_mortgages"
+            ),
+            household_financial_wealth=self.households.ts.current(
+                "wealth_financial_assets"
+            ),
         )
         self.households.process_housing_market_clearing(
             housing_data=self.housing_market.states["properties"],
@@ -867,7 +954,9 @@ class Country:
             ],
             current_unemployment_benefits_by_individual=self.central_government.ts.current(
                 "unemployment_benefits_by_individual"
-            )[0],
+            )[
+                0
+            ],
         )
 
     def process_credit_market_clearing(self) -> None:
@@ -877,28 +966,46 @@ class Country:
         positions after market clearing.
         """
         # Handle debt installments
-        self.firms.ts.debt_installments.append(self.credit_market.pay_firm_installments())
-        self.firms.ts.total_debt_installments.append([self.firms.ts.current("debt_installments").sum()])
-        self.households.ts.debt_installments.append(self.credit_market.pay_household_installments())
-        self.households.ts.total_debt_installments.append([self.households.ts.current("debt_installments").sum()])
+        self.firms.ts.debt_installments.append(
+            self.credit_market.pay_firm_installments()
+        )
+        self.firms.ts.total_debt_installments.append(
+            [self.firms.ts.current("debt_installments").sum()]
+        )
+        self.households.ts.debt_installments.append(
+            self.credit_market.pay_household_installments()
+        )
+        self.households.ts.total_debt_installments.append(
+            [self.households.ts.current("debt_installments").sum()]
+        )
         self.credit_market.remove_repaid_loans()
 
         # Compute aggregates
         self.credit_market.compute_aggregates()
 
         # Calculate firm debt
-        self.firms.ts.short_term_loan_debt.append(self.credit_market.compute_outstanding_short_term_loans_by_firm())
-        self.firms.ts.long_term_loan_debt.append(self.credit_market.compute_outstanding_long_term_loans_by_firm())
+        self.firms.ts.short_term_loan_debt.append(
+            self.credit_market.compute_outstanding_short_term_loans_by_firm()
+        )
+        self.firms.ts.long_term_loan_debt.append(
+            self.credit_market.compute_outstanding_long_term_loans_by_firm()
+        )
         self.firms.ts.debt.append(self.firms.compute_debt())
 
         # Calculate the interest on loans paid by firms
-        self.firms.ts.interest_paid_on_loans.append(self.credit_market.compute_interest_paid_by_firm())
+        self.firms.ts.interest_paid_on_loans.append(
+            self.credit_market.compute_interest_paid_by_firm()
+        )
 
         # Calculate the interest on deposits received/paid by firms
         self.firms.ts.interest_paid_on_deposits.append(
             self.firms.compute_interest_paid_on_deposits(
-                bank_interest_rate_on_firm_deposits=self.banks.ts.current("interest_rate_on_firm_deposits"),
-                bank_overdraft_rate_on_firm_deposits=self.banks.ts.current("overdraft_rate_on_firm_deposits"),
+                bank_interest_rate_on_firm_deposits=self.banks.ts.current(
+                    "interest_rate_on_firm_deposits"
+                ),
+                bank_overdraft_rate_on_firm_deposits=self.banks.ts.current(
+                    "overdraft_rate_on_firm_deposits"
+                ),
             )
         )
 
@@ -909,18 +1016,28 @@ class Country:
         self.households.ts.consumption_loan_debt.append(
             self.credit_market.compute_outstanding_consumption_loans_by_household()
         )
-        self.households.ts.mortgage_debt.append(self.credit_market.compute_outstanding_mortgages_by_household())
+        self.households.ts.mortgage_debt.append(
+            self.credit_market.compute_outstanding_mortgages_by_household()
+        )
         self.households.ts.debt.append(self.households.compute_debt())
-        self.households.ts.debt_histogram.append(get_histogram(self.households.ts.current("debt"), self.scale))
+        self.households.ts.debt_histogram.append(
+            get_histogram(self.households.ts.current("debt"), self.scale)
+        )
 
         # Calculate the interest on loans paid by households
-        self.households.ts.interest_paid_on_loans.append(self.credit_market.compute_interest_paid_by_household())
+        self.households.ts.interest_paid_on_loans.append(
+            self.credit_market.compute_interest_paid_by_household()
+        )
 
         # Calculate the interest on deposits received/paid by households
         self.households.ts.interest_paid_on_deposits.append(
             self.households.compute_interest_paid_on_deposits(
-                bank_interest_rate_on_household_deposits=self.banks.ts.current("interest_rate_on_household_deposits"),
-                bank_overdraft_rate_on_household_deposits=self.banks.ts.current("overdraft_rate_on_household_deposits"),
+                bank_interest_rate_on_household_deposits=self.banks.ts.current(
+                    "interest_rate_on_household_deposits"
+                ),
+                bank_overdraft_rate_on_household_deposits=self.banks.ts.current(
+                    "overdraft_rate_on_household_deposits"
+                ),
             )
         )
 
@@ -928,7 +1045,9 @@ class Country:
         self.households.ts.interest_paid.append(self.households.compute_interest_paid())
 
         # Calculate the interest on loans received by banks
-        self.banks.ts.interest_received_on_loans.append(self.credit_market.compute_interest_received_by_bank())
+        self.banks.ts.interest_received_on_loans.append(
+            self.credit_market.compute_interest_received_by_bank()
+        )
 
     def prepare_goods_market_clearing(self) -> None:
         """Prepare for goods market transactions.
@@ -949,13 +1068,19 @@ class Country:
             exchange_rate_usd_to_lcu=self.exchange_rate_usd_to_lcu,
             exogenous_gov_consumption_before=(
                 None
-                if "Real Government Consumption (Value)" not in self.exogenous.national_accounts_before.columns
-                else self.exogenous.national_accounts_before["Real Government Consumption (Value)"].values.flatten()
+                if "Real Government Consumption (Value)"
+                not in self.exogenous.national_accounts_before.columns
+                else self.exogenous.national_accounts_before[
+                    "Real Government Consumption (Value)"
+                ].values.flatten()
             ),
             exogenous_gov_consumption_during=(
                 None
-                if "Real Government Consumption (Value)" not in self.exogenous.national_accounts_during.columns
-                else self.exogenous.national_accounts_during["Real Government Consumption (Value)"].values.flatten()
+                if "Real Government Consumption (Value)"
+                not in self.exogenous.national_accounts_during.columns
+                else self.exogenous.national_accounts_during[
+                    "Real Government Consumption (Value)"
+                ].values.flatten()
             ),
             initial_good_prices=self.economy.ts.initial("good_prices"),
             current_good_prices=self.economy.ts.current("good_prices"),
@@ -1046,12 +1171,24 @@ class Country:
         # Update core economic indicators and market metrics
         self.economy.compute_price_indicators(
             firm_real_amount_bought=self.firms.ts.current("real_amount_bought"),
-            firm_nominal_amount_spent=self.firms.ts.current("nominal_amount_spent_in_lcu"),
-            household_real_amount_bought=self.households.ts.current("real_amount_bought"),
-            household_nominal_amount_spent=self.households.ts.current("nominal_amount_spent_in_lcu"),
-            government_real_amount_bought=self.government_entities.ts.current("real_amount_bought"),
-            government_nominal_amount_spent=self.government_entities.ts.current("nominal_amount_spent_in_lcu"),
-            firms_real_amount_bought_as_capital_goods=self.firms.ts.current("real_amount_bought_as_capital_goods"),
+            firm_nominal_amount_spent=self.firms.ts.current(
+                "nominal_amount_spent_in_lcu"
+            ),
+            household_real_amount_bought=self.households.ts.current(
+                "real_amount_bought"
+            ),
+            household_nominal_amount_spent=self.households.ts.current(
+                "nominal_amount_spent_in_lcu"
+            ),
+            government_real_amount_bought=self.government_entities.ts.current(
+                "real_amount_bought"
+            ),
+            government_nominal_amount_spent=self.government_entities.ts.current(
+                "nominal_amount_spent_in_lcu"
+            ),
+            firms_real_amount_bought_as_capital_goods=self.firms.ts.current(
+                "real_amount_bought_as_capital_goods"
+            ),
         )
         self.economy.compute_inflation()
         self.economy.compute_growth(
@@ -1064,14 +1201,22 @@ class Country:
             previous_property_values=self.housing_market.ts.prev("property_values"),
         )
         self.economy.compute_labour_market_aggregates(
-            current_individual_activity_status=self.individuals.states["Activity Status"],
-            current_firm_labour_inputs=self.firms.ts.current("labour_inputs"),
-            current_desired_firm_labour_inputs=self.firms.ts.current("desired_labour_inputs"),
-            num_ind_employed_before_cleaning=self.labour_market.ts.current("num_employed_individuals_before_clearing")[
-                0
+            current_individual_activity_status=self.individuals.states[
+                "Activity Status"
             ],
-            num_ind_newly_joining=self.labour_market.ts.current("num_individuals_newly_joining")[0],
-            num_ind_newly_leaving=self.labour_market.ts.current("num_individuals_newly_leaving")[0],
+            current_firm_labour_inputs=self.firms.ts.current("labour_inputs"),
+            current_desired_firm_labour_inputs=self.firms.ts.current(
+                "desired_labour_inputs"
+            ),
+            num_ind_employed_before_cleaning=self.labour_market.ts.current(
+                "num_employed_individuals_before_clearing"
+            )[0],
+            num_ind_newly_joining=self.labour_market.ts.current(
+                "num_individuals_newly_joining"
+            )[0],
+            num_ind_newly_leaving=self.labour_market.ts.current(
+                "num_individuals_newly_leaving"
+            )[0],
         )
         self.economy.compute_rental_market_aggregates(
             real_rent_paid=self.households.ts.current("rent"),
@@ -1117,18 +1262,24 @@ class Country:
             corresponding_firm=self.individuals.states["Corresponding Firm ID"],
             individual_wages=self.individuals.ts.current("employee_income"),
             income_taxes=self.central_government.states["Income Tax"],
-            employee_social_insurance_tax=self.central_government.states["Employee Social Insurance Tax"],
-            employer_social_insurance_tax=self.central_government.states["Employer Social Insurance Tax"],
+            employee_social_insurance_tax=self.central_government.states[
+                "Employee Social Insurance Tax"
+            ],
+            employer_social_insurance_tax=self.central_government.states[
+                "Employer Social Insurance Tax"
+            ],
             cpi=self.economy.ts.current("cpi")[0],
         )
 
         # C3. EMISSIONS AND INVENTORY
         if self.add_emissions:
             readjusted_factors = (
-                self.emission_factors_lcu / self.economy.ts.current("good_prices")[self.emitting_indices]
+                self.emission_factors_lcu
+                / self.economy.ts.current("good_prices")[self.emitting_indices]
             )
             readjusted_factors_ch4 = (
-                self.emission_factors_lcu_ch4 / self.economy.ts.current("good_prices")[self.emitting_indices_ch4]
+                self.emission_factors_lcu_ch4
+                / self.economy.ts.current("good_prices")[self.emitting_indices_ch4]
                 if self.emission_factors_lcu_ch4 is not None
                 else None
             )
@@ -1140,13 +1291,17 @@ class Country:
                 emitting_indices_ch4=self.emitting_indices_ch4,
             )
 
-        self.firms.ts.used_intermediate_inputs.append(self.firms.compute_used_intermediate_inputs())
+        self.firms.ts.used_intermediate_inputs.append(
+            self.firms.compute_used_intermediate_inputs()
+        )
         self.firms.ts.used_intermediate_inputs_costs.append(
             self.firms.compute_used_intermediate_inputs_costs(
                 current_good_prices=self.economy.ts.current("good_prices"),
             )
         )
-        self.firms.ts.used_capital_inputs.append(self.firms.compute_used_capital_inputs())
+        self.firms.ts.used_capital_inputs.append(
+            self.firms.compute_used_capital_inputs()
+        )
         self.firms.ts.used_capital_inputs_costs.append(
             self.firms.compute_used_capital_inputs_costs(
                 current_good_prices=self.economy.ts.current("good_prices"),
@@ -1158,7 +1313,9 @@ class Country:
                 current_good_prices=self.economy.ts.current("good_prices"),
             )
         )
-        self.firms.ts.intermediate_inputs_stock.append(self.firms.compute_intermediate_inputs_stock())
+        self.firms.ts.intermediate_inputs_stock.append(
+            self.firms.compute_intermediate_inputs_stock()
+        )
         self.firms.ts.intermediate_inputs_stock_value.append(
             self.firms.compute_intermediate_inputs_stock_value(
                 current_good_prices=self.economy.ts.current("good_prices"),
@@ -1167,21 +1324,29 @@ class Country:
         self.firms.ts.intermediate_inputs_stock_industry.append(
             self.firms.ts.current("intermediate_inputs_stock").sum(axis=0)
         )
-        self.firms.ts.capital_inputs_stock.append(self.firms.compute_capital_inputs_stock())
+        self.firms.ts.capital_inputs_stock.append(
+            self.firms.compute_capital_inputs_stock()
+        )
         self.firms.ts.capital_inputs_stock_value.append(
             self.firms.compute_intermediate_inputs_stock_value(
                 current_good_prices=self.economy.ts.current("good_prices"),
             )
         )
-        self.firms.ts.capital_inputs_stock_industry.append(self.firms.ts.current("capital_inputs_stock").sum(axis=0))
+        self.firms.ts.capital_inputs_stock_industry.append(
+            self.firms.ts.current("capital_inputs_stock").sum(axis=0)
+        )
 
         # D1. FIRM FINANCIAL METRICS
         # Update firm financial positions
-        self.firms.ts.total_inventory_change.append(self.firms.compute_total_inventory_change())
+        self.firms.ts.total_inventory_change.append(
+            self.firms.compute_total_inventory_change()
+        )
         self.firms.ts.total_sales.append(self.firms.compute_total_sales())
         self.firms.ts.taxes_paid_on_production.append(
             self.firms.compute_taxes_paid_on_production(
-                taxes_less_subsidies_rates=self.central_government.states["Taxes Less Subsidies Rates"],
+                taxes_less_subsidies_rates=self.central_government.states[
+                    "Taxes Less Subsidies Rates"
+                ],
             )
         )
         self.firms.ts.profits.append(self.firms.compute_profits())
@@ -1207,9 +1372,13 @@ class Country:
         npl_firm_loans = self.firms.handle_insolvency(credit_market=self.credit_market)
         self.economy.ts.npl_firm_loans.append([npl_firm_loans])
 
-        firm_insolvency_rate, num_insolvent_firms_by_sector = self.firms.compute_insolvency_rate()
+        firm_insolvency_rate, num_insolvent_firms_by_sector = (
+            self.firms.compute_insolvency_rate()
+        )
         self.economy.ts.firm_insolvency_rate.append([firm_insolvency_rate])
-        self.economy.ts.num_insolvent_firms_by_sector.append(num_insolvent_firms_by_sector)
+        self.economy.ts.num_insolvent_firms_by_sector.append(
+            num_insolvent_firms_by_sector
+        )
 
         self.firms.ts.total_debt.append([self.firms.compute_total_debt()])
         self.firms.ts.total_deposits.append([self.firms.compute_total_deposits()])
@@ -1225,7 +1394,9 @@ class Country:
                 tau_firm=self.central_government.states["Profit Tax"],
             )
         )
-        self.individuals.ts.income_histogram.append(get_histogram(self.individuals.ts.current("income"), self.scale))
+        self.individuals.ts.income_histogram.append(
+            get_histogram(self.individuals.ts.current("income"), self.scale)
+        )
 
         # E2. HOUSEHOLD INCOME COMPONENTS
         # Recalculate rental income with final housing market data and overwrite the planned value
@@ -1234,7 +1405,9 @@ class Country:
             income_taxes=self.central_government.states["Income Tax"],
         )
         self.households.ts.dicts["income_rental"][-1] = final_income_rental
-        self.households.ts.dicts["total_income_rental"][-1] = [final_income_rental.sum()]
+        self.households.ts.dicts["total_income_rental"][-1] = [
+            final_income_rental.sum()
+        ]
 
         self.households.ts.income_employee.append(
             self.households.compute_employee_income(
@@ -1242,22 +1415,30 @@ class Country:
                 corr_households=self.individuals.states["Corresponding Household ID"],
             )
         )
-        self.households.ts.total_income_employee.append([self.households.ts.current("income_employee").sum()])
+        self.households.ts.total_income_employee.append(
+            [self.households.ts.current("income_employee").sum()]
+        )
         self.households.ts.income_social_transfers.append(
             self.households.compute_social_transfer_income(
-                total_other_social_transfers=self.central_government.ts.current("total_other_benefits")[0],
+                total_other_social_transfers=self.central_government.ts.current(
+                    "total_other_benefits"
+                )[0],
                 cpi=self.economy.ts.current("cpi")[0],
             )
         )
         self.households.ts.total_income_social_transfers.append(
             [self.households.ts.current("income_social_transfers").sum()]
         )
-        self.households.ts.income_financial_assets.append(self.households.compute_income_from_financial_assets())
+        self.households.ts.income_financial_assets.append(
+            self.households.compute_income_from_financial_assets()
+        )
         self.households.ts.total_income_financial_assets.append(
             [self.households.ts.current("income_financial_assets").sum()]
         )
         self.households.ts.income.append(self.households.compute_income())
-        self.households.ts.income_histogram.append(get_histogram(self.households.ts.current("income"), self.scale))
+        self.households.ts.income_histogram.append(
+            get_histogram(self.households.ts.current("income"), self.scale)
+        )
 
         # E3. HOUSEHOLD METRICS
         rent_div_income = np.divide(
@@ -1266,16 +1447,20 @@ class Country:
             out=np.zeros(self.households.ts.current("rent").shape),
             where=self.households.ts.current("income") != 0.0,
         )
-        self.households.ts.rent_div_income_histogram.append(get_histogram(rent_div_income, None))
+        self.households.ts.rent_div_income_histogram.append(
+            get_histogram(rent_div_income, None)
+        )
 
         # F1. HOUSEHOLD WEALTH AND CONSUMPTION
         # Update household financial positions
         if self.add_emissions:
             readjusted_factors = (
-                self.emission_factors_lcu / self.economy.ts.current("good_prices")[self.emitting_indices]
+                self.emission_factors_lcu
+                / self.economy.ts.current("good_prices")[self.emitting_indices]
             )
             readjusted_factors_ch4 = (
-                self.emission_factors_lcu_ch4 / self.economy.ts.current("good_prices")[self.emitting_indices_ch4]
+                self.emission_factors_lcu_ch4
+                / self.economy.ts.current("good_prices")[self.emitting_indices_ch4]
                 if self.emission_factors_lcu_ch4 is not None
                 else None
             )
@@ -1297,13 +1482,17 @@ class Country:
             housing_data=self.housing_market.states["properties"],
             tau_cf=self.central_government.states["Capital Formation Tax"],
         )
-        self.households.ts.wealth_histogram.append(get_histogram(self.households.ts.current("wealth"), self.scale))
+        self.households.ts.wealth_histogram.append(
+            get_histogram(self.households.ts.current("wealth"), self.scale)
+        )
         self.households.ts.net_wealth.append(self.households.compute_net_wealth())
 
         # F2. HOUSEHOLD INSOLVENCY
-        household_insolvency_rate, npl_hh_cons_loans, npl_mortgages = self.households.handle_insolvency(
-            banks=self.banks,
-            credit_market=self.credit_market,
+        household_insolvency_rate, npl_hh_cons_loans, npl_mortgages = (
+            self.households.handle_insolvency(
+                banks=self.banks,
+                credit_market=self.credit_market,
+            )
         )
         self.economy.ts.household_insolvency_rate.append([household_insolvency_rate])
         self.economy.ts.npl_hh_cons_loans.append([npl_hh_cons_loans])
@@ -1324,38 +1513,52 @@ class Country:
             )
         )
         self.banks.ts.profits.append(self.banks.compute_profits())
-        self.banks.ts.profits_histogram.append(get_histogram(self.banks.ts.current("profits"), self.scale))
+        self.banks.ts.profits_histogram.append(
+            get_histogram(self.banks.ts.current("profits"), self.scale)
+        )
 
         # G3. BANK BALANCE SHEETS
         self.banks.update_deposits(
             current_firm_deposits=self.firms.ts.current("deposits"),
             current_household_deposits=self.households.ts.current("wealth_deposits"),
             firm_corresponding_bank=self.firms.states["Corresponding Bank ID"],
-            households_corresponding_bank=self.households.states["Corresponding Bank ID"],
+            households_corresponding_bank=self.households.states[
+                "Corresponding Bank ID"
+            ],
         )
         self.banks.update_loans(credit_market=self.credit_market)
 
         self.banks.ts.market_share.append(self.banks.compute_market_share())
-        self.banks.ts.market_share_histogram.append(get_histogram(self.banks.ts.current("market_share"), None))
+        self.banks.ts.market_share_histogram.append(
+            get_histogram(self.banks.ts.current("market_share"), None)
+        )
 
         self.banks.ts.equity.append(
             self.banks.compute_equity(
                 profit_taxes=self.central_government.states["Profit Tax"],
             )
         )
-        self.banks.ts.equity_histogram.append(get_histogram(self.banks.ts.current("equity"), self.scale))
+        self.banks.ts.equity_histogram.append(
+            get_histogram(self.banks.ts.current("equity"), self.scale)
+        )
 
         self.banks.ts.liability.append(self.banks.compute_liability())
-        self.banks.ts.liability_histogram.append(get_histogram(self.banks.ts.current("liability"), self.scale))
+        self.banks.ts.liability_histogram.append(
+            get_histogram(self.banks.ts.current("liability"), self.scale)
+        )
 
         self.banks.ts.deposits.append(self.banks.compute_deposits())
-        self.banks.ts.deposits_histogram.append(get_histogram(self.banks.ts.current("deposits"), self.scale))
+        self.banks.ts.deposits_histogram.append(
+            get_histogram(self.banks.ts.current("deposits"), self.scale)
+        )
 
         # G4. BANK INSOLVENCY
         self.central_government.ts.bank_equity_injection.append(
             [self.banks.handle_insolvency(credit_market=self.credit_market)]
         )
-        self.economy.ts.bank_insolvency_rate.append([self.banks.compute_insolvency_rate()])
+        self.economy.ts.bank_insolvency_rate.append(
+            [self.banks.compute_insolvency_rate()]
+        )
 
         # G5. GOVERNMENT REVENUE
         # General government fields
@@ -1364,7 +1567,9 @@ class Country:
             current_total_rent_paid=self.households.ts.current("rent")[
                 self.households.states["Tenure Status of the Main Residence"] == 3
             ].sum(),
-            current_income_financial_assets=self.households.ts.current("income_financial_assets"),
+            current_income_financial_assets=self.households.ts.current(
+                "income_financial_assets"
+            ),
             current_ind_activity=self.individuals.states["Activity Status"],
             current_ind_realised_cons=self.households.ts.current("consumption"),
             current_bank_profits=self.banks.ts.current("profits"),
@@ -1372,35 +1577,47 @@ class Country:
             current_firm_price=self.firms.ts.current("price"),
             current_firm_profits=self.firms.ts.current("profits"),
             current_firm_industries=self.firms.states["Industry"],
-            taxes_less_subsidies_rates=self.central_government.states["Taxes Less Subsidies Rates"],
+            taxes_less_subsidies_rates=self.central_government.states[
+                "Taxes Less Subsidies Rates"
+            ],
             current_household_new_real_wealth=self.households.ts.current("investment"),
             current_total_exports=self.economy.ts.current("exports_before_taxes").sum(),
         )
 
         # General government fields
-        self.central_government.ts.taxes_on_products.append([self.central_government.compute_taxes_on_products()])
+        self.central_government.ts.taxes_on_products.append(
+            [self.central_government.compute_taxes_on_products()]
+        )
         self.central_government.ts.revenue.append(
             [
                 self.central_government.compute_revenue(
-                    household_rent_paid_to_government=self.households.states["Rent paid to Government"]
+                    household_rent_paid_to_government=self.households.states[
+                        "Rent paid to Government"
+                    ]
                 )
             ]
         )
         self.central_government.ts.deficit.append(
             self.central_government.compute_deficit(
                 current_ind_activity=self.individuals.states["Activity Status"],
-                current_household_social_transfers=self.households.ts.current("income_social_transfers"),
+                current_household_social_transfers=self.households.ts.current(
+                    "income_social_transfers"
+                ),
                 current_government_nominal_amount_spent=self.government_entities.ts.current(
                     "nominal_amount_spent_in_lcu"
                 ),
-                government_interest_rates=self.central_bank.ts.current("policy_rate")[0],
+                government_interest_rates=self.central_bank.ts.current("policy_rate")[
+                    0
+                ],
             )
         )
         self.central_government.ts.debt.append(self.central_government.compute_debt())
 
         # Compute GDP
         self.economy.compute_gdp(
-            total_output=(self.firms.ts.current("price") * self.firms.ts.current("production")).sum(),
+            total_output=(
+                self.firms.ts.current("price") * self.firms.ts.current("production")
+            ).sum(),
             sectoral_sales=np.bincount(
                 self.firms.states["Industry"],
                 weights=self.firms.ts.current("total_sales"),
@@ -1411,8 +1628,12 @@ class Country:
                 weights=self.firms.ts.current("used_intermediate_inputs_costs"),
                 minlength=self.economy.n_industries,
             ),
-            taxes_on_products=self.central_government.ts.current("taxes_on_products")[0],
-            taxes_on_production=self.central_government.ts.current("taxes_production")[0],
+            taxes_on_products=self.central_government.ts.current("taxes_on_products")[
+                0
+            ],
+            taxes_on_production=self.central_government.ts.current("taxes_production")[
+                0
+            ],
             rent_paid=self.economy.ts.current("total_real_rent_paid")[0],
             rent_imputed=self.economy.ts.current("total_imp_rent_paid")[0],
             hh_consumption=self.households.ts.current("total_consumption")[0],
@@ -1420,16 +1641,22 @@ class Country:
             change_in_inventories=self.firms.ts.current("total_inventory_change").sum()
             + self.firms.ts.current("total_intermediate_inputs_bought_costs").sum()
             - self.firms.ts.current("used_intermediate_inputs_costs").sum(),
-            gross_fixed_capital_formation=self.firms.ts.current("total_capital_inputs_bought_costs").sum()
+            gross_fixed_capital_formation=self.firms.ts.current(
+                "total_capital_inputs_bought_costs"
+            ).sum()
             + (1 + self.central_government.states["Capital Formation Tax"])
             * self.households.ts.current("investment").sum(),
             exports=self.economy.ts.current("exports").sum(),
             imports=self.economy.ts.current("imports").sum(),
-            operating_surplus=self.firms.ts.current("gross_operating_surplus_mixed_income").sum(),
+            operating_surplus=self.firms.ts.current(
+                "gross_operating_surplus_mixed_income"
+            ).sum(),
             wages=self.firms.ts.current("total_wage").sum(),
             rent_received=self.economy.ts.current("total_real_rent_rec")[0]
             + self.central_government.ts.current("taxes_rental_income")[0],
-            central_government_rent_received=self.central_government.ts.current("total_rent_received")[0],
+            central_government_rent_received=self.central_government.ts.current(
+                "total_rent_received"
+            )[0],
             running_multiple_countries=self.running_multiple_countries,
         )
 
@@ -1504,26 +1731,35 @@ class Country:
             "PPI": self.economy.total_ppi_inflation(),
             "CPI": self.economy.total_cpi_inflation(),
             "CFPI": self.economy.total_cfpi_inflation(),
-            "Gross Output": self.firms.total_sales() + self.firms.total_taxes_paid_on_production(),
+            "Gross Output": self.firms.total_sales()
+            + self.firms.total_taxes_paid_on_production(),
             "Unemployment Rate": self.economy.unemployment_rate(),
             "Consumption Expansion Loan Debt": self.households.consumption_loan_debt(),
             "Mortgage Debt": self.households.mortgage_debt(),
-            "Central Bank Policy Rate": self.central_bank.ts.get_aggregate("policy_rate"),
+            "Central Bank Policy Rate": self.central_bank.ts.get_aggregate(
+                "policy_rate"
+            ),
         }
 
         if self.add_emissions:
             data_dict["Firm Input Emissions"] = self.firms.get_total_inputs_emissions()
-            data_dict["Firm Capital Emissions"] = self.firms.get_total_capital_emissions()
-            data_dict["Household Consumption Emissions"] = self.households.consumption_emissions()
-            data_dict["Household Investment Emissions"] = self.households.investment_emissions()
+            data_dict["Firm Capital Emissions"] = (
+                self.firms.get_total_capital_emissions()
+            )
+            data_dict["Household Consumption Emissions"] = (
+                self.households.consumption_emissions()
+            )
+            data_dict["Household Investment Emissions"] = (
+                self.households.investment_emissions()
+            )
             data_dict["Government Emissions"] = self.government_entities.emissions()
             for input_name in ["Coal", "Gas", "Oil", "Refined Products"]:
                 input_rename = input_name.replace(" ", "_").lower()
-                data_dict[f"Firm Input Emissions {input_name}"] = self.firms.get_disaggregated_input_emissions(
-                    input_rename
+                data_dict[f"Firm Input Emissions {input_name}"] = (
+                    self.firms.get_disaggregated_input_emissions(input_rename)
                 )
-                data_dict[f"Firm Capital Emissions {input_name}"] = self.firms.get_disaggregated_capital_emissions(
-                    input_rename
+                data_dict[f"Firm Capital Emissions {input_name}"] = (
+                    self.firms.get_disaggregated_capital_emissions(input_rename)
                 )
                 data_dict[f"Household Consumption Emissions {input_name}"] = (
                     self.households.disaggregated_consumption_emissions(input_rename)
@@ -1531,8 +1767,8 @@ class Country:
                 data_dict[f"Household Investment Emissions {input_name}"] = (
                     self.households.disaggregated_investment_emissions(input_rename)
                 )
-                data_dict[f"Government Emissions {input_name}"] = self.government_entities.disaggregated_emissions(
-                    input_rename
+                data_dict[f"Government Emissions {input_name}"] = (
+                    self.government_entities.disaggregated_emissions(input_rename)
                 )
 
         return pd.DataFrame(data_dict)
@@ -1551,45 +1787,95 @@ class Country:
             # GDP Output Approach Components
             "GDP_Output": self.economy.ts.get_aggregate("gdp_output"),
             "+Total_Output": self.economy.ts.get_aggregate("total_output"),
-            "-Total_Intermediate_Consumption": self.economy.ts.get_aggregate("total_intermediate_consumption"),
-            "+Taxes_on_Products": self.central_government.ts.get_aggregate("taxes_on_products"),
-            "-Taxes_on_Production": self.central_government.ts.get_aggregate("taxes_production"),
-            "+Total_Real_Rent_Paid": self.economy.ts.get_aggregate("total_real_rent_paid"),
-            "+Total_Imputed_Rent_Paid": self.economy.ts.get_aggregate("total_imp_rent_paid"),
+            "-Total_Intermediate_Consumption": self.economy.ts.get_aggregate(
+                "total_intermediate_consumption"
+            ),
+            "+Taxes_on_Products": self.central_government.ts.get_aggregate(
+                "taxes_on_products"
+            ),
+            "-Taxes_on_Production": self.central_government.ts.get_aggregate(
+                "taxes_production"
+            ),
+            "+Total_Real_Rent_Paid": self.economy.ts.get_aggregate(
+                "total_real_rent_paid"
+            ),
+            "+Total_Imputed_Rent_Paid": self.economy.ts.get_aggregate(
+                "total_imp_rent_paid"
+            ),
             # GDP Expenditure Approach Components
             "GDP_Expenditure": self.economy.ts.get_aggregate("gdp_expenditure"),
-            "+Household_Consumption": self.households.ts.get_aggregate("total_consumption"),
-            "+Government_Consumption": self.government_entities.ts.get_aggregate("total_consumption"),
-            "+Changes_in_Inventories": self.firms.ts.get_aggregate("total_inventory_change"),
-            "+Gross_Fixed_Capital_Formation": self.economy.ts.get_aggregate("total_gross_fixed_capital_formation"),
+            "+Household_Consumption": self.households.ts.get_aggregate(
+                "total_consumption"
+            ),
+            "+Government_Consumption": self.government_entities.ts.get_aggregate(
+                "total_consumption"
+            ),
+            "+Changes_in_Inventories": self.firms.ts.get_aggregate(
+                "total_inventory_change"
+            ),
+            "+Gross_Fixed_Capital_Formation": self.economy.ts.get_aggregate(
+                "total_gross_fixed_capital_formation"
+            ),
             "+Exports": self.economy.ts.get_aggregate("total_exports"),
             "-Imports": self.economy.ts.get_aggregate("total_imports"),
             "+Rent_Paid": self.economy.ts.get_aggregate("total_real_rent_paid"),
             "+Rent_Imputed": self.economy.ts.get_aggregate("total_imp_rent_paid"),
             # GDP Income Approach Components
             "GDP_Income": self.economy.ts.get_aggregate("gdp_income"),
-            "+Operating_Surplus": self.firms.ts.get_aggregate("gross_operating_surplus_mixed_income"),
+            "+Operating_Surplus": self.firms.ts.get_aggregate(
+                "gross_operating_surplus_mixed_income"
+            ),
             "+Wages": self.firms.ts.get_aggregate("total_wage"),
             "+Rent_Received": self.economy.ts.get_aggregate("total_real_rent_rec"),
-            "+Central_Government_Rent_Received": self.central_government.ts.get_aggregate("total_rent_received"),
-            "+Central_Government_Rental_Taxes": self.central_government.ts.get_aggregate("taxes_rental_income"),
-            "+Central_Government_Product_Taxes": self.central_government.ts.get_aggregate("taxes_on_products"),
+            "+Central_Government_Rent_Received": self.central_government.ts.get_aggregate(
+                "total_rent_received"
+            ),
+            "+Central_Government_Rental_Taxes": self.central_government.ts.get_aggregate(
+                "taxes_rental_income"
+            ),
+            "+Central_Government_Product_Taxes": self.central_government.ts.get_aggregate(
+                "taxes_on_products"
+            ),
             # Additional Value Added Components
-            "Total_Gross_Value_Added": self.economy.ts.get_aggregate("total_gross_value_added"),
-            "Total_Gross_Value_Added_A": self.economy.ts.get_aggregate("total_gross_value_added_a"),
-            "Total_Gross_Value_Added_BCDE": self.economy.ts.get_aggregate("total_gross_value_added_bcde"),
-            "Total_Gross_Value_Added_C": self.economy.ts.get_aggregate("total_gross_value_added_c"),
-            "Total_Gross_Value_Added_F": self.economy.ts.get_aggregate("total_gross_value_added_f"),
+            "Total_Gross_Value_Added": self.economy.ts.get_aggregate(
+                "total_gross_value_added"
+            ),
+            "Total_Gross_Value_Added_A": self.economy.ts.get_aggregate(
+                "total_gross_value_added_a"
+            ),
+            "Total_Gross_Value_Added_BCDE": self.economy.ts.get_aggregate(
+                "total_gross_value_added_bcde"
+            ),
+            "Total_Gross_Value_Added_C": self.economy.ts.get_aggregate(
+                "total_gross_value_added_c"
+            ),
+            "Total_Gross_Value_Added_F": self.economy.ts.get_aggregate(
+                "total_gross_value_added_f"
+            ),
             "Total_Gross_Value_Added_GHIJKLMNOPQRSTU": self.economy.ts.get_aggregate(
                 "total_gross_value_added_ghijklmnopqrstu"
             ),
-            "Total_Gross_Value_Added_GHI": self.economy.ts.get_aggregate("total_gross_value_added_ghi"),
-            "Total_Gross_Value_Added_J": self.economy.ts.get_aggregate("total_gross_value_added_j"),
-            "Total_Gross_Value_Added_K": self.economy.ts.get_aggregate("total_gross_value_added_k"),
-            "Total_Gross_Value_Added_L": self.economy.ts.get_aggregate("total_gross_value_added_l"),
-            "Total_Gross_Value_Added_MN": self.economy.ts.get_aggregate("total_gross_value_added_mn"),
-            "Total_Gross_Value_Added_OPQ": self.economy.ts.get_aggregate("total_gross_value_added_opq"),
-            "Total_Gross_Value_Added_RSTU": self.economy.ts.get_aggregate("total_gross_value_added_rstu"),
+            "Total_Gross_Value_Added_GHI": self.economy.ts.get_aggregate(
+                "total_gross_value_added_ghi"
+            ),
+            "Total_Gross_Value_Added_J": self.economy.ts.get_aggregate(
+                "total_gross_value_added_j"
+            ),
+            "Total_Gross_Value_Added_K": self.economy.ts.get_aggregate(
+                "total_gross_value_added_k"
+            ),
+            "Total_Gross_Value_Added_L": self.economy.ts.get_aggregate(
+                "total_gross_value_added_l"
+            ),
+            "Total_Gross_Value_Added_MN": self.economy.ts.get_aggregate(
+                "total_gross_value_added_mn"
+            ),
+            "Total_Gross_Value_Added_OPQ": self.economy.ts.get_aggregate(
+                "total_gross_value_added_opq"
+            ),
+            "Total_Gross_Value_Added_RSTU": self.economy.ts.get_aggregate(
+                "total_gross_value_added_rstu"
+            ),
         }
 
         return pd.DataFrame(data_dict)
@@ -1609,45 +1895,95 @@ class Country:
             # GDP Output Approach Components
             "GDP_Output": self.economy.ts.get_aggregate("gdp_output"),
             "+Total_Output": self.economy.ts.get_aggregate("total_output"),
-            "-Total_Intermediate_Consumption": self.economy.ts.get_aggregate("total_intermediate_consumption"),
-            "+Taxes_on_Products": self.central_government.ts.get_aggregate("taxes_on_products"),
-            "-Taxes_on_Production": self.central_government.ts.get_aggregate("taxes_production"),
-            "+Total_Real_Rent_Paid": self.economy.ts.get_aggregate("total_real_rent_paid"),
-            "+Total_Imputed_Rent_Paid": self.economy.ts.get_aggregate("total_imp_rent_paid"),
+            "-Total_Intermediate_Consumption": self.economy.ts.get_aggregate(
+                "total_intermediate_consumption"
+            ),
+            "+Taxes_on_Products": self.central_government.ts.get_aggregate(
+                "taxes_on_products"
+            ),
+            "-Taxes_on_Production": self.central_government.ts.get_aggregate(
+                "taxes_production"
+            ),
+            "+Total_Real_Rent_Paid": self.economy.ts.get_aggregate(
+                "total_real_rent_paid"
+            ),
+            "+Total_Imputed_Rent_Paid": self.economy.ts.get_aggregate(
+                "total_imp_rent_paid"
+            ),
             # GDP Expenditure Approach Components
             "GDP_Expenditure": self.economy.ts.get_aggregate("gdp_expenditure"),
-            "+Household_Consumption": self.households.ts.get_aggregate("total_consumption"),
-            "+Government_Consumption": self.government_entities.ts.get_aggregate("total_consumption"),
-            "+Changes_in_Inventories": self.firms.ts.get_aggregate("total_inventory_change"),
-            "+Gross_Fixed_Capital_Formation": self.economy.ts.get_aggregate("total_gross_fixed_capital_formation"),
+            "+Household_Consumption": self.households.ts.get_aggregate(
+                "total_consumption"
+            ),
+            "+Government_Consumption": self.government_entities.ts.get_aggregate(
+                "total_consumption"
+            ),
+            "+Changes_in_Inventories": self.firms.ts.get_aggregate(
+                "total_inventory_change"
+            ),
+            "+Gross_Fixed_Capital_Formation": self.economy.ts.get_aggregate(
+                "total_gross_fixed_capital_formation"
+            ),
             "+Exports": self.economy.ts.get_aggregate("total_exports"),
             "-Imports": self.economy.ts.get_aggregate("total_imports"),
             "+Rent_Paid": self.economy.ts.get_aggregate("total_real_rent_paid"),
             "+Rent_Imputed": self.economy.ts.get_aggregate("total_imp_rent_paid"),
             # GDP Income Approach Components
             "GDP_Income": self.economy.ts.get_aggregate("gdp_income"),
-            "+Operating_Surplus": self.firms.ts.get_aggregate("gross_operating_surplus_mixed_income"),
+            "+Operating_Surplus": self.firms.ts.get_aggregate(
+                "gross_operating_surplus_mixed_income"
+            ),
             "+Wages": self.firms.ts.get_aggregate("total_wage"),
             "+Rent_Received": self.economy.ts.get_aggregate("total_real_rent_rec"),
-            "+Central_Government_Rent_Received": self.central_government.ts.get_aggregate("total_rent_received"),
-            "+Central_Government_Rental_Taxes": self.central_government.ts.get_aggregate("taxes_rental_income"),
-            "+Central_Government_Product_Taxes": self.central_government.ts.get_aggregate("taxes_on_products"),
+            "+Central_Government_Rent_Received": self.central_government.ts.get_aggregate(
+                "total_rent_received"
+            ),
+            "+Central_Government_Rental_Taxes": self.central_government.ts.get_aggregate(
+                "taxes_rental_income"
+            ),
+            "+Central_Government_Product_Taxes": self.central_government.ts.get_aggregate(
+                "taxes_on_products"
+            ),
             # Additional Value Added Components
-            "Total_Gross_Value_Added": self.economy.ts.get_aggregate("total_gross_value_added"),
-            "Total_Gross_Value_Added_A": self.economy.ts.get_aggregate("total_gross_value_added_a"),
-            "Total_Gross_Value_Added_BCDE": self.economy.ts.get_aggregate("total_gross_value_added_bcde"),
-            "Total_Gross_Value_Added_C": self.economy.ts.get_aggregate("total_gross_value_added_c"),
-            "Total_Gross_Value_Added_F": self.economy.ts.get_aggregate("total_gross_value_added_f"),
+            "Total_Gross_Value_Added": self.economy.ts.get_aggregate(
+                "total_gross_value_added"
+            ),
+            "Total_Gross_Value_Added_A": self.economy.ts.get_aggregate(
+                "total_gross_value_added_a"
+            ),
+            "Total_Gross_Value_Added_BCDE": self.economy.ts.get_aggregate(
+                "total_gross_value_added_bcde"
+            ),
+            "Total_Gross_Value_Added_C": self.economy.ts.get_aggregate(
+                "total_gross_value_added_c"
+            ),
+            "Total_Gross_Value_Added_F": self.economy.ts.get_aggregate(
+                "total_gross_value_added_f"
+            ),
             "Total_Gross_Value_Added_GHIJKLMNOPQRSTU": self.economy.ts.get_aggregate(
                 "total_gross_value_added_ghijklmnopqrstu"
             ),
-            "Total_Gross_Value_Added_GHI": self.economy.ts.get_aggregate("total_gross_value_added_ghi"),
-            "Total_Gross_Value_Added_J": self.economy.ts.get_aggregate("total_gross_value_added_j"),
-            "Total_Gross_Value_Added_K": self.economy.ts.get_aggregate("total_gross_value_added_k"),
-            "Total_Gross_Value_Added_L": self.economy.ts.get_aggregate("total_gross_value_added_l"),
-            "Total_Gross_Value_Added_MN": self.economy.ts.get_aggregate("total_gross_value_added_mn"),
-            "Total_Gross_Value_Added_OPQ": self.economy.ts.get_aggregate("total_gross_value_added_opq"),
-            "Total_Gross_Value_Added_RSTU": self.economy.ts.get_aggregate("total_gross_value_added_rstu"),
+            "Total_Gross_Value_Added_GHI": self.economy.ts.get_aggregate(
+                "total_gross_value_added_ghi"
+            ),
+            "Total_Gross_Value_Added_J": self.economy.ts.get_aggregate(
+                "total_gross_value_added_j"
+            ),
+            "Total_Gross_Value_Added_K": self.economy.ts.get_aggregate(
+                "total_gross_value_added_k"
+            ),
+            "Total_Gross_Value_Added_L": self.economy.ts.get_aggregate(
+                "total_gross_value_added_l"
+            ),
+            "Total_Gross_Value_Added_MN": self.economy.ts.get_aggregate(
+                "total_gross_value_added_mn"
+            ),
+            "Total_Gross_Value_Added_OPQ": self.economy.ts.get_aggregate(
+                "total_gross_value_added_opq"
+            ),
+            "Total_Gross_Value_Added_RSTU": self.economy.ts.get_aggregate(
+                "total_gross_value_added_rstu"
+            ),
         }
 
         return pd.DataFrame(data_dict)

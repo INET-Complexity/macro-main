@@ -152,7 +152,9 @@ class TimeSeries:
                 for i in range(len(self.historic(field))):
                     logging.error(self.historic(field)[i].shape)
 
-    def write_field_to_h5(self, ts_data: np.ndarray, field: str, agent_group: h5py.Group) -> None:
+    def write_field_to_h5(
+        self, ts_data: np.ndarray, field: str, agent_group: h5py.Group
+    ) -> None:
         """Write a single time series field to an HDF5 file.
 
         Handles different dimensionality of data (1D, 2D, 3D) appropriately.
@@ -168,7 +170,9 @@ class TimeSeries:
             self.write_3d_field_to_h5(ts_data, field, agent_group)
 
     @staticmethod
-    def write_2d_field_to_h5(ts_data: np.ndarray, field: str, agent_group: h5py.Group) -> None:
+    def write_2d_field_to_h5(
+        ts_data: np.ndarray, field: str, agent_group: h5py.Group
+    ) -> None:
         """Write a 1D or 2D time series field to an HDF5 file.
 
         Args:
@@ -184,7 +188,9 @@ class TimeSeries:
             dtype=float,
         )
 
-    def write_3d_field_to_h5(self, ts_data: np.ndarray, field: str, agent_group: h5py.Group) -> None:
+    def write_3d_field_to_h5(
+        self, ts_data: np.ndarray, field: str, agent_group: h5py.Group
+    ) -> None:
         """Write a 3D time series field to an HDF5 file.
 
         Converts 3D data to a multi-index DataFrame format before saving.

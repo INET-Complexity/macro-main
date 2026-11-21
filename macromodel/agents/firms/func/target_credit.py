@@ -85,7 +85,8 @@ class DefaultTargetCreditSetter(TargetCreditSetter):
         )
         target_long_term_credit = np.maximum(
             0.0,
-            unconstrained_target_capital_inputs_costs - (estimated_deposits - target_short_term_credit),
+            unconstrained_target_capital_inputs_costs
+            - (estimated_deposits - target_short_term_credit),
         )
         return target_short_term_credit, target_long_term_credit
 

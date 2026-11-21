@@ -82,7 +82,9 @@ class CompustatSpoofer:
         # Add a number for uniqueness
         return f"{prefix} {company_type} {idx:04d}"
 
-    def spoof_categorical_column(self, series: pd.Series, preserve_values: bool = False) -> pd.Series:
+    def spoof_categorical_column(
+        self, series: pd.Series, preserve_values: bool = False
+    ) -> pd.Series:
         """
         Spoof a categorical column by resampling from the distribution.
 
@@ -98,7 +100,9 @@ class CompustatSpoofer:
 
         # For categorical, resample from observed distribution
         value_counts = series.value_counts(normalize=True, dropna=False)
-        spoofed = np.random.choice(value_counts.index, size=len(series), p=value_counts.values, replace=True)
+        spoofed = np.random.choice(
+            value_counts.index, size=len(series), p=value_counts.values, replace=True
+        )
         return pd.Series(spoofed, index=series.index)
 
     def spoof_numerical_column(
@@ -126,7 +130,10 @@ class CompustatSpoofer:
             # Treat as categorical - resample from observed values
             value_counts = non_missing.value_counts(normalize=True)
             spoofed_values = np.random.choice(
-                value_counts.index, size=len(non_missing), p=value_counts.values, replace=True
+                value_counts.index,
+                size=len(non_missing),
+                p=value_counts.values,
+                replace=True,
             )
         else:
             # Auto-detect distribution
@@ -147,9 +154,13 @@ class CompustatSpoofer:
 
                     if std_log == 0:
                         # No variation - use constant
-                        spoofed_values = np.full(len(non_missing), positive_values.mean())
+                        spoofed_values = np.full(
+                            len(non_missing), positive_values.mean()
+                        )
                     else:
-                        spoofed_values = np.random.lognormal(mean=mean_log, sigma=std_log, size=len(non_missing))
+                        spoofed_values = np.random.lognormal(
+                            mean=mean_log, sigma=std_log, size=len(non_missing)
+                        )
             else:  # normal
                 mean = non_missing.mean()
                 std = non_missing.std()
@@ -158,7 +169,9 @@ class CompustatSpoofer:
                     # No variation - use constant
                     spoofed_values = np.full(len(non_missing), mean)
                 else:
-                    spoofed_values = np.random.normal(loc=mean, scale=std, size=len(non_missing))
+                    spoofed_values = np.random.normal(
+                        loc=mean, scale=std, size=len(non_missing)
+                    )
 
         # Create result series maintaining NaN pattern
         if preserve_nans:
@@ -197,7 +210,9 @@ class CompustatSpoofer:
 
         # Spoof employment
         print("  Spoofing emp (employment)...")
-        spoofed["emp"] = self.spoof_numerical_column(spoofed["emp"], distribution="lognormal")
+        spoofed["emp"] = self.spoof_numerical_column(
+            spoofed["emp"], distribution="lognormal"
+        )
 
         # Spoof index column
         spoofed["Unnamed: 0"] = np.arange(len(spoofed))
@@ -229,7 +244,9 @@ class CompustatSpoofer:
             start_idx = len(self.company_name_map)
             for idx, orig_name in enumerate(df.loc[unmapped, "conm"].unique()):
                 fake_name = self.generate_fake_company_name(start_idx + idx)
-                spoofed.loc[spoofed["conm"].isna() & (df["conm"] == orig_name), "conm"] = fake_name
+                spoofed.loc[
+                    spoofed["conm"].isna() & (df["conm"] == orig_name), "conm"
+                ] = fake_name
 
         print("  Removing conml (long company name)...")
         spoofed = spoofed.drop(columns=["conml"])

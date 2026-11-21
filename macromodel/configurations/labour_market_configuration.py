@@ -38,9 +38,11 @@ class Clearing(BaseModel):
         path_name (str): Module path for clearing functions
     """
 
-    name: Literal["NoLabourMarketClearer", "DefaultLabourMarketClearer", "PolednaLabourMarketClearer"] = (
-        "PolednaLabourMarketClearer"
-    )
+    name: Literal[
+        "NoLabourMarketClearer",
+        "DefaultLabourMarketClearer",
+        "PolednaLabourMarketClearer",
+    ] = "PolednaLabourMarketClearer"
     parameters: dict[str, Any] = {
         "compare_with_normalised_inputs": True,
         "round_target_employment": True,

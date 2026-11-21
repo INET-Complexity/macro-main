@@ -140,7 +140,9 @@ class PolicyRatesReader:
             pd.DataFrame: DataFrame with dates as index and Costa Rica policy rates
                          as values, rates are in decimal form
         """
-        df = pd.read_csv(self.path.parent / "policy_rate_cri.csv", engine="pyarrow", index_col=0)
+        df = pd.read_csv(
+            self.path.parent / "policy_rate_cri.csv", engine="pyarrow", index_col=0
+        )
         df = df.mean(axis=0)
         df.index = pd.to_datetime([pd.Timestamp(int(y), 1, 1) for y in df.index.values])
         df = df.resample("QE").ffill()
@@ -159,7 +161,10 @@ class PolicyRatesReader:
         Returns:
             list[str]: List of corresponding Alpha-3 country codes
         """
-        return [self.c_map.loc[self.c_map["Alpha-2 code"] == c, "Alpha-3 code"].values[0] for c in codes]
+        return [
+            self.c_map.loc[self.c_map["Alpha-2 code"] == c, "Alpha-3 code"].values[0]
+            for c in codes
+        ]
 
     @staticmethod
     def get_dates() -> list[pd.Timestamp]:

@@ -193,21 +193,28 @@ class DefaultSyntheticBanks(SyntheticBanks):
         if single_bank:
             number_of_banks = 1
         else:
-            bank_branches = readers.oecd_econ.read_number_of_banks(country=country_name, year=year)
+            bank_branches = readers.oecd_econ.read_number_of_banks(
+                country=country_name, year=year
+            )
             number_of_banks = max(1, int(bank_branches / scale))
 
         bank_equity = (
-            readers.eurostat.get_total_bank_equity(country=country_name, year=year, proxy_country=proxy_eu_country)
+            readers.eurostat.get_total_bank_equity(
+                country=country_name, year=year, proxy_country=proxy_eu_country
+            )
             * exchange_rate_from_eur
         )
-        bank_data = pd.DataFrame({"Equity": np.ones(number_of_banks) * bank_equity / number_of_banks})
+        bank_data = pd.DataFrame(
+            {"Equity": np.ones(number_of_banks) * bank_equity / number_of_banks}
+        )
         bank_data["Deposits from Firms"] = np.ones(number_of_banks)
         bank_data["Deposits from Households"] = np.ones(number_of_banks)
         bank_data["Loans to Firms"] = np.ones(number_of_banks)
         bank_data["Consumption Loans to Households"] = np.ones(number_of_banks)
         bank_data["Mortgages to Households"] = np.ones(number_of_banks)
         bank_data["Loans to Households"] = (
-            bank_data["Consumption Loans to Households"] + bank_data["Mortgages to Households"]
+            bank_data["Consumption Loans to Households"]
+            + bank_data["Mortgages to Households"]
         )
 
         (
@@ -220,14 +227,20 @@ class DefaultSyntheticBanks(SyntheticBanks):
             hh_mortgage_ect,
             hh_mortgage_passthrough,
             hh_mortgage_rate,
-        ) = cls.initialise_rates(country_name, inflation_data, proxy_eu_country, quarter, readers, year)
+        ) = cls.initialise_rates(
+            country_name, inflation_data, proxy_eu_country, quarter, readers, year
+        )
 
         initial_central_bank_policy_rate = (
-            readers.policy_rates.get_policy_rates(country_name).loc[f"{year}-Q{quarter}", "Policy Rate"].values[0]
+            readers.policy_rates.get_policy_rates(country_name)
+            .loc[f"{year}-Q{quarter}", "Policy Rate"]
+            .values[0]
         )
 
         bank_data["Interest Rates on Firm Deposits"] = initial_central_bank_policy_rate
-        bank_data["Interest Rates on Household Deposits"] = initial_central_bank_policy_rate
+        bank_data["Interest Rates on Household Deposits"] = (
+            initial_central_bank_policy_rate
+        )
 
         return cls(
             country_name,
@@ -288,7 +301,8 @@ class DefaultSyntheticBanks(SyntheticBanks):
             DefaultSyntheticBanks: Container with preprocessed banking system data
         """
         compustat_data = readers.compustat_banks.get_country_data(
-            country=country_name, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country_name, year)
+            country=country_name,
+            exchange_rate=readers.exchange_rates.from_usd_to_lcu(country_name, year),
         )
 
         # select only positive debt
@@ -297,10 +311,14 @@ class DefaultSyntheticBanks(SyntheticBanks):
         if single_bank:
             number_of_banks = 1
         else:
-            oecd_banks = readers.oecd_econ.read_number_of_banks(country=country_name, year=year)
+            oecd_banks = readers.oecd_econ.read_number_of_banks(
+                country=country_name, year=year
+            )
             number_of_banks = max(1, int(oecd_banks / scale))
 
-        banks_inds = np.random.choice(range(len(compustat_data)), number_of_banks, replace=True)
+        banks_inds = np.random.choice(
+            range(len(compustat_data)), number_of_banks, replace=True
+        )
 
         compustat_selection = compustat_data.iloc[banks_inds]
 
@@ -331,14 +349,20 @@ class DefaultSyntheticBanks(SyntheticBanks):
             hh_mortgage_ect,
             hh_mortgage_passthrough,
             hh_mortgage_rate,
-        ) = cls.initialise_rates(country_name, inflation_data, proxy_eu_country, quarter, readers, year)
+        ) = cls.initialise_rates(
+            country_name, inflation_data, proxy_eu_country, quarter, readers, year
+        )
 
         initial_central_bank_policy_rate = (
-            readers.policy_rates.get_policy_rates(country_name).loc[f"{year}-Q{quarter}", "Policy Rate"].values[0]
+            readers.policy_rates.get_policy_rates(country_name)
+            .loc[f"{year}-Q{quarter}", "Policy Rate"]
+            .values[0]
         )
 
         bank_data["Interest Rates on Firm Deposits"] = initial_central_bank_policy_rate
-        bank_data["Interest Rates on Household Deposits"] = initial_central_bank_policy_rate
+        bank_data["Interest Rates on Household Deposits"] = (
+            initial_central_bank_policy_rate
+        )
 
         return cls(
             country_name,
@@ -358,7 +382,9 @@ class DefaultSyntheticBanks(SyntheticBanks):
         )
 
     @classmethod
-    def initialise_rates(cls, country_name, inflation_data, proxy_eu_country, quarter, readers, year):
+    def initialise_rates(
+        cls, country_name, inflation_data, proxy_eu_country, quarter, readers, year
+    ):
         """Preprocess and estimate initial interest rate parameters.
 
         This method:
@@ -399,8 +425,12 @@ class DefaultSyntheticBanks(SyntheticBanks):
                 raise ValueError("Proxy EU country is required for non-EU countries.")
             data_country = proxy_eu_country
         firm_rate = readers.ecb_reader.get_firm_rates(data_country)
-        household_consumption_rate = readers.ecb_reader.get_household_consumption_rates(data_country)
-        household_mortgage_rates = readers.ecb_reader.get_household_mortgage_rates(data_country)
+        household_consumption_rate = readers.ecb_reader.get_household_consumption_rates(
+            data_country
+        )
+        household_mortgage_rates = readers.ecb_reader.get_household_mortgage_rates(
+            data_country
+        )
         policy_rates = readers.policy_rates.get_policy_rates(data_country)
         npl_rates = readers.world_bank.get_npl_ratios(data_country)
         if any(
@@ -412,12 +442,16 @@ class DefaultSyntheticBanks(SyntheticBanks):
             ]
         ):
             firm_passthrough, firm_ect, firm_rate = default_rate_values(policy_rates)
-            hh_consumption_passthrough, household_consumption_ect, household_consumption_rate = default_rate_values(
-                policy_rates
-            )
-            hh_mortgage_passthrough, household_mortgages_ect, household_mortgages_rate = default_rate_values(
-                policy_rates
-            )
+            (
+                hh_consumption_passthrough,
+                household_consumption_ect,
+                household_consumption_rate,
+            ) = default_rate_values(policy_rates)
+            (
+                hh_mortgage_passthrough,
+                household_mortgages_ect,
+                household_mortgages_rate,
+            ) = default_rate_values(policy_rates)
         else:
             df = rates_dataframe(
                 firm_rate,
@@ -431,12 +465,16 @@ class DefaultSyntheticBanks(SyntheticBanks):
             )
 
             firm_passthrough, firm_ect, firm_rate = fit_firm_models(df, n_lags=1)
-            hh_consumption_passthrough, household_consumption_ect, household_consumption_rate = fit_household_models(
-                df, n_lags=1
-            )
-            hh_mortgage_passthrough, household_mortgages_ect, household_mortgages_rate = fit_mortgage_models(
-                df, n_lags=1
-            )
+            (
+                hh_consumption_passthrough,
+                household_consumption_ect,
+                household_consumption_rate,
+            ) = fit_household_models(df, n_lags=1)
+            (
+                hh_mortgage_passthrough,
+                household_mortgages_ect,
+                household_mortgages_rate,
+            ) = fit_mortgage_models(df, n_lags=1)
         return (
             firm_ect,
             firm_passthrough,
@@ -455,7 +493,9 @@ class DefaultSyntheticBanks(SyntheticBanks):
         Args:
             bank_equity (float): Equity amount to set for each bank
         """
-        self.bank_data["Equity"] = np.full(self.number_of_banks, bank_equity / self.number_of_banks)
+        self.bank_data["Equity"] = np.full(
+            self.number_of_banks, bank_equity / self.number_of_banks
+        )
 
     def set_deposits_from_firms(self, firm_deposits: np.ndarray) -> None:
         """Set the initial deposits from firms for each bank.
@@ -477,8 +517,12 @@ class DefaultSyntheticBanks(SyntheticBanks):
         """
         initial_deposits_from_households = np.zeros(self.number_of_banks)
         for bank_id in range(self.number_of_banks):
-            corr_households = np.array(self.bank_data["Corresponding Households ID"][bank_id])
-            initial_deposits_from_households[bank_id] += household_deposits[corr_households].sum()
+            corr_households = np.array(
+                self.bank_data["Corresponding Households ID"][bank_id]
+            )
+            initial_deposits_from_households[bank_id] += household_deposits[
+                corr_households
+            ].sum()
         self.bank_data["Deposits from Households"] = initial_deposits_from_households
 
     def set_loans_to_firms(self, firm_debt: np.ndarray) -> None:
@@ -507,12 +551,22 @@ class DefaultSyntheticBanks(SyntheticBanks):
         initial_mortgages_to_households = np.zeros(self.number_of_banks)
         initial_other_loans_to_households = np.zeros(self.number_of_banks)
         for bank_id in range(self.number_of_banks):
-            corr_firms = np.array(self.bank_data["Corresponding Households ID"][bank_id])
-            initial_mortgages_to_households[bank_id] += household_mortgage_debt[corr_firms].sum()
-            initial_other_loans_to_households[bank_id] += household_other_debt[corr_firms].sum()
+            corr_firms = np.array(
+                self.bank_data["Corresponding Households ID"][bank_id]
+            )
+            initial_mortgages_to_households[bank_id] += household_mortgage_debt[
+                corr_firms
+            ].sum()
+            initial_other_loans_to_households[bank_id] += household_other_debt[
+                corr_firms
+            ].sum()
         self.bank_data["Mortgages to Households"] = initial_mortgages_to_households
-        self.bank_data["Consumption Loans to Households"] = initial_other_loans_to_households
-        self.bank_data["Loans to Households"] = initial_mortgages_to_households + initial_other_loans_to_households
+        self.bank_data["Consumption Loans to Households"] = (
+            initial_other_loans_to_households
+        )
+        self.bank_data["Loans to Households"] = (
+            initial_mortgages_to_households + initial_other_loans_to_households
+        )
 
     def set_bank_deposits(
         self,
@@ -532,7 +586,9 @@ class DefaultSyntheticBanks(SyntheticBanks):
         initial_bank_deposits = np.zeros(self.number_of_banks)
         for bank_id in range(self.number_of_banks):
             corr_firms = np.array(self.bank_data["Corresponding Firms ID"][bank_id])
-            corr_households = np.array(self.bank_data["Corresponding Households ID"][bank_id])
+            corr_households = np.array(
+                self.bank_data["Corresponding Households ID"][bank_id]
+            )
             total_firm_deposits = firm_deposits[corr_firms].sum()
             total_firm_debts = firm_debt[corr_firms].sum()
             total_household_deposits = household_deposits[corr_households].sum()

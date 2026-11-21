@@ -164,11 +164,16 @@ def collect_seller_info(
     total_nominal_supply = {c: np.zeros(n_industries) for c in country_names}
     for country_name in country_names:
         for transactor in goods_market_participants[country_name]:
-            if transactor.transactor_seller_states["Priority"] == 1 or not high_prio_only:
+            if (
+                transactor.transactor_seller_states["Priority"] == 1
+                or not high_prio_only
+            ):
                 if transactor.transactor_seller_states["Value Type"] == ValueType.REAL:
                     total_real_supply[country_name] += get_split_sum(
                         np.minimum(
-                            trade_proportions[transactor.transactor_seller_states["Industries"]]
+                            trade_proportions[
+                                transactor.transactor_seller_states["Industries"]
+                            ]
                             * transactor.transactor_seller_states[init_field],
                             transactor.transactor_seller_states[rem_field],
                         ),
@@ -177,7 +182,9 @@ def collect_seller_info(
                     )
                     total_nominal_supply[country_name] += get_split_sum(
                         np.minimum(
-                            trade_proportions[transactor.transactor_seller_states["Industries"]]
+                            trade_proportions[
+                                transactor.transactor_seller_states["Industries"]
+                            ]
                             * transactor.transactor_seller_states[init_field],
                             transactor.transactor_seller_states[rem_field],
                         )
@@ -188,7 +195,9 @@ def collect_seller_info(
 
     # Calculate the average price
     aggr_real_supply = np.stack(list(total_real_supply.values()), axis=0).sum(axis=0)
-    aggr_nominal_supply = np.stack(list(total_nominal_supply.values()), axis=0).sum(axis=0)
+    aggr_nominal_supply = np.stack(list(total_nominal_supply.values()), axis=0).sum(
+        axis=0
+    )
     price = np.divide(
         aggr_nominal_supply,
         aggr_real_supply,
@@ -283,41 +292,61 @@ def collect_buyer_info(
     total_nominal_demand = {c: np.zeros(n_industries) for c in country_names}
     for country_name in country_names:
         for transactor in goods_market_participants[country_name]:
-            if with_value_type is None or transactor.transactor_buyer_states["Value Type"] == with_value_type:
-                if transactor.transactor_buyer_states["Priority"] == 1 or not high_prio_only:
-                    if transactor.transactor_buyer_states["Value Type"] == ValueType.REAL:
+            if (
+                with_value_type is None
+                or transactor.transactor_buyer_states["Value Type"] == with_value_type
+            ):
+                if (
+                    transactor.transactor_buyer_states["Priority"] == 1
+                    or not high_prio_only
+                ):
+                    if (
+                        transactor.transactor_buyer_states["Value Type"]
+                        == ValueType.REAL
+                    ):
                         total_real_demand[country_name] += np.minimum(
-                            trade_proportions * transactor.transactor_buyer_states[init_field],
+                            trade_proportions
+                            * transactor.transactor_buyer_states[init_field],
                             transactor.transactor_buyer_states[rem_field],
                         ).sum(axis=0)
                         total_nominal_demand[country_name] += (
                             np.minimum(
-                                trade_proportions * transactor.transactor_buyer_states[init_field],
+                                trade_proportions
+                                * transactor.transactor_buyer_states[init_field],
                                 transactor.transactor_buyer_states[rem_field],
                             ).sum(axis=0)
                             * average_price
                         )
-                    elif transactor.transactor_buyer_states["Value Type"] == ValueType.NOMINAL:
+                    elif (
+                        transactor.transactor_buyer_states["Value Type"]
+                        == ValueType.NOMINAL
+                    ):
                         total_real_demand[country_name] += np.divide(
                             np.minimum(
-                                trade_proportions * transactor.transactor_buyer_states[init_field],
+                                trade_proportions
+                                * transactor.transactor_buyer_states[init_field],
                                 transactor.transactor_buyer_states[rem_field],
                             ).sum(axis=0),
                             average_price,
                             out=np.full(
-                                transactor.transactor_buyer_states["Remaining Goods"].shape[1],
+                                transactor.transactor_buyer_states[
+                                    "Remaining Goods"
+                                ].shape[1],
                                 np.nan,
                             ),
                             where=average_price != 0,
                         )
                         total_nominal_demand[country_name] += np.minimum(
-                            trade_proportions * transactor.transactor_buyer_states[init_field],
+                            trade_proportions
+                            * transactor.transactor_buyer_states[init_field],
                             transactor.transactor_buyer_states[rem_field],
                         ).sum(axis=0)
 
     # Calculate sums
     aggr_real_demand = np.stack(list(total_real_demand.values()), axis=0).sum(axis=0)
-    aggr_nominal_demand = np.stack(list(total_nominal_demand.values()), axis=0).sum(axis=0)
+    aggr_nominal_demand = np.stack(list(total_nominal_demand.values()), axis=0).sum(
+        axis=0
+    )
 
     return (
         total_real_demand,
@@ -427,35 +456,65 @@ def clear_evenly(
             # Seller
             for country_name in from_country_names:
                 for transactor in goods_market_participants[country_name]:
-                    if transactor.transactor_seller_states["Priority"] == 1 or not sell_high_prio_only:
-                        if not np.all(transactor.transactor_seller_states["Remaining Goods"] == 0):
-                            if transactor.transactor_seller_states["Value Type"] == ValueType.REAL:
+                    if (
+                        transactor.transactor_seller_states["Priority"] == 1
+                        or not sell_high_prio_only
+                    ):
+                        if not np.all(
+                            transactor.transactor_seller_states["Remaining Goods"] == 0
+                        ):
+                            if (
+                                transactor.transactor_seller_states["Value Type"]
+                                == ValueType.REAL
+                            ):
                                 for rec_country in total_real_demand.keys():
                                     real_amount = (
-                                        transactor.transactor_seller_states["Remaining Goods"][
-                                            transactor.transactor_seller_states["Industries"] == g
+                                        transactor.transactor_seller_states[
+                                            "Remaining Goods"
+                                        ][
+                                            transactor.transactor_seller_states[
+                                                "Industries"
+                                            ]
+                                            == g
                                         ]
                                         / aggr_real_supply[g]
                                         * total_real_demand[rec_country][g]
                                     )
-                                    transactor.transactor_seller_states["Real Amount sold to " + rec_country][
-                                        transactor.transactor_seller_states["Industries"] == g
+                                    transactor.transactor_seller_states[
+                                        "Real Amount sold to " + rec_country
+                                    ][
+                                        transactor.transactor_seller_states[
+                                            "Industries"
+                                        ]
+                                        == g
                                     ] += real_amount
                                 total_real_amount = (
-                                    transactor.transactor_seller_states["Remaining Goods"][
-                                        transactor.transactor_seller_states["Industries"] == g
+                                    transactor.transactor_seller_states[
+                                        "Remaining Goods"
+                                    ][
+                                        transactor.transactor_seller_states[
+                                            "Industries"
+                                        ]
+                                        == g
                                     ]
                                     / aggr_real_supply[g]
                                     * aggr_real_demand[g]
                                 )
                                 transactor.transactor_seller_states["Real Amount sold"][
-                                    transactor.transactor_seller_states["Industries"] == g
+                                    transactor.transactor_seller_states["Industries"]
+                                    == g
                                 ] += total_real_amount
                                 transactor.transactor_seller_states["Remaining Goods"][
-                                    transactor.transactor_seller_states["Industries"] == g
+                                    transactor.transactor_seller_states["Industries"]
+                                    == g
                                 ] -= (
-                                    transactor.transactor_seller_states["Remaining Goods"][
-                                        transactor.transactor_seller_states["Industries"] == g
+                                    transactor.transactor_seller_states[
+                                        "Remaining Goods"
+                                    ][
+                                        transactor.transactor_seller_states[
+                                            "Industries"
+                                        ]
+                                        == g
                                     ]
                                     / aggr_real_supply[g]
                                     * aggr_real_demand[g]
@@ -465,92 +524,154 @@ def clear_evenly(
                 for transactor in goods_market_participants[country_name]:
                     if (
                         with_buyer_value_type is None
-                        or transactor.transactor_buyer_states["Value Type"] == with_buyer_value_type
+                        or transactor.transactor_buyer_states["Value Type"]
+                        == with_buyer_value_type
                     ):
-                        if transactor.transactor_buyer_states["Priority"] == 1 or not buy_high_prio_only:
-                            if transactor.transactor_buyer_states["Value Type"] == ValueType.REAL:
-                                transactor.transactor_buyer_states["Nominal Amount spent"][:, g] += (
+                        if (
+                            transactor.transactor_buyer_states["Priority"] == 1
+                            or not buy_high_prio_only
+                        ):
+                            if (
+                                transactor.transactor_buyer_states["Value Type"]
+                                == ValueType.REAL
+                            ):
+                                transactor.transactor_buyer_states[
+                                    "Nominal Amount spent"
+                                ][:, g] += (
                                     average_goods_price[g]
                                     * trade_prop
-                                    * transactor.transactor_buyer_states["Remaining Goods"][:, g]
+                                    * transactor.transactor_buyer_states[
+                                        "Remaining Goods"
+                                    ][:, g]
                                 )
                                 for sell_country in total_real_supply.keys():
                                     transactor.transactor_buyer_states[
-                                        "Nominal Amount spent on Goods from " + sell_country
+                                        "Nominal Amount spent on Goods from "
+                                        + sell_country
                                     ][:, g] += (
                                         (
                                             average_goods_price[g]
                                             * trade_prop
-                                            * transactor.transactor_buyer_states["Remaining Goods"][:, g]
+                                            * transactor.transactor_buyer_states[
+                                                "Remaining Goods"
+                                            ][:, g]
                                         )
                                         * total_real_supply[sell_country][g]
                                         / aggr_real_supply[g]
                                     )
-                                transactor.transactor_buyer_states["Real Amount bought"][:, g] += (
-                                    trade_prop * transactor.transactor_buyer_states["Remaining Goods"][:, g]
-                                )
-                                for sell_country in total_real_supply.keys():
-                                    transactor.transactor_buyer_states["Real Amount bought from " + sell_country][
-                                        :, g
-                                    ] += (
-                                        trade_prop
-                                        * transactor.transactor_buyer_states["Remaining Goods"][:, g]
-                                        * total_real_supply[sell_country][g]
-                                        / aggr_real_supply[g]
-                                    )
-                                transactor.transactor_buyer_states["Remaining Goods"][:, g] -= (
-                                    trade_prop * transactor.transactor_buyer_states["Remaining Goods"][:, g]
-                                )
-                            elif transactor.transactor_buyer_states["Value Type"] == ValueType.NOMINAL:
-                                transactor.transactor_buyer_states["Nominal Amount spent"][:, g] += (
-                                    trade_prop * transactor.transactor_buyer_states["Remaining Goods"][:, g]
+                                transactor.transactor_buyer_states[
+                                    "Real Amount bought"
+                                ][:, g] += (
+                                    trade_prop
+                                    * transactor.transactor_buyer_states[
+                                        "Remaining Goods"
+                                    ][:, g]
                                 )
                                 for sell_country in total_real_supply.keys():
                                     transactor.transactor_buyer_states[
-                                        "Nominal Amount spent on Goods from " + sell_country
+                                        "Real Amount bought from " + sell_country
                                     ][:, g] += (
                                         trade_prop
-                                        * transactor.transactor_buyer_states["Remaining Goods"][:, g]
+                                        * transactor.transactor_buyer_states[
+                                            "Remaining Goods"
+                                        ][:, g]
                                         * total_real_supply[sell_country][g]
                                         / aggr_real_supply[g]
                                     )
-                                transactor.transactor_buyer_states["Real Amount bought"][:, g] += (
+                                transactor.transactor_buyer_states["Remaining Goods"][
+                                    :, g
+                                ] -= (
                                     trade_prop
-                                    * transactor.transactor_buyer_states["Remaining Goods"][:, g]
+                                    * transactor.transactor_buyer_states[
+                                        "Remaining Goods"
+                                    ][:, g]
+                                )
+                            elif (
+                                transactor.transactor_buyer_states["Value Type"]
+                                == ValueType.NOMINAL
+                            ):
+                                transactor.transactor_buyer_states[
+                                    "Nominal Amount spent"
+                                ][:, g] += (
+                                    trade_prop
+                                    * transactor.transactor_buyer_states[
+                                        "Remaining Goods"
+                                    ][:, g]
+                                )
+                                for sell_country in total_real_supply.keys():
+                                    transactor.transactor_buyer_states[
+                                        "Nominal Amount spent on Goods from "
+                                        + sell_country
+                                    ][:, g] += (
+                                        trade_prop
+                                        * transactor.transactor_buyer_states[
+                                            "Remaining Goods"
+                                        ][:, g]
+                                        * total_real_supply[sell_country][g]
+                                        / aggr_real_supply[g]
+                                    )
+                                transactor.transactor_buyer_states[
+                                    "Real Amount bought"
+                                ][:, g] += (
+                                    trade_prop
+                                    * transactor.transactor_buyer_states[
+                                        "Remaining Goods"
+                                    ][:, g]
                                     / average_goods_price[g]
                                 )
                                 for sell_country in total_real_supply.keys():
-                                    transactor.transactor_buyer_states["Real Amount bought from " + sell_country][
-                                        :, g
-                                    ] += (
+                                    transactor.transactor_buyer_states[
+                                        "Real Amount bought from " + sell_country
+                                    ][:, g] += (
                                         (
                                             trade_prop
-                                            * transactor.transactor_buyer_states["Remaining Goods"][:, g]
+                                            * transactor.transactor_buyer_states[
+                                                "Remaining Goods"
+                                            ][:, g]
                                             / average_goods_price[g]
                                         )
                                         * total_real_supply[sell_country][g]
                                         / aggr_real_supply[g]
                                     )
-                                transactor.transactor_buyer_states["Remaining Goods"][:, g] -= (
-                                    trade_prop * transactor.transactor_buyer_states["Remaining Goods"][:, g]
+                                transactor.transactor_buyer_states["Remaining Goods"][
+                                    :, g
+                                ] -= (
+                                    trade_prop
+                                    * transactor.transactor_buyer_states[
+                                        "Remaining Goods"
+                                    ][:, g]
                                 )
         else:
             # Seller
             for country_name in from_country_names:
                 for transactor in goods_market_participants[country_name]:
-                    if transactor.transactor_seller_states["Priority"] == 1 or not sell_high_prio_only:
-                        if transactor.transactor_seller_states["Value Type"] == ValueType.REAL:
+                    if (
+                        transactor.transactor_seller_states["Priority"] == 1
+                        or not sell_high_prio_only
+                    ):
+                        if (
+                            transactor.transactor_seller_states["Value Type"]
+                            == ValueType.REAL
+                        ):
                             transactor.transactor_seller_states["Real Amount sold"][
                                 transactor.transactor_seller_states["Industries"] == g
                             ] += transactor.transactor_seller_states["Remaining Goods"][
                                 transactor.transactor_seller_states["Industries"] == g
                             ]
                             for buy_country in total_real_demand.keys():
-                                transactor.transactor_seller_states["Real Amount sold to " + buy_country][
-                                    transactor.transactor_seller_states["Industries"] == g
+                                transactor.transactor_seller_states[
+                                    "Real Amount sold to " + buy_country
+                                ][
+                                    transactor.transactor_seller_states["Industries"]
+                                    == g
                                 ] += (
-                                    transactor.transactor_seller_states["Remaining Goods"][
-                                        transactor.transactor_seller_states["Industries"] == g
+                                    transactor.transactor_seller_states[
+                                        "Remaining Goods"
+                                    ][
+                                        transactor.transactor_seller_states[
+                                            "Industries"
+                                        ]
+                                        == g
                                     ]
                                     / aggr_real_demand[g]
                                     * total_real_demand[buy_country][g]
@@ -566,80 +687,120 @@ def clear_evenly(
                 for transactor in goods_market_participants[country_name]:
                     if (
                         with_buyer_value_type is None
-                        or transactor.transactor_buyer_states["Value Type"] == with_buyer_value_type
+                        or transactor.transactor_buyer_states["Value Type"]
+                        == with_buyer_value_type
                     ):
-                        if transactor.transactor_buyer_states["Priority"] == 1 or not buy_high_prio_only:
-                            if transactor.transactor_buyer_states["Value Type"] == ValueType.REAL:
-                                transactor.transactor_buyer_states["Nominal Amount spent"][:, g] += (
+                        if (
+                            transactor.transactor_buyer_states["Priority"] == 1
+                            or not buy_high_prio_only
+                        ):
+                            if (
+                                transactor.transactor_buyer_states["Value Type"]
+                                == ValueType.REAL
+                            ):
+                                transactor.transactor_buyer_states[
+                                    "Nominal Amount spent"
+                                ][:, g] += (
                                     average_goods_price[g]
                                     * trade_prop
-                                    * transactor.transactor_buyer_states["Remaining Goods"][:, g]
+                                    * transactor.transactor_buyer_states[
+                                        "Remaining Goods"
+                                    ][:, g]
                                     / aggr_real_demand[g]
                                     * aggr_real_supply[g]
                                 )
                                 for sell_country in total_real_supply.keys():
                                     transactor.transactor_buyer_states[
-                                        "Nominal Amount spent on Goods from " + sell_country
+                                        "Nominal Amount spent on Goods from "
+                                        + sell_country
                                     ][:, g] += (
                                         average_goods_price[g]
                                         * trade_prop
-                                        * transactor.transactor_buyer_states["Remaining Goods"][:, g]
+                                        * transactor.transactor_buyer_states[
+                                            "Remaining Goods"
+                                        ][:, g]
                                         / aggr_real_demand[g]
                                         * total_real_supply[sell_country][g]
                                     )
-                                transactor.transactor_buyer_states["Real Amount bought"][:, g] += (
+                                transactor.transactor_buyer_states[
+                                    "Real Amount bought"
+                                ][:, g] += (
                                     trade_prop
-                                    * transactor.transactor_buyer_states["Remaining Goods"][:, g]
-                                    / aggr_real_demand[g]
-                                    * aggr_real_supply[g]
-                                )
-                                for sell_country in total_real_supply.keys():
-                                    transactor.transactor_buyer_states["Real Amount bought from " + sell_country][
-                                        :, g
-                                    ] += (
-                                        trade_prop
-                                        * transactor.transactor_buyer_states["Remaining Goods"][:, g]
-                                        / aggr_real_demand[g]
-                                        * total_real_supply[sell_country][g]
-                                    )
-                            elif transactor.transactor_buyer_states["Value Type"] == ValueType.NOMINAL:
-                                transactor.transactor_buyer_states["Nominal Amount spent"][:, g] += (
-                                    trade_prop
-                                    * transactor.transactor_buyer_states["Remaining Goods"][:, g]
+                                    * transactor.transactor_buyer_states[
+                                        "Remaining Goods"
+                                    ][:, g]
                                     / aggr_real_demand[g]
                                     * aggr_real_supply[g]
                                 )
                                 for sell_country in total_real_supply.keys():
                                     transactor.transactor_buyer_states[
-                                        "Nominal Amount spent on Goods from " + sell_country
+                                        "Real Amount bought from " + sell_country
                                     ][:, g] += (
                                         trade_prop
-                                        * transactor.transactor_buyer_states["Remaining Goods"][:, g]
+                                        * transactor.transactor_buyer_states[
+                                            "Remaining Goods"
+                                        ][:, g]
                                         / aggr_real_demand[g]
                                         * total_real_supply[sell_country][g]
                                     )
-                                transactor.transactor_buyer_states["Real Amount bought"][:, g] += (
+                            elif (
+                                transactor.transactor_buyer_states["Value Type"]
+                                == ValueType.NOMINAL
+                            ):
+                                transactor.transactor_buyer_states[
+                                    "Nominal Amount spent"
+                                ][:, g] += (
                                     trade_prop
-                                    * transactor.transactor_buyer_states["Remaining Goods"][:, g]
+                                    * transactor.transactor_buyer_states[
+                                        "Remaining Goods"
+                                    ][:, g]
+                                    / aggr_real_demand[g]
+                                    * aggr_real_supply[g]
+                                )
+                                for sell_country in total_real_supply.keys():
+                                    transactor.transactor_buyer_states[
+                                        "Nominal Amount spent on Goods from "
+                                        + sell_country
+                                    ][:, g] += (
+                                        trade_prop
+                                        * transactor.transactor_buyer_states[
+                                            "Remaining Goods"
+                                        ][:, g]
+                                        / aggr_real_demand[g]
+                                        * total_real_supply[sell_country][g]
+                                    )
+                                transactor.transactor_buyer_states[
+                                    "Real Amount bought"
+                                ][:, g] += (
+                                    trade_prop
+                                    * transactor.transactor_buyer_states[
+                                        "Remaining Goods"
+                                    ][:, g]
                                     / average_goods_price[g]
                                     / aggr_real_demand[g]
                                     * aggr_real_supply[g]
                                 )
                                 for sell_country in total_real_supply.keys():
-                                    transactor.transactor_buyer_states["Real Amount bought from " + sell_country][
-                                        :, g
-                                    ] += (
+                                    transactor.transactor_buyer_states[
+                                        "Real Amount bought from " + sell_country
+                                    ][:, g] += (
                                         trade_prop
-                                        * transactor.transactor_buyer_states["Remaining Goods"][:, g]
+                                        * transactor.transactor_buyer_states[
+                                            "Remaining Goods"
+                                        ][:, g]
                                         / average_goods_price[g]
                                         / aggr_real_demand[g]
                                         * total_real_supply[sell_country][g]
                                     )
 
                             # Remaining goods
-                            transactor.transactor_buyer_states["Remaining Goods"][:, g] -= (
+                            transactor.transactor_buyer_states["Remaining Goods"][
+                                :, g
+                            ] -= (
                                 trade_prop
-                                * transactor.transactor_buyer_states["Remaining Goods"][:, g]
+                                * transactor.transactor_buyer_states["Remaining Goods"][
+                                    :, g
+                                ]
                                 / aggr_real_demand[g]
                                 * aggr_real_supply[g]
                             )
@@ -704,10 +865,12 @@ def distribute_excess_demand_evenly(
         - Plan capacity adjustments
     """
     # Collect initial values
-    _, _, total_nominal_supply, aggr_nominal_supply, average_price = collect_seller_info(
-        goods_market_participants=goods_market_participants,
-        n_industries=n_industries,
-        use_initial=True,
+    _, _, total_nominal_supply, aggr_nominal_supply, average_price = (
+        collect_seller_info(
+            goods_market_participants=goods_market_participants,
+            n_industries=n_industries,
+            use_initial=True,
+        )
     )
     _, excess_real_demand, _, _ = collect_buyer_info(
         goods_market_participants=goods_market_participants,

@@ -39,7 +39,9 @@ class TestROARestrictionIntegration:
             debtor_minimum_fill=False,
         )
 
-    def test_roa_calculation_with_zero_capital_no_crash(self, credit_market_clearer, test_banks, test_firms):
+    def test_roa_calculation_with_zero_capital_no_crash(
+        self, credit_market_clearer, test_banks, test_firms
+    ):
         """Test that ROA calculation doesn't crash when a firm has zero capital.
 
         This test verifies that the fix handles division by zero correctly
@@ -60,7 +62,9 @@ class TestROARestrictionIntegration:
         if n_firms > 0:
             modified_capital = original_capital.copy()
             modified_capital[0] = 0.0
-            test_firms.ts.override_current("capital_inputs_stock_value", modified_capital)
+            test_firms.ts.override_current(
+                "capital_inputs_stock_value", modified_capital
+            )
 
         # Set up credit demand for firms
         target_credit = np.full(n_firms, 10000.0)
@@ -89,11 +93,15 @@ class TestROARestrictionIntegration:
             # If we get here, the division by zero was handled correctly
             # Check that the result is a valid array (no NaN or unexpected inf)
             assert result is not None, "Result should not be None"
-            assert np.all(np.isfinite(result[0]) | (result[0] == 0)), "Loan values should be finite or zero"
+            assert np.all(
+                np.isfinite(result[0]) | (result[0] == 0)
+            ), "Loan values should be finite or zero"
 
         finally:
             # Restore original capital values
-            test_firms.ts.override_current("capital_inputs_stock_value", original_capital)
+            test_firms.ts.override_current(
+                "capital_inputs_stock_value", original_capital
+            )
 
 
 class TestROARestrictionLogic:
@@ -123,7 +131,9 @@ class TestROARestrictionLogic:
         """
         # Simulate firm data with one firm having ZERO capital
         n_firms = 5
-        expected_profits = np.array([1000000, 100000, 2000000, -100000, 500000], dtype=float)
+        expected_profits = np.array(
+            [1000000, 100000, 2000000, -100000, 500000], dtype=float
+        )
         capital_stock = np.array([10000000, 0, 15000000, 2000000, 5000000], dtype=float)
         roa_threshold = 0.0
 
@@ -137,9 +147,9 @@ class TestROARestrictionLogic:
         # Document the bug: firm with zero capital gets inf (allowed)
         firm_with_zero_capital_idx = 1
         assert capital_stock[firm_with_zero_capital_idx] == 0
-        assert return_on_assets_restrictions[firm_with_zero_capital_idx] == np.inf, (
-            "Bug demonstration: old formula allows firm with zero capital"
-        )
+        assert (
+            return_on_assets_restrictions[firm_with_zero_capital_idx] == np.inf
+        ), "Bug demonstration: old formula allows firm with zero capital"
 
     def test_new_formula_handles_zero_capital_correctly(self):
         """Test that the new formula handles zero capital safely.
@@ -159,7 +169,9 @@ class TestROARestrictionLogic:
         - ROA = 0.0, which is correctly compared against threshold
         """
         n_firms = 5
-        expected_profits = np.array([1000000, 100000, 2000000, -100000, 500000], dtype=float)
+        expected_profits = np.array(
+            [1000000, 100000, 2000000, -100000, 500000], dtype=float
+        )
         capital_stock = np.array([10000000, 0, 15000000, 2000000, 5000000], dtype=float)
         roa_threshold = 0.05  # 5% threshold
 
@@ -177,17 +189,21 @@ class TestROARestrictionLogic:
         # Verify ROA calculation for zero capital firm
         firm_with_zero_capital_idx = 1
         assert capital_stock[firm_with_zero_capital_idx] == 0
-        assert firm_roa[firm_with_zero_capital_idx] == 0.0, "Zero capital should result in ROA = 0"
+        assert (
+            firm_roa[firm_with_zero_capital_idx] == 0.0
+        ), "Zero capital should result in ROA = 0"
 
         # With threshold = 5% and ROA = 0%, firm should be BLOCKED
-        assert return_on_assets_restrictions[firm_with_zero_capital_idx] == 0.0, (
-            "Firm with zero capital should be blocked when threshold > 0"
-        )
+        assert (
+            return_on_assets_restrictions[firm_with_zero_capital_idx] == 0.0
+        ), "Firm with zero capital should be blocked when threshold > 0"
 
     def test_all_firm_scenarios(self):
         """Test ROA restriction logic for various firm scenarios."""
         n_firms = 5
-        expected_profits = np.array([1000000, 100000, 2000000, -100000, 500000], dtype=float)
+        expected_profits = np.array(
+            [1000000, 100000, 2000000, -100000, 500000], dtype=float
+        )
         capital_stock = np.array([10000000, 0, 15000000, 2000000, 5000000], dtype=float)
         roa_threshold = 0.05  # 5%
 
@@ -210,7 +226,9 @@ class TestROARestrictionLogic:
             where=capital_stock != 0,
         )
 
-        assert np.allclose(firm_roa, expected_roa), f"ROA calculation mismatch: {firm_roa} vs {expected_roa}"
+        assert np.allclose(
+            firm_roa, expected_roa
+        ), f"ROA calculation mismatch: {firm_roa} vs {expected_roa}"
 
         # Apply restrictions
         return_on_assets_restrictions = np.full(n_firms, np.inf)
