@@ -158,9 +158,7 @@ class RestOfTheWorld(Agent):
         Returns:
             RestOfTheWorld: Initialized ROW instance
         """
-        functions = functions_from_model(
-            model=configuration.functions, loc="macromodel.rest_of_the_world"
-        )
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.rest_of_the_world")
 
         if (
             isinstance(functions.get("prices"), SectorExogenousROWPriceSetter)
@@ -173,19 +171,11 @@ class RestOfTheWorld(Agent):
         data = synthetic_row.row_data.astype(float)
         data.rename_axis("Industry", inplace=True)
 
-        exogenous_real_imports_before = calibration_data_before[
-            ("ROW", "Real Imports (Value)")
-        ].values
-        exogenous_real_exports_before = calibration_data_before[
-            ("ROW", "Real Exports (Value)")
-        ].values
+        exogenous_real_imports_before = calibration_data_before[("ROW", "Real Imports (Value)")].values
+        exogenous_real_exports_before = calibration_data_before[("ROW", "Real Exports (Value)")].values
 
-        exogenous_real_imports_during = calibration_data_during[
-            ("ROW", "Real Imports (Value)")
-        ].values
-        exogenous_real_exports_during = calibration_data_during[
-            ("ROW", "Real Exports (Value)")
-        ].values
+        exogenous_real_imports_during = calibration_data_during[("ROW", "Real Imports (Value)")].values
+        exogenous_real_exports_during = calibration_data_during[("ROW", "Real Exports (Value)")].values
 
         n_exporters_by_industry = synthetic_row.n_exporters_by_industry
         n_importers = synthetic_row.n_importers
@@ -273,27 +263,20 @@ class RestOfTheWorld(Agent):
         """
         historic_total_real_imports = np.concatenate(
             (
-                self.states["exogenous_real_imports_before"][
-                    -self.forecasting_window :
-                ],
+                self.states["exogenous_real_imports_before"][-self.forecasting_window :],
                 np.sum(
-                    np.array(self.ts.historic("imports_in_lcu"))
-                    / np.array(self.ts.historic("price_in_lcu")),
+                    np.array(self.ts.historic("imports_in_lcu")) / np.array(self.ts.historic("price_in_lcu")),
                     axis=1,
                 ),
             )
         )
         if self.assume_zero_growth:
-            self.ts.desired_imports_in_lcu.append(
-                self.ts.initial("desired_imports_in_lcu")
-            )
+            self.ts.desired_imports_in_lcu.append(self.ts.initial("desired_imports_in_lcu"))
         else:
             self.ts.desired_imports_in_lcu.append(
                 self.functions["imports"].compute_imports(
                     historic_total_real_imports=historic_total_real_imports,
-                    historic_total_real_imports_during=self.states[
-                        "exogenous_real_imports_during"
-                    ],
+                    historic_total_real_imports_during=self.states["exogenous_real_imports_during"],
                     current_time=len(self.ts.historic("total_exports")),
                     initial_desired_imports=self.ts.initial("desired_imports_in_lcu"),
                     model=self.states["row_imports_model"],
@@ -304,9 +287,7 @@ class RestOfTheWorld(Agent):
                 )
             )
         self.ts.desired_imports_in_usd.append(
-            1.0
-            / self.exchange_rate_usd_to_lcu
-            * self.ts.current("desired_imports_in_lcu")
+            1.0 / self.exchange_rate_usd_to_lcu * self.ts.current("desired_imports_in_lcu")
         )
         assert np.all(self.ts.current("desired_imports_in_usd") >= 0.0)
         self.set_goods_to_buy(
@@ -335,9 +316,7 @@ class RestOfTheWorld(Agent):
         # Set desired exports
         historic_total_real_exports = np.concatenate(
             (
-                self.states["exogenous_real_exports_before"][
-                    -self.forecasting_window :
-                ],
+                self.states["exogenous_real_exports_before"][-self.forecasting_window :],
                 np.array(self.ts.historic("total_exports")).flatten(),
             )
         )
@@ -347,9 +326,7 @@ class RestOfTheWorld(Agent):
             self.ts.desired_exports_real.append(
                 self.functions["exports"].compute_exports(
                     historic_total_real_exports=historic_total_real_exports,
-                    historic_total_real_exports_during=self.states[
-                        "exogenous_real_exports_during"
-                    ],
+                    historic_total_real_exports_during=self.states["exogenous_real_exports_during"],
                     current_time=len(self.ts.historic("total_exports")),
                     initial_desired_exports=self.ts.initial("desired_exports_real"),
                     model=self.states["row_exports_model"],
@@ -386,9 +363,7 @@ class RestOfTheWorld(Agent):
                 adjustment_speed=self.parameters.adjustment_speed,
             )
         )
-        self.ts.price_in_usd.append(
-            1.0 / self.exchange_rate_usd_to_lcu * self.ts.current("price_in_lcu")
-        )
+        self.ts.price_in_usd.append(1.0 / self.exchange_rate_usd_to_lcu * self.ts.current("price_in_lcu"))
         assert np.all(self.ts.current("price_in_usd") > 0.0)
         self.ts.price_offered.append(self.ts.current("price_in_usd"))
         self.set_prices(self.ts.current("price_in_usd")[self.states["Industry"]])
@@ -450,9 +425,7 @@ class RestOfTheWorld(Agent):
         self.ts.exports_real.append(self.ts.current("real_amount_sold"))
         self.ts.total_exports.append([self.ts.current("exports_real").sum()])
         self.ts.imports_in_usd.append(self.ts.current("nominal_amount_spent_in_lcu")[0])
-        self.ts.imports_in_lcu.append(
-            self.exchange_rate_usd_to_lcu * self.ts.current("imports_in_usd")
-        )
+        self.ts.imports_in_lcu.append(self.exchange_rate_usd_to_lcu * self.ts.current("imports_in_usd"))
         self.ts.total_imports.append([self.ts.current("imports_in_lcu").sum()])
 
     def save_to_h5(self, file: h5py.File) -> None:

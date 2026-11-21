@@ -226,13 +226,9 @@ class SyntheticCountry:
             This method should only be used for EU member countries. For non-EU
             countries, use proxied_synthetic_country instead.
         """
-        central_government = DefaultSyntheticCGovernment.from_readers(
-            readers, country, year, year_range=year_range
-        )
+        central_government = DefaultSyntheticCGovernment.from_readers(readers, country, year, year_range=year_range)
 
-        total_unemployment_benefits = central_government.central_gov_data[
-            "Total Unemployment Benefits"
-        ].values[0]
+        total_unemployment_benefits = central_government.central_gov_data["Total Unemployment Benefits"].values[0]
 
         government_entities = DefaultSyntheticGovernmentEntities.from_readers(
             readers=readers,
@@ -302,25 +298,15 @@ class SyntheticCountry:
 
         total_imputed_rent = readers.icio[year].imputed_rents[country]
 
-        dividend_payout_ratio = readers.eurostat.dividend_payout_ratio(
-            country=country, year=year
-        )
-        long_term_interest_rate = readers.oecd_econ.read_long_term_interest_rates(
-            country=country, year=year
-        )
-        policy_rate_markup = readers.eurostat.firm_risk_premium(
-            country=country, year=year
-        )
+        dividend_payout_ratio = readers.eurostat.dividend_payout_ratio(country=country, year=year)
+        long_term_interest_rate = readers.oecd_econ.read_long_term_interest_rates(country=country, year=year)
+        policy_rate_markup = readers.eurostat.firm_risk_premium(country=country, year=year)
 
         if set(industries).issubset(ALL_INDUSTRIES):
-            weights_by_income = readers.expand_weights_by_income(
-                year=year, country=country
-            )
+            weights_by_income = readers.expand_weights_by_income(year=year, country=country)
         else:
-            weights_by_income = (
-                readers.oecd_econ.get_household_consumption_by_income_quantile(
-                    country=country, year=year
-                )
+            weights_by_income = readers.oecd_econ.get_household_consumption_by_income_quantile(
+                country=country, year=year
             )
 
         cls.match_households_firms_banks(banks, firms, industries, population, tax_data)
@@ -336,10 +322,7 @@ class SyntheticCountry:
 
         if emission_factors is not None:
             emitting_industry_indices = np.array(
-                [
-                    list(industries).index(industry)
-                    for industry in ["B05a", "B05b", "B05c", "C19"]
-                ]
+                [list(industries).index(industry) for industry in ["B05a", "B05b", "B05c", "C19"]]
             )
             emission_factors_array = emission_factors.emissions_array
         else:
@@ -361,9 +344,7 @@ class SyntheticCountry:
         )
 
         if readers.emission_fractions is not None:
-            emission_fractions = EmissionFractions.from_reader(
-                readers.emission_fractions
-            )
+            emission_fractions = EmissionFractions.from_reader(readers.emission_fractions)
         else:
             emission_fractions = None
 
@@ -409,9 +390,7 @@ class SyntheticCountry:
             emission_fractions=emission_fractions,
             emission_factors_ch4=emission_factors_ch4,
             firm_exo_prices=(
-                SectorExoPrices.from_reader(readers.exo_prices)
-                if readers.exo_prices is not None
-                else None
+                SectorExoPrices.from_reader(readers.exo_prices) if readers.exo_prices is not None else None
             ),
         )
 
@@ -461,13 +440,9 @@ class SyntheticCountry:
         Returns:
             SyntheticCountry: Initialized synthetic country instance
         """
-        central_government = DefaultSyntheticCGovernment.from_readers(
-            readers, country, year, year_range=year_range
-        )
+        central_government = DefaultSyntheticCGovernment.from_readers(readers, country, year, year_range=year_range)
 
-        total_unemployment_benefits = central_government.central_gov_data[
-            "Total Unemployment Benefits"
-        ].values[0]
+        total_unemployment_benefits = central_government.central_gov_data["Total Unemployment Benefits"].values[0]
 
         government_entities = DefaultSyntheticGovernmentEntities.from_readers(
             readers=readers,
@@ -548,26 +523,16 @@ class SyntheticCountry:
 
         total_imputed_rent = readers.icio[year].imputed_rents[country]
 
-        dividend_payout_ratio = readers.eurostat.dividend_payout_ratio(
-            country=country, year=year
-        )
-        long_term_interest_rate = readers.oecd_econ.read_long_term_interest_rates(
-            country=country, year=year
-        )
-        policy_rate_markup = readers.eurostat.firm_risk_premium(
-            country=country, year=year
-        )
+        dividend_payout_ratio = readers.eurostat.dividend_payout_ratio(country=country, year=year)
+        long_term_interest_rate = readers.oecd_econ.read_long_term_interest_rates(country=country, year=year)
+        policy_rate_markup = readers.eurostat.firm_risk_premium(country=country, year=year)
 
         if set(industries).issubset(AGGREGATED_INDUSTRIES):
-            weights_by_income = (
-                readers.oecd_econ.get_household_consumption_by_income_quantile(
-                    country=country, year=year
-                )
+            weights_by_income = readers.oecd_econ.get_household_consumption_by_income_quantile(
+                country=country, year=year
             )
         else:
-            weights_by_income = readers.expand_weights_by_income(
-                year=year, country=country
-            )
+            weights_by_income = readers.expand_weights_by_income(year=year, country=country)
 
         cls.match_households_firms_banks(banks, firms, industries, population, tax_data)
 
@@ -582,10 +547,7 @@ class SyntheticCountry:
 
         if emission_factors is not None:
             emitting_industry_indices = np.array(
-                [
-                    list(industries).index(industry)
-                    for industry in ["B05a", "B05b", "B05c", "C19"]
-                ]
+                [list(industries).index(industry) for industry in ["B05a", "B05b", "B05c", "C19"]]
             )
             emission_factors_array = emission_factors.emissions_array
         else:
@@ -607,9 +569,7 @@ class SyntheticCountry:
         )
 
         if readers.emission_fractions is not None:
-            emission_fractions = EmissionFractions.from_reader(
-                readers.emission_fractions
-            )
+            emission_fractions = EmissionFractions.from_reader(readers.emission_fractions)
         else:
             emission_fractions = None
 
@@ -655,9 +615,7 @@ class SyntheticCountry:
             emission_fractions=emission_fractions,
             emission_factors_ch4=emission_factors_ch4,
             firm_exo_prices=(
-                SectorExoPrices.from_reader(readers.exo_prices)
-                if readers.exo_prices is not None
-                else None
+                SectorExoPrices.from_reader(readers.exo_prices) if readers.exo_prices is not None else None
             ),
         )
 
@@ -914,19 +872,13 @@ class SyntheticCountry:
         population.set_wealth_distribution_function(independents=independents)
 
         population.compute_household_income(
-            total_social_transfers=central_government.central_gov_data[
-                "Other Social Benefits"
-            ].values[0],
+            total_social_transfers=central_government.central_gov_data["Other Social Benefits"].values[0],
             independents=independents,
         )
         population.set_household_saving_rates(independents=independents)
 
-        population.set_household_investment_rates(
-            capital_formation_taxrate=tax_data.capital_formation_tax
-        )
-        iot_consumption = country_industry_data["industry_vectors"][
-            "Household Consumption in LCU"
-        ]
+        population.set_household_investment_rates(capital_formation_taxrate=tax_data.capital_formation_tax)
+        iot_consumption = country_industry_data["industry_vectors"]["Household Consumption in LCU"]
         population.normalise_household_consumption(
             iot_hh_consumption=iot_consumption,
             vat=tax_data.value_added_tax,
@@ -935,9 +887,7 @@ class SyntheticCountry:
 
         population.normalise_household_investment(
             tau_cf=tax_data.capital_formation_tax,
-            iot_hh_investment=country_industry_data["industry_vectors"][
-                "Household Capital Inputs in LCU"
-            ],
+            iot_hh_investment=country_industry_data["industry_vectors"]["Household Capital Inputs in LCU"],
         )
 
         population.match_consumption_weights_by_income(
@@ -946,9 +896,7 @@ class SyntheticCountry:
             vat=tax_data.value_added_tax,
         )
 
-        if (emission_factors_array is not None) and (
-            emitting_industry_indices is not None
-        ):
+        if (emission_factors_array is not None) and (emitting_industry_indices is not None):
             population.add_emissions(
                 emission_factors_array,
                 emitting_industry_indices,
@@ -998,9 +946,7 @@ class SyntheticCountry:
         owned_houses = housing_data["Is Owner-Occupied"]
         total_rent = housing_data.loc[owned_houses, "Rent"].sum()
 
-        self.match_households_firms_banks(
-            self.banks, self.firms, self.industries, self.population, self.tax_data
-        )
+        self.match_households_firms_banks(self.banks, self.firms, self.industries, self.population, self.tax_data)
 
         housing_data = set_housing_df(
             synthetic_population=self.population,
@@ -1041,20 +987,12 @@ class SyntheticCountry:
         Returns:
             float: GDP value calculated using the output approach
         """
-        total_sales = (
-            self.firms.firm_data["Production"] * self.firms.firm_data["Price"]
-        ).sum()
+        total_sales = (self.firms.firm_data["Production"] * self.firms.firm_data["Price"]).sum()
         used_intermediate_inputs = self.firms.used_intermediate_inputs
-        used_intermediate_inputs_costs = np.matmul(
-            self.firms.firm_data["Price"].values, used_intermediate_inputs
-        ).sum()
+        used_intermediate_inputs_costs = np.matmul(self.firms.firm_data["Price"].values, used_intermediate_inputs).sum()
 
-        total_taxes_on_products = self.central_government.central_gov_data[
-            "Taxes on Products"
-        ].values[0]
-        total_taxes_on_production = self.central_government.central_gov_data[
-            "Taxes on Production"
-        ].values[0]
+        total_taxes_on_products = self.central_government.central_gov_data["Taxes on Products"].values[0]
+        total_taxes_on_production = self.central_government.central_gov_data["Taxes on Production"].values[0]
 
         rent = self.population.household_data["Rent Paid"].sum()
         imputed_rent = self.population.household_data["Rent Imputed"].sum()
@@ -1084,14 +1022,10 @@ class SyntheticCountry:
             float: GDP value calculated using the expenditure approach
         """
         used_capital_inputs = self.firms.used_capital_inputs
-        used_capital_inputs_costs = np.matmul(
-            used_capital_inputs.T, self.firms.firm_data["Price"].values
-        ).sum()
+        used_capital_inputs_costs = np.matmul(used_capital_inputs.T, self.firms.firm_data["Price"].values).sum()
 
         investment_rate = self.population.household_data["Investment Rate"].values
-        investment_weights = self.industry_data["industry_vectors"][
-            "Household Capital Inputs in LCU"
-        ]
+        investment_weights = self.industry_data["industry_vectors"]["Household Capital Inputs in LCU"]
         investment_weights = investment_weights.values / investment_weights.values.sum()
 
         income = self.population.household_data["Income"].values
@@ -1100,32 +1034,20 @@ class SyntheticCountry:
 
         capital_formation = used_capital_inputs_costs + gross_hh_investment.sum()
 
-        hh_consumption = self.industry_data["industry_vectors"][
-            "Household Consumption in LCU"
-        ].sum() * (1 + self.tax_data.value_added_tax)
-
-        gov_consumption = self.government_entities.gov_entity_data[
-            "Consumption in LCU"
-        ].sum()
-
-        exports = self.industry_data["industry_vectors"]["Exports in LCU"].sum() * (
-            1 + self.tax_data.export_tax
+        hh_consumption = self.industry_data["industry_vectors"]["Household Consumption in LCU"].sum() * (
+            1 + self.tax_data.value_added_tax
         )
+
+        gov_consumption = self.government_entities.gov_entity_data["Consumption in LCU"].sum()
+
+        exports = self.industry_data["industry_vectors"]["Exports in LCU"].sum() * (1 + self.tax_data.export_tax)
 
         imports = self.industry_data["industry_vectors"]["Imports in LCU"].sum()
 
         rent = self.population.household_data["Rent Paid"].sum()
         imputed_rent = self.population.household_data["Rent Imputed"].sum()
 
-        return (
-            capital_formation
-            + hh_consumption
-            + gov_consumption
-            + exports
-            - imports
-            + rent
-            + imputed_rent
-        )
+        return capital_formation + hh_consumption + gov_consumption + exports - imports + rent + imputed_rent
 
     @property
     def gdp_income(self) -> 0:
@@ -1144,9 +1066,7 @@ class SyntheticCountry:
         Returns:
             float: GDP value calculated using the income approach
         """
-        total_sales = (
-            self.firms.firm_data["Production"] * self.firms.firm_data["Price"]
-        ).sum()
+        total_sales = (self.firms.firm_data["Production"] * self.firms.firm_data["Price"]).sum()
         used_intermediate_inputs = self.firms.used_intermediate_inputs
         used_intermediate_inputs_costs = np.matmul(
             used_intermediate_inputs.T, self.firms.firm_data["Price"].values
@@ -1156,29 +1076,19 @@ class SyntheticCountry:
 
         taxes_on_production = self.firms.firm_data["Taxes paid on Production"].sum()
 
-        operating_surplus = (
-            total_sales - wages - used_intermediate_inputs_costs - taxes_on_production
-        )
+        operating_surplus = total_sales - wages - used_intermediate_inputs_costs - taxes_on_production
 
         # taxes_on_production_gov = self.central_government.central_gov_data["Taxes on Production"].values[0]
 
-        taxes_on_products_gov = self.central_government.central_gov_data[
-            "Taxes on Products"
-        ].values[0]
+        taxes_on_products_gov = self.central_government.central_gov_data["Taxes on Products"].values[0]
 
-        cg_rent_received = self.central_government.central_gov_data[
-            "Total Social Housing Rent"
-        ].values[0]
+        cg_rent_received = self.central_government.central_gov_data["Total Social Housing Rent"].values[0]
 
-        cg_taxes_rental_income = self.central_government.central_gov_data[
-            "Rental Income Taxes"
-        ].values[0]
+        cg_taxes_rental_income = self.central_government.central_gov_data["Rental Income Taxes"].values[0]
 
         rent_imputed = self.population.household_data["Rent Imputed"].sum()
 
-        hh_rental_income = self.population.household_data[
-            "Rental Income from Real Estate"
-        ].sum()
+        hh_rental_income = self.population.household_data["Rental Income from Real Estate"].sum()
 
         return (
             operating_surplus

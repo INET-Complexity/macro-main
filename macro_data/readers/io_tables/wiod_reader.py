@@ -81,9 +81,7 @@ class WIODReader:
     - Countries not in `considered_countries` are aggregated into "ROW"
     """
 
-    def __init__(
-        self, df: pd.DataFrame, considered_countries: list[str], industries: list[str]
-    ):
+    def __init__(self, df: pd.DataFrame, considered_countries: list[str], industries: list[str]):
         self.df = df
         self.industries = industries
         self.considered_countries = considered_countries
@@ -136,9 +134,7 @@ class WIODReader:
         - Drops "PURR" and "PURNR" rows
         - Swaps levels to maintain consistent structure
         """
-        df = pd.read_csv(
-            path, skiprows=1, header=[1, 2, 3, 4], index_col=[0, 1, 2, 3], thousands=","
-        )
+        df = pd.read_csv(path, skiprows=1, header=[1, 2, 3, 4], index_col=[0, 1, 2, 3], thousands=",")
         df.index = df.index.droplevel(1)
         df.index = df.index.droplevel(2)
         df.columns = df.columns.droplevel(1)
@@ -257,10 +253,7 @@ class WIODReader:
             Sum of values for the specified symbol across all countries
         """
         considered_countries_row = self.considered_countries + ["ROW"]
-        all_cols = [
-            self.df.loc[col, (country, symbol)].loc[self.industries]
-            for col in considered_countries_row
-        ]
+        all_cols = [self.df.loc[col, (country, symbol)].loc[self.industries] for col in considered_countries_row]
         return reduce(lambda a, b: a + b, all_cols)
 
     def capital_formation(self, country: str) -> np.ndarray:
@@ -310,9 +303,7 @@ class WIODReader:
         np.ndarray
             Array of household consumption values by industry
         """
-        return self.column_allc(country, "CONS_h") + self.column_allc(
-            country, "CONS_np"
-        )
+        return self.column_allc(country, "CONS_h") + self.column_allc(country, "CONS_np")
 
     def hh_consumption_weights(self, country: str) -> np.ndarray:
         """

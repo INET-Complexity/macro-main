@@ -122,15 +122,9 @@ class Firms(Agent):
         )
 
         self.functions: dict[str, Any] = functions
-        self.base_intermediate_inputs_productivity_matrix = (
-            intermediate_inputs_productivity_matrix
-        )
-        self.base_capital_inputs_productivity_matrix = (
-            capital_inputs_productivity_matrix
-        )
-        self.base_capital_inputs_depreciation_matrix = (
-            capital_inputs_depreciation_matrix
-        )
+        self.base_intermediate_inputs_productivity_matrix = intermediate_inputs_productivity_matrix
+        self.base_capital_inputs_productivity_matrix = capital_inputs_productivity_matrix
+        self.base_capital_inputs_depreciation_matrix = capital_inputs_depreciation_matrix
         self.goods_criticality_matrix = goods_criticality_matrix
         self.intermediate_inputs_utilisation_rate = intermediate_inputs_utilisation_rate
         self.capital_inputs_utilisation_rate = capital_inputs_utilisation_rate
@@ -155,9 +149,7 @@ class Firms(Agent):
         """
         # Base matrix is [n_industries, n_industries]
         # Select columns for each firm's industry
-        base_coefficients = self.base_intermediate_inputs_productivity_matrix[
-            :, self.states["Industry"]
-        ].T
+        base_coefficients = self.base_intermediate_inputs_productivity_matrix[:, self.states["Industry"]].T
 
         # Apply firm-specific multipliers if they exist
         multipliers = self.states.get("intermediate_tech_multipliers")
@@ -176,9 +168,7 @@ class Firms(Agent):
         Shape: [n_industries, n_firms] (transposed for firm-wise operations)
         """
         # For capital, we use the depreciation matrix
-        base_coefficients = self.base_capital_inputs_productivity_matrix[
-            :, self.states["Industry"]
-        ].T
+        base_coefficients = self.base_capital_inputs_productivity_matrix[:, self.states["Industry"]].T
 
         # Apply firm-specific multipliers if they exist
         multipliers = self.states.get("capital_tech_multipliers")
@@ -222,40 +212,23 @@ class Firms(Agent):
         """
         from macromodel.agents.firms.func.prices import SectorExogenousPriceSetter
 
-        functions = functions_from_model(
-            model=configuration.functions, loc="macromodel.agents.firms"
-        )
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.firms")
 
-        if (
-            isinstance(functions.get("prices"), SectorExogenousPriceSetter)
-            and firm_exo_prices is not None
-        ):
+        if isinstance(functions.get("prices"), SectorExogenousPriceSetter) and firm_exo_prices is not None:
             functions["prices"].firm_exo_prices = firm_exo_prices
             functions["prices"].overriden_industries = industries
 
-        intermediate_inputs_productivity_matrix = (
-            synthetic_firms.intermediate_inputs_productivity_matrix
-        )
-        capital_inputs_productivity_matrix = (
-            synthetic_firms.capital_inputs_productivity_matrix
-        )
-        capital_inputs_depreciation_matrix = (
-            synthetic_firms.capital_inputs_depreciation_matrix
-        )
+        intermediate_inputs_productivity_matrix = synthetic_firms.intermediate_inputs_productivity_matrix
+        capital_inputs_productivity_matrix = synthetic_firms.capital_inputs_productivity_matrix
+        capital_inputs_depreciation_matrix = synthetic_firms.capital_inputs_depreciation_matrix
         if isinstance(goods_criticality_matrix, pd.DataFrame):
             goods_criticality_matrix = goods_criticality_matrix.values
 
         corr_employees = synthetic_firms.firm_data["Employees ID"]
 
-        corr_employees = [
-            [int(x) for x in sublist if not pd.isna(x)] for sublist in corr_employees
-        ]
+        corr_employees = [[int(x) for x in sublist if not pd.isna(x)] for sublist in corr_employees]
 
-        data = (
-            synthetic_firms.firm_data.drop(columns=["Employees ID"])
-            .astype(float)
-            .rename_axis("Firm ID")
-        )
+        data = synthetic_firms.firm_data.drop(columns=["Employees ID"]).astype(float).rename_axis("Firm ID")
 
         if add_emissions:
             inputs_emissions = synthetic_firms.firm_data["Input Emissions"].values
@@ -263,18 +236,14 @@ class Firms(Agent):
             inputs_emissions_ch4 = np.zeros_like(inputs_emissions)
             capital_emissions_ch4 = np.zeros_like(capital_emissions)
             input_dict: dict = {
-                f"{key}_inputs_emissions": synthetic_firms.firm_data[
-                    f"{emitting_industry} Input Emissions"
-                ]
+                f"{key}_inputs_emissions": synthetic_firms.firm_data[f"{emitting_industry} Input Emissions"]
                 for key, emitting_industry in zip(
                     ["coal", "oil", "gas", "refined_products"],
                     ["Coal", "Oil", "Gas", "Refined Products"],
                 )
             }
             capital_dict = {
-                f"{key}_capital_emissions": synthetic_firms.firm_data[
-                    f"{emitting_industry} Capital Emissions"
-                ]
+                f"{key}_capital_emissions": synthetic_firms.firm_data[f"{emitting_industry} Capital Emissions"]
                 for key, emitting_industry in zip(
                     ["coal", "oil", "gas", "refined_products"],
                     ["Coal", "Oil", "Gas", "Refined Products"],
@@ -313,18 +282,14 @@ class Firms(Agent):
             "Corresponding Bank ID",
         ]:
             if state_name not in data.columns:
-                raise ValueError(
-                    "Missing " + state_name + " from the data for initialising firms."
-                )
+                raise ValueError("Missing " + state_name + " from the data for initialising firms.")
             states[state_name] = data[state_name].fillna(-1).values.astype(int)
 
         states["Employments"] = corr_employees
         states["is_insolvent"] = np.full(data.shape[0], False)
         states["Excess Demand"] = np.zeros(data.shape[0])
 
-        states["Labour Productivity by Industry"] = (
-            synthetic_firms.labour_productivity_by_industry
-        )
+        states["Labour Productivity by Industry"] = synthetic_firms.labour_productivity_by_industry
 
         # Initialize TFP multiplier to 1.0 (no TFP effect initially)
         states["tfp_multiplier"] = np.ones(data.shape[0])
@@ -338,14 +303,10 @@ class Firms(Agent):
         states["capital_tech_multipliers"] = np.ones((n_firms, n_industries))
 
         # Cumulative improvements start at 0.0
-        states["cumulative_intermediate_improvements"] = np.zeros(
-            (n_firms, n_industries)
-        )
+        states["cumulative_intermediate_improvements"] = np.zeros((n_firms, n_industries))
         states["cumulative_capital_improvements"] = np.zeros((n_firms, n_industries))
 
-        bundle_matrix = create_bundle_matrix(
-            np.array(configuration.substitution_bundles)
-        )
+        bundle_matrix = create_bundle_matrix(np.array(configuration.substitution_bundles))
 
         return cls(
             country_name,
@@ -412,9 +373,7 @@ class Firms(Agent):
 
         current_inv = (
             self.ts.current("production")
-            * configuration.functions.target_production.parameters[
-                "target_inventory_to_production_fraction"
-            ]
+            * configuration.functions.target_production.parameters["target_inventory_to_production_fraction"]
         )
 
         industries = self.states["Industry"]
@@ -426,13 +385,8 @@ class Firms(Agent):
             * np.divide(
                 self.ts.current("production"),
                 self.base_intermediate_inputs_productivity_matrix[:, industries],
-                out=np.zeros(
-                    self.base_intermediate_inputs_productivity_matrix[
-                        :, industries
-                    ].shape
-                ),
-                where=self.base_intermediate_inputs_productivity_matrix[:, industries]
-                != 0.0,
+                out=np.zeros(self.base_intermediate_inputs_productivity_matrix[:, industries].shape),
+                where=self.base_intermediate_inputs_productivity_matrix[:, industries] != 0.0,
             ).T
         )
 
@@ -442,11 +396,8 @@ class Firms(Agent):
             * np.divide(
                 self.ts.current("production"),
                 self.base_capital_inputs_productivity_matrix[:, industries],
-                out=np.zeros(
-                    self.base_capital_inputs_productivity_matrix[:, industries].shape
-                ),
-                where=self.base_capital_inputs_productivity_matrix[:, industries]
-                != 0.0,
+                out=np.zeros(self.base_capital_inputs_productivity_matrix[:, industries].shape),
+                where=self.base_capital_inputs_productivity_matrix[:, industries] != 0.0,
             ).T
         )
 
@@ -459,12 +410,8 @@ class Firms(Agent):
 
         # Reset productivity multipliers to 1
         self.states["tfp_multiplier"] = np.ones_like(self.states["tfp_multiplier"])
-        self.states["intermediate_tech_multipliers"] = np.ones_like(
-            self.states["intermediate_tech_multipliers"]
-        )
-        self.states["capital_tech_multipliers"] = np.ones_like(
-            self.states["capital_tech_multipliers"]
-        )
+        self.states["intermediate_tech_multipliers"] = np.ones_like(self.states["intermediate_tech_multipliers"])
+        self.states["capital_tech_multipliers"] = np.ones_like(self.states["capital_tech_multipliers"])
 
         self.configuration = deepcopy(configuration)
 
@@ -492,14 +439,10 @@ class Firms(Agent):
             previous_average_good_prices (np.ndarray): Previous period prices
         """
         self.ts.estimated_growth_by_firm.append(
-            self.compute_estimated_growth_by_firm(
-                previous_average_good_prices=previous_average_good_prices
-            )
+            self.compute_estimated_growth_by_firm(previous_average_good_prices=previous_average_good_prices)
         )
         self.ts.estimated_demand.append(
-            self.compute_estimated_demand(
-                current_estimated_growth=current_estimated_growth
-            )
+            self.compute_estimated_demand(current_estimated_growth=current_estimated_growth)
         )
 
     def compute_estimated_growth_by_firm(
@@ -606,19 +549,13 @@ class Firms(Agent):
             )
         )
         self.ts.desired_labour_inputs.append(self.compute_desired_labour_inputs())
-        self.ts.target_intermediate_inputs_production.append(
-            self.compute_target_intermediate_inputs_production()
-        )
-        self.ts.target_capital_inputs_production.append(
-            self.compute_target_capital_inputs_production()
-        )
+        self.ts.target_intermediate_inputs_production.append(self.compute_target_intermediate_inputs_production())
+        self.ts.target_capital_inputs_production.append(self.compute_target_capital_inputs_production())
 
         # Plan productivity investment using industry-level prices
-        total_investment, tfp_investment, technical_investment = (
-            self.plan_productivity_investment(
-                estimated_inflation=estimated_inflation,
-                current_good_prices=current_good_prices,
-            )
+        total_investment, tfp_investment, technical_investment = self.plan_productivity_investment(
+            estimated_inflation=estimated_inflation,
+            current_good_prices=current_good_prices,
         )
         # Store total investment for backward compatibility
         self.ts.planned_productivity_investment.append(total_investment)
@@ -649,9 +586,7 @@ class Firms(Agent):
         # Use current prices adjusted for inflation as expected prices
         expected_prices = (1 + estimated_inflation) * current_good_prices
         # Target capital inputs are in real units, so multiply by expected prices to get costs
-        expected_capital_costs = np.matmul(
-            self.ts.current("target_capital_inputs"), expected_prices
-        )
+        expected_capital_costs = np.matmul(self.ts.current("target_capital_inputs"), expected_prices)
 
         # Calculate available cash for productivity investment
         # First ensure capital replacement is covered, then use remaining capacity
@@ -660,9 +595,7 @@ class Firms(Agent):
         current_deposits = self.ts.current("deposits")
 
         # Total credit capacity (short-term + long-term)
-        total_target_credit = self.ts.current(
-            "target_short_term_credit"
-        ) + self.ts.current("target_long_term_credit")
+        total_target_credit = self.ts.current("target_short_term_credit") + self.ts.current("target_long_term_credit")
 
         # Total financial capacity = deposits + available credit
         total_financial_capacity = current_deposits + total_target_credit
@@ -691,9 +624,7 @@ class Firms(Agent):
 
         return total_investment, tfp_investment, technical_investment
 
-    def compute_estimated_profits(
-        self, estimated_growth: float, estimated_inflation: float
-    ) -> np.ndarray:
+    def compute_estimated_profits(self, estimated_growth: float, estimated_inflation: float) -> np.ndarray:
         """Estimate future profits for each firm.
 
         Uses the profit estimator function to project future profits based on
@@ -736,18 +667,14 @@ class Firms(Agent):
             previous_inventory=self.ts.current("inventory"),
             previous_production=self.ts.current("production"),
             current_target_production=self.ts.current("target_production"),
-            current_limiting_intermediate_inputs=self.ts.current(
-                "limiting_intermediate_inputs"
-            ),
+            current_limiting_intermediate_inputs=self.ts.current("limiting_intermediate_inputs"),
             current_limiting_capital_inputs=self.ts.current("limiting_capital_inputs"),
             current_firm_equity=self.ts.current("equity"),
             current_firm_debt=self.ts.current("debt"),
             previous_loans_applied_for=self.ts.current("target_short_term_credit")
             + self.ts.current("target_long_term_credit"),
             current_firm_deposits=self.ts.current("deposits"),
-            interest_on_overdraft_rates=-bank_overdraft_rate_on_firm_deposits[
-                self.states["Corresponding Bank ID"]
-            ]
+            interest_on_overdraft_rates=-bank_overdraft_rate_on_firm_deposits[self.states["Corresponding Bank ID"]]
             * np.minimum(0.0, self.ts.current("deposits")),
             interest_paid_on_loans=self.ts.current("interest_paid_on_loans"),
         )
@@ -771,9 +698,7 @@ class Firms(Agent):
             previous_production=self.ts.current("production"),
             current_target_production=self.ts.current("target_production"),
             current_limiting_labour_inputs=self.ts.current("labour_inputs"),
-            current_limiting_intermediate_inputs=self.ts.current(
-                "limiting_intermediate_inputs"
-            ),
+            current_limiting_intermediate_inputs=self.ts.current("limiting_intermediate_inputs"),
             current_limiting_capital_inputs=self.ts.current("limiting_capital_inputs"),
             current_firm_equity=self.ts.current("equity"),
             current_firm_debt=self.ts.current("debt"),
@@ -804,9 +729,7 @@ class Firms(Agent):
             previous_production=self.ts.current("production"),
             current_target_production=self.ts.current("target_production"),
             current_limiting_labour_inputs=self.ts.current("labour_inputs"),
-            current_limiting_intermediate_inputs=self.ts.current(
-                "limiting_intermediate_inputs"
-            ),
+            current_limiting_intermediate_inputs=self.ts.current("limiting_intermediate_inputs"),
             current_limiting_capital_inputs=self.ts.current("limiting_capital_inputs"),
             current_firm_equity=self.ts.current("equity"),
             current_firm_debt=self.ts.current("debt"),
@@ -831,15 +754,11 @@ class Firms(Agent):
         """
         return self.functions["desired_labour"].compute_desired_labour(
             current_target_production=self.ts.current("target_production"),
-            current_limiting_intermediate_inputs=self.ts.current(
-                "limiting_intermediate_inputs"
-            ),
+            current_limiting_intermediate_inputs=self.ts.current("limiting_intermediate_inputs"),
             current_limiting_capital_inputs=self.ts.current("limiting_capital_inputs"),
         )
 
-    def compute_labour_inputs(
-        self, corresponding_firm: np.ndarray, current_labour_inputs: np.ndarray
-    ) -> np.ndarray:
+    def compute_labour_inputs(self, corresponding_firm: np.ndarray, current_labour_inputs: np.ndarray) -> np.ndarray:
         """Calculate effective labor inputs for each firm.
 
         Computes actual labor inputs based on:
@@ -859,36 +778,25 @@ class Firms(Agent):
             weights=current_labour_inputs[corresponding_firm >= 0],
             minlength=self.ts.current("n_firms"),
         )
-        industry_labour_productivity_by_firm = self.states[
-            "Labour Productivity by Industry"
-        ][self.states["Industry"]]
+        industry_labour_productivity_by_firm = self.states["Labour Productivity by Industry"][self.states["Industry"]]
 
         # Compute labour productivity
         self.ts.labour_productivity_factor.append(
             self.functions["labour_productivity"].compute_labour_productivity_factor(
                 current_target_production=self.ts.current("target_production"),
-                current_limiting_intermediate_inputs=self.ts.current(
-                    "limiting_intermediate_inputs"
-                ),
-                current_limiting_capital_inputs=self.ts.current(
-                    "limiting_capital_inputs"
-                ),
+                current_limiting_intermediate_inputs=self.ts.current("limiting_intermediate_inputs"),
+                current_limiting_capital_inputs=self.ts.current("limiting_capital_inputs"),
                 labour_inputs_from_employees=labour_inputs_from_employees,
                 industry_labour_productivity_by_firm=industry_labour_productivity_by_firm,
             )
         )
         self.ts.labour_productivity.append(
-            self.ts.current("labour_productivity_factor")
-            * industry_labour_productivity_by_firm
+            self.ts.current("labour_productivity_factor") * industry_labour_productivity_by_firm
         )
 
         # Compute labour inputs
-        self.ts.labour_inputs.append(
-            self.ts.current("labour_productivity") * labour_inputs_from_employees
-        )
-        self.ts.normalised_labour_inputs.append(
-            industry_labour_productivity_by_firm * labour_inputs_from_employees
-        )
+        self.ts.labour_inputs.append(self.ts.current("labour_productivity") * labour_inputs_from_employees)
+        self.ts.normalised_labour_inputs.append(industry_labour_productivity_by_firm * labour_inputs_from_employees)
 
         return labour_inputs_from_employees
 
@@ -921,9 +829,7 @@ class Firms(Agent):
         return self.functions["production"].compute_production(
             desired_production=self.ts.current("target_production"),
             current_labour_inputs=self.ts.current("labour_inputs"),
-            current_limiting_intermediate_inputs=self.ts.current(
-                "limiting_intermediate_inputs"
-            ),
+            current_limiting_intermediate_inputs=self.ts.current("limiting_intermediate_inputs"),
             current_limiting_capital_inputs=self.ts.current("limiting_capital_inputs"),
             tfp_multiplier=self.states.get("tfp_multiplier"),
         )
@@ -934,9 +840,7 @@ class Firms(Agent):
         Returns:
             np.ndarray: Net sales revenue for each firm
         """
-        return self.ts.current("price") * self.ts.current(
-            "production"
-        ) - self.ts.current("taxes_paid_on_production")
+        return self.ts.current("price") * self.ts.current("production") - self.ts.current("taxes_paid_on_production")
 
     def compute_wages_markup(self) -> np.ndarray:
         """Calculate wage markup based on labor market tightness.
@@ -984,25 +888,19 @@ class Firms(Agent):
         Returns:
             np.ndarray: Wage offers for each firm
         """
-        return self.functions[
-            "wage_setter"
-        ].get_offered_wage_given_labour_inputs_function(
+        return self.functions["wage_setter"].get_offered_wage_given_labour_inputs_function(
             corresponding_firm=corresponding_firm,
             current_individual_labour_inputs=current_individual_labour_inputs,
             previous_employee_income=previous_employee_income,
             current_target_production=self.ts.current("target_production"),
-            current_limiting_intermediate_inputs=self.ts.current(
-                "limiting_intermediate_inputs"
-            ),
+            current_limiting_intermediate_inputs=self.ts.current("limiting_intermediate_inputs"),
             current_limiting_capital_inputs=self.ts.current("limiting_capital_inputs"),
-            industry_labour_productivity_by_firm=self.states[
-                "Labour Productivity by Industry"
-            ][self.states["Industry"]],
+            industry_labour_productivity_by_firm=self.states["Labour Productivity by Industry"][
+                self.states["Industry"]
+            ],
             initial_wage_per_capita=self.ts.initial("real_wage_per_capita"),
             current_wage_per_capita=self.ts.current("real_wage_per_capita"),
-            current_labour_productivity_factor=self.ts.current(
-                "labour_productivity_factor"
-            ),
+            current_labour_productivity_factor=self.ts.current("labour_productivity_factor"),
             prev_labour_productivity_factor=self.ts.prev("labour_productivity_factor"),
             current_wage_tightness_markup=self.ts.current("wage_tightness_markup"),
             income_taxes=income_taxes,
@@ -1056,19 +954,15 @@ class Firms(Agent):
             current_employee_income=current_employee_income,
             current_individual_offered_wage=current_individual_offered_wage,
             current_target_production=self.ts.current("target_production"),
-            current_limiting_intermediate_inputs=self.ts.current(
-                "limiting_intermediate_inputs"
-            ),
+            current_limiting_intermediate_inputs=self.ts.current("limiting_intermediate_inputs"),
             current_limiting_capital_inputs=self.ts.current("limiting_capital_inputs"),
             labour_inputs_from_employees=labour_inputs_from_employees,
-            industry_labour_productivity_by_firm=self.states[
-                "Labour Productivity by Industry"
-            ][self.states["Industry"]],
+            industry_labour_productivity_by_firm=self.states["Labour Productivity by Industry"][
+                self.states["Industry"]
+            ],
             initial_wage_per_capita=self.ts.initial("real_wage_per_capita"),
             current_wage_per_capita=self.ts.current("real_wage_per_capita"),
-            current_labour_productivity_factor=self.ts.current(
-                "labour_productivity_factor"
-            ),
+            current_labour_productivity_factor=self.ts.current("labour_productivity_factor"),
             prev_labour_productivity_factor=self.ts.prev("labour_productivity_factor"),
             current_wage_tightness_markup=self.ts.current("wage_tightness_markup"),
             estimated_ppi_inflation=estimated_ppi_inflation,
@@ -1112,11 +1006,7 @@ class Firms(Agent):
             cpi
             * (
                 (1.0 + employer_social_insurance_tax)
-                / (
-                    1
-                    - employee_social_insurance_tax
-                    - income_taxes * (1 - employee_social_insurance_tax)
-                )
+                / (1 - employee_social_insurance_tax - income_taxes * (1 - employee_social_insurance_tax))
                 * real_wages
             )
         )
@@ -1165,9 +1055,7 @@ class Firms(Agent):
             current_firm_sectors=self.states["Industry"],
             curr_unit_costs=self.ts.current("unit_costs"),
             prev_unit_costs=(
-                self.ts.current("unit_costs")
-                if len(self.ts.historic("price")) == 1
-                else self.ts.prev("unit_costs")
+                self.ts.current("unit_costs") if len(self.ts.historic("price")) == 1 else self.ts.prev("unit_costs")
             ),
             ppi_during=ppi_during,
             current_time=len(self.ts.historic("price")),
@@ -1192,17 +1080,11 @@ class Firms(Agent):
         Returns:
             np.ndarray: Unconstrained intermediate input demand for each firm
         """
-        return self.functions[
-            "target_intermediate_inputs"
-        ].compute_unconstrained_target_intermediate_inputs(
-            current_target_production=self.ts.current(
-                "target_intermediate_inputs_production"
-            ),
+        return self.functions["target_intermediate_inputs"].compute_unconstrained_target_intermediate_inputs(
+            current_target_production=self.ts.current("target_intermediate_inputs_production"),
             intermediate_inputs_productivity_matrix=self.get_effective_intermediate_coefficients(),
             prev_intermediate_inputs_stock=self.ts.current("intermediate_inputs_stock"),
-            initial_intermediate_inputs_stock=self.ts.initial(
-                "intermediate_inputs_stock"
-            ),
+            initial_intermediate_inputs_stock=self.ts.initial("intermediate_inputs_stock"),
             prev_production=self.ts.current("production"),
             initial_production=self.ts.initial("production"),
             previous_good_prices=good_prices,
@@ -1210,9 +1092,7 @@ class Firms(Agent):
             extra_taxes=extra_taxes,
         )
 
-    def compute_unconstrained_demand_for_intermediate_inputs_value(
-        self, current_good_prices: np.ndarray
-    ) -> np.ndarray:
+    def compute_unconstrained_demand_for_intermediate_inputs_value(self, current_good_prices: np.ndarray) -> np.ndarray:
         """Calculate value of unconstrained intermediate input demand.
 
         Computes the monetary value of desired intermediate inputs
@@ -1248,12 +1128,8 @@ class Firms(Agent):
         Returns:
             np.ndarray: Unconstrained capital input demand for each firm
         """
-        return self.functions[
-            "target_capital_inputs"
-        ].compute_unconstrained_target_capital_inputs(
-            current_target_production=self.ts.current(
-                "target_capital_inputs_production"
-            ),
+        return self.functions["target_capital_inputs"].compute_unconstrained_target_capital_inputs(
+            current_target_production=self.ts.current("target_capital_inputs_production"),
             capital_inputs_depreciation_matrix=self.base_capital_inputs_depreciation_matrix[
                 :, self.states["Industry"]
             ].T,
@@ -1266,17 +1142,13 @@ class Firms(Agent):
             extra_taxes=extra_taxes,
         )
 
-    def compute_unconstrained_demand_for_capital_inputs_value(
-        self, current_good_prices: np.ndarray
-    ) -> np.ndarray:
+    def compute_unconstrained_demand_for_capital_inputs_value(self, current_good_prices: np.ndarray) -> np.ndarray:
         return np.matmul(
             self.ts.current("unconstrained_target_capital_inputs"),
             current_good_prices,
         )
 
-    def compute_target_credit(
-        self, estimated_growth: float, estimated_inflation: float
-    ) -> None:
+    def compute_target_credit(self, estimated_growth: float, estimated_inflation: float) -> None:
         """Calculate target borrowing levels for each firm.
 
         Determines desired short-term and long-term credit based on:
@@ -1290,9 +1162,7 @@ class Firms(Agent):
             estimated_inflation (float): Expected inflation rate
         """
         estimated_corporate_taxes = (
-            (1 + estimated_growth)
-            * (1 + estimated_inflation)
-            * self.ts.current("corporate_taxes_paid")
+            (1 + estimated_growth) * (1 + estimated_inflation) * self.ts.current("corporate_taxes_paid")
         )
         estimated_change_in_deposits = (
             self.ts.current("price") * self.ts.current("production")
@@ -1304,16 +1174,12 @@ class Firms(Agent):
             - self.ts.current("debt_installments")
         )
         estimated_deposits = self.ts.current("deposits") + estimated_change_in_deposits
-        target_short_term_credit, target_long_term_credit = self.functions[
-            "target_credit"
-        ].compute_target_credit(
+        target_short_term_credit, target_long_term_credit = self.functions["target_credit"].compute_target_credit(
             estimated_deposits=estimated_deposits,
             unconstrained_target_intermediate_inputs_costs=self.ts.current(
                 "unconstrained_target_intermediate_inputs_costs"
             ),
-            unconstrained_target_capital_inputs_costs=self.ts.current(
-                "unconstrained_target_capital_inputs_costs"
-            ),
+            unconstrained_target_capital_inputs_costs=self.ts.current("unconstrained_target_capital_inputs_costs"),
         )
         self.ts.target_short_term_credit.append(target_short_term_credit)
         self.ts.total_target_short_term_credit.append([target_short_term_credit.sum()])
@@ -1321,9 +1187,7 @@ class Firms(Agent):
         self.ts.total_target_long_term_credit.append([target_long_term_credit.sum()])
 
     def compute_debt(self) -> np.ndarray:
-        return self.ts.current("short_term_loan_debt") + self.ts.current(
-            "long_term_loan_debt"
-        )
+        return self.ts.current("short_term_loan_debt") + self.ts.current("long_term_loan_debt")
 
     def compute_interest_paid_on_deposits(
         self,
@@ -1347,9 +1211,7 @@ class Firms(Agent):
         Returns:
             np.ndarray: Total interest paid by each firm
         """
-        return self.ts.current("interest_paid_on_loans") + self.ts.current(
-            "interest_paid_on_deposits"
-        )
+        return self.ts.current("interest_paid_on_loans") + self.ts.current("interest_paid_on_deposits")
 
     def compute_offered_price(self) -> np.ndarray:
         """Calculate offered prices by industry.
@@ -1364,8 +1226,7 @@ class Firms(Agent):
         """
         nom = np.bincount(
             self.states["Industry"],
-            weights=self.ts.current("price_in_usd")
-            * (self.ts.current("production") + self.ts.current("inventory")),
+            weights=self.ts.current("price_in_usd") * (self.ts.current("production") + self.ts.current("inventory")),
             minlength=self.n_industries,
         )
         real = np.bincount(
@@ -1392,9 +1253,7 @@ class Firms(Agent):
         return self.functions["excess_demand"].set_maximum_excess_demand(
             current_production=self.ts.current("production"),
             target_production=self.ts.current("target_production"),
-            limiting_intermediate_inputs=self.ts.current(
-                "limiting_intermediate_inputs"
-            ),
+            limiting_intermediate_inputs=self.ts.current("limiting_intermediate_inputs"),
             limiting_capital_inputs=self.ts.current("limiting_capital_inputs"),
             limiting_labour_inputs=self.ts.current("labour_inputs"),
         )
@@ -1422,23 +1281,15 @@ class Firms(Agent):
         """
         # Target intermediate inputs
         if assume_zero_growth:
-            self.ts.target_intermediate_inputs.append(
-                self.ts.initial("target_intermediate_inputs")
-            )
+            self.ts.target_intermediate_inputs.append(self.ts.initial("target_intermediate_inputs"))
         else:
             self.ts.target_intermediate_inputs.append(
-                self.functions[
-                    "target_intermediate_inputs"
-                ].compute_target_intermediate_inputs(
+                self.functions["target_intermediate_inputs"].compute_target_intermediate_inputs(
                     unconstrained_target_intermediate_inputs=self.ts.current(
                         "unconstrained_target_intermediate_inputs"
                     ),
-                    target_short_term_credit=self.ts.current(
-                        "target_short_term_credit"
-                    ),
-                    received_short_term_credit=self.ts.current(
-                        "received_short_term_credit"
-                    ),
+                    target_short_term_credit=self.ts.current("target_short_term_credit"),
+                    received_short_term_credit=self.ts.current("received_short_term_credit"),
                     previous_good_prices=previous_good_prices,
                     expected_inflation=expected_inflation,
                 )
@@ -1446,29 +1297,20 @@ class Firms(Agent):
 
         # Target capital inputs
         if assume_zero_growth:
-            self.ts.target_capital_inputs.append(
-                self.ts.initial("target_capital_inputs")
-            )
+            self.ts.target_capital_inputs.append(self.ts.initial("target_capital_inputs"))
         else:
             self.ts.target_capital_inputs.append(
                 self.functions["target_capital_inputs"].compute_target_capital_inputs(
-                    unconstrained_target_capital_inputs=self.ts.current(
-                        "unconstrained_target_capital_inputs"
-                    ),
+                    unconstrained_target_capital_inputs=self.ts.current("unconstrained_target_capital_inputs"),
                     target_long_term_credit=self.ts.current("target_long_term_credit"),
-                    received_long_term_credit=self.ts.current(
-                        "received_long_term_credit"
-                    ),
+                    received_long_term_credit=self.ts.current("received_long_term_credit"),
                     previous_good_prices=previous_good_prices,
                     expected_inflation=expected_inflation,
                 )
             )
 
         # Setting total real amount of goods to buy
-        self.set_goods_to_buy(
-            self.ts.current("target_intermediate_inputs")
-            + self.ts.current("target_capital_inputs")
-        )
+        self.set_goods_to_buy(self.ts.current("target_intermediate_inputs") + self.ts.current("target_capital_inputs"))
 
     def prepare_selling_goods(self) -> None:
         """Prepare firms' selling plans for goods market.
@@ -1479,12 +1321,8 @@ class Firms(Agent):
         - Industry classifications
         - Maximum excess demand
         """
-        self.set_goods_to_sell(
-            self.ts.current("production") + self.ts.current("inventory")
-        )
-        self.ts.price_in_usd.append(
-            1.0 / self.exchange_rate_usd_to_lcu * self.ts.current("price")
-        )
+        self.set_goods_to_sell(self.ts.current("production") + self.ts.current("inventory"))
+        self.ts.price_in_usd.append(1.0 / self.exchange_rate_usd_to_lcu * self.ts.current("price"))
         self.ts.price_offered.append(self.compute_offered_price())
         self.set_prices(self.ts.current("price_in_usd"))
         self.set_seller_industries(self.states["Industry"])
@@ -1531,9 +1369,7 @@ class Firms(Agent):
             desired_investment=self.ts.current("target_capital_inputs"),
             buy_real=self.ts.current("real_amount_bought"),
         )
-        self.ts.real_amount_bought_as_intermediate_inputs.append(
-            new_intermediate_inputs
-        )
+        self.ts.real_amount_bought_as_intermediate_inputs.append(new_intermediate_inputs)
         self.ts.real_amount_bought_as_capital_goods.append(new_capital_inputs)
         """
         print(
@@ -1547,9 +1383,7 @@ class Firms(Agent):
         )
         """
 
-    def compute_gross_fixed_capital_formation(
-        self, current_good_prices: np.ndarray
-    ) -> np.ndarray:
+    def compute_gross_fixed_capital_formation(self, current_good_prices: np.ndarray) -> np.ndarray:
         """Calculate gross fixed capital formation.
 
         Computes value of capital goods purchases at current prices.
@@ -1560,9 +1394,7 @@ class Firms(Agent):
         Returns:
             np.ndarray: Value of capital formation by industry
         """
-        return (
-            self.ts.current("real_amount_bought_as_capital_goods") * current_good_prices
-        ).sum(axis=0)
+        return (self.ts.current("real_amount_bought_as_capital_goods") * current_good_prices).sum(axis=0)
 
     def update_total_newly_bought_costs(self, current_good_prices: np.ndarray) -> None:
         """Update costs of newly purchased inputs.
@@ -1575,13 +1407,8 @@ class Firms(Agent):
         Args:
             current_good_prices (np.ndarray): Current prices for valuation
         """
-        amount_ii = (
-            self.ts.current("real_amount_bought_as_intermediate_inputs")
-            * current_good_prices
-        ).sum(axis=1)
-        amount_cap = (
-            self.ts.current("real_amount_bought_as_capital_goods") * current_good_prices
-        ).sum(axis=1)
+        amount_ii = (self.ts.current("real_amount_bought_as_intermediate_inputs") * current_good_prices).sum(axis=1)
+        amount_cap = (self.ts.current("real_amount_bought_as_capital_goods") * current_good_prices).sum(axis=1)
 
         # Just take fractions
         self.ts.total_intermediate_inputs_bought_costs.append(
@@ -1622,9 +1449,7 @@ class Firms(Agent):
         Returns:
             np.ndarray: Nominal production value for each firm
         """
-        return current_good_prices[self.states["Industry"]] * self.ts.current(
-            "production"
-        )
+        return current_good_prices[self.states["Industry"]] * self.ts.current("production")
 
     def compute_inventory(self) -> np.ndarray:
         """Calculate end-of-period inventory levels.
@@ -1638,13 +1463,9 @@ class Firms(Agent):
         Returns:
             np.ndarray: Updated inventory levels for each firm
         """
-        return (
-            1 - np.array(self.depreciation_rates)[self.states["Industry"]]
-        ) * np.maximum(
+        return (1 - np.array(self.depreciation_rates)[self.states["Industry"]]) * np.maximum(
             0.0,
-            self.ts.current("inventory")
-            + self.ts.current("production")
-            - self.ts.current("real_amount_sold"),
+            self.ts.current("inventory") + self.ts.current("production") - self.ts.current("real_amount_sold"),
         )
 
     def compute_nominal_inventory(self, current_good_prices: np.ndarray) -> np.ndarray:
@@ -1656,9 +1477,7 @@ class Firms(Agent):
         Returns:
             np.ndarray: Nominal inventory value for each firm
         """
-        return current_good_prices[self.states["Industry"]] * self.ts.current(
-            "inventory"
-        )
+        return current_good_prices[self.states["Industry"]] * self.ts.current("inventory")
 
     def compute_used_intermediate_inputs(self):
         """Calculate intermediate inputs used in production.
@@ -1680,9 +1499,7 @@ class Firms(Agent):
             substitution_bundle_matrix=self.substitution_bundles,
         )
 
-    def compute_used_intermediate_inputs_costs(
-        self, current_good_prices: np.ndarray
-    ) -> np.ndarray:
+    def compute_used_intermediate_inputs_costs(self, current_good_prices: np.ndarray) -> np.ndarray:
         """Calculate cost of intermediate inputs used in production.
 
         Args:
@@ -1691,9 +1508,7 @@ class Firms(Agent):
         Returns:
             np.ndarray: Cost of used intermediate inputs for each firm
         """
-        return (self.ts.current("used_intermediate_inputs") * current_good_prices).sum(
-            axis=1
-        )
+        return (self.ts.current("used_intermediate_inputs") * current_good_prices).sum(axis=1)
 
     def compute_intermediate_inputs_stock(self) -> np.ndarray:
         """Calculate end-of-period intermediate input stocks.
@@ -1713,9 +1528,7 @@ class Firms(Agent):
             + self.ts.current("real_amount_bought_as_intermediate_inputs"),
         )
 
-    def compute_intermediate_inputs_stock_value(
-        self, current_good_prices: np.ndarray
-    ) -> np.ndarray:
+    def compute_intermediate_inputs_stock_value(self, current_good_prices: np.ndarray) -> np.ndarray:
         """Calculate value of intermediate input stocks.
 
         Args:
@@ -1724,9 +1537,7 @@ class Firms(Agent):
         Returns:
             np.ndarray: Value of intermediate input stocks for each firm
         """
-        return (self.ts.current("intermediate_inputs_stock") * current_good_prices).sum(
-            axis=1
-        )
+        return (self.ts.current("intermediate_inputs_stock") * current_good_prices).sum(axis=1)
 
     def compute_used_capital_inputs(self):
         """Calculate capital inputs used in production.
@@ -1750,9 +1561,7 @@ class Firms(Agent):
             substitution_bundle_matrix=self.substitution_bundles,
         )
 
-    def compute_used_capital_inputs_costs(
-        self, current_good_prices: np.ndarray
-    ) -> np.ndarray:
+    def compute_used_capital_inputs_costs(self, current_good_prices: np.ndarray) -> np.ndarray:
         """Calculate cost of capital inputs used in production.
 
         Args:
@@ -1761,9 +1570,7 @@ class Firms(Agent):
         Returns:
             np.ndarray: Cost of used capital inputs for each firm
         """
-        return (self.ts.current("used_capital_inputs") * current_good_prices).sum(
-            axis=1
-        )
+        return (self.ts.current("used_capital_inputs") * current_good_prices).sum(axis=1)
 
     def compute_expected_capital_inputs_stock_value(
         self,
@@ -1784,9 +1591,7 @@ class Firms(Agent):
         Returns:
             np.ndarray: Expected value of capital input stocks for each firm
         """
-        return (1 + estimated_inflation) * (
-            self.ts.current("capital_inputs_stock") * current_good_prices
-        ).sum(axis=1)
+        return (1 + estimated_inflation) * (self.ts.current("capital_inputs_stock") * current_good_prices).sum(axis=1)
 
     def compute_capital_inputs_stock(self) -> np.ndarray:
         """Calculate end-of-period capital input stocks.
@@ -1800,12 +1605,8 @@ class Firms(Agent):
         Returns:
             np.ndarray: Updated capital input stocks
         """
-        hist_bought_capital = np.array(
-            self.ts.historic("real_amount_bought_as_capital_goods")[1:]
-        )
-        delayed_bought_capital = np.zeros(
-            (self.ts.current("n_firms"), self.n_industries)
-        )
+        hist_bought_capital = np.array(self.ts.historic("real_amount_bought_as_capital_goods")[1:])
+        delayed_bought_capital = np.zeros((self.ts.current("n_firms"), self.n_industries))
         for g in range(self.n_industries):
             delay = self.capital_inputs_delay[g]
             if delay < hist_bought_capital.shape[0]:
@@ -1813,14 +1614,10 @@ class Firms(Agent):
 
         return np.maximum(
             0.0,
-            self.ts.current("capital_inputs_stock")
-            - self.ts.current("used_capital_inputs")
-            + delayed_bought_capital,
+            self.ts.current("capital_inputs_stock") - self.ts.current("used_capital_inputs") + delayed_bought_capital,
         )
 
-    def compute_capital_inputs_stock_value(
-        self, current_good_prices: np.ndarray
-    ) -> np.ndarray:
+    def compute_capital_inputs_stock_value(self, current_good_prices: np.ndarray) -> np.ndarray:
         """Calculate value of capital input stocks.
 
         Args:
@@ -1829,9 +1626,7 @@ class Firms(Agent):
         Returns:
             np.ndarray: Value of capital input stocks for each firm
         """
-        return (self.ts.current("capital_inputs_stock") * current_good_prices).sum(
-            axis=1
-        )
+        return (self.ts.current("capital_inputs_stock") * current_good_prices).sum(axis=1)
 
     def compute_total_inventory_change(self) -> np.ndarray:
         """Calculate nominal change in inventory value.
@@ -1839,13 +1634,9 @@ class Firms(Agent):
         Returns:
             np.ndarray: Change in inventory value for each firm
         """
-        return self.ts.current("price") * (
-            self.ts.current("inventory") - self.ts.prev("inventory")
-        )
+        return self.ts.current("price") * (self.ts.current("inventory") - self.ts.prev("inventory"))
 
-    def compute_taxes_paid_on_production(
-        self, taxes_less_subsidies_rates: np.ndarray
-    ) -> np.ndarray:
+    def compute_taxes_paid_on_production(self, taxes_less_subsidies_rates: np.ndarray) -> np.ndarray:
         """Calculate taxes paid on production.
 
         Args:
@@ -1956,8 +1747,7 @@ class Firms(Agent):
         """
         return (
             self.ts.current("nominal_amount_sold_in_lcu")
-            + self.ts.current("price")
-            * (self.ts.current("inventory") - self.ts.prev("inventory"))
+            + self.ts.current("price") * (self.ts.current("inventory") - self.ts.prev("inventory"))
             - self.ts.current("total_wage")
             - self.ts.current("used_intermediate_inputs_costs")
             - self.ts.current("taxes_paid_on_production")
@@ -1978,9 +1768,7 @@ class Firms(Agent):
         Returns:
             float: Non-performing loan ratio for firm loans
         """
-        self.states["is_insolvent"] = self.functions[
-            "demography"
-        ].handle_firm_insolvency(
+        self.states["is_insolvent"] = self.functions["demography"].handle_firm_insolvency(
             current_firm_is_insolvent=self.states["is_insolvent"],
             current_firm_equity=self.ts.current("equity"),
             current_firm_deposits=self.ts.current("deposits"),
@@ -2004,12 +1792,8 @@ class Firms(Agent):
 
         # Calculate the NPL ratio for firm loans
         total_loans_granted = (
-            credit_market.ts.current(
-                "total_outstanding_loans_granted_firms_short_term"
-            )[0]
-            + credit_market.ts.current(
-                "total_outstanding_loans_granted_firms_long_term"
-            )[0]
+            credit_market.ts.current("total_outstanding_loans_granted_firms_short_term")[0]
+            + credit_market.ts.current("total_outstanding_loans_granted_firms_long_term")[0]
         )
         if total_loans_granted == 0.0:
             return 0.0
@@ -2029,9 +1813,7 @@ class Firms(Agent):
         Returns:
             np.ndarray: Equity values for each firm
         """
-        material = np.dot(
-            self.ts.current("intermediate_inputs_stock"), current_good_prices
-        )
+        material = np.dot(self.ts.current("intermediate_inputs_stock"), current_good_prices)
         capital = np.dot(self.ts.current("capital_inputs_stock"), current_good_prices)
         return (
             self.ts.current("inventory") * self.ts.current("price")
@@ -2050,9 +1832,7 @@ class Firms(Agent):
         firm_insolvency_rate = self.states["is_insolvent"].mean()
         num_insolvent_firms_by_sector = np.zeros(self.n_industries)
         for g in range(self.n_industries):
-            num_insolvent_firms_by_sector[g] = np.sum(
-                self.states["is_insolvent"][self.states["Industry"] == g]
-            )
+            num_insolvent_firms_by_sector[g] = np.sum(self.states["is_insolvent"][self.states["Industry"] == g])
         self.states["is_insolvent"] = np.full(self.ts.current("n_firms"), False)
         return firm_insolvency_rate, num_insolvent_firms_by_sector
 
@@ -2096,19 +1876,11 @@ class Firms(Agent):
         # Apply per-industry CO2 fraction multipliers when enabled.
         # emission_fractions.co2 has shape (n_emitting, n_industries); transposed and
         # indexed by each firm's industry gives (n_firms, n_emitting) multipliers.
-        if (
-            use_emission_multiplier
-            and self.emission_fractions is not None
-            and self.emission_fractions.co2 is not None
-        ):
+        if use_emission_multiplier and self.emission_fractions is not None and self.emission_fractions.co2 is not None:
             firm_industries = self.states["Industry"]
             emitting_fractions = self.emission_fractions.co2.T[firm_industries]
-            inputs_slice = (
-                used_intermediate_inputs[:, emitting_indices] * emitting_fractions
-            )
-            capital_slice = (
-                used_capital_inputs[:, emitting_indices] * emitting_fractions
-            )
+            inputs_slice = used_intermediate_inputs[:, emitting_indices] * emitting_fractions
+            capital_slice = used_capital_inputs[:, emitting_indices] * emitting_fractions
         else:
             inputs_slice = used_intermediate_inputs[:, emitting_indices]
             capital_slice = used_capital_inputs[:, emitting_indices]
@@ -2124,13 +1896,8 @@ class Firms(Agent):
         self.ts.capital_emissions.append(capital_emissions)
 
         if emitting_indices_ch4 is not None and readjusted_factors_ch4 is not None:
-            inputs_emissions_ch4 = (
-                used_intermediate_inputs[:, emitting_indices_ch4]
-                @ readjusted_factors_ch4
-            )
-            capital_emissions_ch4 = (
-                used_capital_inputs[:, emitting_indices_ch4] @ readjusted_factors_ch4
-            )
+            inputs_emissions_ch4 = used_intermediate_inputs[:, emitting_indices_ch4] @ readjusted_factors_ch4
+            capital_emissions_ch4 = used_capital_inputs[:, emitting_indices_ch4] @ readjusted_factors_ch4
             self.ts.inputs_emissions_ch4.append(inputs_emissions_ch4)
             self.ts.capital_emissions_ch4.append(capital_emissions_ch4)
 
@@ -2142,15 +1909,11 @@ class Firms(Agent):
         self.ts.coal_inputs_emissions.append(inputs_emissions_disaggregated[:, 0])
         self.ts.gas_inputs_emissions.append(inputs_emissions_disaggregated[:, 1])
         self.ts.oil_inputs_emissions.append(inputs_emissions_disaggregated[:, 2])
-        self.ts.refined_products_inputs_emissions.append(
-            inputs_emissions_disaggregated[:, 3]
-        )
+        self.ts.refined_products_inputs_emissions.append(inputs_emissions_disaggregated[:, 3])
         self.ts.coal_capital_emissions.append(capital_emissions_disaggregated[:, 0])
         self.ts.gas_capital_emissions.append(capital_emissions_disaggregated[:, 1])
         self.ts.oil_capital_emissions.append(capital_emissions_disaggregated[:, 2])
-        self.ts.refined_products_capital_emissions.append(
-            capital_emissions_disaggregated[:, 3]
-        )
+        self.ts.refined_products_capital_emissions.append(capital_emissions_disaggregated[:, 3])
 
     def compute_total_deposits(self) -> float:
         """Calculate total deposits across all firms.
@@ -2319,15 +2082,11 @@ class Firms(Agent):
         """
         return self.ts.get_aggregate("taxes_paid_on_production")
 
-    def increase_industry_input_productivity(
-        self, producing_industry: str, input_industry: str, increase_pct: float
-    ):
+    def increase_industry_input_productivity(self, producing_industry: str, input_industry: str, increase_pct: float):
         producing_index = self.industries.index(producing_industry)
         input_index = self.industries.index(input_industry)
 
-        self.base_intermediate_inputs_productivity_matrix[
-            input_index, producing_index
-        ] *= (1 + increase_pct)
+        self.base_intermediate_inputs_productivity_matrix[input_index, producing_index] *= 1 + increase_pct
 
     def compute_productivity_investment(self) -> np.ndarray:
         """Calculate investment above depreciation replacement.
@@ -2349,23 +2108,17 @@ class Firms(Agent):
 
         # Calculate replacement investment needed (in monetary terms)
         production = self.ts.current("production")
-        depreciation_matrix = self.base_capital_inputs_depreciation_matrix[
-            :, self.states["Industry"]
-        ].T
+        depreciation_matrix = self.base_capital_inputs_depreciation_matrix[:, self.states["Industry"]].T
 
         # For each firm, calculate total replacement cost across all capital types
         replacement_needs = production[:, None] * depreciation_matrix
-        total_replacement_cost = (replacement_needs * current_good_prices[None, :]).sum(
-            axis=1
-        )
+        total_replacement_cost = (replacement_needs * current_good_prices[None, :]).sum(axis=1)
 
         # Actual total investment
         total_investment = self.ts.current("total_capital_inputs_bought_costs")
 
         # Net investment = productivity investment (cannot be negative)
-        productivity_investment = np.maximum(
-            0, total_investment - total_replacement_cost
-        )
+        productivity_investment = np.maximum(0, total_investment - total_replacement_cost)
 
         return productivity_investment
 
@@ -2397,20 +2150,14 @@ class Firms(Agent):
         # Use executed productivity investment if available (from time series),
         # otherwise fall back to computing it
         if len(self.ts.executed_productivity_investment) > 0:
-            productivity_investment = self.ts.current(
-                "executed_productivity_investment"
-            )
+            productivity_investment = self.ts.current("executed_productivity_investment")
         else:
             # Fallback for initial period or if execute_productivity_investment wasn't called
             productivity_investment = self.compute_productivity_investment()
 
         # Get configuration parameters, using defaults if not specified
-        base_growth = getattr(
-            self.configuration.parameters, "tfp_base_growth_rate", 0.0025
-        )  # 0.25% quarterly
-        elasticity = getattr(
-            self.configuration.parameters, "tfp_investment_elasticity", 0.3
-        )
+        base_growth = getattr(self.configuration.parameters, "tfp_base_growth_rate", 0.0025)  # 0.25% quarterly
+        elasticity = getattr(self.configuration.parameters, "tfp_investment_elasticity", 0.3)
 
         # Use productivity growth function if available, otherwise use simple growth
         if "productivity_growth" in self.functions:
@@ -2445,19 +2192,14 @@ class Firms(Agent):
         growth_func = self.functions["technical_coefficients_growth"]
 
         # Get current technical investment (if any)
-        if (
-            hasattr(self.ts, "planned_technical_investment")
-            and len(self.ts.planned_technical_investment) > 0
-        ):
+        if hasattr(self.ts, "planned_technical_investment") and len(self.ts.planned_technical_investment) > 0:
             technical_investment = self.ts.current("planned_technical_investment")
         else:
             # No technical investment yet
             return
 
         # Use actual base technical coefficients (a_ij matrices)
-        base_intermediate_coefficients = (
-            self.base_intermediate_inputs_productivity_matrix
-        )
+        base_intermediate_coefficients = self.base_intermediate_inputs_productivity_matrix
         base_capital_coefficients = self.base_capital_inputs_productivity_matrix
 
         # Update intermediate coefficient multipliers
@@ -2471,9 +2213,7 @@ class Firms(Agent):
             firm_industries=self.states["Industry"],
             technical_investment=technical_investment,
             production=self.ts.current("production"),
-            prices=self.ts.current(
-                "price"
-            ),  # Use current firm prices as proxy for industry prices
+            prices=self.ts.current("price"),  # Use current firm prices as proxy for industry prices
         )
 
         # Update capital coefficient multipliers
@@ -2487,9 +2227,7 @@ class Firms(Agent):
             firm_industries=self.states["Industry"],
             technical_investment=technical_investment,
             production=self.ts.current("production"),
-            prices=self.ts.current(
-                "price"
-            ),  # Use current firm prices as proxy for industry prices
+            prices=self.ts.current("price"),  # Use current firm prices as proxy for industry prices
         )
 
         # Apply growth to multipliers
@@ -2498,9 +2236,7 @@ class Firms(Agent):
 
         # Update cumulative improvements for diminishing returns
         if "cumulative_intermediate_improvements" not in self.states:
-            self.states["cumulative_intermediate_improvements"] = (
-                intermediate_growth.copy()
-            )
+            self.states["cumulative_intermediate_improvements"] = intermediate_growth.copy()
         else:
             self.states["cumulative_intermediate_improvements"] += intermediate_growth
 

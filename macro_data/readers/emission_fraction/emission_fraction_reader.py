@@ -77,12 +77,8 @@ class EmissionsFractionReader:
             data_path = Path(data_path)
 
         return cls(
-            emitting_fraction_co2=pd.read_csv(
-                data_path / "emitting_fraction_co2.csv", index_col=0
-            ),
-            emitting_fraction_ch4=pd.read_csv(
-                data_path / "emitting_fraction_ch4.csv", index_col=0
-            ),
+            emitting_fraction_co2=pd.read_csv(data_path / "emitting_fraction_co2.csv", index_col=0),
+            emitting_fraction_ch4=pd.read_csv(data_path / "emitting_fraction_ch4.csv", index_col=0),
             emitting_fraction_consumption=pd.read_csv(
                 data_path / "emitting_fraction_consumption.csv", index_col=0, header=0
             ),

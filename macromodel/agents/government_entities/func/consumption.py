@@ -192,12 +192,10 @@ class AutoregressiveGovernmentConsumptionSetter(GovernmentConsumptionSetter):
                         )
                     )
                 else:
-                    self.fixed_total_government_consumption = (
-                        ManualAutoregForecaster().forecast(
-                            data=historic_total_consumption,
-                            t=max(current_time + self.buffer, current_time),
-                            assume_zero_noise=assume_zero_noise,
-                        )
+                    self.fixed_total_government_consumption = ManualAutoregForecaster().forecast(
+                        data=historic_total_consumption,
+                        t=max(current_time + self.buffer, current_time),
+                        assume_zero_noise=assume_zero_noise,
                     )
             consumption = self.fixed_total_government_consumption[current_time - 1]
 
@@ -212,16 +210,10 @@ class AutoregressiveGovernmentConsumptionSetter(GovernmentConsumptionSetter):
             )
 
         # Weighted by prices
-        consumption_weights = _normalise_government_consumption_weights(
-            previous_desired_government_consumption
-        )
+        consumption_weights = _normalise_government_consumption_weights(previous_desired_government_consumption)
         return np.maximum(
             0.0,
-            (1 + expected_inflation)
-            * current_good_prices
-            / initial_good_prices
-            * consumption
-            * consumption_weights,
+            (1 + expected_inflation) * current_good_prices / initial_good_prices * consumption * consumption_weights,
         )
 
 
@@ -381,8 +373,7 @@ class AutoregressiveGrowthGovernmentConsumptionSetter(GovernmentConsumptionSette
         if self.consistency == 1.0:
             if self.fixed_total_government_consumption is None:
                 historic_total_consumption_growth = (
-                    historic_total_consumption[1:] / historic_total_consumption[:-1]
-                    - 1.0
+                    historic_total_consumption[1:] / historic_total_consumption[:-1] - 1.0
                 )
                 self.fixed_total_government_consumption = (
                     np.exp(
@@ -395,8 +386,7 @@ class AutoregressiveGrowthGovernmentConsumptionSetter(GovernmentConsumptionSette
                     - 1
                 )
                 self.fixed_total_government_consumption = (
-                    np.cumprod(1 + self.fixed_total_government_consumption)
-                    * historic_total_consumption[-1]
+                    np.cumprod(1 + self.fixed_total_government_consumption) * historic_total_consumption[-1]
                 )
 
             consumption = self.fixed_total_government_consumption[current_time - 1]
@@ -412,16 +402,10 @@ class AutoregressiveGrowthGovernmentConsumptionSetter(GovernmentConsumptionSette
             )
 
         # Weighted by prices
-        consumption_weights = _normalise_government_consumption_weights(
-            previous_desired_government_consumption
-        )
+        consumption_weights = _normalise_government_consumption_weights(previous_desired_government_consumption)
         return np.maximum(
             0.0,
-            (1 + expected_inflation)
-            * current_good_prices
-            / initial_good_prices
-            * consumption
-            * consumption_weights,
+            (1 + expected_inflation) * current_good_prices / initial_good_prices * consumption * consumption_weights,
         )
 
 
@@ -502,9 +486,7 @@ class ExogenousGovernmentConsumptionSetter(GovernmentConsumptionSetter):
                 "ExogenousGovernmentConsumptionSetter: non-finite exogenous government consumption with "
                 f"current_time={current_time}, value={exogenous_total_consumption[current_time]}"
             )
-        consumption_weights = _normalise_government_consumption_weights(
-            previous_desired_government_consumption
-        )
+        consumption_weights = _normalise_government_consumption_weights(previous_desired_government_consumption)
         return (
             (1 + expected_inflation)
             * current_good_prices

@@ -129,9 +129,7 @@ class GovernmentEntities(Agent):
         Returns:
             GovernmentEntities: Initialized government entities
         """
-        functions = functions_from_model(
-            model=configuration.functions, loc="macromodel.agents.government_entities"
-        )
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.government_entities")
 
         ts = create_government_entities_timeseries(
             data=synthetic_government_entities.gov_entity_data,
@@ -141,9 +139,7 @@ class GovernmentEntities(Agent):
             emitting_indices=emitting_indices,
         )
 
-        states = {
-            "government_consumption_model": synthetic_government_entities.government_consumption_model
-        }
+        states = {"government_consumption_model": synthetic_government_entities.government_consumption_model}
 
         return cls(
             country_name=country_name,
@@ -211,28 +207,21 @@ class GovernmentEntities(Agent):
                 consumption paths
         """
         if exogenous_gov_consumption_before is None:
-            historic_total_consumption = (
-                np.array(self.ts.historic("total_consumption")).flatten() / historic_ppi
-            )
+            historic_total_consumption = np.array(self.ts.historic("total_consumption")).flatten() / historic_ppi
         else:
             historic_total_consumption = np.concatenate(
                 (
                     exogenous_gov_consumption_before[-forecasting_window:],
-                    np.array(self.ts.historic("total_consumption")).flatten()
-                    / historic_ppi,
+                    np.array(self.ts.historic("total_consumption")).flatten() / historic_ppi,
                 )
             )
         if assume_zero_growth:
-            self.ts.desired_consumption_in_lcu.append(
-                self.ts.initial("consumption_in_lcu")
-            )
+            self.ts.desired_consumption_in_lcu.append(self.ts.initial("consumption_in_lcu"))
         else:
             self.ts.desired_consumption_in_lcu.append(
                 (
                     self.functions["consumption"].compute_target_consumption(
-                        previous_desired_government_consumption=self.ts.current(
-                            "desired_consumption_in_lcu"
-                        ),
+                        previous_desired_government_consumption=self.ts.current("desired_consumption_in_lcu"),
                         model=self.states["government_consumption_model"],
                         historic_total_consumption=historic_total_consumption,
                         initial_good_prices=initial_good_prices,
@@ -247,13 +236,11 @@ class GovernmentEntities(Agent):
                 )
             )
         self.ts.desired_consumption_in_usd.append(
-            1.0
-            / self.exchange_rate_usd_to_lcu
-            * self.ts.current("desired_consumption_in_lcu")
+            1.0 / self.exchange_rate_usd_to_lcu * self.ts.current("desired_consumption_in_lcu")
         )
-        single_entity_consumption = self.ts.current(
-            "desired_consumption_in_usd"
-        ) / self.ts.current("n_government_entities")
+        single_entity_consumption = self.ts.current("desired_consumption_in_usd") / self.ts.current(
+            "n_government_entities"
+        )
         all_entity_consumption = np.tile(
             single_entity_consumption,
             (self.ts.current("n_government_entities"), 1),
@@ -333,41 +320,22 @@ class GovernmentEntities(Agent):
             emitting_indices (np.ndarray, optional): Indices of goods
                 that generate emissions
         """
-        self.ts.consumption_in_usd.append(
-            self.ts.current("nominal_amount_spent_in_usd").sum(axis=0)
-        )
-        self.ts.consumption_in_lcu.append(
-            self.exchange_rate_usd_to_lcu * self.ts.current("consumption_in_usd")
-        )
+        self.ts.consumption_in_usd.append(self.ts.current("nominal_amount_spent_in_usd").sum(axis=0))
+        self.ts.consumption_in_lcu.append(self.exchange_rate_usd_to_lcu * self.ts.current("consumption_in_usd"))
         if add_emissions:
-            emissions = np.sum(
-                self.ts.current("consumption_in_lcu")[emitting_indices]
-                * readjusted_factors
-            ).sum()
+            emissions = np.sum(self.ts.current("consumption_in_lcu")[emitting_indices] * readjusted_factors).sum()
             self.ts.emissions.append(emissions)
             self.ts.coal_emissions.append(
-                np.sum(
-                    self.ts.current("consumption_in_lcu")[emitting_indices]
-                    * readjusted_factors[0]
-                )
+                np.sum(self.ts.current("consumption_in_lcu")[emitting_indices] * readjusted_factors[0])
             )
             self.ts.gas_emissions.append(
-                np.sum(
-                    self.ts.current("consumption_in_lcu")[emitting_indices]
-                    * readjusted_factors[1]
-                )
+                np.sum(self.ts.current("consumption_in_lcu")[emitting_indices] * readjusted_factors[1])
             )
             self.ts.oil_emissions.append(
-                np.sum(
-                    self.ts.current("consumption_in_lcu")[emitting_indices]
-                    * readjusted_factors[2]
-                )
+                np.sum(self.ts.current("consumption_in_lcu")[emitting_indices] * readjusted_factors[2])
             )
             self.ts.refined_products_emissions.append(
-                np.sum(
-                    self.ts.current("consumption_in_lcu")[emitting_indices]
-                    * readjusted_factors[3]
-                )
+                np.sum(self.ts.current("consumption_in_lcu")[emitting_indices] * readjusted_factors[3])
             )
         self.ts.total_consumption.append([self.ts.current("consumption_in_lcu").sum()])
 

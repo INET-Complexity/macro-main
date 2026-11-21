@@ -144,16 +144,10 @@ class TestSyntheticFirms:
         )
 
         firm_data = firms.firm_data
-        firms_output_usd = firm_data.groupby("Industry").apply(
-            lambda x: (x["Production"] * x["Price in USD"]).sum()
-        )
-        firms_output_lcu = firm_data.groupby("Industry").apply(
-            lambda x: (x["Production"] * x["Price"]).sum()
-        )
+        firms_output_usd = firm_data.groupby("Industry").apply(lambda x: (x["Production"] * x["Price in USD"]).sum())
+        firms_output_lcu = firm_data.groupby("Industry").apply(lambda x: (x["Production"] * x["Price"]).sum())
 
-        output_in_usd = multic_industry_data[country]["industry_vectors"][
-            "Output in USD"
-        ]
+        output_in_usd = multic_industry_data[country]["industry_vectors"]["Output in USD"]
 
         output_in_lcu = multic_industry_data[country]["industry_vectors"][
             "Output in USD"

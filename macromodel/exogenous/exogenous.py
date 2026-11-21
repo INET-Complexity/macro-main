@@ -106,52 +106,32 @@ class Exogenous:
         offset = 0
 
         # Split data into before/during simulation periods
-        start_ind = np.where(
-            self.inflation.index == str(initial_year) + "-Q" + str(initial_quarter)
-        )[0][0]
+        start_ind = np.where(self.inflation.index == str(initial_year) + "-Q" + str(initial_quarter))[0][0]
         self.inflation_before = self.inflation.iloc[0:start_ind]
-        self.inflation_during = self.inflation.iloc[
-            start_ind : start_ind + t_max - offset
-        ]
+        self.inflation_during = self.inflation.iloc[start_ind : start_ind + t_max - offset]
 
         if len(self.national_accounts) > 0:
             self.national_accounts_before = self.national_accounts.loc[
-                self.national_accounts.index
-                < pd.Timestamp(initial_year, 3 * initial_quarter - 2, 1)
+                self.national_accounts.index < pd.Timestamp(initial_year, 3 * initial_quarter - 2, 1)
             ]
             self.national_accounts_during = self.national_accounts.loc[
-                self.national_accounts.index
-                >= pd.Timestamp(initial_year, 3 * initial_quarter - 2, 1)
+                self.national_accounts.index >= pd.Timestamp(initial_year, 3 * initial_quarter - 2, 1)
             ]
         else:
             self.national_accounts_before = pd.DataFrame()
             self.national_accounts_during = pd.DataFrame()
 
-        start_ind = np.where(
-            self.unemployment_rate.index
-            == str(initial_year) + "-Q" + str(initial_quarter)
-        )[0][0]
+        start_ind = np.where(self.unemployment_rate.index == str(initial_year) + "-Q" + str(initial_quarter))[0][0]
         self.unemployment_rate_before = self.unemployment_rate.iloc[0:start_ind]
-        self.unemployment_rate_during = self.unemployment_rate.iloc[
-            start_ind : start_ind + t_max - offset
-        ]
+        self.unemployment_rate_during = self.unemployment_rate.iloc[start_ind : start_ind + t_max - offset]
 
-        start_ind = np.where(
-            self.vacancy_rate.index == str(initial_year) + "-Q" + str(initial_quarter)
-        )[0][0]
+        start_ind = np.where(self.vacancy_rate.index == str(initial_year) + "-Q" + str(initial_quarter))[0][0]
         self.vacancy_rate_before = self.vacancy_rate.iloc[0:start_ind]
-        self.vacancy_rate_during = self.vacancy_rate.iloc[
-            start_ind : start_ind + t_max - offset
-        ]
+        self.vacancy_rate_during = self.vacancy_rate.iloc[start_ind : start_ind + t_max - offset]
 
-        start_ind = np.where(
-            self.house_price_index.index
-            == str(initial_year) + "-Q" + str(initial_quarter)
-        )[0][0]
+        start_ind = np.where(self.house_price_index.index == str(initial_year) + "-Q" + str(initial_quarter))[0][0]
         self.house_price_index_before = self.house_price_index.iloc[0:start_ind]
-        self.house_price_index_during = self.house_price_index.iloc[
-            start_ind : start_ind + t_max - offset
-        ]
+        self.house_price_index_during = self.house_price_index.iloc[start_ind : start_ind + t_max - offset]
 
         # Process exchange rates
         self.exchange_rates_data = self.exchange_rates_data.T
@@ -161,17 +141,13 @@ class Exogenous:
             data_country = country_name
         self.exchange_rates_data = self.exchange_rates_data.loc[:, data_country]
         self.exchange_rates_data.index = [ind for ind in self.exchange_rates_data.index]
-        self.exchange_rates_data.index = pd.PeriodIndex(
-            self.exchange_rates_data.index, freq="Q"
-        ).to_timestamp()
+        self.exchange_rates_data.index = pd.PeriodIndex(self.exchange_rates_data.index, freq="Q").to_timestamp()
         self.exchange_rates_data.columns = ["Exchange Rate"]
         self.exchange_rates_data_before = self.exchange_rates_data.loc[
-            self.exchange_rates_data.index
-            < pd.Timestamp(initial_year, 3 * initial_quarter - 2, 1)
+            self.exchange_rates_data.index < pd.Timestamp(initial_year, 3 * initial_quarter - 2, 1)
         ]
         self.exchange_rates_data_during = self.exchange_rates_data.loc[
-            self.exchange_rates_data.index
-            >= pd.Timestamp(initial_year, 3 * initial_quarter - 2, 1)
+            self.exchange_rates_data.index >= pd.Timestamp(initial_year, 3 * initial_quarter - 2, 1)
         ]
 
         # Create time series and compile historic data
@@ -196,8 +172,7 @@ class Exogenous:
             axis=1,
         )
         self.compiled_historic_data.columns = [
-            field.replace(" ", "_").upper()
-            for field in self.compiled_historic_data.columns
+            field.replace(" ", "_").upper() for field in self.compiled_historic_data.columns
         ]
 
     @classmethod
@@ -230,9 +205,7 @@ class Exogenous:
             exchange_rates_data=exchange_rates.historic_exchange_rate_data,
             inflation=exogenous_data.inflation,
             national_accounts=exogenous_data.national_accounts,
-            unemployment_rate=exogenous_data.labour_stats[
-                ["Unemployment Rate (Value)"]
-            ],
+            unemployment_rate=exogenous_data.labour_stats[["Unemployment Rate (Value)"]],
             vacancy_rate=exogenous_data.labour_stats[["Vacancy Rate (Value)"]],
             house_price_index=exogenous_data.house_price_index,
             initial_year=initial_year,

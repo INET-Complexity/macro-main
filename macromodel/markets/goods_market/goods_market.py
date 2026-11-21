@@ -150,18 +150,12 @@ class GoodsMarket:
             which also depend on market clearing conditions, priorities, and other factors.
         """
         # Get corresponding functions
-        functions = functions_from_model(
-            configuration.functions, loc="macromodel.markets.goods_market"
-        )
+        functions = functions_from_model(configuration.functions, loc="macromodel.markets.goods_market")
         n_countries = int(np.sqrt(len(origin_trade_proportions) / n_industries))
 
         states = {
-            "origin_trade_proportions": origin_trade_proportions.reshape(
-                (n_countries, n_countries, n_industries)
-            ),
-            "destin_trade_proportions": destin_trade_proportions.reshape(
-                (n_countries, n_countries, n_industries)
-            ),
+            "origin_trade_proportions": origin_trade_proportions.reshape((n_countries, n_countries, n_industries)),
+            "destin_trade_proportions": destin_trade_proportions.reshape((n_countries, n_countries, n_industries)),
             "previous_supply_chain": None,
         }
 
@@ -179,17 +173,13 @@ class GoodsMarket:
         for c in goods_market_participants.keys():
             seller_priorities[c] = np.array(
                 [
-                    goods_market_participants[c][i].transactor_settings[
-                        "Buyer Priority"
-                    ]
+                    goods_market_participants[c][i].transactor_settings["Buyer Priority"]
                     for i in range(len(goods_market_participants[c]))
                 ]
             )
             buyer_priorities[c] = np.array(
                 [
-                    goods_market_participants[c][i].transactor_settings[
-                        "Seller Priority"
-                    ]
+                    goods_market_participants[c][i].transactor_settings["Seller Priority"]
                     for i in range(len(goods_market_participants[c]))
                 ]
             )
@@ -232,13 +222,9 @@ class GoodsMarket:
             collect_sd (bool): Whether to collect supply/demand data. Defaults to True.
         """
         # Prepare agents
-        self.functions["clearing"].prepare(
-            goods_market_participants=self.goods_market_participants
-        )
+        self.functions["clearing"].prepare(goods_market_participants=self.goods_market_participants)
         if collect_sd:
-            total_supply, total_demand = self.functions[
-                "clearing"
-            ].collect_all_supply_and_demand(
+            total_supply, total_demand = self.functions["clearing"].collect_all_supply_and_demand(
                 goods_market_participants=self.goods_market_participants,
                 n_industries=self.n_industries,
             )
@@ -276,9 +262,7 @@ class GoodsMarket:
 
         Triggers recording of transaction outcomes for all market participants.
         """
-        self.functions["clearing"].record(
-            goods_market_participants=self.goods_market_participants
-        )
+        self.functions["clearing"].record(goods_market_participants=self.goods_market_participants)
 
     def save_to_h5(self, h5_file: pd.HDFStore) -> None:
         """Save market state to HDF5.

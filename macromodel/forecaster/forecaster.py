@@ -53,9 +53,7 @@ class Forecaster(ABC):
     """
 
     @abstractmethod
-    def forecast(
-        self, data: np.ndarray, t: int = 1, assume_zero_noise: bool = False
-    ) -> float | np.ndarray:
+    def forecast(self, data: np.ndarray, t: int = 1, assume_zero_noise: bool = False) -> float | np.ndarray:
         """Generate forecasts from time series data.
 
         Args:
@@ -88,9 +86,7 @@ class ConstantForecaster(Forecaster):
         """
         self.value = value
 
-    def forecast(
-        self, data: np.ndarray, t: int = 1, assume_zero_noise: bool = False
-    ) -> np.ndarray:
+    def forecast(self, data: np.ndarray, t: int = 1, assume_zero_noise: bool = False) -> np.ndarray:
         """Generate constant value forecasts.
 
         Args:
@@ -111,9 +107,7 @@ class OLSForecaster(Forecaster):
     extrapolating linear trends in the data.
     """
 
-    def forecast(
-        self, data: np.ndarray, t: int = 1, assume_zero_noise: bool = False
-    ) -> np.ndarray:
+    def forecast(self, data: np.ndarray, t: int = 1, assume_zero_noise: bool = False) -> np.ndarray:
         """Generate trend-based forecasts.
 
         Fits linear trend to historical data and extrapolates forward.
@@ -159,9 +153,7 @@ class ImplementedAutoregForecaster(Forecaster):
         self.lags = lags
         self.trend = trend
 
-    def forecast(
-        self, data: np.ndarray, t: int = 1, assume_zero_noise: bool = False
-    ) -> float | np.ndarray:
+    def forecast(self, data: np.ndarray, t: int = 1, assume_zero_noise: bool = False) -> float | np.ndarray:
         """Generate autoregressive forecasts.
 
         Args:
@@ -173,11 +165,7 @@ class ImplementedAutoregForecaster(Forecaster):
             float | np.ndarray: Forecasted values
         """
         check_len(data)
-        forecast = (
-            AutoReg(data, lags=[self.lags], trend=self.trend, old_names=False)
-            .fit()
-            .forecast(steps=t)
-        )
+        forecast = AutoReg(data, lags=[self.lags], trend=self.trend, old_names=False).fit().forecast(steps=t)
         return forecast
 
 

@@ -85,9 +85,7 @@ class RentSetter(ABC):
         pass
 
     @abstractmethod
-    def compute_offered_rent_for_existing_properties(
-        self, current_offered_rent: np.ndarray
-    ) -> np.ndarray:
+    def compute_offered_rent_for_existing_properties(self, current_offered_rent: np.ndarray) -> np.ndarray:
         """Update rental offers for existing properties.
 
         Args:
@@ -108,9 +106,7 @@ class ConstantRentSetter(RentSetter):
     - Existing property offers
     """
 
-    def compute_rent(
-        self, current_rent: np.ndarray, historic_inflation: np.ndarray
-    ) -> np.ndarray:
+    def compute_rent(self, current_rent: np.ndarray, historic_inflation: np.ndarray) -> np.ndarray:
         """Return unchanged rental prices.
 
         Args:
@@ -136,9 +132,7 @@ class ConstantRentSetter(RentSetter):
         """
         return property_value
 
-    def compute_offered_rent_for_existing_properties(
-        self, current_offered_rent: np.ndarray
-    ) -> np.ndarray:
+    def compute_offered_rent_for_existing_properties(self, current_offered_rent: np.ndarray) -> np.ndarray:
         """Return unchanged rental offers.
 
         Args:
@@ -206,13 +200,10 @@ class DefaultRentSetter(RentSetter):
             np.ndarray: Initial rental prices
         """
         return (1 + self.new_property_rent_markup) * (
-            observed_fraction_rent_value[0] * property_value
-            + observed_fraction_rent_value[1]
+            observed_fraction_rent_value[0] * property_value + observed_fraction_rent_value[1]
         )
 
-    def compute_offered_rent_for_existing_properties(
-        self, current_offered_rent: np.ndarray
-    ) -> np.ndarray:
+    def compute_offered_rent_for_existing_properties(self, current_offered_rent: np.ndarray) -> np.ndarray:
         """Update existing property rents using default behavior.
 
         Adjusts prices through:

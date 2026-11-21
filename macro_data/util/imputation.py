@@ -106,7 +106,5 @@ def apply_iterative_imputer(
         df.loc[:, columns] = imputer.fit_transform(df[columns].values)
         return df
     else:
-        df.loc[selection, columns] = imputer.fit_transform(
-            df.loc[selection, columns].values
-        )
+        df.loc[selection, columns] = imputer.fit_transform(df.loc[selection, columns].values)
         return df

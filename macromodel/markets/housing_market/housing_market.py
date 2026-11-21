@@ -162,19 +162,13 @@ class HousingMarket:
         # property_data["Corresponding Inhabitant Household ID"].loc[
         #     :, np.isnan(property_data["Corresponding Inhabitant Household ID"])
         # ] = -1
-        property_data["Corresponding Inhabitant Household ID"] = (
-            macromodel.util.get_histogram.fillna(-1).astype(int)
-        )
+        property_data["Corresponding Inhabitant Household ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
         property_data["House ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
-        property_data["Is Owner-Occupied"] = macromodel.util.get_histogram.fillna(
-            -1
-        ).astype(int)
-        property_data["Corresponding Owner Household ID"] = property_data[
-            "Corresponding Owner Household ID"
-        ].astype(int)
-        property_data["Corresponding Inhabitant Household ID"] = (
-            macromodel.util.get_histogram.fillna(-1).astype(int)
+        property_data["Is Owner-Occupied"] = macromodel.util.get_histogram.fillna(-1).astype(int)
+        property_data["Corresponding Owner Household ID"] = property_data["Corresponding Owner Household ID"].astype(
+            int
         )
+        property_data["Corresponding Inhabitant Household ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
 
         ts = create_housing_market_timeseries(
             data=property_data,
@@ -257,19 +251,11 @@ class HousingMarket:
 
         # Recording the states of all homes
         states = data.copy()
-        states["Corresponding Inhabitant Household ID"][
-            np.isnan(states["Corresponding Inhabitant Household ID"])
-        ] = -1
+        states["Corresponding Inhabitant Household ID"][np.isnan(states["Corresponding Inhabitant Household ID"])] = -1
         states["House ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
-        states["Is Owner-Occupied"] = macromodel.util.get_histogram.fillna(-1).astype(
-            int
-        )
-        states["Corresponding Owner Household ID"] = (
-            macromodel.util.get_histogram.fillna(-1).astype(int)
-        )
-        states["Corresponding Inhabitant Household ID"] = (
-            macromodel.util.get_histogram.fillna(-1).astype(int)
-        )
+        states["Is Owner-Occupied"] = macromodel.util.get_histogram.fillna(-1).astype(int)
+        states["Corresponding Owner Household ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
+        states["Corresponding Inhabitant Household ID"] = macromodel.util.get_histogram.fillna(-1).astype(int)
 
         # Create the corresponding time series object
         ts = create_housing_market_timeseries(
@@ -308,15 +294,11 @@ class HousingMarket:
             The specific valuation logic is defined in the configured
             value function, allowing for different valuation models.
         """
-        self.states["properties"].loc[:, "Value"] = self.functions[
-            "value"
-        ].compute_value(
+        self.states["properties"].loc[:, "Value"] = self.functions["value"].compute_value(
             current_property_values=self.states["properties"]["Value"].values
         )
         self.ts.property_values.append(self.states["properties"]["Value"].values)
-        self.ts.property_values_histogram.append(
-            get_histogram(self.ts.current("property_values"), self.scale)
-        )
+        self.ts.property_values_histogram.append(get_histogram(self.ts.current("property_values"), self.scale))
 
     def clear(
         self,
@@ -391,13 +373,10 @@ class HousingMarket:
             The ratio helps track market efficiency and price discovery,
             with deviations from 1.0 indicating potential market imbalances.
         """
-        current_sells = self.states["current_sales"].loc[
-            self.states["current_sales"]["sales_types"] == "Sell"
-        ]
+        current_sells = self.states["current_sales"].loc[self.states["current_sales"]["sales_types"] == "Sell"]
         self.ts.price_value_histogram.append(
             get_histogram(
-                current_sells["price_or_rent"].values
-                / current_sells["property_value"].values,
+                current_sells["price_or_rent"].values / current_sells["property_value"].values,
                 None,
             )
         )
@@ -424,13 +403,10 @@ class HousingMarket:
             The ratio helps track rental market efficiency and yield rates,
             providing insights into investment returns and market balance.
         """
-        current_rentals = self.states["current_sales"].loc[
-            self.states["current_sales"]["sales_types"] == "Rental"
-        ]
+        current_rentals = self.states["current_sales"].loc[self.states["current_sales"]["sales_types"] == "Rental"]
         self.ts.rent_value_histogram.append(
             get_histogram(
-                current_rentals["price_or_rent"].values
-                / current_rentals["property_value"].values,
+                current_rentals["price_or_rent"].values / current_rentals["property_value"].values,
                 None,
             )
         )
@@ -483,21 +459,15 @@ class HousingMarket:
                 int(sale["seller_id"]),
                 int(sale["property_id"]),
             )
-            prev_property_id = household_states["Corresponding Inhabited House ID"][
-                buyer_id
-            ]
+            prev_property_id = household_states["Corresponding Inhabited House ID"][buyer_id]
             if sale["sales_types"] == "Rental":
-                self.states["properties"].loc[
-                    property_id, "Corresponding Inhabitant Household ID"
-                ] = buyer_id
+                self.states["properties"].loc[property_id, "Corresponding Inhabitant Household ID"] = buyer_id
                 if prev_property_id != -1:
                     self.states["properties"].loc[
                         prev_property_id,
                         "Corresponding Inhabitant Household ID",
                     ] = -1
-                household_states["Corresponding Inhabited House ID"][
-                    buyer_id
-                ] = property_id
+                household_states["Corresponding Inhabited House ID"][buyer_id] = property_id
                 household_states["Tenure Status of the Main Residence"][buyer_id] = 3
                 household_states["corr_renters"][seller_id].append(buyer_id)
                 total_number_of_newly_rented_houses += 1
@@ -507,19 +477,13 @@ class HousingMarket:
                     or household_financial_wealth[buyer_id] >= sale["price_or_rent"]
                 ):
                     # Corresponding property owners
-                    self.states["properties"].loc[
-                        property_id, "Corresponding Owner Household ID"
-                    ] = buyer_id
-                    household_states["Corresponding Property Owner"][
-                        buyer_id
-                    ] = buyer_id
+                    self.states["properties"].loc[property_id, "Corresponding Owner Household ID"] = buyer_id
+                    household_states["Corresponding Property Owner"][buyer_id] = buyer_id
                     # household_states["corr_additionally_owned_properties"][buyer_id].append(property_id)
                     # household_states["corr_additionally_owned_properties"][seller_id].remove(property_id)
 
                     # Corresponding inhabitant households
-                    self.states["properties"].loc[
-                        property_id, "Corresponding Inhabitant Household ID"
-                    ] = buyer_id
+                    self.states["properties"].loc[property_id, "Corresponding Inhabitant Household ID"] = buyer_id
                     if prev_property_id != -1:
                         self.states["properties"].loc[
                             prev_property_id,
@@ -527,39 +491,27 @@ class HousingMarket:
                         ] = -1
 
                     # Corresponding inhabited house ID
-                    household_states["Corresponding Inhabited House ID"][
-                        buyer_id
-                    ] = property_id
+                    household_states["Corresponding Inhabited House ID"][buyer_id] = property_id
 
                     # Tenure status
-                    household_states["Tenure Status of the Main Residence"][
-                        buyer_id
-                    ] = 1
+                    household_states["Tenure Status of the Main Residence"][buyer_id] = 1
 
                     # Corresponding renter
                     if buyer_id in household_states["corr_renters"][seller_id]:
                         household_states["corr_renters"][seller_id].remove(buyer_id)
 
                     # Price
-                    self.states["properties"].loc[property_id, "Value"] = sale[
-                        "price_or_rent"
-                    ]
+                    self.states["properties"].loc[property_id, "Value"] = sale["price_or_rent"]
 
                     # Count
                     total_number_of_bought_houses += 1
             else:
-                raise ValueError(
-                    "Unknown housing market sales type", sale["sales_types"]
-                )
+                raise ValueError("Unknown housing market sales type", sale["sales_types"])
 
             # General stuff
             if (
-                self.states["properties"].at[
-                    property_id, "Corresponding Owner Household ID"
-                ]
-                == self.states["properties"].at[
-                    property_id, "Corresponding Inhabitant Household ID"
-                ]
+                self.states["properties"].at[property_id, "Corresponding Owner Household ID"]
+                == self.states["properties"].at[property_id, "Corresponding Inhabitant Household ID"]
             ):
                 self.states["properties"].at[property_id, "Is Owner-Occupied"] = 1
             else:
@@ -570,16 +522,9 @@ class HousingMarket:
             [
                 np.sum(
                     np.logical_and(
-                        self.states["properties"][
-                            "Corresponding Inhabitant Household ID"
-                        ]
-                        != -1,
-                        self.states["properties"][
-                            "Corresponding Inhabitant Household ID"
-                        ]
-                        != self.states["properties"][
-                            "Corresponding Owner Household ID"
-                        ],
+                        self.states["properties"]["Corresponding Inhabitant Household ID"] != -1,
+                        self.states["properties"]["Corresponding Inhabitant Household ID"]
+                        != self.states["properties"]["Corresponding Owner Household ID"],
                     )
                 )
             ]
@@ -593,17 +538,10 @@ class HousingMarket:
             ]
         )
         self.ts.total_number_of_houses_unoccupied.append(
-            [
-                np.sum(
-                    self.states["properties"]["Corresponding Inhabitant Household ID"]
-                    == -1
-                )
-            ]
+            [np.sum(self.states["properties"]["Corresponding Inhabitant Household ID"] == -1)]
         )
         self.ts.total_number_of_bought_houses.append([total_number_of_bought_houses])
-        self.ts.total_number_of_newly_rented_houses.append(
-            [total_number_of_newly_rented_houses]
-        )
+        self.ts.total_number_of_newly_rented_houses.append([total_number_of_newly_rented_houses])
 
     def compute_total_property_value(self) -> float:
         """Calculate the total value of all properties in the market.

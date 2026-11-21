@@ -18,9 +18,7 @@ from typing import Optional
 import numpy as np
 
 
-def get_histogram(
-    values: np.ndarray, scale: Optional[int], bins: int = 40, normalise: bool = False
-) -> np.ndarray:
+def get_histogram(values: np.ndarray, scale: Optional[int], bins: int = 40, normalise: bool = False) -> np.ndarray:
     """Compute a normalized histogram from numerical data.
 
     This function creates a histogram from input values, with options

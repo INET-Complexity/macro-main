@@ -9,9 +9,7 @@ from macro_data.configuration.countries import Country
 class Region(str):
     """A string subclass that represents a region code with additional metadata."""
 
-    def __new__(
-        cls, code: str, parent_country: Country, name: str, va_ratio: float = 1.0
-    ):
+    def __new__(cls, code: str, parent_country: Country, name: str, va_ratio: float = 1.0):
         instance = super().__new__(cls, code)
         instance._parent_country = parent_country
         instance._name = name

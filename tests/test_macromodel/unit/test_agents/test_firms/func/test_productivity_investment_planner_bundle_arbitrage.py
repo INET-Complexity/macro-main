@@ -28,17 +28,13 @@ class TestBundleArbitrageInvestmentAllocation:
         n_firms, n_industries = 2, 4
 
         # Create bundle: industries 0,1 are in energy bundle, others are singleton bundles
-        bundles = [
-            [0, 1]
-        ]  # Energy bundle with oil (industry 0) and electricity (industry 1)
+        bundles = [[0, 1]]  # Energy bundle with oil (industry 0) and electricity (industry 1)
         good_bundle = create_good_bundle(n_industries, bundles)
         bundle_matrix = create_bundle_matrix(np.array(good_bundle))
 
         # Set prices: oil expensive ($100), electricity cheap ($20)
         # Other industries have moderate prices
-        current_prices = np.array(
-            [100.0, 20.0, 50.0, 60.0]
-        )  # oil, electricity, coal, gas
+        current_prices = np.array([100.0, 20.0, 50.0, 60.0])  # oil, electricity, coal, gas
 
         # Firm spending patterns - both firms spend significantly on energy bundle
         input_usage = np.array(
@@ -135,9 +131,7 @@ class TestBundleArbitrageInvestmentAllocation:
         # Firm 0 should show strong arbitrage (high energy spending)
         firm0_oil = technical_investment[0, 0]
         firm0_electricity = technical_investment[0, 1]
-        assert (
-            firm0_electricity > 2.0 * firm0_oil
-        ), "Firm 0 should show strong bundle arbitrage effect"
+        assert firm0_electricity > 2.0 * firm0_oil, "Firm 0 should show strong bundle arbitrage effect"
 
         # Firm 1 should show weak/no arbitrage (low energy spending)
         firm1_oil = technical_investment[1, 0]
@@ -153,9 +147,7 @@ class TestBundleArbitrageInvestmentAllocation:
     def test_singleton_bundles_no_arbitrage(self):
         """Test that singleton bundles don't apply arbitrage (no substitution opportunity)."""
 
-        planner = SimpleProductivityInvestmentPlanner(
-            tfp_investment_share=0.0, n_firms=1
-        )
+        planner = SimpleProductivityInvestmentPlanner(tfp_investment_share=0.0, n_firms=1)
 
         n_firms, n_industries = 1, 3
         # All singleton bundles (no multi-input bundles)
@@ -193,9 +185,9 @@ class TestBundleArbitrageInvestmentAllocation:
 
         # With singleton bundles, arbitrage intensity should make no difference
         # since there are no substitution opportunities
-        assert np.allclose(
-            tech_low, tech_high, rtol=1e-10
-        ), "Singleton bundles should be unaffected by arbitrage intensity"
+        assert np.allclose(tech_low, tech_high, rtol=1e-10), (
+            "Singleton bundles should be unaffected by arbitrage intensity"
+        )
 
         # Investment should follow base priority logic (expensive inputs get higher priority)
         investments = tech_low[0]
@@ -240,26 +232,22 @@ class TestBundleArbitrageInvestmentAllocation:
         investments = technical_investment[0]
 
         # Within energy bundle: electricity (1) should beat oil (0)
-        assert (
-            investments[1] > investments[0]
-        ), f"Energy bundle: Electricity ({investments[1]:.2f}) should beat oil ({investments[0]:.2f})"
+        assert investments[1] > investments[0], (
+            f"Energy bundle: Electricity ({investments[1]:.2f}) should beat oil ({investments[0]:.2f})"
+        )
 
         # Within transport bundle: bike (3) should beat car (2)
-        assert (
-            investments[3] > investments[2]
-        ), f"Transport bundle: Bike ({investments[3]:.2f}) should beat car ({investments[2]:.2f})"
+        assert investments[3] > investments[2], (
+            f"Transport bundle: Bike ({investments[3]:.2f}) should beat car ({investments[2]:.2f})"
+        )
 
         # Verify arbitrage strength based on price ratios
         energy_arbitrage = investments[1] / (investments[0] + 1e-10)
         transport_arbitrage = investments[3] / (investments[2] + 1e-10)
 
         # Both should show arbitrage, transport even stronger (4:1 vs 4:1 price ratio)
-        assert (
-            energy_arbitrage > 2.0
-        ), f"Energy arbitrage ratio {energy_arbitrage:.2f} should be significant"
-        assert (
-            transport_arbitrage > 2.0
-        ), f"Transport arbitrage ratio {transport_arbitrage:.2f} should be significant"
+        assert energy_arbitrage > 2.0, f"Energy arbitrage ratio {energy_arbitrage:.2f} should be significant"
+        assert transport_arbitrage > 2.0, f"Transport arbitrage ratio {transport_arbitrage:.2f} should be significant"
 
     def test_integration_with_base_priority_factors(self):
         """Test that bundle arbitrage integrates correctly with price/usage/potential factors."""
@@ -284,9 +272,7 @@ class TestBundleArbitrageInvestmentAllocation:
         input_usage = np.array([[100.0, 10.0, 20.0, 15.0]])
 
         # Potential strongly favors industry 1 (low current multiplier)
-        current_tech_multipliers = np.array(
-            [[1.0, 0.6, 1.0, 1.0]]
-        )  # Industry 1 has room for improvement
+        current_tech_multipliers = np.array([[1.0, 0.6, 1.0, 1.0]])  # Industry 1 has room for improvement
 
         total_investment = np.array([1000.0])
 
@@ -314,9 +300,9 @@ class TestBundleArbitrageInvestmentAllocation:
 
         # Verify that base factors are still working outside the bundle
         # Industries 2,3 should follow standard priority logic
-        assert (
-            investments[2] > 0 and investments[3] > 0
-        ), "Non-bundle industries should still receive investment based on base factors"
+        assert investments[2] > 0 and investments[3] > 0, (
+            "Non-bundle industries should still receive investment based on base factors"
+        )
 
     def test_zero_investment_budget(self):
         """Test handling of zero investment budgets."""

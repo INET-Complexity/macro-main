@@ -70,9 +70,7 @@ class TestSyntheticHousingMarket:
         # Debug prints for initial state
         print("\nInitial state:")
         print(f"Total households: {len(population.household_data)}")
-        print(
-            f"Number of renters: {np.sum(population.household_data['Tenure Status of the Main Residence'] == 3)}"
-        )
+        print(f"Number of renters: {np.sum(population.household_data['Tenure Status of the Main Residence'] == 3)}")
         print(
             f"Number of properties owned: {np.sum(population.household_data['Number of Properties other than Household Main Residence'])}"
         )

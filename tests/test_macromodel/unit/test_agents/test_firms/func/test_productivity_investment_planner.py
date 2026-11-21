@@ -32,21 +32,17 @@ class TestNoProductivityInvestmentPlanner:
         current_unit_costs = np.full(n_firms, 5.0)
         available_cash = np.full(n_firms, 1000.0)
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(n_firms),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(n_firms),
         )
 
         # Should return all zeros
         expected_1d = np.zeros(n_firms)
-        expected_2d = np.zeros(
-            (n_firms, technical_investment.shape[1])
-        )  # Match actual shape
+        expected_2d = np.zeros((n_firms, technical_investment.shape[1]))  # Match actual shape
         assert np.allclose(total_investment, expected_1d)
         assert np.allclose(tfp_investment, expected_1d)
         assert np.allclose(technical_investment, expected_2d)
@@ -61,14 +57,12 @@ class TestNoProductivityInvestmentPlanner:
         current_unit_costs = np.array([100.0])
         available_cash = np.array([10000.0])
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(1),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(1),
         )
 
         assert np.allclose(total_investment, [0.0])
@@ -93,19 +87,15 @@ class TestSimpleProductivityInvestmentPlanner:
         n_firms = 3
         current_tfp = np.ones(n_firms)
         current_production = np.array([100.0, 200.0, 150.0])
-        current_unit_costs = np.array(
-            [8.0, 12.0, 10.0]
-        )  # Unit costs for cost savings calculation
+        current_unit_costs = np.array([8.0, 12.0, 10.0])  # Unit costs for cost savings calculation
         available_cash = np.array([500.0, 800.0, 600.0])
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(n_firms),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(n_firms),
         )
 
         # All values should be non-negative
@@ -131,14 +121,12 @@ class TestSimpleProductivityInvestmentPlanner:
         current_unit_costs = np.array([5.0, 15.0])  # Second firm has higher costs
         available_cash = np.array([1000.0, 1000.0])
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(2),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(2),
         )
 
         # Firm with higher unit costs should invest more (higher returns from cost reduction)
@@ -160,14 +148,12 @@ class TestSimpleProductivityInvestmentPlanner:
         current_unit_costs = np.array([2.0])  # Low unit costs = low savings potential
         available_cash = np.array([500.0])
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(1),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(1),
         )
 
         # High hurdle rate + low effectiveness + low unit costs should lead to no investment
@@ -186,19 +172,15 @@ class TestSimpleProductivityInvestmentPlanner:
 
         current_tfp = np.array([1.0])
         current_production = np.array([100.0])
-        current_unit_costs = np.array(
-            [20.0]
-        )  # High unit costs = high savings potential
+        current_unit_costs = np.array([20.0])  # High unit costs = high savings potential
         available_cash = np.array([5.0])  # Very limited cash
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(1),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(1),
         )
 
         # Investment should be limited by cash constraint
@@ -222,14 +204,12 @@ class TestSimpleProductivityInvestmentPlanner:
         current_unit_costs = np.array([0.0])  # Zero unit costs
         available_cash = np.array([500.0])
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(1),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(1),
         )
 
         # No unit costs means no cost savings possible
@@ -246,14 +226,12 @@ class TestSimpleProductivityInvestmentPlanner:
         current_unit_costs = np.array([10.0])
         available_cash = np.array([0.0])  # No cash available
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(1),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(1),
         )
 
         assert np.allclose(total_investment, [0.0])
@@ -275,9 +253,7 @@ class TestSimpleProductivityInvestmentPlanner:
 
         # Calculate expected value manually following investment_decision.md
         investment_intensity = productivity_investment / current_production  # 0.1
-        tfp_growth = 0.1 * np.power(
-            investment_intensity, 0.5
-        )  # 0.1 * sqrt(0.1) ≈ 0.0316
+        tfp_growth = 0.1 * np.power(investment_intensity, 0.5)  # 0.1 * sqrt(0.1) ≈ 0.0316
         cost_reduction_per_period = tfp_growth * current_unit_costs * current_production
         hurdle_discount = (1 + 0.15) / 0.15  # (1 + r_h) / r_h
         expected_value = cost_reduction_per_period * hurdle_discount
@@ -306,14 +282,12 @@ class TestOptimalProductivityInvestmentPlanner:
         current_unit_costs = np.array([15.0])  # Good cost savings potential
         available_cash = np.array([500.0])
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(1),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(1),
         )
 
         assert np.all(total_investment >= 0)
@@ -350,24 +324,20 @@ class TestOptimalProductivityInvestmentPlanner:
         current_unit_costs = np.array([12.0])
         available_cash = np.array([500.0])
 
-        optimal_total, optimal_tfp, optimal_tech = (
-            optimal_planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(1),
-            )
+        optimal_total, optimal_tfp, optimal_tech = optimal_planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(1),
         )
 
-        simple_total, simple_tfp, simple_tech = (
-            simple_planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(1),
-            )
+        simple_total, simple_tfp, simple_tech = simple_planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(1),
         )
 
         # Calculate NPV for both solutions
@@ -399,14 +369,12 @@ class TestOptimalProductivityInvestmentPlanner:
         current_unit_costs = np.array([8.0, 12.0, 10.0, 15.0])
         available_cash = np.array([400.0, 600.0, 500.0, 800.0])
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(n_firms),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(n_firms),
         )
 
         assert len(total_investment) == n_firms
@@ -433,14 +401,12 @@ class TestOptimalProductivityInvestmentPlanner:
         current_unit_costs = np.array([2.0])  # Low costs = limited savings potential
         available_cash = np.array([200.0])
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(1),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(1),
         )
 
         # Should find no profitable investment
@@ -463,9 +429,7 @@ class TestProductivityInvestmentPlannerUtilities:
         productivity_investment = np.array([10.0, 20.0, 0.0])
         current_production = np.array([100.0, 200.0, 150.0])
 
-        tfp_growth = planner.compute_expected_tfp_growth(
-            productivity_investment, current_production
-        )
+        tfp_growth = planner.compute_expected_tfp_growth(productivity_investment, current_production)
 
         # Calculate expected manually
         investment_intensity = productivity_investment / current_production
@@ -506,9 +470,7 @@ class TestProductivityInvestmentPlannerUtilities:
         current_production = np.array([100.0, 200.0, 80.0])
         max_cash_fraction = 0.4
 
-        budget = planner.compute_investment_budget(
-            available_cash, current_production, max_cash_fraction
-        )
+        budget = planner.compute_investment_budget(available_cash, current_production, max_cash_fraction)
 
         # Should be minimum of cash and output constraints
         cash_constraint = max_cash_fraction * available_cash
@@ -528,14 +490,12 @@ class TestProductivityInvestmentPlannerUtilities:
         current_unit_costs = np.array([10.0, 12.0])
         available_cash = np.array([500.0, 300.0])
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(2),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(2),
         )
 
         # No NaN or inf values
@@ -561,14 +521,12 @@ class TestProductivityInvestmentPlannerUtilities:
         current_unit_costs = np.array([10.0])
         available_cash = np.array([-100.0])  # Negative cash
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(1),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(1),
         )
 
         # Should handle negative cash gracefully (no investment possible)
@@ -585,14 +543,12 @@ class TestProductivityInvestmentPlannerUtilities:
         current_unit_costs = np.array([])
         available_cash = np.array([])
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(0),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(0),
         )
 
         assert len(total_investment) == 0
@@ -683,14 +639,12 @@ class TestHeterogeneousParameters:
         current_unit_costs = np.array([10.0, 10.0, 10.0])  # Same costs
         available_cash = np.array([1000.0, 1000.0, 1000.0])  # Same cash
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(n_firms),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(n_firms),
         )
 
         # Firms with higher effectiveness should get higher expected returns
@@ -717,14 +671,12 @@ class TestHeterogeneousParameters:
         current_unit_costs = np.array([10.0, 10.0, 10.0])
         available_cash = np.array([500.0, 500.0, 500.0])
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(n_firms),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(n_firms),
         )
 
         # Firm with low hurdle rate (0.05) should invest more than firm with high hurdle rate (0.30)
@@ -765,9 +717,7 @@ class TestHeterogeneousParameters:
         )
 
         # Verify arrays
-        assert np.allclose(
-            planner.technical_investment_effectiveness, [0.10, 0.15, 0.20]
-        )
+        assert np.allclose(planner.technical_investment_effectiveness, [0.10, 0.15, 0.20])
         assert np.allclose(planner.technical_diminishing_returns, [0.3, 0.5, 0.7])
         assert np.allclose(planner.price_weight, [0.5, 0.4, 0.3])
         assert np.allclose(planner.usage_weight, [0.3, 0.3, 0.4])
@@ -792,14 +742,12 @@ class TestHeterogeneousParameters:
         current_unit_costs = np.array([10.0, 12.0])
         available_cash = np.array([500.0, 600.0])
 
-        total_investment, tfp_investment, technical_investment = (
-            planner.plan_productivity_investment(
-                current_tfp=current_tfp,
-                current_production=current_production,
-                current_unit_costs=current_unit_costs,
-                available_cash=available_cash,
-                **create_test_params(n_firms),
-            )
+        total_investment, tfp_investment, technical_investment = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **create_test_params(n_firms),
         )
 
         # Should produce valid investment decisions

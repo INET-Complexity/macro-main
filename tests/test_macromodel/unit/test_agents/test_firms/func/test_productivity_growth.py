@@ -53,9 +53,7 @@ class TestSimpleTFPGrowth:
 
         # Calculate expected growth
         investment_intensity = productivity_investment / production
-        expected = base_growth + effectiveness * np.power(
-            investment_intensity, elasticity
-        )
+        expected = base_growth + effectiveness * np.power(investment_intensity, elasticity)
 
         assert np.allclose(tfp_growth, expected)
 
@@ -120,9 +118,7 @@ class TestStochasticTFPGrowth:
 
         # Check that growth varies around base growth
         assert tfp_growth.mean() != base_growth  # Should have variation
-        assert (
-            np.abs(tfp_growth.mean() - base_growth) < 0.005
-        )  # But mean should be close
+        assert np.abs(tfp_growth.mean() - base_growth) < 0.005  # But mean should be close
         assert tfp_growth.std() > 0  # Should have variation
 
     def test_zero_shock_std(self):

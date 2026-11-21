@@ -144,21 +144,13 @@ class SyntheticCreditMarket:
         # credit_market_data.index.name = "Loans"
         # credit_market_data.columns.name = "Loan Properties"
 
-        longterm_loans = LongtermLoans.from_agent_data(
-            banks.bank_data, firms.firm_data, firm_loan_maturity
-        )
-        shortterm_loans = ShorttermLoans.from_agent_data(
-            banks.bank_data, firms.firm_data, firm_loan_maturity
-        )
+        longterm_loans = LongtermLoans.from_agent_data(banks.bank_data, firms.firm_data, firm_loan_maturity)
+        shortterm_loans = ShorttermLoans.from_agent_data(banks.bank_data, firms.firm_data, firm_loan_maturity)
         consumption_expansion_loans = ConsumptionExpansionLoans.from_agent_data(
             banks.bank_data, population.household_data, hh_consumption_maturity
         )
-        payday_loans = PaydayLoans.from_agent_data(
-            banks.bank_data, population.household_data, hh_consumption_maturity
-        )
-        mortgage_loans = MortgageLoans.from_agent_data(
-            banks.bank_data, population.household_data, mortgage_maturity
-        )
+        payday_loans = PaydayLoans.from_agent_data(banks.bank_data, population.household_data, hh_consumption_maturity)
+        mortgage_loans = MortgageLoans.from_agent_data(banks.bank_data, population.household_data, mortgage_maturity)
 
         return cls(
             country_name=firms.country_name,

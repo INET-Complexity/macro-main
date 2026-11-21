@@ -223,27 +223,21 @@ class ICIOReader:
 
         # Aggregate the IOT
         if aggregation_type is not None:
-            aggregation = (
-                ICIO_AGGREGATE if aggregation_type == "Aggregate" else ICIO_ALL
-            )
+            aggregation = ICIO_AGGREGATE if aggregation_type == "Aggregate" else ICIO_ALL
         else:
             aggregation = None
         agg_df = cls.aggregate_io(considered_countries, df, aggregation)
 
         # Isolate-out imputed rents
 
-        avg_imputed_rent_fraction = sum(imputed_rent_fraction.values()) / len(
-            imputed_rent_fraction
-        )
+        avg_imputed_rent_fraction = sum(imputed_rent_fraction.values()) / len(imputed_rent_fraction)
 
         new_rent_fraction = {}
         for c in considered_countries:
             if c in imputed_rent_fraction.keys():
                 new_rent_fraction[c] = imputed_rent_fraction[c]
             else:
-                new_rent_fraction[c] = imputed_rent_fraction.get(
-                    proxy_country_dict[c], avg_imputed_rent_fraction
-                )
+                new_rent_fraction[c] = imputed_rent_fraction.get(proxy_country_dict[c], avg_imputed_rent_fraction)
 
         imputed_rents = {}
         for country_name in considered_countries:
@@ -259,9 +253,7 @@ class ICIOReader:
                     / yearly_factor
                     * exchange_rates.from_usd_to_lcu(country_name, year)
                 )
-                agg_df.at[
-                    (country_name, "L"), (country_name, "Household Consumption")
-                ] -= (
+                agg_df.at[(country_name, "L"), (country_name, "Household Consumption")] -= (
                     new_rent_fraction[country_name]
                     * agg_df.at[
                         (country_name, "L"),
@@ -302,9 +294,7 @@ class ICIOReader:
         df["rows_1"] = np.where(df["_inrow"], sep_rows[0], df["rows"])
         df["rows_2"] = np.where(df["_inrow"], sep_rows[1], df["rows"])
         df.drop(columns=["columns", "rows"], inplace=True)
-        df = df.pivot(
-            index=["rows_1", "rows_2"], columns=["col_1", "col_2"], values="value"
-        )
+        df = df.pivot(index=["rows_1", "rows_2"], columns=["col_1", "col_2"], values="value")
         df.index.names = ["CountryInd", "industryInd"]
         df.columns.names = ["CountryCol", "industryCol"]
         return df.sort_index(axis=0).sort_index(axis=1)
@@ -375,10 +365,7 @@ class ICIOReader:
             pd.Series: Summed values across all countries
         """
         considered_countries_row = self.considered_countries + ["ROW"]
-        all_cols = [
-            self.iot.loc[col, (country_name, symbol)].loc[self.industries]
-            for col in considered_countries_row
-        ]
+        all_cols = [self.iot.loc[col, (country_name, symbol)].loc[self.industries] for col in considered_countries_row]
         return reduce(lambda a, b: a + b, all_cols).fillna(0)
 
     def get_total_output(self, country_name: str) -> np.ndarray:
@@ -391,10 +378,9 @@ class ICIOReader:
             np.ndarray: Total output values by industry, converted to sub-annual frequency
         """
         return (
-            self.iot[("TOTAL", "Output")]
-            .xs(country_name, axis=0, level=0)
-            .loc[self.industries]
-        ).fillna(0).values / self.yearly_factor
+            (self.iot[("TOTAL", "Output")].xs(country_name, axis=0, level=0).loc[self.industries]).fillna(0).values
+            / self.yearly_factor
+        )
 
     def get_total_output_series(self, country_name: str) -> pd.Series:
         """Get total output by industry as a pandas Series.
@@ -405,12 +391,7 @@ class ICIOReader:
         Returns:
             pd.Series: Total output values by industry, converted to sub-annual frequency
         """
-        return (
-            self.iot[("TOTAL", "Output")]
-            .xs(country_name, axis=0, level=0)
-            .loc[self.industries]
-            / self.yearly_factor
-        )
+        return self.iot[("TOTAL", "Output")].xs(country_name, axis=0, level=0).loc[self.industries] / self.yearly_factor
 
     def get_output_shares_dict(self, country_name: str) -> dict[str, pd.Series]:
         """Calculate output shares for aggregated industry sectors.
@@ -431,9 +412,7 @@ class ICIOReader:
 
         for agg_sector in AGGREGATED_INDUSTRIES:
             sub_sectors = industry_dict[agg_sector]
-            sub_sector_outputs = output_series.loc[
-                output_series.index.intersection(sub_sectors)
-            ]
+            sub_sector_outputs = output_series.loc[output_series.index.intersection(sub_sectors)]
             total_output = sub_sector_outputs.sum()
             output_shares_dict[agg_sector] = sub_sector_outputs / total_output
 
@@ -485,9 +464,7 @@ class ICIOReader:
             reduce(
                 lambda a, b: a + b,
                 [
-                    self.iot.loc[c_prime, country_name].loc[
-                        self.industries, self.industries
-                    ]
+                    self.iot.loc[c_prime, country_name].loc[self.industries, self.industries]
                     for c_prime in self.considered_countries + ["ROW"]
                 ],
             )
@@ -510,9 +487,7 @@ class ICIOReader:
             reduce(
                 lambda a, b: a + b,
                 [
-                    self.iot.loc[country_name, c_prime].loc[
-                        self.industries, self.industries
-                    ]
+                    self.iot.loc[country_name, c_prime].loc[self.industries, self.industries]
                     for c_prime in self.considered_countries + ["ROW"]
                 ],
             )
@@ -532,10 +507,7 @@ class ICIOReader:
             np.ndarray: Matrix of domestic intermediate inputs, converted to sub-annual frequency
         """
         c_iot = self.iot.xs(country_name, axis=1, level=0)
-        return (
-            c_iot.loc[country_name, c_iot.columns.isin(self.industries)]
-            / self.yearly_factor
-        )
+        return c_iot.loc[country_name, c_iot.columns.isin(self.industries)] / self.yearly_factor
 
     def get_capital_inputs(self, country_name: str) -> np.ndarray:
         """Get total capital inputs by industry.
@@ -549,10 +521,7 @@ class ICIOReader:
         Returns:
             np.ndarray: Capital input values by industry, converted to sub-annual frequency
         """
-        return (
-            self.column_allc(country_name, "Fixed Capital Formation").values
-            / self.yearly_factor
-        )
+        return self.column_allc(country_name, "Fixed Capital Formation").values / self.yearly_factor
 
     def get_firm_capital_inputs(self, country_name: str) -> np.ndarray:
         """Get capital inputs used by firms.
@@ -566,10 +535,7 @@ class ICIOReader:
         Returns:
             np.ndarray: Firm capital inputs by industry, converted to sub-annual frequency
         """
-        return (
-            self.column_allc(country_name, "Firm Fixed Capital Formation").values
-            / self.yearly_factor
-        )
+        return self.column_allc(country_name, "Firm Fixed Capital Formation").values / self.yearly_factor
 
     def get_household_capital_inputs(self, country_name: str) -> np.ndarray:
         """Get capital inputs used by households.
@@ -583,10 +549,7 @@ class ICIOReader:
         Returns:
             np.ndarray: Household capital inputs by industry, converted to sub-annual frequency
         """
-        return (
-            self.column_allc(country_name, "Household Fixed Capital Formation").values
-            / self.yearly_factor
-        )
+        return self.column_allc(country_name, "Household Fixed Capital Formation").values / self.yearly_factor
 
     def get_gfcf_column(self, country_name: str) -> np.ndarray:
         """Get Gross Fixed Capital Formation (GFCF) column.
@@ -620,10 +583,7 @@ class ICIOReader:
         Returns:
             np.ndarray: Domestic capital inputs by industry, converted to sub-annual frequency
         """
-        return (
-            self.iot.loc[country_name, country_name]["Fixed Capital Formation"].values
-            / self.yearly_factor
-        )
+        return self.iot.loc[country_name, country_name]["Fixed Capital Formation"].values / self.yearly_factor
 
     def get_value_added(self, country_name: str) -> np.ndarray:
         """Get value added by industry.
@@ -638,9 +598,7 @@ class ICIOReader:
             np.ndarray: Value added by industry, converted to sub-annual frequency
         """
         return (
-            self.iot.xs(country_name, axis=1, level=0)
-            .loc[("TOTAL", "Value Added"), self.industries]
-            .values
+            self.iot.xs(country_name, axis=1, level=0).loc[("TOTAL", "Value Added"), self.industries].values
             / self.yearly_factor
         )
 
@@ -657,9 +615,7 @@ class ICIOReader:
             pd.Series: Value added by industry, converted to sub-annual frequency
         """
         return (
-            self.iot.xs(country_name, axis=1, level=0).loc[
-                ("TOTAL", "Value Added"), self.industries
-            ]
+            self.iot.xs(country_name, axis=1, level=0).loc[("TOTAL", "Value Added"), self.industries]
             / self.yearly_factor
         )
 
@@ -694,9 +650,7 @@ class ICIOReader:
         Returns:
             np.ndarray: Net tax rates by industry
         """
-        return self.get_taxes_less_subsidies(country_name) / self.get_total_output(
-            country_name
-        )
+        return self.get_taxes_less_subsidies(country_name) / self.get_total_output(country_name)
 
     def get_hh_consumption(self, country_name: str) -> np.ndarray:
         """Get total household consumption by industry.
@@ -710,10 +664,7 @@ class ICIOReader:
         Returns:
             np.ndarray: Household consumption by industry, converted to sub-annual frequency
         """
-        return (
-            self.column_allc(country_name, "Household Consumption").values
-            / self.yearly_factor
-        )
+        return self.column_allc(country_name, "Household Consumption").values / self.yearly_factor
 
     def get_hh_consumption_series(self, country_name: str) -> pd.Series:
         """Get household consumption by industry as a pandas Series.
@@ -727,9 +678,7 @@ class ICIOReader:
         Returns:
             pd.Series: Household consumption by industry, converted to sub-annual frequency
         """
-        return (
-            self.column_allc(country_name, "Household Consumption") / self.yearly_factor
-        )
+        return self.column_allc(country_name, "Household Consumption") / self.yearly_factor
 
     def get_hh_consumption_domestic(self, country_name: str) -> np.ndarray:
         """Get domestic household consumption by industry.
@@ -743,10 +692,7 @@ class ICIOReader:
         Returns:
             np.ndarray: Domestic household consumption by industry, converted to sub-annual frequency
         """
-        return (
-            self.iot.loc[country_name, (country_name, "Household Consumption")].values
-            / self.yearly_factor
-        )
+        return self.iot.loc[country_name, (country_name, "Household Consumption")].values / self.yearly_factor
 
     def get_hh_consumption_weights(self, country_name: str) -> np.ndarray:
         """Calculate household consumption weights by industry.
@@ -775,10 +721,7 @@ class ICIOReader:
         Returns:
             np.ndarray: Government consumption by industry, converted to sub-annual frequency
         """
-        return (
-            self.column_allc(country_name, "Government Consumption").values
-            / self.yearly_factor
-        )
+        return self.column_allc(country_name, "Government Consumption").values / self.yearly_factor
 
     def get_govt_consumption_domestic(self, country_name: str) -> np.ndarray:
         """Get domestic government consumption by industry.
@@ -792,10 +735,7 @@ class ICIOReader:
         Returns:
             np.ndarray: Domestic government consumption by industry, converted to sub-annual frequency
         """
-        return (
-            self.iot.loc[country_name, (country_name, "Government Consumption")].values
-            / self.yearly_factor
-        )
+        return self.iot.loc[country_name, (country_name, "Government Consumption")].values / self.yearly_factor
 
     def govt_consumption_weights(self, country_name: str) -> np.ndarray:
         """Calculate government consumption weights by industry.
@@ -827,11 +767,7 @@ class ICIOReader:
         considered_countries_row = self.considered_countries + ["ROW"]
         imports = reduce(
             lambda a, b: a + b,
-            (
-                self.iot.loc[c2, country_name].sum(axis=1)
-                for c2 in considered_countries_row
-                if c2 != country_name
-            ),
+            (self.iot.loc[c2, country_name].sum(axis=1) for c2 in considered_countries_row if c2 != country_name),
         )
         return imports.loc[self.industries] / self.yearly_factor
 
@@ -850,11 +786,7 @@ class ICIOReader:
         considered_countries_row = self.considered_countries + ["ROW"]
         exports = reduce(
             lambda a, b: a + b,
-            (
-                self.iot.loc[country_name, c2].sum(axis=1)
-                for c2 in considered_countries_row
-                if c2 != country_name
-            ),
+            (self.iot.loc[country_name, c2].sum(axis=1) for c2 in considered_countries_row if c2 != country_name),
         )
         return exports.loc[self.industries] / self.yearly_factor
 
@@ -871,10 +803,7 @@ class ICIOReader:
         Returns:
             pd.Series: Trade values by industry, converted to sub-annual frequency
         """
-        return (
-            self.iot.loc[start_country, end_country].sum(axis=1).loc[self.industries]
-            / self.yearly_factor
-        )
+        return self.iot.loc[start_country, end_country].sum(axis=1).loc[self.industries] / self.yearly_factor
 
     def get_origin_trade_proportions(self) -> pd.DataFrame:
         """Calculate trade proportions from origin country perspective.
@@ -896,28 +825,18 @@ class ICIOReader:
             if end_country == "ROW":
                 imports_total = self.get_imports(end_country)
             else:
-                imports_total = self.get_imports(end_country) + self.get_trade(
-                    end_country, end_country
-                )
+                imports_total = self.get_imports(end_country) + self.get_trade(end_country, end_country)
             for start_country in self.considered_countries + ["ROW"]:
-                trade_proportions["start_country"] += [start_country] * len(
-                    self.industries
-                )
+                trade_proportions["start_country"] += [start_country] * len(self.industries)
                 trade_proportions["end_country"] += [end_country] * len(self.industries)
                 trade_proportions["industry"] += list(range(len(self.industries)))
                 if start_country == end_country == "ROW":
                     trade_proportions["value"] += list(np.zeros(len(self.industries)))
                 else:
                     trade_proportions["value"] += list(
-                        (
-                            self.get_trade(start_country, end_country) / imports_total
-                        ).values
+                        (self.get_trade(start_country, end_country) / imports_total).values
                     )
-        return (
-            pd.DataFrame(trade_proportions)
-            .set_index(["start_country", "end_country", "industry"])
-            .sort_index()
-        )
+        return pd.DataFrame(trade_proportions).set_index(["start_country", "end_country", "industry"]).sort_index()
 
     def get_destination_trade_proportions(self) -> pd.DataFrame:
         """Calculate trade proportions from destination country perspective.
@@ -939,28 +858,18 @@ class ICIOReader:
             if start_country == "ROW":
                 exports_total = self.get_exports(start_country)
             else:
-                exports_total = self.get_exports(start_country) + self.get_trade(
-                    start_country, start_country
-                )
+                exports_total = self.get_exports(start_country) + self.get_trade(start_country, start_country)
             for end_country in self.considered_countries + ["ROW"]:
                 if start_country == end_country == "ROW":
                     trade_proportions["value"] += list(np.zeros(len(self.industries)))
                 else:
                     trade_proportions["value"] += list(
-                        (
-                            self.get_trade(start_country, end_country) / exports_total
-                        ).values
+                        (self.get_trade(start_country, end_country) / exports_total).values
                     )
-                trade_proportions["start_country"] += [start_country] * len(
-                    self.industries
-                )
+                trade_proportions["start_country"] += [start_country] * len(self.industries)
                 trade_proportions["end_country"] += [end_country] * len(self.industries)
                 trade_proportions["industry"] += list(range(len(self.industries)))
-        return (
-            pd.DataFrame(trade_proportions)
-            .set_index(["start_country", "end_country", "industry"])
-            .sort_index()
-        )
+        return pd.DataFrame(trade_proportions).set_index(["start_country", "end_country", "industry"]).sort_index()
 
     def get_intermediate_inputs_matrix(self, country_name: str) -> pd.DataFrame:
         """Calculate the intermediate inputs coefficient matrix.
@@ -975,9 +884,7 @@ class ICIOReader:
             pd.DataFrame: Matrix of input-output coefficients
         """
         total_output = self.get_total_output(country_name)
-        total_monthly_intermediate_inputs = self.get_intermediate_inputs_use(
-            country_name
-        )
+        total_monthly_intermediate_inputs = self.get_intermediate_inputs_use(country_name)
         return total_output[None, :] / total_monthly_intermediate_inputs  # noqa
 
     def get_capital_inputs_matrix(
@@ -1000,14 +907,8 @@ class ICIOReader:
         """
         norm_investment_matrix = self.investment_matrices[country_name].copy()
         norm_investment_matrix /= norm_investment_matrix.sum(axis=0)
-        cap_inputs_matrix = (
-            self.get_total_output(country_name) / capital_stock
-        ) / norm_investment_matrix
-        return (
-            cap_inputs_matrix.xs(country_name, axis=0, level=0)
-            .xs(country_name, axis=1, level=0)
-            .fillna(np.inf)
-        )
+        cap_inputs_matrix = (self.get_total_output(country_name) / capital_stock) / norm_investment_matrix
+        return cap_inputs_matrix.xs(country_name, axis=0, level=0).xs(country_name, axis=1, level=0).fillna(np.inf)
 
     def get_capital_inputs_depreciation(
         self,
@@ -1129,8 +1030,7 @@ def normalise_iot(
         ("TOTAL", "Intermediate Inputs"),
         industry_columns,
     ] = iot.loc[
-        (iot.index != ("TOTAL", "Value Added"))
-        & (iot.index.get_level_values(1) != "Taxes Less Subsidies"),
+        (iot.index != ("TOTAL", "Value Added")) & (iot.index.get_level_values(1) != "Taxes Less Subsidies"),
         industry_columns,
     ].sum(axis=0)
 
@@ -1144,8 +1044,7 @@ def normalise_iot(
     ].sum(axis=0)
     iot = iot.loc[
         np.logical_not(
-            (iot.index.get_level_values(0) != "TOTAL")
-            & (iot.index.get_level_values(1) == "Taxes Less Subsidies")
+            (iot.index.get_level_values(0) != "TOTAL") & (iot.index.get_level_values(1) == "Taxes Less Subsidies")
         )
     ].copy()
 
@@ -1194,16 +1093,13 @@ def split_gfcf_column(
     for c in considered_countries:
         ind = iot.index.get_level_values(1).isin(industries)
         iot.loc[ind, (c, "Firm Fixed Capital Formation")] = (
-            investment_fractions[c]["Firm"]
-            * iot.loc[ind, (c, "Fixed Capital Formation")]
+            investment_fractions[c]["Firm"] * iot.loc[ind, (c, "Fixed Capital Formation")]
         )
         iot.loc[ind, (c, "Household Fixed Capital Formation")] = (
-            investment_fractions[c]["Household"]
-            * iot.loc[ind, (c, "Fixed Capital Formation")]
+            investment_fractions[c]["Household"] * iot.loc[ind, (c, "Fixed Capital Formation")]
         )
         iot.loc[ind, (c, "Government Consumption")] += (
-            investment_fractions[c]["Government"]
-            * iot.loc[ind, (c, "Fixed Capital Formation")]
+            investment_fractions[c]["Government"] * iot.loc[ind, (c, "Fixed Capital Formation")]
         )
         iot = iot.loc[
             :,

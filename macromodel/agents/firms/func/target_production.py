@@ -70,18 +70,14 @@ class TargetProductionSetter(ABC):
             capital_inputs_target_considers_capital_inputs (float): Capital weight for capital
         """
         self.existing_inventory_fraction = existing_inventory_fraction
-        self.target_inventory_to_production_fraction = (
-            target_inventory_to_production_fraction
-        )
+        self.target_inventory_to_production_fraction = target_inventory_to_production_fraction
         self.financial_constrains_fraction = financial_constrains_fraction
         self.maximum_debt_to_equity_ratio = maximum_debt_to_equity_ratio
 
         self.intermediate_inputs_target_considers_labour_inputs = clip(
             intermediate_inputs_target_considers_labour_inputs
         )
-        self.intermediate_inputs_target_considers_labour_inputs = (
-            intermediate_inputs_target_considers_labour_inputs
-        )
+        self.intermediate_inputs_target_considers_labour_inputs = intermediate_inputs_target_considers_labour_inputs
         self.intermediate_inputs_target_considers_intermediate_inputs = clip(
             intermediate_inputs_target_considers_intermediate_inputs
         )
@@ -91,28 +87,16 @@ class TargetProductionSetter(ABC):
         self.intermediate_inputs_target_considers_capital_inputs = clip(
             intermediate_inputs_target_considers_capital_inputs
         )
-        self.intermediate_inputs_target_considers_capital_inputs = (
-            intermediate_inputs_target_considers_capital_inputs
-        )
+        self.intermediate_inputs_target_considers_capital_inputs = intermediate_inputs_target_considers_capital_inputs
 
-        self.capital_inputs_target_considers_labour_inputs = clip(
-            capital_inputs_target_considers_labour_inputs
-        )
-        self.capital_inputs_target_considers_labour_inputs = (
-            capital_inputs_target_considers_labour_inputs
-        )
+        self.capital_inputs_target_considers_labour_inputs = clip(capital_inputs_target_considers_labour_inputs)
+        self.capital_inputs_target_considers_labour_inputs = capital_inputs_target_considers_labour_inputs
         self.capital_inputs_target_considers_intermediate_inputs = clip(
             capital_inputs_target_considers_intermediate_inputs
         )
-        self.capital_inputs_target_considers_intermediate_inputs = (
-            capital_inputs_target_considers_intermediate_inputs
-        )
-        self.capital_inputs_target_considers_capital_inputs = clip(
-            capital_inputs_target_considers_capital_inputs
-        )
-        self.capital_inputs_target_considers_capital_inputs = (
-            capital_inputs_target_considers_capital_inputs
-        )
+        self.capital_inputs_target_considers_intermediate_inputs = capital_inputs_target_considers_intermediate_inputs
+        self.capital_inputs_target_considers_capital_inputs = clip(capital_inputs_target_considers_capital_inputs)
+        self.capital_inputs_target_considers_capital_inputs = capital_inputs_target_considers_capital_inputs
 
     @abstractmethod
     def compute_target_production(

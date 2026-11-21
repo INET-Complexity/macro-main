@@ -60,18 +60,12 @@ class ProductivityInvestmentPlanner(ABC):
         # Convert all parameters to numpy arrays with shape (n_firms,)
         self.hurdle_rate = self._to_array(hurdle_rate, n_firms)
         self.max_investment_fraction = self._to_array(max_investment_fraction, n_firms)
-        self.investment_effectiveness = self._to_array(
-            investment_effectiveness, n_firms
-        )
+        self.investment_effectiveness = self._to_array(investment_effectiveness, n_firms)
         self.investment_elasticity = self._to_array(investment_elasticity, n_firms)
         # Technical coefficient parameters
         self.tfp_investment_share = self._to_array(tfp_investment_share, n_firms)
-        self.technical_investment_effectiveness = self._to_array(
-            technical_investment_effectiveness, n_firms
-        )
-        self.technical_diminishing_returns = self._to_array(
-            technical_diminishing_returns, n_firms
-        )
+        self.technical_investment_effectiveness = self._to_array(technical_investment_effectiveness, n_firms)
+        self.technical_diminishing_returns = self._to_array(technical_diminishing_returns, n_firms)
         self.price_weight = self._to_array(price_weight, n_firms)
         self.usage_weight = self._to_array(usage_weight, n_firms)
         self.potential_weight = self._to_array(potential_weight, n_firms)
@@ -89,9 +83,7 @@ class ProductivityInvestmentPlanner(ABC):
         if isinstance(value, (list, tuple)):
             arr = np.array(value)
             if len(arr) != n_firms:
-                raise ValueError(
-                    f"Parameter list length {len(arr)} does not match n_firms {n_firms}"
-                )
+                raise ValueError(f"Parameter list length {len(arr)} does not match n_firms {n_firms}")
             return arr
         else:
             return np.full(n_firms, value)
@@ -154,9 +146,7 @@ class ProductivityInvestmentPlanner(ABC):
             out=np.zeros_like(productivity_investment),
             where=current_production > 0,
         )
-        return self.investment_effectiveness * np.power(
-            investment_intensity, self.investment_elasticity
-        )
+        return self.investment_effectiveness * np.power(investment_intensity, self.investment_elasticity)
 
     def compute_hurdle_adjusted_value(
         self,
@@ -183,9 +173,7 @@ class ProductivityInvestmentPlanner(ABC):
             np.ndarray: Hurdle-adjusted present value of cost savings
         """
         # Expected TFP growth factor (φ * (I/Y)^α)
-        tfp_growth = self.compute_expected_tfp_growth(
-            productivity_investment, current_production
-        )
+        tfp_growth = self.compute_expected_tfp_growth(productivity_investment, current_production)
 
         # Cost reduction per period = tfp_growth * unit_cost * production
         cost_reduction_per_period = tfp_growth * current_unit_costs * current_production
@@ -218,9 +206,7 @@ class ProductivityInvestmentPlanner(ABC):
         output_constraint = self.max_investment_fraction * current_production
         return np.minimum(cash_constraint, output_constraint)
 
-    def compute_expected_prices(
-        self, current_prices: np.ndarray, estimated_inflation: float
-    ) -> np.ndarray:
+    def compute_expected_prices(self, current_prices: np.ndarray, estimated_inflation: float) -> np.ndarray:
         """Calculate expected future prices using inflation estimate.
 
         Uses the same approach as elsewhere in the model:
@@ -266,9 +252,7 @@ class ProductivityInvestmentPlanner(ABC):
         technical_budget = (1.0 - self.tfp_investment_share) * total_investment
 
         # Compute base input priorities for technical investment
-        priorities = self._compute_input_priorities(
-            current_prices, input_usage, current_tech_multipliers
-        )
+        priorities = self._compute_input_priorities(current_prices, input_usage, current_tech_multipliers)
 
         # Apply bundle arbitrage (always - bundles exist even if singleton)
         priorities = self._apply_bundle_arbitrage(
@@ -362,12 +346,8 @@ class ProductivityInvestmentPlanner(ABC):
         adjusted_priorities = base_priorities.copy()
 
         # Calculate spending on each input for each firm
-        input_spending = (
-            input_usage * current_prices[np.newaxis, :]
-        )  # [n_firms x n_industries]
-        total_spending_per_firm = input_spending.sum(
-            axis=1, keepdims=True
-        )  # [n_firms x 1]
+        input_spending = input_usage * current_prices[np.newaxis, :]  # [n_firms x n_industries]
+        total_spending_per_firm = input_spending.sum(axis=1, keepdims=True)  # [n_firms x 1]
 
         # Process each bundle
         for bundle_idx in range(n_bundles):
@@ -379,9 +359,7 @@ class ProductivityInvestmentPlanner(ABC):
                 continue  # Skip singleton bundles - no arbitrage opportunity
 
             # Calculate bundle spending for each firm
-            bundle_spending = input_spending[:, bundle_industries].sum(
-                axis=1, keepdims=True
-            )  # [n_firms x 1]
+            bundle_spending = input_spending[:, bundle_industries].sum(axis=1, keepdims=True)  # [n_firms x 1]
             bundle_spending_fraction = np.divide(
                 bundle_spending,
                 total_spending_per_firm,
@@ -390,9 +368,7 @@ class ProductivityInvestmentPlanner(ABC):
             )
 
             # Only apply arbitrage for firms where this bundle is significant
-            significant_firms = (
-                bundle_spending_fraction >= bundle_significance_threshold
-            ).flatten()
+            significant_firms = (bundle_spending_fraction >= bundle_significance_threshold).flatten()
 
             if not np.any(significant_firms):
                 continue  # No firms spend significantly on this bundle
@@ -440,9 +416,7 @@ class ProductivityInvestmentPlanner(ABC):
             np.ndarray: Hurdle-adjusted present value of combined cost savings
         """
         # TFP component
-        tfp_growth = self.compute_expected_tfp_growth(
-            tfp_investment, current_production
-        )
+        tfp_growth = self.compute_expected_tfp_growth(tfp_investment, current_production)
         tfp_cost_savings = tfp_growth * current_unit_costs * current_production
 
         # Technical component - vectorized across all inputs
@@ -455,9 +429,7 @@ class ProductivityInvestmentPlanner(ABC):
         )
 
         # Apply exponential diminishing returns (firm-specific parameters)
-        diminishing_factor = np.exp(
-            -self.technical_diminishing_returns[:, np.newaxis] * cumulative_improvements
-        )
+        diminishing_factor = np.exp(-self.technical_diminishing_returns[:, np.newaxis] * cumulative_improvements)
 
         # Effective technical growth with diminishing returns (firm-specific parameters)
         technical_growth = (
@@ -607,9 +579,7 @@ class SimpleProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
         candidate_investment = self.investment_propensity * budget
 
         # Compute hurdle-adjusted present value of cost savings
-        hurdle_value = self.compute_hurdle_adjusted_value(
-            candidate_investment, current_production, current_unit_costs
-        )
+        hurdle_value = self.compute_hurdle_adjusted_value(candidate_investment, current_production, current_unit_costs)
 
         # Investment is profitable if hurdle-adjusted value exceeds investment cost
         profitable = hurdle_value > candidate_investment
@@ -619,14 +589,12 @@ class SimpleProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
 
         if substitution_bundle_matrix is not None:
             # Allocate between TFP and technical using bundle-aware logic
-            tfp_investment, technical_investment = (
-                self.allocate_productivity_investment(
-                    total_investment,
-                    current_prices,
-                    input_usage,
-                    current_tech_multipliers,
-                    substitution_bundle_matrix,
-                )
+            tfp_investment, technical_investment = self.allocate_productivity_investment(
+                total_investment,
+                current_prices,
+                input_usage,
+                current_tech_multipliers,
+                substitution_bundle_matrix,
             )
         else:
             # Fallback to simple allocation without bundle logic
@@ -635,9 +603,7 @@ class SimpleProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
             technical_investment = np.zeros((len(current_production), n_industries))
             # Distribute technical budget evenly across inputs for simplicity
             if n_industries > 0:
-                technical_investment[:, :] = (
-                    technical_budget[:, np.newaxis] / n_industries
-                )
+                technical_investment[:, :] = technical_budget[:, np.newaxis] / n_industries
 
         return total_investment, tfp_investment, technical_investment
 
@@ -729,11 +695,7 @@ class OptimalProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
 
         # For each firm, find optimal investment level
         for i in range(n_firms):
-            if (
-                budget[i] <= 0
-                or current_production[i] <= 0
-                or current_unit_costs[i] <= 0
-            ):
+            if budget[i] <= 0 or current_production[i] <= 0 or current_unit_costs[i] <= 0:
                 continue
 
             # Search over possible investment levels
@@ -752,9 +714,7 @@ class OptimalProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
                 prod_array = np.array([current_production[i]])
                 costs_array = np.array([current_unit_costs[i]])
 
-                hurdle_value = self.compute_hurdle_adjusted_value(
-                    inv_array, prod_array, costs_array
-                )[0]
+                hurdle_value = self.compute_hurdle_adjusted_value(inv_array, prod_array, costs_array)[0]
 
                 # NPV: hurdle-adjusted value minus investment cost
                 npv = hurdle_value - investment
@@ -768,14 +728,12 @@ class OptimalProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
 
         if substitution_bundle_matrix is not None:
             # Allocate between TFP and technical using bundle-aware logic
-            tfp_investment, technical_investment = (
-                self.allocate_productivity_investment(
-                    total_investment,
-                    current_prices,
-                    input_usage,
-                    current_tech_multipliers,
-                    substitution_bundle_matrix,
-                )
+            tfp_investment, technical_investment = self.allocate_productivity_investment(
+                total_investment,
+                current_prices,
+                input_usage,
+                current_tech_multipliers,
+                substitution_bundle_matrix,
             )
         else:
             # Fallback to simple allocation without bundle logic
@@ -784,8 +742,6 @@ class OptimalProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
             technical_investment = np.zeros((len(current_production), n_industries))
             # Distribute technical budget evenly across inputs for simplicity
             if n_industries > 0:
-                technical_investment[:, :] = (
-                    technical_budget[:, np.newaxis] / n_industries
-                )
+                technical_investment[:, :] = technical_budget[:, np.newaxis] / n_industries
 
         return total_investment, tfp_investment, technical_investment

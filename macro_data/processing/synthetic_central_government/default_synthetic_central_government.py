@@ -141,9 +141,7 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
                 benefits_inflation_data, regression_window=regression_window
             )
             last_observation = (
-                benefits_inflation_data[["Real CPI Inflation", "Unemployment Rate"]]
-                .iloc[-1]
-                .values.reshape(1, -1)
+                benefits_inflation_data[["Real CPI Inflation", "Unemployment Rate"]].iloc[-1].values.reshape(1, -1)
             )
 
             if unemployment_benefits_model:
@@ -152,9 +150,7 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
                     * benefits_inflation_data["Unemployment Benefits"].iloc[-1]
                 )
             else:
-                current_unemployment_benefits = benefits_inflation_data[
-                    "Unemployment Benefits"
-                ].iloc[-1]
+                current_unemployment_benefits = benefits_inflation_data["Unemployment Benefits"].iloc[-1]
 
             if other_benefits_model:
                 current_other_benefits = (
@@ -162,20 +158,13 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
                     * benefits_inflation_data["Other Total Benefits"].iloc[-1]
                 )
             else:
-                current_other_benefits = benefits_inflation_data[
-                    "Other Total Benefits"
-                ].iloc[-1]
+                current_other_benefits = benefits_inflation_data["Other Total Benefits"].iloc[-1]
         else:
             # if exogenous data is not available, set the benefits models to None
             unemployment_benefits_model = None
             other_benefits_model = None
-            current_unemployment_benefits = readers.get_total_unemployment_benefits_lcu(
-                country_name, year
-            )
-            current_other_benefits = (
-                readers.get_total_benefits_lcu(country_name, year)
-                - current_unemployment_benefits
-            )
+            current_unemployment_benefits = readers.get_total_unemployment_benefits_lcu(country_name, year)
+            current_other_benefits = readers.get_total_benefits_lcu(country_name, year) - current_unemployment_benefits
 
         # TODO: debt in USD or in local currency?
 
@@ -200,9 +189,7 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
         return central_gov
 
 
-def build_unemployment_model(
-    benefits_inflation_data: pd.DataFrame, regression_window: int = 48
-):
+def build_unemployment_model(benefits_inflation_data: pd.DataFrame, regression_window: int = 48):
     """Estimate a model for preprocessing unemployment benefits data.
 
     This function estimates parameters for preprocessing unemployment benefits by:
@@ -235,9 +222,7 @@ def build_unemployment_model(
         return None
 
 
-def build_other_benefits_model(
-    benefits_inflation_data: pd.DataFrame, regression_window: int = 48
-):
+def build_other_benefits_model(benefits_inflation_data: pd.DataFrame, regression_window: int = 48):
     """Estimate a model for preprocessing other benefits data.
 
     This function estimates parameters for preprocessing non-unemployment benefits by:

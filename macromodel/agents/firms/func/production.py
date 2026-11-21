@@ -64,9 +64,7 @@ class ProductionSetter(ABC):
             effective_labour = current_labour_inputs
             effective_limiting_stock = limiting_stock
 
-        return np.amin(
-            [desired_production, effective_labour, effective_limiting_stock], axis=0
-        )
+        return np.amin([desired_production, effective_labour, effective_limiting_stock], axis=0)
 
     @abstractmethod
     def compute_limiting_intermediate_inputs_stock(
@@ -267,9 +265,7 @@ class PureLeontief(ProductionSetter):
             np.ndarray: Production possible with intermediate inputs
         """
 
-        output_mask = np.all(
-            (intermediate_inputs_productivity_matrix == np.inf), axis=1
-        )
+        output_mask = np.all((intermediate_inputs_productivity_matrix == np.inf), axis=1)
 
         limiting = np.multiply(
             intermediate_inputs_productivity_matrix,
@@ -374,9 +370,7 @@ class PureLeontief(ProductionSetter):
         Returns:
             np.ndarray: Capital inputs depreciated in production
         """
-        used_capital_inputs = (
-            realised_production[:, None] * capital_inputs_depreciation_matrix
-        )
+        used_capital_inputs = realised_production[:, None] * capital_inputs_depreciation_matrix
         used_capital_inputs[used_capital_inputs == np.inf] = 0.0
         used_capital_inputs[used_capital_inputs == -np.inf] = 0.0
         return used_capital_inputs
@@ -495,9 +489,7 @@ class CriticalAndImportantLeontief(ProductionSetter):
         Returns:
             np.ndarray: Critical capital inputs depreciated
         """
-        used_capital_inputs = (
-            realised_production[:, None] * capital_inputs_depreciation_matrix
-        )
+        used_capital_inputs = realised_production[:, None] * capital_inputs_depreciation_matrix
         used_capital_inputs[used_capital_inputs == np.inf] = 0.0
         used_capital_inputs[used_capital_inputs == -np.inf] = 0.0
         used_capital_inputs[goods_criticality_matrix == 0.0] = 0.0
@@ -617,9 +609,7 @@ class CriticalLeontief(ProductionSetter):
         Returns:
             np.ndarray: Critical capital inputs depreciated
         """
-        used_capital_inputs = (
-            realised_production[:, None] * capital_inputs_depreciation_matrix
-        )
+        used_capital_inputs = realised_production[:, None] * capital_inputs_depreciation_matrix
         used_capital_inputs[used_capital_inputs == np.inf] = 0.0
         used_capital_inputs[used_capital_inputs == -np.inf] = 0.0
         used_capital_inputs[goods_criticality_matrix < 1.0] = 0.0
@@ -728,9 +718,7 @@ class Linear(ProductionSetter):
         Returns:
             np.ndarray: Capital inputs depreciated in production
         """
-        used_capital_inputs = (
-            realised_production[:, None] * capital_inputs_depreciation_matrix
-        )
+        used_capital_inputs = realised_production[:, None] * capital_inputs_depreciation_matrix
         used_capital_inputs[used_capital_inputs == np.inf] = 0.0
         used_capital_inputs[used_capital_inputs == -np.inf] = 0.0
         used_capital_inputs = (
@@ -897,9 +885,7 @@ class BundledLeontief(ProductionSetter):
         bundle_productivity = np.matmul(effective_inputs, substitution_bundle_matrix)
 
         # industries with rows at infty are non-existent
-        output_mask = np.all(
-            (intermediate_inputs_productivity_matrix == np.inf), axis=1
-        )
+        output_mask = np.all((intermediate_inputs_productivity_matrix == np.inf), axis=1)
         limiting = bundle_productivity.min(axis=1)
         limiting[output_mask] = 0
 
@@ -1015,9 +1001,7 @@ class BundledLeontief(ProductionSetter):
             np.ndarray: Capital inputs depreciated in production
         """
         # Calculate base capital depreciation
-        used_capital_inputs = (
-            realised_production[:, None] * capital_inputs_depreciation_matrix
-        )
+        used_capital_inputs = realised_production[:, None] * capital_inputs_depreciation_matrix
         used_capital_inputs[used_capital_inputs == np.inf] = 0.0
         used_capital_inputs[used_capital_inputs == -np.inf] = 0.0
 

@@ -261,20 +261,16 @@ class DefaultHouseholdDemandForProperty(HouseholdDemandForProperty):
         ind_renting = np.array(household_residence_tenure_status == 0)
         ind_renting_not_staying = np.logical_and(
             ind_renting,
-            np.random.random(ind_renting.shape[0])
-            > self.probability_stay_in_rented_property,
+            np.random.random(ind_renting.shape[0]) > self.probability_stay_in_rented_property,
         )
         ind_owning = np.array(household_residence_tenure_status == 1)
         ind_owning_not_staying = np.logical_and(
             ind_owning,
-            np.random.random(ind_owning.shape[0])
-            > self.probability_stay_in_owned_property,
+            np.random.random(ind_owning.shape[0]) > self.probability_stay_in_owned_property,
         )
 
         # Decision between renting and owning for households renting or in social housing
-        ind_dec = (
-            ind_in_social_housing | ind_renting_not_staying | ind_owning_not_staying
-        )
+        ind_dec = ind_in_social_housing | ind_renting_not_staying | ind_owning_not_staying
         max_amount_pay = (
             self.maximum_price_income_coefficient
             * household_income[ind_dec] ** self.maximum_price_income_exponent
@@ -286,21 +282,13 @@ class DefaultHouseholdDemandForProperty(HouseholdDemandForProperty):
                 )
             )
         )
-        max_value_affordable = (
-            observed_fraction_value_price[0] * max_amount_pay
-            + observed_fraction_value_price[1]
-        )
+        max_value_affordable = observed_fraction_value_price[0] * max_amount_pay + observed_fraction_value_price[1]
         max_corresponding_rent = (
-            observed_fraction_rent_value[0] * max_value_affordable
-            + observed_fraction_rent_value[1]
+            observed_fraction_rent_value[0] * max_value_affordable + observed_fraction_rent_value[1]
         )
-        annual_cost_of_renting = (
-            4 * (1 + self.psychological_pressure_of_renting) * max_corresponding_rent
-        )
+        annual_cost_of_renting = 4 * (1 + self.psychological_pressure_of_renting) * max_corresponding_rent
         annual_cost_of_purchasing = (
-            4
-            * np.maximum(0, max_amount_pay - household_financial_wealth[ind_dec])
-            / assumed_mortgage_maturity
+            4 * np.maximum(0, max_amount_pay - household_financial_wealth[ind_dec]) / assumed_mortgage_maturity
             - ((1 + expected_hpi_growth) ** 4 - 1) * max_value_affordable
         )
         # Logistic probability of buying, normalized by 10000.
@@ -315,16 +303,13 @@ class DefaultHouseholdDemandForProperty(HouseholdDemandForProperty):
 
         # The price households are willing to pay
         max_price_willing_to_pay = np.full(household_income.shape, np.nan)
-        max_price_willing_to_pay[ind_deciding_to_buy] = max_amount_pay[
-            ind_deciding_to_buy_rel
-        ]
+        max_price_willing_to_pay[ind_deciding_to_buy] = max_amount_pay[ind_deciding_to_buy_rel]
 
         # The rent households are willing to pay
         max_rent_willing_to_pay = np.full(household_income.shape, np.nan)
         max_rent_willing_to_pay[ind_deciding_to_rent] = (
             self.maximum_rent_income_coefficient
-            * household_income[ind_deciding_to_rent]
-            ** self.maximum_rent_income_exponent
+            * household_income[ind_deciding_to_rent] ** self.maximum_rent_income_exponent
         )
 
         return (
@@ -369,9 +354,7 @@ class DefaultHouseholdDemandForProperty(HouseholdDemandForProperty):
         """
 
         new_sale_prices = sale_prices.copy()
-        properties_with_reduced_price = (
-            np.random.random(sale_prices.shape) < self.price_decrease_probability
-        )
+        properties_with_reduced_price = np.random.random(sale_prices.shape) < self.price_decrease_probability
         new_sale_prices[properties_with_reduced_price] *= np.maximum(
             max_decrease,
             1
@@ -408,8 +391,7 @@ class DefaultHouseholdDemandForProperty(HouseholdDemandForProperty):
             1
             + np.maximum(
                 0.0,
-                self.partial_rent_inflation_indexation
-                * historic_inflation[-self.partial_rent_inflation_delay],
+                self.partial_rent_inflation_indexation * historic_inflation[-self.partial_rent_inflation_delay],
             )
         ) * current_rent
 
@@ -433,8 +415,7 @@ class DefaultHouseholdDemandForProperty(HouseholdDemandForProperty):
             np.ndarray: Initial rental prices
         """
         return (1 + self.rent_initial_markup) * (
-            observed_fraction_rent_value[0] * property_value
-            + observed_fraction_rent_value[1]
+            observed_fraction_rent_value[0] * property_value + observed_fraction_rent_value[1]
         )
 
     def compute_offered_rent_for_existing_properties(
@@ -443,10 +424,7 @@ class DefaultHouseholdDemandForProperty(HouseholdDemandForProperty):
         max_decrease: float = 0.2,
     ) -> np.ndarray:
         new_offered_rent = current_offered_rent.copy()
-        properties_with_reduced_rent = (
-            np.random.random(current_offered_rent.shape)
-            < self.rent_decrease_probability
-        )
+        properties_with_reduced_rent = np.random.random(current_offered_rent.shape) < self.rent_decrease_probability
         new_offered_rent[properties_with_reduced_rent] *= 1 - np.exp(
             np.random.normal(
                 self.rent_decrease_mean,

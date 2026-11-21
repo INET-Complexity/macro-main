@@ -151,15 +151,9 @@ class EmissionsReader:
             Emissions factors are calculated by dividing the standard emissions
             factor for each fuel by its price, giving tCO2 per USD spent
         """
-        coal_tco2_per_usd = (
-            COAL_TCO2_PER_TON / self.prices_df.loc[f"{year}", "coal_price"].iloc[0]
-        )
-        oil_tco2_per_usd = (
-            OIL_TCO2_PER_BARREL / self.prices_df.loc[f"{year}", "oil_price"].iloc[0]
-        )
-        gas_tco2_per_usd = (
-            GAS_TCO2_PER_MBTU / self.prices_df.loc[f"{year}", "gas_price"].iloc[0]
-        )
+        coal_tco2_per_usd = COAL_TCO2_PER_TON / self.prices_df.loc[f"{year}", "coal_price"].iloc[0]
+        oil_tco2_per_usd = OIL_TCO2_PER_BARREL / self.prices_df.loc[f"{year}", "oil_price"].iloc[0]
+        gas_tco2_per_usd = GAS_TCO2_PER_MBTU / self.prices_df.loc[f"{year}", "gas_price"].iloc[0]
 
         return {
             "coal": coal_tco2_per_usd,
@@ -298,9 +292,7 @@ class EmissionsEnergyFactors:
         return cls(refining_kwh_per_tco2=refining_coeff)
 
 
-def get_country_coke_refining_kwh_per_tco2(
-    icio_reader: ICIOReader, country: str | Country
-) -> float:
+def get_country_coke_refining_kwh_per_tco2(icio_reader: ICIOReader, country: str | Country) -> float:
     """
     Calculate energy output per tCO2 for coke refining in a country.
 
@@ -315,17 +307,11 @@ def get_country_coke_refining_kwh_per_tco2(
         Uses input-output coefficients to weight the energy content
         of different fuel inputs to the refining process
     """
-    coefficients = (1 / icio_reader.get_intermediate_inputs_matrix(country)).loc[
-        ["B05a", "B05b", "B05c"], "C19"
-    ]
-    return coefficients @ np.array(
-        [COAL_KWH_PER_TCO2, OIL_KWH_PER_TCO2, GAS_KWH_PER_TCO2]
-    )
+    coefficients = (1 / icio_reader.get_intermediate_inputs_matrix(country)).loc[["B05a", "B05b", "B05c"], "C19"]
+    return coefficients @ np.array([COAL_KWH_PER_TCO2, OIL_KWH_PER_TCO2, GAS_KWH_PER_TCO2])
 
 
-def get_avg_coke_refining_kwh_per_tco2(
-    icio_reader: ICIOReader, countries: list[str | Country]
-) -> float:
+def get_avg_coke_refining_kwh_per_tco2(icio_reader: ICIOReader, countries: list[str | Country]) -> float:
     """
     Calculate average energy output per tCO2 for coke refining across countries.
 
@@ -339,12 +325,7 @@ def get_avg_coke_refining_kwh_per_tco2(
     Note:
         Includes ROW (Rest of World) in the average calculation
     """
-    return np.mean(
-        [
-            get_country_coke_refining_kwh_per_tco2(icio_reader, country)
-            for country in countries + ["ROW"]
-        ]
-    )
+    return np.mean([get_country_coke_refining_kwh_per_tco2(icio_reader, country) for country in countries + ["ROW"]])
 
 
 _EMISSION_INDUSTRIES_CH4 = [
@@ -455,11 +436,7 @@ class CH4EmissionsDataCAN:
                 ch4[list(industries).index(code)] = val
 
         emitting_indices = np.array(
-            [
-                list(industries).index(ind)
-                for ind in _EMISSION_INDUSTRIES_CH4
-                if ind in industries
-            ]
+            [list(industries).index(ind) for ind in _EMISSION_INDUSTRIES_CH4 if ind in industries]
         )
 
         prod = production_by_industry[emitting_indices]

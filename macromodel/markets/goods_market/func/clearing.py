@@ -135,9 +135,7 @@ class GoodsMarketClearer(ABC):
             allow_additional_row_exports (bool): Allow extra ROW exports
         """
         # Ensure prioritisation is between 0 and 1
-        self.real_country_prioritisation = max(
-            0.0, min(1.0, real_country_prioritisation)
-        )
+        self.real_country_prioritisation = max(0.0, min(1.0, real_country_prioritisation))
         self.real_country_prioritisation = real_country_prioritisation
 
         # Priority flags
@@ -235,12 +233,8 @@ class GoodsMarketClearer(ABC):
         default_origin_trade_proportions: np.ndarray,
         default_destin_trade_proportions: np.ndarray,
         buyer_priorities: dict[str, np.ndarray],
-        previous_supply_chain: dict[
-            int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]
-        ],
-        current_supply_chain: dict[
-            int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]
-        ],
+        previous_supply_chain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]],
+        current_supply_chain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]],
         row_index: int = -1,
     ) -> None:
         """Execute market clearing algorithm.
@@ -289,12 +283,8 @@ class NoGoodsMarketClearer(GoodsMarketClearer):
         default_origin_trade_proportions: np.ndarray,
         default_destin_trade_proportions: np.ndarray,
         buyer_priorities: dict[str, np.ndarray],
-        previous_supply_chain: dict[
-            int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]
-        ],
-        current_supply_chain: dict[
-            int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]
-        ],
+        previous_supply_chain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]],
+        current_supply_chain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]],
         row_index: int = -1,
     ) -> None:
         """No-op implementation of market clearing.
@@ -330,12 +320,8 @@ class DefaultGoodsMarketClearer(GoodsMarketClearer):
         default_origin_trade_proportions: np.ndarray,
         default_destin_trade_proportions: np.ndarray,
         buyer_priorities: dict[str, np.ndarray],
-        previous_supply_chain: dict[
-            int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]
-        ],
-        current_supply_chain: dict[
-            int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]
-        ],
+        previous_supply_chain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]],
+        current_supply_chain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]],
         row_index: int = -1,
     ) -> None:
         """Execute the default market clearing algorithm.
@@ -451,10 +437,7 @@ class DefaultGoodsMarketClearer(GoodsMarketClearer):
             # Copy remaining demand to excess demand field
             for country_name in goods_market_participants.keys():
                 for transactor in goods_market_participants[country_name]:
-                    if (
-                        transactor.transactor_buyer_states["Value Type"]
-                        != ValueType.NONE
-                    ):
+                    if transactor.transactor_buyer_states["Value Type"] != ValueType.NONE:
                         transactor.transactor_buyer_states["Remaining Excess Goods"] = (
                             transactor.transactor_buyer_states["Remaining Goods"].copy()
                         )
@@ -553,12 +536,8 @@ class WaterBucketGoodsMarketClearer(GoodsMarketClearer):
         default_origin_trade_proportions: np.ndarray,
         default_destin_trade_proportions: np.ndarray,
         buyer_priorities: dict[str, np.ndarray],
-        previous_supply_chain: dict[
-            int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]
-        ],
-        current_supply_chain: dict[
-            int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]
-        ],
+        previous_supply_chain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]],
+        current_supply_chain: dict[int, dict[Agent, dict[int, list[Tuple[Agent, int]]]]],
         row_index: int = -1,
     ) -> None:
         """Execute the water bucket market clearing algorithm.
@@ -665,10 +644,7 @@ class WaterBucketGoodsMarketClearer(GoodsMarketClearer):
         )
 
         # Allow additional ROW exports if enabled
-        if (
-            self.allow_additional_row_exports
-            and self.additionally_available_factor > 0.0
-        ):
+        if self.allow_additional_row_exports and self.additionally_available_factor > 0.0:
             self.handle_additional_row_exports(
                 goods_market_participants=goods_market_participants,
                 n_industries=n_industries,
@@ -716,12 +692,8 @@ class WaterBucketGoodsMarketClearer(GoodsMarketClearer):
             current_origin_trade_proportions = None
             current_destin_trade_proportions = None
         else:
-            current_origin_trade_proportions = origin_trade_proportions[
-                start_country, end_country
-            ]
-            current_destin_trade_proportions = destin_trade_proportions[
-                start_country, end_country
-            ]
+            current_origin_trade_proportions = origin_trade_proportions[start_country, end_country]
+            current_destin_trade_proportions = destin_trade_proportions[start_country, end_country]
 
         # Collect supply information
         (
@@ -739,22 +711,16 @@ class WaterBucketGoodsMarketClearer(GoodsMarketClearer):
 
         # Handle missing prices using country or ROW averages
         if start_country is None:
-            emp_goods_prices[np.isnan(emp_goods_prices)] = average_prices_by_country[
-                -1
-            ][np.isnan(emp_goods_prices)]
-            emp_goods_prices[emp_goods_prices == 0.0] = average_prices_by_country[-1][
-                emp_goods_prices == 0.0
-            ]
+            emp_goods_prices[np.isnan(emp_goods_prices)] = average_prices_by_country[-1][np.isnan(emp_goods_prices)]
+            emp_goods_prices[emp_goods_prices == 0.0] = average_prices_by_country[-1][emp_goods_prices == 0.0]
         else:
-            emp_goods_prices[np.isnan(emp_goods_prices)] = average_prices_by_country[
-                start_country
-            ][np.isnan(emp_goods_prices)]
-            emp_goods_prices[emp_goods_prices == 0.0] = average_prices_by_country[
-                start_country
-            ][emp_goods_prices == 0.0]
-            emp_goods_prices[emp_goods_prices == 0.0] = average_prices_by_country[-1][
+            emp_goods_prices[np.isnan(emp_goods_prices)] = average_prices_by_country[start_country][
+                np.isnan(emp_goods_prices)
+            ]
+            emp_goods_prices[emp_goods_prices == 0.0] = average_prices_by_country[start_country][
                 emp_goods_prices == 0.0
             ]
+            emp_goods_prices[emp_goods_prices == 0.0] = average_prices_by_country[-1][emp_goods_prices == 0.0]
 
         # Collect demand information
         (
@@ -819,12 +785,10 @@ class WaterBucketGoodsMarketClearer(GoodsMarketClearer):
               - Priority-based allocation
         """
         # Collect initial values
-        _, _, total_nominal_supply, aggr_nominal_supply, average_price = (
-            collect_seller_info(
-                goods_market_participants=goods_market_participants,
-                n_industries=n_industries,
-                use_initial=True,
-            )
+        _, _, total_nominal_supply, aggr_nominal_supply, average_price = collect_seller_info(
+            goods_market_participants=goods_market_participants,
+            n_industries=n_industries,
+            use_initial=True,
         )
         _, excess_real_demand, _, _ = collect_buyer_info(
             goods_market_participants=goods_market_participants,
@@ -840,58 +804,37 @@ class WaterBucketGoodsMarketClearer(GoodsMarketClearer):
             # Calculate allocation based on supply shares
             current_alloc = np.array(
                 [
-                    excess_real_demand[g]
-                    * total_nominal_supply[country_name][g]
-                    / aggr_nominal_supply[g]
+                    excess_real_demand[g] * total_nominal_supply[country_name][g] / aggr_nominal_supply[g]
                     for country_name in goods_market_participants.keys()
                 ]
             )
             # Adjust ROW allocation based on real country prioritization
-            current_alloc[-1] *= 1 - max(
-                0.0, min(1.0, self.real_country_prioritisation)
-            )
+            current_alloc[-1] *= 1 - max(0.0, min(1.0, self.real_country_prioritisation))
             if current_alloc.sum() == 0.0:
                 continue
             current_alloc *= excess_real_demand[g] / current_alloc.sum()
 
             # Distribute to each country
-            for country_ind, country_name in enumerate(
-                goods_market_participants.keys()
-            ):
+            for country_ind, country_name in enumerate(goods_market_participants.keys()):
                 for transactor in goods_market_participants[country_name]:
-                    if (
-                        transactor.transactor_seller_states["Value Type"]
-                        == ValueType.REAL
-                    ):
+                    if transactor.transactor_seller_states["Value Type"] == ValueType.REAL:
                         ind = transactor.transactor_seller_states["Industries"] == g
                         if self.deterministic:
                             _, seller_priorities = get_seller_priorities_deterministic(
-                                productions=transactor.transactor_seller_states[
-                                    "Initial Goods"
-                                ][ind],
-                                prices=transactor.transactor_seller_states["Prices"][
-                                    ind
-                                ],
+                                productions=transactor.transactor_seller_states["Initial Goods"][ind],
+                                prices=transactor.transactor_seller_states["Prices"][ind],
                                 price_temperature=self.price_temperature,
                                 distribution_type=self.seller_selection_distribution_type,
                             )
                         else:
                             _, seller_priorities = get_seller_priorities_stochastic(
-                                productions=transactor.transactor_seller_states[
-                                    "Initial Goods"
-                                ][ind],
-                                prices=transactor.transactor_seller_states["Prices"][
-                                    ind
-                                ],
+                                productions=transactor.transactor_seller_states["Initial Goods"][ind],
+                                prices=transactor.transactor_seller_states["Prices"][ind],
                                 price_temperature=self.price_temperature,
                                 distribution_type=self.seller_selection_distribution_type,
                             )
-                        transactor.transactor_seller_states["Real Excess Demand"][
-                            ind
-                        ] = fill_buckets(
-                            capacities=transactor.transactor_seller_states[
-                                "Remaining Excess Goods"
-                            ][ind],
+                        transactor.transactor_seller_states["Real Excess Demand"][ind] = fill_buckets(
+                            capacities=transactor.transactor_seller_states["Remaining Excess Goods"][ind],
                             fill_amount=current_alloc[country_ind],
                             priorities=seller_priorities,
                             minimum_fill=self.seller_minimum_fill,
@@ -929,14 +872,12 @@ class WaterBucketGoodsMarketClearer(GoodsMarketClearer):
         )
         # Apply price markup
         average_price *= 1 + self.price_markup
-        additional_real_demand_by_country, additional_real_demand, _, _ = (
-            collect_buyer_info(
-                goods_market_participants=goods_market_participants,
-                average_price=average_price,
-                n_industries=n_industries,
-                high_prio_only=True,
-                exclude_row=True,
-            )
+        additional_real_demand_by_country, additional_real_demand, _, _ = collect_buyer_info(
+            goods_market_participants=goods_market_participants,
+            average_price=average_price,
+            n_industries=n_industries,
+            high_prio_only=True,
+            exclude_row=True,
         )
 
         # Distribute additional exports by industry
@@ -966,15 +907,11 @@ class WaterBucketGoodsMarketClearer(GoodsMarketClearer):
                     if transactor.transactor_buyer_states["Priority"] == 1:
                         # Get buyer priorities
                         buyer_priorities = get_buyer_priorities(
-                            n_buyers=transactor.transactor_buyer_states[
-                                "Remaining Goods"
-                            ].shape[0]
+                            n_buyers=transactor.transactor_buyer_states["Remaining Goods"].shape[0]
                         )
                         # Allocate additional supply
                         real_amount_bought = fill_buckets(
-                            capacities=transactor.transactor_buyer_states[
-                                "Remaining Goods"
-                            ][:, g],
+                            capacities=transactor.transactor_buyer_states["Remaining Goods"][:, g],
                             fill_amount=country_supply,
                             priorities=buyer_priorities,
                             minimum_fill=self.buyer_minimum_fill_micro,
@@ -983,35 +920,24 @@ class WaterBucketGoodsMarketClearer(GoodsMarketClearer):
                             continue
 
                         # Update buyer states
-                        transactor.transactor_buyer_states["Real Amount bought"][
-                            :, g
-                        ] += real_amount_bought
-                        transactor.transactor_buyer_states[
-                            "Real Amount bought from ROW"
-                        ][:, g] += real_amount_bought
-                        transactor.transactor_buyer_states["Nominal Amount spent"][
-                            :, g
-                        ] += (average_price[g] * real_amount_bought)
-                        transactor.transactor_buyer_states[
-                            "Nominal Amount spent on Goods from ROW"
-                        ][:, g] += (average_price[g] * real_amount_bought)
-                        transactor.transactor_buyer_states["Remaining Goods"][
-                            :, g
-                        ] -= real_amount_bought
+                        transactor.transactor_buyer_states["Real Amount bought"][:, g] += real_amount_bought
+                        transactor.transactor_buyer_states["Real Amount bought from ROW"][:, g] += real_amount_bought
+                        transactor.transactor_buyer_states["Nominal Amount spent"][:, g] += (
+                            average_price[g] * real_amount_bought
+                        )
+                        transactor.transactor_buyer_states["Nominal Amount spent on Goods from ROW"][:, g] += (
+                            average_price[g] * real_amount_bought
+                        )
+                        transactor.transactor_buyer_states["Remaining Goods"][:, g] -= real_amount_bought
 
                         # Update ROW seller states
-                        ind = (
-                            goods_market_participants["ROW"][
-                                0
-                            ].transactor_seller_states["Industries"]
-                            == g
+                        ind = goods_market_participants["ROW"][0].transactor_seller_states["Industries"] == g
+                        goods_market_participants["ROW"][0].transactor_seller_states["Real Amount sold"][ind] += (
+                            real_amount_bought.sum() / np.sum(ind)
                         )
-                        goods_market_participants["ROW"][0].transactor_seller_states[
-                            "Real Amount sold"
-                        ][ind] += real_amount_bought.sum() / np.sum(ind)
                         goods_market_participants["ROW"][0].transactor_seller_states[
                             "Real Amount sold to " + country_name
                         ][ind] += real_amount_bought.sum() / np.sum(ind)
-                        goods_market_participants["ROW"][0].transactor_seller_states[
-                            "Remaining Goods"
-                        ][ind] -= real_amount_bought.sum() / np.sum(ind)
+                        goods_market_participants["ROW"][0].transactor_seller_states["Remaining Goods"][ind] -= (
+                            real_amount_bought.sum() / np.sum(ind)
+                        )

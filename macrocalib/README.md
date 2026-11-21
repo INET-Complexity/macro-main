@@ -29,8 +29,7 @@ An example of how to run the pipeline is given in the `sampling.py` and `trainin
 The `sampling.py` script generates synthetic data using the macromodel and saves it into `data.pkl`. The `training.py` script then trains a neural net to predict the posterior distribution of the parameters given the data. The posterior is saved into `posterior.pkl`. It can then be loaded and the user may sample from it using 
 
  ```python
-
-  parameter_samples = posterior.sample((n_samples,), x=real_data)
+ parameter_samples = posterior.sample((n_samples,), x=real_data)
 ```
 
 where `real_data` **must** correspond to the observables of the model, i.e. it must be the real-world equivalent of the synthetic data generated in the first step.

@@ -227,9 +227,7 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
         firm_employments = firms.states["Employments"]
         current_individual_wages = individuals.ts.current("employee_income")
         current_household_wealth = households.ts.current("wealth")
-        individuals_corresponding_household = individuals.states[
-            "Corresponding Household ID"
-        ]
+        individuals_corresponding_household = individuals.states["Corresponding Household ID"]
         firm_industries = firms.states["Industry"]
         offered_wage_function = firms.states["offered_wage_function"]
         individual_reservation_wages = individuals.ts.current("reservation_wages")
@@ -269,15 +267,11 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
             prev_labour_inputs=prev_labour_inputs,
             current_individual_wages=current_individual_wages,
             firm_industries=firm_industries,
-            average_industry_productivity=firms.states[
-                "Labour Productivity by Industry"
-            ],
+            average_industry_productivity=firms.states["Labour Productivity by Industry"],
         )
 
         # Hiring
-        individuals.states["Offered Wage of Accepted Job"] = np.zeros(
-            len(current_individuals_activity)
-        )
+        individuals.states["Offered Wage of Accepted Job"] = np.zeros(len(current_individuals_activity))
         hiring_costs_regular, num_newly_joining = self.hiring(
             firm_employments=firm_employments,
             firm_industries=firm_industries,
@@ -291,9 +285,7 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
             offered_wage=individuals.states["Offered Wage of Accepted Job"],
             individual_reservation_wages=individual_reservation_wages,
             current_individual_wages=current_individual_wages,
-            average_industry_productivity=firms.states[
-                "Labour Productivity by Industry"
-            ],
+            average_industry_productivity=firms.states["Labour Productivity by Industry"],
         )
 
         return (
@@ -346,9 +338,7 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
                 continue
 
             # The order in which individuals are fired
-            ind_firing_queue = self.get_firing_queue(
-                firm_employments, firm_id, prev_individuals_productivity
-            )
+            ind_firing_queue = self.get_firing_queue(firm_employments, firm_id, prev_individuals_productivity)
 
             # Firing them in that order
             labour_supply_lost = 0
@@ -363,9 +353,7 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
                 labour_supply_lost,
                 prev_individuals_productivity,
                 current_individual_wages,
-                firm_productivity=float(
-                    average_industry_productivity[firm_industries[firm_id]]
-                ),
+                firm_productivity=float(average_industry_productivity[firm_industries[firm_id]]),
             )
 
             # Count
@@ -415,9 +403,7 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
         for i_to_fire in range(len(firm_employments[firm_id]) - 1):
             ind_to_fire = ind_firing_queue[i_to_fire]
             if self.round_target_employment:
-                firing_reference = (
-                    firm_productivity * prev_individuals_productivity[ind_to_fire]
-                )  # / 2.0
+                firing_reference = firm_productivity * prev_individuals_productivity[ind_to_fire]  # / 2.0
             else:
                 firing_reference = 0.0
 
@@ -431,26 +417,17 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
                 )
 
                 # Update the remaining excess productivity
-                excess_productivity[firm_id] -= (
-                    firm_productivity * prev_individuals_productivity[ind_to_fire]
-                )
+                excess_productivity[firm_id] -= firm_productivity * prev_individuals_productivity[ind_to_fire]
 
                 # Calculate firing costs
-                firing_costs += (
-                    self.firing_cost_fraction * current_individual_wages[ind_to_fire]
-                )
+                firing_costs += self.firing_cost_fraction * current_individual_wages[ind_to_fire]
 
                 # Count
                 num_newly_fired += 1
 
                 # Frictions
-                labour_supply_lost += (
-                    firm_productivity * prev_individuals_productivity[ind_to_fire]
-                )
-                if (
-                    labour_supply_lost
-                    > self.firing_speed * initial_excess_productivity[firm_id]
-                ):
+                labour_supply_lost += firm_productivity * prev_individuals_productivity[ind_to_fire]
+                if labour_supply_lost > self.firing_speed * initial_excess_productivity[firm_id]:
                     break
             else:
                 break
@@ -537,9 +514,7 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
         initial_missing_productivity = missing_productivity.copy()
 
         # Collect potential employees
-        unemployed_ind = np.array(
-            current_individuals_activity == ActivityStatus.UNEMPLOYED
-        )
+        unemployed_ind = np.array(current_individuals_activity == ActivityStatus.UNEMPLOYED)
 
         # Iterate over firms in random order
         firm_id_rnd = np.nonzero(missing_productivity > 0)[0]
@@ -578,14 +553,11 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
 
                 # Update missing productivity
                 missing_productivity[firm_id] -= (
-                    average_industry_productivity[firm_industries[firm_id]]
-                    * prev_individuals_productivity[ind_chosen]
+                    average_industry_productivity[firm_industries[firm_id]] * prev_individuals_productivity[ind_chosen]
                 )
 
                 # Calculate hiring costs
-                hiring_costs[firm_id] += (
-                    self.hiring_cost_fraction * offered_wage[ind_chosen]
-                )
+                hiring_costs[firm_id] += self.hiring_cost_fraction * offered_wage[ind_chosen]
 
                 # Count
                 num_newly_joining += 1
@@ -595,13 +567,9 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
 
                 # Frictions
                 labour_supply_gained += (
-                    average_industry_productivity[firm_industries[firm_id]]
-                    * prev_individuals_productivity[ind_chosen]
+                    average_industry_productivity[firm_industries[firm_id]] * prev_individuals_productivity[ind_chosen]
                 )
-                if (
-                    labour_supply_gained
-                    > self.hiring_speed * initial_missing_productivity[firm_id]
-                ):
+                if labour_supply_gained > self.hiring_speed * initial_missing_productivity[firm_id]:
                     break
 
         return hiring_costs, num_newly_joining
@@ -640,9 +608,7 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
             int | None: ID of chosen worker or None if none found
         """
         # If reservation wages are taken into account
-        current_offered_wage = offered_wage_function(
-            firm_id, prev_individuals_productivity
-        )
+        current_offered_wage = offered_wage_function(firm_id, prev_individuals_productivity)
         if self.consider_reservation_wages:
             would_accept_offer = current_offered_wage >= individual_reservation_wages
             unemployed_ind = np.logical_and(unemployed_ind, would_accept_offer)
@@ -655,9 +621,7 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
             unemployed_ind = np.logical_and(
                 unemployed_ind,
                 firm_missing_productivity
-                > average_industry_productivity[firm_industry]
-                * prev_individuals_productivity
-                / 2.0,
+                > average_industry_productivity[firm_industry] * prev_individuals_productivity / 2.0,
             )
 
         # If individuals can not switch industries
@@ -676,8 +640,7 @@ class DefaultLabourMarketClearer(LabourMarketClearer):
         # Find the most suited individual
         if self.optimised_hiring:
             dist = np.abs(
-                average_industry_productivity[firm_industry]
-                * prev_individuals_productivity[unemployed_ind]
+                average_industry_productivity[firm_industry] * prev_individuals_productivity[unemployed_ind]
                 - firm_missing_productivity
             )
             ind = unemployed_ind[np.argmin(dist)]
@@ -701,9 +664,7 @@ def sort_employees_by_productivity(
     Returns:
         np.ndarray: Sorted array of employee IDs
     """
-    return np.array(current_firm_employments)[
-        np.argsort(prev_individuals_productivity[current_firm_employments])
-    ]
+    return np.array(current_firm_employments)[np.argsort(prev_individuals_productivity[current_firm_employments])]
 
 
 def random_firing(
@@ -736,9 +697,7 @@ def random_firing(
     if random_firing_probability == 0.0:
         return firing_costs, num_newly_randomly_fired
 
-    employed: np.ndarray = (
-        current_individuals_activity == ActivityStatus.EMPLOYED
-    )  # noqa
+    employed: np.ndarray = current_individuals_activity == ActivityStatus.EMPLOYED  # noqa
 
     is_fired = np.random.random(employed.sum()) <= random_firing_probability
 
@@ -794,21 +753,14 @@ def random_quitting(
         int: Number of voluntary quits
     """
     num_newly_randomly_quit = 0
-    employed_individuals: np.ndarray = (
-        current_individuals_activity == ActivityStatus.EMPLOYED
-    )  # noqa
+    employed_individuals: np.ndarray = current_individuals_activity == ActivityStatus.EMPLOYED  # noqa
     individual_indices = np.arange(employed_individuals.shape[0])
 
     household_wealth = current_household_wealth[individuals_corresponding_household]
 
-    exponentials = np.exp(
-        -individuals_quitting_temperature * current_individual_wages / household_wealth
-    )
+    exponentials = np.exp(-individuals_quitting_temperature * current_individual_wages / household_wealth)
 
-    random_quit = (
-        np.random.random(employed_individuals.sum())
-        <= 1 - exponentials[employed_individuals]
-    )
+    random_quit = np.random.random(employed_individuals.sum()) <= 1 - exponentials[employed_individuals]
 
     num_newly_randomly_quit = random_quit.sum()
 
@@ -897,9 +849,7 @@ def check_employed_correspondence(activity_array: np.ndarray, firm_employments: 
     return size_matches and np.all(all_employments == emp_indices)
 
 
-def check_employed_in_list(
-    activity_array: np.ndarray, corresponding_firm: np.ndarray, firm_employments: list
-):
+def check_employed_in_list(activity_array: np.ndarray, corresponding_firm: np.ndarray, firm_employments: list):
     """Check if employed workers are in firm lists.
 
     Args:
@@ -972,9 +922,7 @@ class PolednaLabourMarketClearer(LabourMarketClearer):
         firm_employments = firms.states["Employments"]
         current_individual_wages = individuals.ts.current("employee_income")
         current_household_wealth = households.ts.current("wealth")
-        individuals_corresponding_household = individuals.states[
-            "Corresponding Household ID"
-        ]
+        individuals_corresponding_household = individuals.states["Corresponding Household ID"]
         firm_industries = firms.states["Industry"]
         individual_reservation_wages = individuals.ts.current("reservation_wages")
 
@@ -1011,32 +959,24 @@ class PolednaLabourMarketClearer(LabourMarketClearer):
             prev_labour_inputs=prev_labour_inputs,
             current_individual_wages=current_individual_wages,
             firm_industries=firm_industries,
-            average_industry_productivity=firms.states[
-                "Labour Productivity by Industry"
-            ],
+            average_industry_productivity=firms.states["Labour Productivity by Industry"],
             firing_speed=self.firing_speed,
             firing_cost_fraction=self.firing_cost_fraction,
         )
         # Hiring
-        individuals.states["Offered Wage of Accepted Job"] = np.zeros(
-            len(current_individuals_activity)
-        )
+        individuals.states["Offered Wage of Accepted Job"] = np.zeros(len(current_individuals_activity))
         hiring_costs_regular, num_newly_joining, new_hires = hiring(
             firm_industries=firm_industries,
             current_individuals_industry=current_individuals_industry,
             individuals_corresponding_firm=individuals_corresponding_firm,
             prev_individuals_productivity=prev_individuals_productivity,
-            current_ind_ea=np.logical_not(
-                current_individuals_activity == ActivityStatus.NOT_ECONOMICALLY_ACTIVE
-            ),
+            current_ind_ea=np.logical_not(current_individuals_activity == ActivityStatus.NOT_ECONOMICALLY_ACTIVE),
             desired_labour_inputs=desired_labour_inputs,
             prev_labour_inputs=prev_labour_inputs,
             offered_wage=individuals.states["Offered Wage of Accepted Job"],
             individual_reservation_wages=individual_reservation_wages,
             current_individual_wages=current_individual_wages,
-            average_industry_productivity=firms.states[
-                "Labour Productivity by Industry"
-            ],
+            average_industry_productivity=firms.states["Labour Productivity by Industry"],
             hiring_speed=self.hiring_speed,
             hiring_cost_fraction=self.hiring_cost_fraction,
         )
@@ -1062,9 +1002,7 @@ class PolednaLabourMarketClearer(LabourMarketClearer):
                 individuals_corresponding_firm < 0,
             )
         ] = ActivityStatus.UNEMPLOYED
-        current_individuals_activity[individuals_corresponding_firm >= 0] = (
-            ActivityStatus.EMPLOYED
-        )
+        current_individuals_activity[individuals_corresponding_firm >= 0] = ActivityStatus.EMPLOYED
 
         return (
             firing_costs_random_firing + firing_costs_regular + hiring_costs_regular,
@@ -1133,9 +1071,7 @@ def firing(
             replace=False,
         )
         individuals_corresponding_firm[ind_firing] = -1
-        firing_costs[firm_id] += (
-            firing_cost_fraction * current_individual_wages[ind_firing].sum()
-        )
+        firing_costs[firm_id] += firing_cost_fraction * current_individual_wages[ind_firing].sum()
     return firing_costs, int(excess_employees.sum())  # noqa
 
 
@@ -1192,9 +1128,7 @@ def hiring(
         0,
     )
     extra_employees = np.floor(
-        hiring_speed
-        * (desired_labour_inputs - prev_labour_inputs)
-        / average_industry_productivity[firm_industries]
+        hiring_speed * (desired_labour_inputs - prev_labour_inputs) / average_industry_productivity[firm_industries]
     )
 
     new_hires = List()
@@ -1203,16 +1137,12 @@ def hiring(
 
     for firm_id in range(len(extra_employees)):
         if extra_employees[firm_id] > 0:
-            ind_unemployed = np.where(
-                np.logical_and(individuals_corresponding_firm == -1, current_ind_ea)
-            )[0]
+            ind_unemployed = np.where(np.logical_and(individuals_corresponding_firm == -1, current_ind_ea))[0]
             n_hiring = int(min(extra_employees[firm_id], len(ind_unemployed)))
             ind_hiring = np.random.choice(ind_unemployed, n_hiring, replace=False)
             individuals_corresponding_firm[ind_hiring] = firm_id
             for ind in ind_hiring:
                 new_hires[firm_id].append(ind)
-            hiring_costs[firm_id] += (
-                hiring_cost_fraction * offered_wage[ind_hiring].sum()
-            )
+            hiring_costs[firm_id] += hiring_cost_fraction * offered_wage[ind_hiring].sum()
             num_newly_joining += n_hiring
     return hiring_costs, num_newly_joining, new_hires

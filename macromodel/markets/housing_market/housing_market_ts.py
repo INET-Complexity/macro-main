@@ -88,18 +88,12 @@ def create_housing_market_timeseries(
             np.sum(
                 np.logical_and(
                     data["Corresponding Inhabitant Household ID"] != -1,
-                    data["Corresponding Inhabitant Household ID"]
-                    != data["Corresponding Owner Household ID"],
+                    data["Corresponding Inhabitant Household ID"] != data["Corresponding Owner Household ID"],
                 )
             )
         ],
         total_number_of_houses_owner_occupied=[
-            np.sum(
-                data["Corresponding Inhabitant Household ID"]
-                == data["Corresponding Owner Household ID"]
-            )
+            np.sum(data["Corresponding Inhabitant Household ID"] == data["Corresponding Owner Household ID"])
         ],
-        total_number_of_houses_unoccupied=[
-            np.sum(data["Corresponding Inhabitant Household ID"] == -1)
-        ],
+        total_number_of_houses_unoccupied=[np.sum(data["Corresponding Inhabitant Household ID"] == -1)],
     )

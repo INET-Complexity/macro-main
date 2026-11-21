@@ -114,16 +114,10 @@ def set_housing_df(
         owners_df["Corresponding Owner Household ID"], "Corresponding Property Owner"
     ] = owners_df["Corresponding Owner Household ID"].values
 
-    landlord_ids, num_additional_properties = housing_info_from_population(
-        rental_income_taxes, synthetic_population
-    )
+    landlord_ids, num_additional_properties = housing_info_from_population(rental_income_taxes, synthetic_population)
 
-    rental_income = synthetic_population.household_data[
-        "Rental Income from Real Estate"
-    ].values
-    property_values = synthetic_population.household_data[
-        "Value of other Properties"
-    ].values
+    rental_income = synthetic_population.household_data["Rental Income from Real Estate"].values
+    property_values = synthetic_population.household_data["Value of other Properties"].values
 
     rental_df = create_rental_df(
         num_additional_properties=num_additional_properties,
@@ -133,22 +127,16 @@ def set_housing_df(
         rental_income=rental_income,
         rental_income_taxes=rental_income_taxes,
     )
-    additionnally_owned_house_ids = np.array_split(
-        rental_df.index, np.cumsum(num_additional_properties)
-    )[:-1]
+    additionnally_owned_house_ids = np.array_split(rental_df.index, np.cumsum(num_additional_properties))[:-1]
 
-    synthetic_population.household_data[
-        "Corresponding Additionally Owned Houses ID"
-    ] = additionnally_owned_house_ids
+    synthetic_population.household_data["Corresponding Additionally Owned Houses ID"] = additionnally_owned_house_ids
 
     housing_df = pd.concat([owners_df, rental_df], ignore_index=True)
 
     invalid_values = housing_df["Value"] < 60 * housing_df["Rent"]
     housing_df.loc[invalid_values, "Value"] = np.nan
 
-    housing_df = remove_outliers(
-        housing_df, cols=["Rent", "Value"], quantile=0.2, use_logpdf=False
-    )
+    housing_df = remove_outliers(housing_df, cols=["Rent", "Value"], quantile=0.2, use_logpdf=False)
 
     housing_df = apply_iterative_imputer(housing_df, ["Rent", "Value"])
 
@@ -177,9 +165,7 @@ def set_housing_df(
         synthetic_population.household_data["Tenure Status of the Main Residence"],
         [1, 2, 4],
     )
-    synthetic_population.household_data.loc[owner_indices, "Rent Imputed"] = (
-        housing_df.loc[owned_houses, "Rent"].values
-    )
+    synthetic_population.household_data.loc[owner_indices, "Rent Imputed"] = housing_df.loc[owned_houses, "Rent"].values
 
     match_renters_to_properties(
         synthetic_population=synthetic_population,
@@ -224,12 +210,10 @@ def create_owners_df(synthetic_population: SyntheticPopulation) -> pd.DataFrame:
     owners_df["House ID"] = owners_df.index
 
     owners_df["Is Owner-Occupied"] = True
-    owners_df["Corresponding Owner Household ID"] = (
-        synthetic_population.household_data.loc[households_owning].index
-    )
-    owners_df["Corresponding Inhabitant Household ID"] = (
-        synthetic_population.household_data.loc[households_owning].index
-    )
+    owners_df["Corresponding Owner Household ID"] = synthetic_population.household_data.loc[households_owning].index
+    owners_df["Corresponding Inhabitant Household ID"] = synthetic_population.household_data.loc[
+        households_owning
+    ].index
 
     owners_df = pd.merge(
         owners_df,
@@ -288,10 +272,7 @@ def create_rental_df(
     rental_df["House ID"] = rental_df.index + id_start
     rental_df["Is Owner-Occupied"] = False
     ownership_array = np.concatenate(
-        [
-            [landlord_id] * num_additional_properties[landlord_id]
-            for landlord_id in landlord_ids
-        ]
+        [[landlord_id] * num_additional_properties[landlord_id] for landlord_id in landlord_ids]
     )
 
     rental_df["Corresponding Owner Household ID"] = ownership_array
@@ -321,9 +302,7 @@ def create_rental_df(
     return rental_df
 
 
-def housing_info_from_population(
-    rental_income_taxes: float, synthetic_population: SyntheticPopulation
-):
+def housing_info_from_population(rental_income_taxes: float, synthetic_population: SyntheticPopulation):
     """Create landlord IDs and number of properties per landlord.
 
     This function estimates the number of properties per landlord and their IDs by:
@@ -346,37 +325,20 @@ def housing_info_from_population(
             - landlord_ids (np.ndarray): Unique landlord identifiers
             - num_additional_properties (np.ndarray): Properties per landlord
     """
-    num_renters = int(
-        np.sum(
-            synthetic_population.household_data["Tenure Status of the Main Residence"]
-            == 3
-        )
-    )
+    num_renters = int(np.sum(synthetic_population.household_data["Tenure Status of the Main Residence"] == 3))
     num_other_properties_owned = int(
-        np.sum(
-            synthetic_population.household_data[
-                "Number of Properties other than Household Main Residence"
-            ]
-        )
+        np.sum(synthetic_population.household_data["Number of Properties other than Household Main Residence"])
     )
     if num_renters > num_other_properties_owned:
-        set_social_housing_renters(
-            num_other_properties_owned, num_renters, synthetic_population
-        )
+        set_social_housing_renters(num_other_properties_owned, num_renters, synthetic_population)
     # Rescale total rent received to match rent paid minus taxes
-    ind_curr_btl = np.flatnonzero(
-        synthetic_population.household_data["Rental Income from Real Estate"] > 0.0
-    )
+    ind_curr_btl = np.flatnonzero(synthetic_population.household_data["Rental Income from Real Estate"] > 0.0)
     rescale_variable = (
         (1 - rental_income_taxes)
         * synthetic_population.household_data["Rent Paid"].sum()
-        / synthetic_population.household_data.loc[
-            ind_curr_btl, "Rental Income from Real Estate"
-        ].sum()
+        / synthetic_population.household_data.loc[ind_curr_btl, "Rental Income from Real Estate"].sum()
     )
-    synthetic_population.household_data.loc[
-        ind_curr_btl, "Rental Income from Real Estate"
-    ] *= rescale_variable
+    synthetic_population.household_data.loc[ind_curr_btl, "Rental Income from Real Estate"] *= rescale_variable
     # Create all remaining properties
     # First get information on landlords and their properties
     num_additional_properties = synthetic_population.household_data[
@@ -409,19 +371,13 @@ def set_social_housing_renters(
         num_renters (int): Total number of renters
         synthetic_population (SyntheticPopulation): Household survey data
     """
-    ind_curr_renting = np.flatnonzero(
-        synthetic_population.household_data["Tenure Status of the Main Residence"] == 3
-    )
-    renters_now_in_sh_rel = np.argsort(
-        synthetic_population.household_data["Income"].values[ind_curr_renting]
-    )[0 : num_renters - num_other_properties_owned]
+    ind_curr_renting = np.flatnonzero(synthetic_population.household_data["Tenure Status of the Main Residence"] == 3)
+    renters_now_in_sh_rel = np.argsort(synthetic_population.household_data["Income"].values[ind_curr_renting])[
+        0 : num_renters - num_other_properties_owned
+    ]
     renters_now_in_sh = ind_curr_renting[renters_now_in_sh_rel]
-    synthetic_population.household_data.loc[
-        renters_now_in_sh, "Tenure Status of the Main Residence"
-    ] = -1
-    synthetic_population.household_data.loc[renters_now_in_sh, "Rent Paid"] = (
-        synthetic_population.social_housing_rent
-    )
+    synthetic_population.household_data.loc[renters_now_in_sh, "Tenure Status of the Main Residence"] = -1
+    synthetic_population.household_data.loc[renters_now_in_sh, "Rent Paid"] = synthetic_population.social_housing_rent
 
 
 def match_renters_to_properties(
@@ -451,20 +407,12 @@ def match_renters_to_properties(
     rented = ~housing_market_df["Is Owner-Occupied"]
     rent_rec = housing_market_df.loc[rented, "Rent"].values
 
-    renters_ind = np.flatnonzero(
-        synthetic_population.household_data["Tenure Status of the Main Residence"] == 3
-    )
+    renters_ind = np.flatnonzero(synthetic_population.household_data["Tenure Status of the Main Residence"] == 3)
 
-    renters = (
-        synthetic_population.household_data["Tenure Status of the Main Residence"] == 3
-    )
+    renters = synthetic_population.household_data["Tenure Status of the Main Residence"] == 3
     rent_paid = synthetic_population.household_data.loc[renters, "Rent Paid"].values
 
-    n_split = (
-        int(len(rent_rec) / max_matching_size)
-        if len(rent_rec) > max_matching_size
-        else 1
-    )
+    n_split = int(len(rent_rec) / max_matching_size) if len(rent_rec) > max_matching_size else 1
     rent_rec_split = np.array_split(rent_rec, n_split)
     rent_paid_split = np.array_split(rent_paid, n_split)
 
@@ -476,15 +424,11 @@ def match_renters_to_properties(
     for chunk_ind in range(len(rent_rec_split)):
         curr_rent_rec = rent_rec_split[chunk_ind]
         curr_rent_paid = rent_paid_split[chunk_ind]
-        cost = sp.spatial.distance_matrix(
-            curr_rent_rec[:, None], curr_rent_paid[:, None]
-        )
+        cost = sp.spatial.distance_matrix(curr_rent_rec[:, None], curr_rent_paid[:, None])
         curr_properties, curr_renters = lsa(cost)
 
         # Step 4: Map the indices back to the original indices
-        corr_renters_by_house_id_rel[split_offset_rec + curr_properties] = renters_ind[
-            curr_renters + split_offset_paid
-        ]
+        corr_renters_by_house_id_rel[split_offset_rec + curr_properties] = renters_ind[curr_renters + split_offset_paid]
 
         split_offset_rec += len(curr_rent_rec)
         split_offset_paid += len(curr_rent_paid)
@@ -492,13 +436,9 @@ def match_renters_to_properties(
     corr_renters_by_house_id_hb = np.full(housing_market_df.shape[0], np.nan)
     corr_renters_by_house_id_hb[rented] = corr_renters_by_house_id_rel
     # add to housing_market_df
-    housing_market_df.loc[rented, "Corresponding Inhabitant Household ID"] = (
-        corr_renters_by_house_id_hb[rented]
-    )
+    housing_market_df.loc[rented, "Corresponding Inhabitant Household ID"] = corr_renters_by_house_id_hb[rented]
 
-    housing_market_df["Up for Rent"] = housing_market_df[
-        "Corresponding Inhabitant Household ID"
-    ].isna()
+    housing_market_df["Up for Rent"] = housing_market_df["Corresponding Inhabitant Household ID"].isna()
 
     housing_market_df["Corresponding Owner Household ID"] = housing_market_df[
         "Corresponding Owner Household ID"
@@ -508,9 +448,7 @@ def match_renters_to_properties(
 
     owners_to_renters = (
         housing_market_df.loc[rented]
-        .groupby("Corresponding Owner Household ID")[
-            "Corresponding Inhabitant Household ID"
-        ]
+        .groupby("Corresponding Owner Household ID")["Corresponding Inhabitant Household ID"]
         .apply(list)
     )
 
@@ -518,27 +456,23 @@ def match_renters_to_properties(
         [] for _ in range(len(synthetic_population.household_data))
     ]
     mapped_renters = synthetic_population.household_data.index.map(owners_to_renters)
-    synthetic_population.household_data.loc[
-        ~mapped_renters.isna(), "Corresponding Renters"
-    ] = mapped_renters[~mapped_renters.isna()]
+    synthetic_population.household_data.loc[~mapped_renters.isna(), "Corresponding Renters"] = mapped_renters[
+        ~mapped_renters.isna()
+    ]
 
-    mapped_df = housing_market_df.dropna(
-        subset=["Corresponding Inhabitant Household ID"]
-    ).set_index("Corresponding Inhabitant Household ID")
+    mapped_df = housing_market_df.dropna(subset=["Corresponding Inhabitant Household ID"]).set_index(
+        "Corresponding Inhabitant Household ID"
+    )
 
     mapped_df.index = mapped_df.index.astype(int)
 
     mapped_df.index.name = synthetic_population.household_data.index.name
 
-    synthetic_population.household_data["Corresponding Inhabited House ID"] = mapped_df[
-        "House ID"
-    ]
+    synthetic_population.household_data["Corresponding Inhabited House ID"] = mapped_df["House ID"]
 
     # Only reset rent for households that own ('1'), part own ('2') or have free use of their home ('4')
     # Preserve the processed HFCS rent data for renters
-    owners = synthetic_population.household_data[
-        "Tenure Status of the Main Residence"
-    ].isin([1, 2, 4])
+    owners = synthetic_population.household_data["Tenure Status of the Main Residence"].isin([1, 2, 4])
     synthetic_population.household_data.loc[owners, "Rent Paid"] = 0
 
     # Update rent for renting households using housing market data where available
@@ -546,35 +480,27 @@ def match_renters_to_properties(
     renter_mapping = mapped_df.loc[~mapped_df["Is Owner-Occupied"]].dropna()
     if len(renter_mapping) > 0:
         renter_house_ids = renter_mapping.index
-        synthetic_population.household_data.loc[renter_house_ids, "Rent Paid"] = (
-            renter_mapping["Rent"]
-        )
+        synthetic_population.household_data.loc[renter_house_ids, "Rent Paid"] = renter_mapping["Rent"]
 
     rental_income = rented & ~housing_market_df["Up for Rent"]
 
-    earned_rent = housing_market_df.loc[rental_income].groupby(
-        "Corresponding Owner Household ID"
-    )["Rent"].sum() * (1 - rental_income_taxes)
+    earned_rent = housing_market_df.loc[rental_income].groupby("Corresponding Owner Household ID")["Rent"].sum() * (
+        1 - rental_income_taxes
+    )
 
     earned_rent.index.name = synthetic_population.household_data.index.name
 
     synthetic_population.household_data["Rental Income from Real Estate"] = 0.0
 
-    synthetic_population.household_data.loc[
-        earned_rent.index.values, "Rental Income from Real Estate"
-    ] = earned_rent.values
-
-    synthetic_population.household_data[
-        "Corresponding Additionally Owned Houses ID"
-    ] = synthetic_population.household_data[
-        "Corresponding Additionally Owned Houses ID"
-    ].apply(
-        list
+    synthetic_population.household_data.loc[earned_rent.index.values, "Rental Income from Real Estate"] = (
+        earned_rent.values
     )
 
-    synthetic_population.household_data["Rent Paid"] = (
-        synthetic_population.household_data["Rent Paid"].fillna(0)
+    synthetic_population.household_data["Corresponding Additionally Owned Houses ID"] = (
+        synthetic_population.household_data["Corresponding Additionally Owned Houses ID"].apply(list)
     )
-    synthetic_population.household_data["Rental Income from Real Estate"] = (
-        synthetic_population.household_data["Rental Income from Real Estate"].fillna(0)
-    )
+
+    synthetic_population.household_data["Rent Paid"] = synthetic_population.household_data["Rent Paid"].fillna(0)
+    synthetic_population.household_data["Rental Income from Real Estate"] = synthetic_population.household_data[
+        "Rental Income from Real Estate"
+    ].fillna(0)

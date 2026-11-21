@@ -41,9 +41,7 @@ class TestCreditMarketClearingIndexingIntegration:
             debtor_minimum_fill=False,
         )
 
-    def test_clear_loans_no_value_error(
-        self, credit_market_clearer, test_banks, test_firms
-    ):
+    def test_clear_loans_no_value_error(self, credit_market_clearer, test_banks, test_firms):
         """Test that clear_loans completes without ValueError.
 
         Before the fix, this would crash with:
@@ -81,16 +79,12 @@ class TestCreditMarketClearingIndexingIntegration:
 
         # Verify result is valid
         assert result is not None, "Result should not be None"
-        assert (
-            result.shape[0] == 3
-        ), "Result should have 3 components (principal, rate, payment)"
+        assert result.shape[0] == 3, "Result should have 3 components (principal, rate, payment)"
         assert result.shape[1] == n_banks, "Result should have correct number of banks"
 
         # Verify no NaN or unexpected values in loan amounts
         loan_amounts = result[0]
-        assert np.all(
-            np.isfinite(loan_amounts) | (loan_amounts == 0)
-        ), "Loan amounts should be finite or zero"
+        assert np.all(np.isfinite(loan_amounts) | (loan_amounts == 0)), "Loan amounts should be finite or zero"
         assert np.all(loan_amounts >= 0), "Loan amounts should be non-negative"
 
 
@@ -117,9 +111,7 @@ class TestCreditMarketClearingIndexingLogic:
 
         # OLD CODE would crash with ValueError
         with pytest.raises(ValueError, match="shape mismatch|could not be broadcast"):
-            new_loans[0, :, agents_with_demand] = np.outer(
-                granted_loans_by_banks, capacities_weights
-            )
+            new_loans[0, :, agents_with_demand] = np.outer(granted_loans_by_banks, capacities_weights)
 
     def test_new_code_pattern_works(self):
         """Test that the fixed row-by-row assignment works correctly.
@@ -148,14 +140,12 @@ class TestCreditMarketClearingIndexingLogic:
         allocated_loans = new_loans[0, 0, agents_with_demand]
 
         assert np.all(allocated_loans >= 0), "All loans should be non-negative"
-        assert np.isclose(
-            allocated_loans.sum(), granted_loans_by_banks[0]
-        ), "Total allocated should equal granted amount"
+        assert np.isclose(allocated_loans.sum(), granted_loans_by_banks[0]), (
+            "Total allocated should equal granted amount"
+        )
 
         expected_loans = granted_loans_by_banks[0] * capacities_weights
-        assert np.allclose(
-            allocated_loans, expected_loans
-        ), "Each agent should receive weighted share"
+        assert np.allclose(allocated_loans, expected_loans), "Each agent should receive weighted share"
 
     def test_multiple_banks_scenario(self):
         """Test the fix works with multiple banks."""
@@ -165,9 +155,7 @@ class TestCreditMarketClearingIndexingLogic:
 
         agents_with_demand = np.arange(n_agents_with_demand)
         new_loans = np.zeros((3, n_banks, n_total_agents))
-        granted_loans_by_banks = np.array(
-            [100000.0, 200000.0, 150000.0, 300000.0, 250000.0]
-        )
+        granted_loans_by_banks = np.array([100000.0, 200000.0, 150000.0, 300000.0, 250000.0])
         capacities_weights = np.random.random(n_agents_with_demand)
         capacities_weights /= capacities_weights.sum()
 
@@ -179,9 +167,9 @@ class TestCreditMarketClearingIndexingLogic:
         # Verify each bank's allocation
         for bank_idx in range(n_banks):
             bank_loans = new_loans[0, bank_idx, agents_with_demand]
-            assert np.isclose(
-                bank_loans.sum(), granted_loans_by_banks[bank_idx]
-            ), f"Bank {bank_idx} should allocate its full granted amount"
+            assert np.isclose(bank_loans.sum(), granted_loans_by_banks[bank_idx]), (
+                f"Bank {bank_idx} should allocate its full granted amount"
+            )
 
     def test_second_branch_supply_weights(self):
         """Test the fix for the second branch using supply_weights.
@@ -209,6 +197,4 @@ class TestCreditMarketClearingIndexingLogic:
         for agent_idx, agent_id in enumerate(agents_with_demand):
             agent_total = new_loans[0, :, agent_id].sum()
             expected = received_loans_by_debtors[agent_idx]
-            assert np.isclose(
-                agent_total, expected
-            ), f"Agent {agent_id} should receive correct total loan amount"
+            assert np.isclose(agent_total, expected), f"Agent {agent_id} should receive correct total loan amount"

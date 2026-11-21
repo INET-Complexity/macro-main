@@ -192,8 +192,7 @@ class GrowthRoWExportsSetter(RoWExportsSetter):
         """
         return np.maximum(
             0.0,
-            (1.0 + adjustment_speed * (aggregate_country_production_index - 1.0))
-            * initial_desired_exports,
+            (1.0 + adjustment_speed * (aggregate_country_production_index - 1.0)) * initial_desired_exports,
         )
 
 
@@ -233,9 +232,7 @@ class ExogenousRoWExportsSetter(RoWExportsSetter):
             np.ndarray: Computed export volumes
         """
         return (
-            historic_total_real_exports_during[current_time]
-            * initial_desired_exports
-            / initial_desired_exports.sum()
+            historic_total_real_exports_during[current_time] * initial_desired_exports / initial_desired_exports.sum()
         )
 
 

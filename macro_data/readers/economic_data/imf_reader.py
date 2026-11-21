@@ -88,9 +88,7 @@ class IMFReader:
         self.data = {key: data[key] for key in data.keys()}
 
     @classmethod
-    def from_data(
-        cls, data_path: Path | str, scale_dict: dict[Country, int]
-    ) -> "IMFReader":
+    def from_data(cls, data_path: Path | str, scale_dict: dict[Country, int]) -> "IMFReader":
         """
         Create an IMFReader instance from data files.
 
@@ -181,14 +179,9 @@ class IMFReader:
         float
             Number of commercial banks (scaled)
         """
-        return (
-            self.get_value(year, country, "Institutions of commercial banks")
-            / self.scale_dict[country]
-        )
+        return self.get_value(year, country, "Institutions of commercial banks") / self.scale_dict[country]
 
-    def number_of_commercial_depositors(
-        self, year: int, country: str | Country
-    ) -> float:
+    def number_of_commercial_depositors(self, year: int, country: str | Country) -> float:
         """
         Get number of commercial bank depositors for a country.
 
@@ -204,14 +197,9 @@ class IMFReader:
         float
             Number of depositors (scaled)
         """
-        return (
-            self.get_value(year, country, "Depositors with commercial banks")
-            / self.scale_dict[country]
-        )
+        return self.get_value(year, country, "Depositors with commercial banks") / self.scale_dict[country]
 
-    def number_of_commercial_borrowers(
-        self, year: int, country: str | Country
-    ) -> float:
+    def number_of_commercial_borrowers(self, year: int, country: str | Country) -> float:
         """
         Get number of commercial bank borrowers for a country.
 
@@ -227,10 +215,7 @@ class IMFReader:
         float
             Number of borrowers (scaled)
         """
-        return (
-            self.get_value(year, country, "Borrowers from commercial banks")
-            / self.scale_dict[country]
-        )
+        return self.get_value(year, country, "Borrowers from commercial banks") / self.scale_dict[country]
 
     def total_commercial_deposits(self, year: int, country: str | Country) -> float:
         """
@@ -252,10 +237,7 @@ class IMFReader:
         -----
         - Returns value in millions of domestic currency units
         """
-        return (
-            self.get_value(year, country, "Outstanding deposits with commercial banks")
-            * 1e6
-        )
+        return self.get_value(year, country, "Outstanding deposits with commercial banks") * 1e6
 
     def total_commercial_loans(self, year: int, country: str | Country) -> float:
         """
@@ -277,10 +259,7 @@ class IMFReader:
         -----
         - Returns value in millions of domestic currency units
         """
-        return (
-            self.get_value(year, country, "Outstanding loans from commercial banks")
-            * 1e6
-        )
+        return self.get_value(year, country, "Outstanding loans from commercial banks") * 1e6
 
     def get_inflation(self, country: Country | str) -> Optional[pd.DataFrame]:
         """
@@ -314,10 +293,7 @@ class IMFReader:
         country_english = str(country).lower()
         data = self.data["international_financial_statistics"]
         data.rename(columns=data.iloc[0]).drop(data.index[0]).reset_index(drop=True)
-        data = data.loc[
-            (data["Attribute"] == "Value")
-            & (data["Country Name"].str.lower() == country_english)
-        ]
+        data = data.loc[(data["Attribute"] == "Value") & (data["Country Name"].str.lower() == country_english)]
         data.set_index("Indicator Name", inplace=True)
         if (
             "Prices, Consumer Price Index, All items, Index" not in data.index
@@ -346,9 +322,7 @@ class IMFReader:
                 ]
             ].T.iloc[4:-1]
         data.columns = ["CPI Inflation", "PPI Inflation"]
-        data.index = [
-            pd.Timestamp(int(ind[0:4]), 3 * int(ind[5]) - 2, 1) for ind in data.index
-        ]  # noqa
+        data.index = [pd.Timestamp(int(ind[0:4]), 3 * int(ind[5]) - 2, 1) for ind in data.index]  # noqa
         with warnings.catch_warnings():
             warnings.simplefilter(action="ignore", category=FutureWarning)
             return data.astype(float).pct_change()
@@ -385,10 +359,7 @@ class IMFReader:
         country_english = str(country).lower()
         data = self.data["international_financial_statistics"]
         data.rename(columns=data.iloc[0]).drop(data.index[0]).reset_index(drop=True)
-        data = data.loc[
-            (data["Attribute"] == "Value")
-            & (data["Country Name"].str.lower() == country_english)
-        ]
+        data = data.loc[(data["Attribute"] == "Value") & (data["Country Name"].str.lower() == country_english)]
         data.set_index("Indicator Name", inplace=True)
         data = data.T.iloc[4:-1]
 
@@ -411,45 +382,24 @@ class IMFReader:
         data_ls = {}
 
         for field in fields.keys():
-            if (
-                field + ", Nominal, Seasonally Adjusted, Domestic Currency"
-                in data.columns
-            ):
-                data_ls[fields[field]] = data[
-                    field + ", Nominal, Seasonally Adjusted, Domestic Currency"
-                ].values
+            if field + ", Nominal, Seasonally Adjusted, Domestic Currency" in data.columns:
+                data_ls[fields[field]] = data[field + ", Nominal, Seasonally Adjusted, Domestic Currency"].values
             elif field + ", Nominal, Domestic Currency" in data.columns:
-                data_ls[fields[field]] = data[
-                    field + ", Nominal, Domestic Currency"
-                ].values
+                data_ls[fields[field]] = data[field + ", Nominal, Domestic Currency"].values
             elif field + ", Nominal, Unadjusted, Domestic Currency" in data.columns:
-                data_ls[fields[field]] = data[
-                    field + ", Nominal, Unadjusted, Domestic Currency"
-                ].values
-            elif (
-                gdp_field + ", Nominal, Seasonally Adjusted, Domestic Currency"
-                in data.columns
-            ):
-                data_ls[fields[field]] = data[
-                    gdp_field + ", Nominal, Seasonally Adjusted, Domestic Currency"
-                ].values
+                data_ls[fields[field]] = data[field + ", Nominal, Unadjusted, Domestic Currency"].values
+            elif gdp_field + ", Nominal, Seasonally Adjusted, Domestic Currency" in data.columns:
+                data_ls[fields[field]] = data[gdp_field + ", Nominal, Seasonally Adjusted, Domestic Currency"].values
             elif gdp_field + ", Nominal, Domestic Currency" in data.columns:
-                data_ls[fields[field]] = data[
-                    gdp_field + ", Nominal, Domestic Currency"
-                ].values
+                data_ls[fields[field]] = data[gdp_field + ", Nominal, Domestic Currency"].values
             elif gdp_field + ", Nominal, Unadjusted, Domestic Currency" in data.columns:
-                data_ls[fields[field]] = data[
-                    gdp_field + ", Nominal, Unadjusted, Domestic Currency"
-                ].values
+                data_ls[fields[field]] = data[gdp_field + ", Nominal, Unadjusted, Domestic Currency"].values
             else:
                 raise ValueError(f"No suitable data found for {country} {field}")
 
         data = pd.DataFrame(
             data=data_ls,
-            index=[
-                pd.Timestamp(int(ind[0:4]), 3 * int(ind[5]) - 2, 1)
-                for ind in data.index
-            ],
+            index=[pd.Timestamp(int(ind[0:4]), 3 * int(ind[5]) - 2, 1) for ind in data.index],
         ).iloc[0:-1]
         data = data.astype(float)
         data["HH Cons"] = data["HH Cons"] + data["NPISH Cons"]
@@ -492,10 +442,7 @@ class IMFReader:
         country_english = str(country).lower()
         data = self.data["international_financial_statistics"]
         data.rename(columns=data.iloc[0]).drop(data.index[0]).reset_index(drop=True)
-        data = data.loc[
-            (data["Attribute"] == "Value")
-            & (data["Country Name"].str.lower() == country_english)
-        ]
+        data = data.loc[(data["Attribute"] == "Value") & (data["Country Name"].str.lower() == country_english)]
         data.set_index("Indicator Name", inplace=True)
         if (
             "Labor Force, Persons, Number of" not in data.index
@@ -518,9 +465,7 @@ class IMFReader:
             "Unemployment Number",
             "Unemployment Rate",
         ]
-        data.index = [
-            pd.Timestamp(int(ind[0:4]), 3 * int(ind[5]) - 2, 1) for ind in data.index
-        ]  # noqa
+        data.index = [pd.Timestamp(int(ind[0:4]), 3 * int(ind[5]) - 2, 1) for ind in data.index]  # noqa
         data = data.astype(float)
         # multiply all columns except the rate by the va_ratio
         data.loc[:, data.columns != "Unemployment Rate"] *= ratio

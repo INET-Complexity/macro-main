@@ -117,9 +117,7 @@ class TestProductionSetter:
         n_industries = 5
         default_bundle = create_good_bundle(5)
         current_target_production = np.full(n_industries, 1)
-        intermediate_inputs_productivity_matrix = np.full(
-            (n_industries, n_industries), 1
-        )
+        intermediate_inputs_productivity_matrix = np.full((n_industries, n_industries), 1)
         prev_intermediate_inputs_stock = np.full((n_industries, n_industries), 1)
         initial_intermediate_inputs_stock = np.full((n_industries, n_industries), 1)
         prev_production = np.full(n_industries, 1)

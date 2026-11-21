@@ -137,9 +137,7 @@ class Simulation:
         countries = {
             country_name: Country.from_pickled_country(
                 synthetic_country=datawrapper.synthetic_countries[country_name],
-                country_configuration=simulation_configuration.country_configurations[
-                    country_name
-                ],
+                country_configuration=simulation_configuration.country_configurations[country_name],
                 exchange_rates=exchange_rates,
                 country_name=country_name,
                 all_country_names=countries_with_row,
@@ -174,8 +172,7 @@ class Simulation:
         )
 
         goods_market_participants = {
-            country_name: country.get_goods_market_participants()
-            for country_name, country in countries.items()
+            country_name: country.get_goods_market_participants() for country_name, country in countries.items()
         }
 
         goods_market_participants["ROW"] = [rest_of_the_world]
@@ -313,13 +310,11 @@ class Simulation:
         # self.exchange_rates.set_current_exchange_rates(current_year=self.timestep.year)
 
         for ind, country in enumerate(self.countries.values()):
-            exchange_rate = (
-                self.exchange_rates.get_current_exchange_rates_from_usd_to_lcu(
-                    country_name=country.country_name,
-                    current_year=self.timestep.year,
-                    prev_inflation=country.economy.ts.current("ppi_inflation")[0],
-                    prev_growth=country.economy.ts.current("total_growth")[0],
-                )
+            exchange_rate = self.exchange_rates.get_current_exchange_rates_from_usd_to_lcu(
+                country_name=country.country_name,
+                current_year=self.timestep.year,
+                prev_inflation=country.economy.ts.current("ppi_inflation")[0],
+                prev_growth=country.economy.ts.current("total_growth")[0],
             )
             logging.info("Country: %s", country.country_name)
             country.initialisation_phase(exchange_rate_usd_to_lcu=exchange_rate)
@@ -353,9 +348,7 @@ class Simulation:
         aggregate_country_production_index = self.production_price_index
         total_real_production = self.total_real_production
         if total_real_production > 0:
-            self.aggregate_country_price_index = (
-                self.aggregate_nominal_production / total_real_production
-            )
+            self.aggregate_country_price_index = self.aggregate_nominal_production / total_real_production
         self.rest_of_the_world.update_planning_metrics(
             aggregate_country_production_index=aggregate_country_production_index,
             aggregate_country_price_index=self.aggregate_country_price_index,
@@ -388,10 +381,7 @@ class Simulation:
                 (
                     self.countries[c].firms.ts.current("price")
                     / self.countries[c].firms.ts.initial("price")
-                    * (
-                        self.countries[c].firms.ts.current("production")
-                        + self.countries[c].firms.ts.prev("inventory")
-                    )
+                    * (self.countries[c].firms.ts.current("production") + self.countries[c].firms.ts.prev("inventory"))
                 ).sum()
                 for c in self.countries.keys()
             ]
@@ -402,10 +392,7 @@ class Simulation:
         """float: Total real (quantity) production across all countries."""
         return np.sum(
             [
-                (
-                    self.countries[c].firms.ts.current("production")
-                    + self.countries[c].firms.ts.prev("inventory")
-                ).sum()
+                (self.countries[c].firms.ts.current("production") + self.countries[c].firms.ts.prev("inventory")).sum()
                 for c in self.countries.keys()
             ]
         )
@@ -413,14 +400,8 @@ class Simulation:
     @property
     def production_price_index(self) -> float:
         """float: Aggregate production price index across all countries."""
-        current_production = [
-            self.countries[c].firms.ts.current("production").sum()
-            for c in self.countries.keys()
-        ]
-        initial_production = [
-            self.countries[c].firms.ts.initial("production").sum()
-            for c in self.countries.keys()
-        ]
+        current_production = [self.countries[c].firms.ts.current("production").sum() for c in self.countries.keys()]
+        initial_production = [self.countries[c].firms.ts.initial("production").sum() for c in self.countries.keys()]
         return np.sum(current_production) / np.sum(initial_production)
 
     def run(self) -> None:
@@ -480,10 +461,7 @@ class Simulation:
         Returns:
             dict: Dictionary mapping country codes to summary DataFrames
         """
-        df_dict = {
-            country: self.countries[country].shallow_output()
-            for country in self.countries
-        }
+        df_dict = {country: self.countries[country].shallow_output() for country in self.countries}
         return df_dict
 
     def shallow_hdf_save(self, save_dir: Path | str, file_name: str):
@@ -502,9 +480,7 @@ class Simulation:
             df = country.shallow_output()
             industry_df = country.firms.industries_dataframe
             df.to_hdf(save_dir / file_name, key=country_name, mode="a")
-            industry_df.to_hdf(
-                save_dir / file_name, key=f"{country_name}_industries", mode="a"
-            )
+            industry_df.to_hdf(save_dir / file_name, key=f"{country_name}_industries", mode="a")
 
     def get_country_shallow_output(self, country: str):
         """Get summary statistics for a specific country.
@@ -563,8 +539,7 @@ def check_compatibility(
     test_cases = [
         firm_data_conf.initial_inventory_to_input_fraction
         == firm_sim_reset_params["initial_inventory_to_input_fraction"],
-        firm_data_conf.capital_inputs_utilisation_rate
-        == firm_sim_reset_params["capital_inputs_utilisation_rate"],
+        firm_data_conf.capital_inputs_utilisation_rate == firm_sim_reset_params["capital_inputs_utilisation_rate"],
         firm_data_conf.intermediate_inputs_utilisation_rate
         == firm_sim_reset_params["intermediate_inputs_utilisation_rate"],
     ]

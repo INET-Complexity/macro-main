@@ -7,9 +7,7 @@ from macro_data.readers.emission_fraction.emission_fraction_reader import (
 
 def _setup_emission_ts(households, n_hh, n_industries):
     """Inject a non-NaN spending matrix and emission timeseries keys."""
-    households.ts.dicts["nominal_amount_spent_in_lcu"][-1] = np.full(
-        (n_hh, n_industries), 10.0
-    )
+    households.ts.dicts["nominal_amount_spent_in_lcu"][-1] = np.full((n_hh, n_industries), 10.0)
     for key in [
         "consumption_emissions",
         "investment_emissions",
@@ -171,9 +169,7 @@ class TestHouseholdsUpdateConsumptionEmissions:
 
         consumption_ones = np.ones((1, n_industries))
         investment_ones = np.ones((1, n_industries))
-        test_households.emission_fractions = EmissionFractions(
-            consumption=consumption_ones, investment=investment_ones
-        )
+        test_households.emission_fractions = EmissionFractions(consumption=consumption_ones, investment=investment_ones)
         test_households.update_consumption_and_investment(
             tau_vat=0.0,
             tau_cf=0.0,
@@ -213,12 +209,8 @@ class TestHouseholdsUpdateConsumptionEmissions:
         n_hh = len(test_households.states["Type"])
         n_industries = test_households.n_industries
         _setup_emission_ts(test_households, n_hh, n_industries)
-        test_households.ts.dicts["consumption_emissions_ch4_by_good"] = [
-            np.zeros(n_industries)
-        ]
-        test_households.ts.dicts["investment_emissions_ch4_by_good"] = [
-            np.zeros(n_industries)
-        ]
+        test_households.ts.dicts["consumption_emissions_ch4_by_good"] = [np.zeros(n_industries)]
+        test_households.ts.dicts["investment_emissions_ch4_by_good"] = [np.zeros(n_industries)]
         emitting_indices = np.array([0, 1, 2, 3])
 
         test_households.update_consumption_and_investment(

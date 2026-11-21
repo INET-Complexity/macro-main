@@ -67,25 +67,13 @@ def create_government_entities_timeseries(
             - refined_products_emissions: Optional refined product emissions
     """
     if add_emissions:
-        emissions = np.sum(
-            data["Consumption in LCU"].values[emitting_indices] * emission_factors_lcu
-        )
+        emissions = np.sum(data["Consumption in LCU"].values[emitting_indices] * emission_factors_lcu)
         emissions_dict = {
-            "coal_emissions": np.sum(
-                data["Consumption in LCU"].values[emitting_indices]
-                * emission_factors_lcu[0]
-            ),
-            "gas_emissions": np.sum(
-                data["Consumption in LCU"].values[emitting_indices]
-                * emission_factors_lcu[1]
-            ),
-            "oil_emissions": np.sum(
-                data["Consumption in LCU"].values[emitting_indices]
-                * emission_factors_lcu[2]
-            ),
+            "coal_emissions": np.sum(data["Consumption in LCU"].values[emitting_indices] * emission_factors_lcu[0]),
+            "gas_emissions": np.sum(data["Consumption in LCU"].values[emitting_indices] * emission_factors_lcu[1]),
+            "oil_emissions": np.sum(data["Consumption in LCU"].values[emitting_indices] * emission_factors_lcu[2]),
             "refined_products_emissions": np.sum(
-                data["Consumption in LCU"].values[emitting_indices]
-                * emission_factors_lcu[3]
+                data["Consumption in LCU"].values[emitting_indices] * emission_factors_lcu[3]
             ),
         }
     else:

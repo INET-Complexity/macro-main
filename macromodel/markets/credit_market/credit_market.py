@@ -143,9 +143,7 @@ class CreditMarket:
         shortterm_loans = synthetic_credit_market.shortterm_loans.stack()
         longterm_loans = synthetic_credit_market.longterm_loans.stack()
         payday_loans = synthetic_credit_market.payday_loans.stack()
-        consumption_expansion_loans = (
-            synthetic_credit_market.consumption_expansion_loans.stack()
-        )
+        consumption_expansion_loans = synthetic_credit_market.consumption_expansion_loans.stack()
         mortgage_loans = synthetic_credit_market.mortgage_loans.stack()
 
         ts = create_credit_market_timeseries(
@@ -305,16 +303,11 @@ class CreditMarket:
 
         # Calculate aggregates for firms
         firms.ts.received_short_term_credit.append(new_st_loans[0].sum(axis=0))
-        firms.ts.total_received_short_term_credit.append(
-            [firms.ts.current("received_short_term_credit").sum()]
-        )
+        firms.ts.total_received_short_term_credit.append([firms.ts.current("received_short_term_credit").sum()])
         firms.ts.received_long_term_credit.append(new_lt_loans[0].sum(axis=0))
-        firms.ts.total_received_long_term_credit.append(
-            [firms.ts.current("received_long_term_credit").sum()]
-        )
+        firms.ts.total_received_long_term_credit.append([firms.ts.current("received_long_term_credit").sum()])
         firms.ts.received_credit.append(
-            firms.ts.current("received_short_term_credit")
-            + firms.ts.current("received_long_term_credit")
+            firms.ts.current("received_short_term_credit") + firms.ts.current("received_long_term_credit")
         )
 
         # Calculate aggregates for households
@@ -323,23 +316,17 @@ class CreditMarket:
             [households.ts.current("received_consumption_loans").sum()]
         )
         households.ts.received_mortgages.append(new_mort_loans[0].sum(axis=0))
-        households.ts.total_received_mortgages.append(
-            [households.ts.current("received_mortgages").sum()]
-        )
+        households.ts.total_received_mortgages.append([households.ts.current("received_mortgages").sum()])
 
         # Update credit market aggregates
         self.ts.total_newly_loans_granted_firms_short_term.append(
             [firms.ts.current("received_short_term_credit").sum()]
         )
-        self.ts.total_newly_loans_granted_firms_long_term.append(
-            [firms.ts.current("received_long_term_credit").sum()]
-        )
+        self.ts.total_newly_loans_granted_firms_long_term.append([firms.ts.current("received_long_term_credit").sum()])
         self.ts.total_newly_loans_granted_households_consumption.append(
             [households.ts.current("received_consumption_loans").sum()]
         )
-        self.ts.total_newly_loans_granted_mortgages.append(
-            [households.ts.current("received_mortgages").sum()]
-        )
+        self.ts.total_newly_loans_granted_mortgages.append([households.ts.current("received_mortgages").sum()])
 
         # Update fractions of types of loans granted by bank
         total_loans_by_bank = (
@@ -350,8 +337,7 @@ class CreditMarket:
         )
         banks.ts.new_loans_fraction_firms.append(
             np.divide(
-                self.states["st_loans"][0].sum(axis=1)
-                + self.states["lt_loans"][0].sum(axis=1),
+                self.states["st_loans"][0].sum(axis=1) + self.states["lt_loans"][0].sum(axis=1),
                 total_loans_by_bank,
                 out=np.zeros(banks.ts.current("n_banks")),
                 where=total_loans_by_bank != 0.0,
@@ -428,18 +414,10 @@ class CreditMarket:
         - Consumer loans
         - Mortgages
         """
-        self.ts.total_outstanding_loans_granted_firms_short_term.append(
-            [self.states["st_loans"][0].sum()]
-        )
-        self.ts.total_outstanding_loans_granted_firms_long_term.append(
-            [self.states["lt_loans"][0].sum()]
-        )
-        self.ts.total_outstanding_loans_granted_households_consumption.append(
-            [self.states["cons_loans"][0].sum()]
-        )
-        self.ts.total_outstanding_loans_granted_mortgages.append(
-            [self.states["mort_loans"][0].sum()]
-        )
+        self.ts.total_outstanding_loans_granted_firms_short_term.append([self.states["st_loans"][0].sum()])
+        self.ts.total_outstanding_loans_granted_firms_long_term.append([self.states["lt_loans"][0].sum()])
+        self.ts.total_outstanding_loans_granted_households_consumption.append([self.states["cons_loans"][0].sum()])
+        self.ts.total_outstanding_loans_granted_mortgages.append([self.states["mort_loans"][0].sum()])
 
     def compute_outstanding_short_term_loans_by_firm(self) -> np.ndarray:
         """Calculate total short-term loans for each firm.
@@ -524,9 +502,7 @@ class CreditMarket:
         Returns:
             np.ndarray: Array of interest payments by firm across all loan types
         """
-        return self.states["st_loans"][1].sum(axis=0) + self.states["lt_loans"][1].sum(
-            axis=0
-        )
+        return self.states["st_loans"][1].sum(axis=0) + self.states["lt_loans"][1].sum(axis=0)
 
     def compute_interest_paid_by_household(self) -> np.ndarray:
         """Calculate total interest paid by each household.
@@ -534,9 +510,7 @@ class CreditMarket:
         Returns:
             np.ndarray: Array of interest payments by household across all loan types
         """
-        return self.states["cons_loans"][1].sum(axis=0) + self.states["mort_loans"][
-            1
-        ].sum(axis=0)
+        return self.states["cons_loans"][1].sum(axis=0) + self.states["mort_loans"][1].sum(axis=0)
 
     def compute_interest_received_by_bank(self) -> np.ndarray:
         """Calculate total interest received by each bank.
@@ -562,17 +536,12 @@ class CreditMarket:
         Returns:
             float: Total amount of loans written off
         """
-        total_amount = (
-            self.states["st_loans"][0][:, firm_id].sum()
-            + self.states["lt_loans"][0][:, firm_id].sum()
-        )
+        total_amount = self.states["st_loans"][0][:, firm_id].sum() + self.states["lt_loans"][0][:, firm_id].sum()
         self.states["st_loans"][:, :, firm_id] = 0.0
         self.states["lt_loans"][:, :, firm_id] = 0.0
         return total_amount
 
-    def remove_loans_to_households(
-        self, household_id: int | np.ndarray
-    ) -> Tuple[float, float]:
+    def remove_loans_to_households(self, household_id: int | np.ndarray) -> Tuple[float, float]:
         """Remove all loans associated with specified household(s).
 
         Used when households default. Returns the total amounts written off by loan type.

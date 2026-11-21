@@ -144,11 +144,7 @@ from macro_data.processing import SyntheticCountry
 from macro_data.configuration.countries import Country
 
 # Initialize a synthetic country
-country = SyntheticCountry(
-    country=Country("FRA"),
-    data_readers=data_readers,
-    configuration=config
-)
+country = SyntheticCountry(country=Country("FRA"), data_readers=data_readers, configuration=config)
 
 # Create the synthetic economic system
 country.create()

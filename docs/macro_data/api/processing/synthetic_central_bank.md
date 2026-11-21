@@ -113,7 +113,7 @@ france_central_bank = DefaultSyntheticCentralBank.from_readers(
     quarter=1,
     readers=readers,
     exogenous_data=exogenous_data,
-    central_bank_configuration=config
+    central_bank_configuration=config,
 )
 
 # Access estimated parameters

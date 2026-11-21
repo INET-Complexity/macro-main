@@ -168,9 +168,7 @@ class DataWrapper:
 
         for country, country_config in configuration.country_configs.items():
             if country_config.eu_proxy_country is None and not country.is_eu_country:
-                raise ValueError(
-                    f"{country} is not in EU: please set an EU proxy country."
-                )
+                raise ValueError(f"{country} is not in EU: please set an EU proxy country.")
 
         proxy_country_dict = {
             country: configuration.country_configs[country].eu_proxy_country
@@ -179,19 +177,12 @@ class DataWrapper:
         }
 
         country_names = configuration.countries
-        industries = (
-            AGGREGATED_INDUSTRIES
-            if configuration.aggregate_industries
-            else ALL_INDUSTRIES
-        )
+        industries = AGGREGATED_INDUSTRIES if configuration.aggregate_industries else ALL_INDUSTRIES
 
         year = configuration.year
         quarter = configuration.quarter
 
-        scale_dict = {
-            country: configuration.country_configs[country].scale
-            for country in country_names
-        }
+        scale_dict = {country: configuration.country_configs[country].scale for country in country_names}
 
         prune_date = configuration.prune_date
 
@@ -201,16 +192,10 @@ class DataWrapper:
         if configuration.aggregation_structure:
             regions_dict = configuration.aggregation_structure
             # If Canada is in the configuration and has regions, use provincial reader
-            if Country(
-                "CAN"
-            ) in configuration.countries and configuration.is_aggregated(
-                Country("CAN")
-            ):
+            if Country("CAN") in configuration.countries and configuration.is_aggregated(Country("CAN")):
                 use_provincial_can_reader = True
                 if configuration.aggregate_industries:
-                    raise ValueError(
-                        "Cannot disaggregate industries when using provincial Canadian data"
-                    )
+                    raise ValueError("Cannot disaggregate industries when using provincial Canadian data")
 
         readers = DataReaders.from_raw_data(
             raw_data_path=raw_data_path,
@@ -230,11 +215,7 @@ class DataWrapper:
 
         if regions_dict:
             # remove each key country from the country names
-            country_names = [
-                country
-                for country in country_names
-                if country not in regions_dict.keys()
-            ]
+            country_names = [country for country in country_names if country not in regions_dict.keys()]
 
         # override industries
         industries = readers.icio[year].industries
@@ -243,9 +224,7 @@ class DataWrapper:
 
         add_emissions = False
 
-        if all(
-            [emitting_ind in industries for emitting_ind in ["B05a", "B05b", "B05c"]]
-        ):
+        if all([emitting_ind in industries for emitting_ind in ["B05a", "B05b", "B05c"]]):
             emission_factors["coke_refining"] = get_coke_refining_emissions(
                 readers.icio[year], emission_factors, country_names + ["ROW"], year
             )
@@ -254,8 +233,7 @@ class DataWrapper:
             emission_factors["coke_refining"] = np.mean(list(emission_factors.values()))
 
         single_firm_dict = {
-            country: configuration.country_configs[country].single_firm_per_industry
-            for country in country_names
+            country: configuration.country_configs[country].single_firm_per_industry for country in country_names
         }
 
         industry_data = compile_industry_data(
@@ -283,9 +261,7 @@ class DataWrapper:
 
         proxy_inflation = {}
 
-        non_eu_countries = [
-            country for country in country_names if not country.is_eu_country
-        ]
+        non_eu_countries = [country for country in country_names if not country.is_eu_country]
 
         for country in non_eu_countries:
             if proxy_country_dict[country] is not None:
@@ -298,10 +274,7 @@ class DataWrapper:
                 proxy_inflation[country] = None
 
         calibration_data = pd.concat(
-            [
-                exogenous_data[country].get_calibration_data(year, quarter)
-                for country in country_names
-            ],
+            [exogenous_data[country].get_calibration_data(year, quarter) for country in country_names],
             axis=1,
         )
 
@@ -329,9 +302,7 @@ class DataWrapper:
                 emission_factors=(
                     EmissionsData.from_readers(
                         emission_factors,
-                        exchange_rate=readers.exchange_rates.from_usd_to_lcu(
-                            country, year
-                        ),
+                        exchange_rate=readers.exchange_rates.from_usd_to_lcu(country, year),
                     )
                     if add_emissions
                     else None
@@ -343,49 +314,38 @@ class DataWrapper:
 
         for country in country_names:
             if not country.is_eu_country:
-                synthetic_countries[country] = (
-                    SyntheticCountry.proxied_synthetic_country(
-                        country=country,
-                        proxy_country=configuration.country_configs[
-                            country
-                        ].eu_proxy_country,
-                        year=year,
-                        country_configuration=configuration.country_configs[country],
-                        industries=industries,
-                        readers=readers,
-                        exogenous_country_data=exogenous_data[country],
-                        country_industry_data=industry_data[country],
-                        year_range=year_range,
-                        goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
-                        quarter=quarter,
-                        proxy_inflation_data=proxy_inflation[country],
-                        emission_factors=(
-                            EmissionsData.from_readers(
-                                emission_factors,
-                                exchange_rate=readers.exchange_rates.from_usd_to_lcu(
-                                    country, year
-                                ),
-                            )
-                            if add_emissions
-                            else None
-                        ),
-                    )
+                synthetic_countries[country] = SyntheticCountry.proxied_synthetic_country(
+                    country=country,
+                    proxy_country=configuration.country_configs[country].eu_proxy_country,
+                    year=year,
+                    country_configuration=configuration.country_configs[country],
+                    industries=industries,
+                    readers=readers,
+                    exogenous_country_data=exogenous_data[country],
+                    country_industry_data=industry_data[country],
+                    year_range=year_range,
+                    goods_criticality_matrix=readers.goods_criticality.criticality_matrix,
+                    quarter=quarter,
+                    proxy_inflation_data=proxy_inflation[country],
+                    emission_factors=(
+                        EmissionsData.from_readers(
+                            emission_factors,
+                            exchange_rate=readers.exchange_rates.from_usd_to_lcu(country, year),
+                        )
+                        if add_emissions
+                        else None
+                    ),
                 )
 
         row_exports_growth = calibration_data[("ROW", "Exports (Growth)")]
         row_imports_growth = calibration_data[("ROW", "Imports (Growth)")]
 
         total_number_sellers = np.sum(
-            [
-                synthetic_countries[country].n_sellers_by_industry
-                for country in synthetic_countries
-            ],
+            [synthetic_countries[country].n_sellers_by_industry for country in synthetic_countries],
             axis=1,
         )
 
-        total_number_buyers = np.sum(
-            [synthetic_countries[country].n_buyers for country in synthetic_countries]
-        )
+        total_number_buyers = np.sum([synthetic_countries[country].n_buyers for country in synthetic_countries])
 
         synthetic_row = DefaultSyntheticRestOfTheWorld.from_readers(
             readers=readers,
@@ -400,9 +360,7 @@ class DataWrapper:
 
         exchange_rates = readers.exchange_rates.df
         origin_trade_proportions = readers.icio[year].get_origin_trade_proportions()
-        destination_trade_proportions = readers.icio[
-            year
-        ].get_destination_trade_proportions()
+        destination_trade_proportions = readers.icio[year].get_destination_trade_proportions()
 
         return cls(
             synthetic_countries=synthetic_countries,
@@ -415,9 +373,7 @@ class DataWrapper:
             industries=industries,
             emission_factors=emission_factors,
             emissions_energy_factors=(
-                EmissionsEnergyFactors.from_readers(readers.icio[year], country_names)
-                if add_emissions
-                else None
+                EmissionsEnergyFactors.from_readers(readers.icio[year], country_names) if add_emissions else None
             ),
             aggregation_structure=configuration.aggregation_structure,
             time_unit=configuration.time_unit,
@@ -471,9 +427,7 @@ class DataWrapper:
         year = self.configuration.year
         quarter = self.configuration.quarter
         calibration_index = self.calibration_data.index
-        calibration_before_index = calibration_index[
-            calibration_index < f"{year}-Q{quarter}"
-        ]
+        calibration_before_index = calibration_index[calibration_index < f"{year}-Q{quarter}"]
         return self.calibration_data.loc[calibration_before_index]
 
     @property
@@ -488,9 +442,7 @@ class DataWrapper:
         year = self.configuration.year
         quarter = self.configuration.quarter
         calibration_index = self.calibration_data.index
-        calibration_during_index = calibration_index[
-            calibration_index == f"{year}-Q{quarter}"
-        ]
+        calibration_during_index = calibration_index[calibration_index == f"{year}-Q{quarter}"]
         return self.calibration_data.loc[calibration_during_index]
 
 
@@ -518,10 +470,7 @@ def add_row_to_calibration(
     countries = list(calibration_data.columns.get_level_values(0).unique())
 
     total_country_exports_base = sum(
-        [
-            industry_data[country]["industry_vectors"]["Exports in USD"]
-            for country in countries
-        ]
+        [industry_data[country]["industry_vectors"]["Exports in USD"] for country in countries]
     )  # type: ignore
 
     all_exports = calibration_data.xs("Exports (Value)", axis=1, level=1)
@@ -531,10 +480,7 @@ def add_row_to_calibration(
     scaled_imports = all_imports / all_imports.loc[f"{year}-Q{quarter}"].iloc[0]
 
     total_country_exports = sum(
-        [
-            country_scaled_exports(country, industry_data, scaled_exports)
-            for country in countries
-        ]
+        [country_scaled_exports(country, industry_data, scaled_exports) for country in countries]
     )
 
     row_scale_exports = total_country_exports / total_country_exports_base.values  # type: ignore
@@ -547,49 +493,34 @@ def add_row_to_calibration(
     total_row_exports = row_exports.sum(axis=1)
 
     total_country_imports = sum(
-        [
-            country_scaled_imports(country, industry_data, scaled_imports)
-            for country in countries
-        ]
+        [country_scaled_imports(country, industry_data, scaled_imports) for country in countries]
     )
 
     row_imports = total_country_exports + row_exports - total_country_imports
     # clip to be positive imports
     total_row_imports = row_imports.sum(axis=1)
 
-    total_nominal_output = calibration_data.xs(
-        "Gross Output (Value)", axis=1, level=1
-    ).sum(axis=1)
-    total_real_output = calibration_data.xs(
-        "Real Gross Output (Value)", axis=1, level=1
-    ).sum(axis=1)
+    total_nominal_output = calibration_data.xs("Gross Output (Value)", axis=1, level=1).sum(axis=1)
+    total_real_output = calibration_data.xs("Real Gross Output (Value)", axis=1, level=1).sum(axis=1)
 
     row_ppi = total_nominal_output / total_real_output
 
     calibration_data[("ROW", "Exports (Value)")] = total_row_exports
     calibration_data[("ROW", "Imports (Value)")] = total_row_imports
-    calibration_data[("ROW", "Exports (Growth)")] = calibration_data[
-        ("ROW", "Exports (Value)")
-    ].pct_change()
-    calibration_data[("ROW", "Imports (Growth)")] = calibration_data[
-        ("ROW", "Imports (Value)")
-    ].pct_change()
+    calibration_data[("ROW", "Exports (Growth)")] = calibration_data[("ROW", "Exports (Value)")].pct_change()
+    calibration_data[("ROW", "Imports (Growth)")] = calibration_data[("ROW", "Imports (Value)")].pct_change()
 
     calibration_data[("ROW", "PPI (Value)")] = row_ppi
-    calibration_data[("ROW", "PPI (Growth)")] = calibration_data[
-        ("ROW", "PPI (Value)")
-    ].pct_change(fill_method=None)
+    calibration_data[("ROW", "PPI (Growth)")] = calibration_data[("ROW", "PPI (Value)")].pct_change(fill_method=None)
 
     # real imports are imports over ppi
     calibration_data[("ROW", "Real Imports (Value)")] = (
-        calibration_data[("ROW", "Imports (Value)")]
-        / calibration_data[("ROW", "PPI (Value)")]
+        calibration_data[("ROW", "Imports (Value)")] / calibration_data[("ROW", "PPI (Value)")]
     )
 
     # same for exports
     calibration_data[("ROW", "Real Exports (Value)")] = (
-        calibration_data[("ROW", "Exports (Value)")]
-        / calibration_data[("ROW", "PPI (Value)")]
+        calibration_data[("ROW", "Exports (Value)")] / calibration_data[("ROW", "PPI (Value)")]
     )
     return calibration_data
 
@@ -615,9 +546,7 @@ def country_scaled_exports(
     """
     exports = industry_data[country]["industry_vectors"]["Exports in USD"]
     scaled = scaled_exports[country]
-    return pd.DataFrame(
-        exports.values * scaled.values[:, np.newaxis], index=scaled.index
-    ).fillna(0)
+    return pd.DataFrame(exports.values * scaled.values[:, np.newaxis], index=scaled.index).fillna(0)
 
 
 def country_scaled_imports(
@@ -641,9 +570,7 @@ def country_scaled_imports(
     """
     imports = industry_data[country]["industry_vectors"]["Imports in USD"]
     scaled = scaled_imports[country]
-    return pd.DataFrame(
-        imports.values * scaled.values[:, np.newaxis], index=scaled.index
-    ).fillna(0)
+    return pd.DataFrame(imports.values * scaled.values[:, np.newaxis], index=scaled.index).fillna(0)
 
 
 def get_country_coke_refining_emissions(
@@ -667,9 +594,7 @@ def get_country_coke_refining_emissions(
     Returns:
         float: Calculated coke refining emissions for the country
     """
-    coefficients = (1 / icio_reader.get_intermediate_inputs_matrix(country)).loc[
-        ["B05a", "B05b", "B05c"], "C19"
-    ]
+    coefficients = (1 / icio_reader.get_intermediate_inputs_matrix(country)).loc[["B05a", "B05b", "B05c"], "C19"]
     return coefficients @ emission_factors_array
 
 
@@ -703,10 +628,5 @@ def get_coke_refining_emissions(
     )
 
     return np.mean(
-        [
-            get_country_coke_refining_emissions(
-                icio_reader, factors_array, country, year
-            )
-            for country in countries
-        ]
+        [get_country_coke_refining_emissions(icio_reader, factors_array, country, year) for country in countries]
     )

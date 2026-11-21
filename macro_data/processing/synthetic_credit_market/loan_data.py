@@ -115,14 +115,10 @@ class LongtermLoans(LoanData):
         for firm_id in range(firm_debt.shape[0]):
             principal[firms_corresponding_bank[firm_id], firm_id] = firm_debt[firm_id]
             interest[firms_corresponding_bank[firm_id], firm_id] = (
-                bank_data["Long-Term Interest Rates on Firm Loans"].values[
-                    firms_corresponding_bank[firm_id]
-                ]
+                bank_data["Long-Term Interest Rates on Firm Loans"].values[firms_corresponding_bank[firm_id]]
                 * firm_debt[firm_id]
             )
-            discount[firms_corresponding_bank[firm_id], firm_id] = (
-                1.0 / firm_loan_maturity * firm_debt[firm_id]
-            )
+            discount[firms_corresponding_bank[firm_id], firm_id] = 1.0 / firm_loan_maturity * firm_debt[firm_id]
 
         return cls(principal, interest, discount)
 
@@ -208,9 +204,7 @@ class ConsumptionExpansionLoans(LoanData):
         Returns:
             ConsumptionExpansionLoans: Container with preprocessed loan data
         """
-        household_other_debt = household_data[
-            "Outstanding Balance of other Non-Mortgage Loans"
-        ].values
+        household_other_debt = household_data["Outstanding Balance of other Non-Mortgage Loans"].values
         households_corresponding_bank = household_data["Corresponding Bank ID"].values
 
         principal = np.zeros((bank_data.shape[0], household_other_debt.shape[0]))
@@ -218,9 +212,7 @@ class ConsumptionExpansionLoans(LoanData):
         discount = np.zeros((bank_data.shape[0], household_other_debt.shape[0]))
 
         for household_id in range(household_other_debt.shape[0]):
-            principal[households_corresponding_bank[household_id], household_id] = (
-                household_other_debt[household_id]
-            )
+            principal[households_corresponding_bank[household_id], household_id] = household_other_debt[household_id]
             interest[households_corresponding_bank[household_id], household_id] = (
                 bank_data["Interest Rates on Household Consumption Loans"].values[
                     households_corresponding_bank[household_id]
@@ -313,9 +305,7 @@ class MortgageLoans(LoanData):
         Returns:
             MortgageLoans: Container with preprocessed loan data
         """
-        household_mortgage_debt = household_data[
-            "Outstanding Balance of HMR Mortgages"
-        ].values
+        household_mortgage_debt = household_data["Outstanding Balance of HMR Mortgages"].values
         households_corresponding_bank = household_data["Corresponding Bank ID"].values
 
         principal = np.zeros((bank_data.shape[0], household_mortgage_debt.shape[0]))
@@ -323,13 +313,9 @@ class MortgageLoans(LoanData):
         discount = np.zeros((bank_data.shape[0], household_mortgage_debt.shape[0]))
 
         for household_id in range(household_mortgage_debt.shape[0]):
-            principal[households_corresponding_bank[household_id], household_id] = (
-                household_mortgage_debt[household_id]
-            )
+            principal[households_corresponding_bank[household_id], household_id] = household_mortgage_debt[household_id]
             interest[households_corresponding_bank[household_id], household_id] = (
-                bank_data["Interest Rates on Mortgages"].values[
-                    households_corresponding_bank[household_id]
-                ]
+                bank_data["Interest Rates on Mortgages"].values[households_corresponding_bank[household_id]]
                 * household_mortgage_debt[household_id]
             )
             discount[households_corresponding_bank[household_id], household_id] = (

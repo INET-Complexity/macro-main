@@ -55,15 +55,11 @@ def analyze_dataframe(df: pd.DataFrame, name: str) -> dict:
                     col_info["is_categorical"] = True
                     col_info["unique_values"] = sorted(non_null.unique().tolist())
                     value_counts = col_data.value_counts()
-                    col_info["value_distribution"] = {
-                        str(k): int(v) for k, v in value_counts.items()
-                    }
+                    col_info["value_distribution"] = {str(k): int(v) for k, v in value_counts.items()}
         else:
             col_info["type"] = "categorical"
             value_counts = col_data.value_counts()
-            col_info["top_values"] = {
-                str(k): int(v) for k, v in value_counts.head(10).items()
-            }
+            col_info["top_values"] = {str(k): int(v) for k, v in value_counts.head(10).items()}
 
         results["columns"][col] = col_info
 
@@ -79,18 +75,14 @@ def analyze_dataframe(df: pd.DataFrame, name: str) -> dict:
                 print(f"  Unique values: {col_info['unique_values']}")
             else:
                 print(f"  Range: [{col_info['min']:.2f}, {col_info['max']:.2f}]")
-                print(
-                    f"  Mean: {col_info['mean']:.2f}, Median: {col_info['median']:.2f}"
-                )
+                print(f"  Mean: {col_info['mean']:.2f}, Median: {col_info['median']:.2f}")
         elif "top_values" in col_info:
             print(f"  Top values: {dict(list(col_info['top_values'].items())[:3])}")
 
     return results
 
 
-def analyze_relationships(
-    firms_annual: pd.DataFrame, firms_quarterly: pd.DataFrame, banks: pd.DataFrame
-) -> dict:
+def analyze_relationships(firms_annual: pd.DataFrame, firms_quarterly: pd.DataFrame, banks: pd.DataFrame) -> dict:
     """Analyze relationships between the three dataframes."""
     print(f"\n{'=' * 60}")
     print("Analyzing Relationships")
@@ -108,9 +100,7 @@ def analyze_relationships(
     print(f"  Quarterly firms: {len(quarterly_gvkeys)} unique companies")
     print(f"  Banks: {len(bank_gvkeys)} unique companies")
     print(f"  Annual ∩ Quarterly: {len(annual_gvkeys & quarterly_gvkeys)} companies")
-    print(
-        f"  Banks ∩ Firms: {len(bank_gvkeys & (annual_gvkeys | quarterly_gvkeys))} companies"
-    )
+    print(f"  Banks ∩ Firms: {len(bank_gvkeys & (annual_gvkeys | quarterly_gvkeys))} companies")
 
     relationships["gvkey_overlap"] = {
         "annual_unique": len(annual_gvkeys),
@@ -124,9 +114,7 @@ def analyze_relationships(
     if "conm" in firms_annual.columns and "conm" in firms_quarterly.columns:
         annual_conm = set(firms_annual["conm"].dropna().unique())
         quarterly_conm = set(firms_quarterly["conm"].dropna().unique())
-        bank_conm = (
-            set(banks["conm"].dropna().unique()) if "conm" in banks.columns else set()
-        )
+        bank_conm = set(banks["conm"].dropna().unique()) if "conm" in banks.columns else set()
 
         print("\nconm (company name) analysis:")
         print(f"  Annual: {len(annual_conm)} unique names")
@@ -136,9 +124,7 @@ def analyze_relationships(
 
         # The code merges on conm, so this is critical
         print("\n  ⚠️  CRITICAL: Firms are merged on 'conm' (company name)")
-        print(
-            f"  Companies in both annual and quarterly: {len(annual_conm & quarterly_conm)}"
-        )
+        print(f"  Companies in both annual and quarterly: {len(annual_conm & quarterly_conm)}")
 
         relationships["conm_overlap"] = {
             "annual_unique": len(annual_conm),
@@ -196,22 +182,16 @@ def generate_spoofing_strategy(analysis_results: dict) -> dict:
                 strategy["columns_to_remove"].append(f"{file_name}:{col_name}")
 
             # Categorical columns - resample from distribution
-            elif col_info.get("type") == "categorical" or col_info.get(
-                "is_categorical"
-            ):
+            elif col_info.get("type") == "categorical" or col_info.get("is_categorical"):
                 print(f"  ✓ {col_name}: Categorical resampling")
-                strategy["columns_to_spoof"][
-                    f"{file_name}:{col_name}"
-                ] = "categorical_resample"
+                strategy["columns_to_spoof"][f"{file_name}:{col_name}"] = "categorical_resample"
 
             # Numeric columns - fit distribution
             elif col_info.get("type") == "numeric":
                 # Check if values are strictly positive (use lognormal)
                 if col_info["min"] >= 0:
                     print(f"  ✓ {col_name}: Lognormal distribution (positive values)")
-                    strategy["columns_to_spoof"][
-                        f"{file_name}:{col_name}"
-                    ] = "lognormal"
+                    strategy["columns_to_spoof"][f"{file_name}:{col_name}"] = "lognormal"
                 else:
                     print(f"  ✓ {col_name}: Normal distribution (can be negative)")
                     strategy["columns_to_spoof"][f"{file_name}:{col_name}"] = "normal"

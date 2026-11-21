@@ -23,7 +23,7 @@ is_eu = france.is_eu_country  # True
 
 # Convert codes
 two_letter = france.to_two_letter_code()  # 'FR'
-three_letter = Country.convert_two_letter_to_three('FR')  # 'FRA'
+three_letter = Country.convert_two_letter_to_three("FR")  # 'FRA'
 ```
 
 ## API Reference

@@ -147,9 +147,7 @@ class SimpleTFPGrowth(ProductivityGrowth):
             valid_firms = positive_production & positive_investment
 
             if np.any(valid_firms):
-                investment_intensity[valid_firms] = (
-                    productivity_investment[valid_firms] / production[valid_firms]
-                )
+                investment_intensity[valid_firms] = productivity_investment[valid_firms] / production[valid_firms]
 
                 # Apply diminishing returns with elasticity parameter
                 investment_contribution = investment_effectiveness * np.power(
@@ -169,9 +167,7 @@ class StochasticTFPGrowth(ProductivityGrowth):
     where ε ~ N(0, σ²)
     """
 
-    def __init__(
-        self, investment_effectiveness: float = 0.1, shock_std: float = 0.01, **kwargs
-    ):
+    def __init__(self, investment_effectiveness: float = 0.1, shock_std: float = 0.01, **kwargs):
         """Initialize StochasticTFPGrowth with parameters.
 
         Args:
@@ -220,9 +216,7 @@ class StochasticTFPGrowth(ProductivityGrowth):
             valid_firms = positive_production & positive_investment
 
             if np.any(valid_firms):
-                investment_intensity[valid_firms] = (
-                    productivity_investment[valid_firms] / production[valid_firms]
-                )
+                investment_intensity[valid_firms] = productivity_investment[valid_firms] / production[valid_firms]
 
                 investment_contribution = investment_effectiveness * np.power(
                     investment_intensity, investment_elasticity
@@ -316,9 +310,7 @@ class SectoralTFPGrowth(ProductivityGrowth):
             valid_firms = positive_production & positive_investment
 
             if np.any(valid_firms):
-                investment_intensity[valid_firms] = (
-                    productivity_investment[valid_firms] / production[valid_firms]
-                )
+                investment_intensity[valid_firms] = productivity_investment[valid_firms] / production[valid_firms]
 
                 # Apply sector-specific effectiveness if available
                 if sector_ids is not None:
@@ -333,9 +325,7 @@ class SectoralTFPGrowth(ProductivityGrowth):
                             tfp_growth[sector_mask] += sector_contribution
                 else:
                     effectiveness = self.investment_effectiveness
-                    investment_contribution = effectiveness * np.power(
-                        investment_intensity, investment_elasticity
-                    )
+                    investment_contribution = effectiveness * np.power(investment_intensity, investment_elasticity)
                     tfp_growth += investment_contribution
 
         return tfp_growth

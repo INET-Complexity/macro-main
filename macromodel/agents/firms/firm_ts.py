@@ -184,8 +184,7 @@ class FirmTimeSeries(TimeSeries):
             FirmTimeSeries: Initialized time series container with all variables set to starting values
         """
         gross_operating_surplus_mixed_income = (
-            data["Price"].values
-            * (data["Production"].values + data["Inventory"].values)
+            data["Price"].values * (data["Production"].values + data["Inventory"].values)
             - data["Total Wages Paid"].values
             - np.matmul(used_intermediate_inputs, initial_good_prices)
             - data["Taxes paid on Production"].values
@@ -199,9 +198,7 @@ class FirmTimeSeries(TimeSeries):
             wage_tightness_markup=np.full(data.shape[0], np.nan),
             n_firms_by_industry=get_n_firms_by_industry(data, n_industries),
             number_of_employees=data["Number of Employees"].values.astype(int),
-            number_of_employees_histogram=get_histogram(
-                data["Number of Employees"].values.astype(int), None
-            ),
+            number_of_employees_histogram=get_histogram(data["Number of Employees"].values.astype(int), None),
             #
             production=data["Production"].values,
             production_histogram=get_histogram(data["Production"].values, None),
@@ -210,9 +207,7 @@ class FirmTimeSeries(TimeSeries):
                 data["Production"].values / data["Number of Employees"].values, None
             ),
             target_production=np.full(data.shape[0], np.nan),
-            constrained_intermediate_inputs_target_production=np.full(
-                len(data), np.nan
-            ),
+            constrained_intermediate_inputs_target_production=np.full(len(data), np.nan),
             constrained_capital_inputs_target_production=np.full(len(data), np.nan),
             #
             price=data["Price"].values,
@@ -221,8 +216,7 @@ class FirmTimeSeries(TimeSeries):
             profits=data["Profits"].values,
             expected_profits=data["Profits"].values,
             total_wage=data["Total Wages Paid"].values,
-            real_wage_per_capita=data["Total Wages Paid"].values
-            / data["Number of Employees"].values,
+            real_wage_per_capita=data["Total Wages Paid"].values / data["Number of Employees"].values,
             unit_costs=data["Unit Costs"].values,
             taxes_paid_on_production=data["Taxes paid on Production"].values,
             corporate_taxes_paid=data["Corporate Taxes Paid"].values,
@@ -231,15 +225,9 @@ class FirmTimeSeries(TimeSeries):
             estimated_demand=data["Demand"].values,
             demand=data["Demand"].values.copy(),
             #
-            unconstrained_target_intermediate_inputs=np.full(
-                (data.shape[0], n_industries), np.nan
-            ),
-            unconstrained_target_intermediate_inputs_costs=np.full(
-                data.shape[0], np.nan
-            ),
-            unconstrained_target_capital_inputs=np.full(
-                (data.shape[0], n_industries), np.nan
-            ),
+            unconstrained_target_intermediate_inputs=np.full((data.shape[0], n_industries), np.nan),
+            unconstrained_target_intermediate_inputs_costs=np.full(data.shape[0], np.nan),
+            unconstrained_target_capital_inputs=np.full((data.shape[0], n_industries), np.nan),
             unconstrained_target_capital_inputs_costs=np.full(data.shape[0], np.nan),
             target_intermediate_inputs=used_intermediate_inputs,
             target_capital_inputs=used_capital_inputs,
@@ -256,45 +244,24 @@ class FirmTimeSeries(TimeSeries):
             total_inventory_change=np.zeros(data.shape[0]),
             #
             intermediate_inputs_stock=intermediate_inputs_stock,
-            intermediate_inputs_stock_value=np.matmul(
-                intermediate_inputs_stock, initial_good_prices
-            ),
+            intermediate_inputs_stock_value=np.matmul(intermediate_inputs_stock, initial_good_prices),
             intermediate_inputs_stock_industry=intermediate_inputs_stock.sum(axis=0),
             used_intermediate_inputs=used_intermediate_inputs,
-            used_intermediate_inputs_costs=np.matmul(
-                used_intermediate_inputs, initial_good_prices
-            ),
-            total_intermediate_inputs_bought_costs=np.matmul(
-                used_intermediate_inputs, initial_good_prices
-            ),
+            used_intermediate_inputs_costs=np.matmul(used_intermediate_inputs, initial_good_prices),
+            total_intermediate_inputs_bought_costs=np.matmul(used_intermediate_inputs, initial_good_prices),
             #
             capital_inputs_stock=capital_inputs_stock,
-            capital_inputs_stock_value=np.matmul(
-                capital_inputs_stock, initial_good_prices
-            ),
+            capital_inputs_stock_value=np.matmul(capital_inputs_stock, initial_good_prices),
             capital_inputs_stock_industry=capital_inputs_stock.sum(axis=0),
-            expected_capital_inputs_stock_value=np.matmul(
-                capital_inputs_stock, initial_good_prices
-            ),
+            expected_capital_inputs_stock_value=np.matmul(capital_inputs_stock, initial_good_prices),
             used_capital_inputs=used_capital_inputs,
-            used_capital_inputs_costs=np.matmul(
-                used_capital_inputs, initial_good_prices
-            ),
-            total_capital_inputs_bought_costs=np.matmul(
-                used_capital_inputs, initial_good_prices
-            ),
-            gross_fixed_capital_formation=(
-                used_capital_inputs * initial_good_prices
-            ).sum(axis=0),
+            used_capital_inputs_costs=np.matmul(used_capital_inputs, initial_good_prices),
+            total_capital_inputs_bought_costs=np.matmul(used_capital_inputs, initial_good_prices),
+            gross_fixed_capital_formation=(used_capital_inputs * initial_good_prices).sum(axis=0),
             #
-            real_amount_bought_as_intermediate_inputs=np.full(
-                (data.shape[0], n_industries), np.nan
-            ),
-            real_amount_bought_as_capital_goods=np.full(
-                (data.shape[0], n_industries), np.nan
-            ),
-            total_sales=data["Price"].values * data["Production"].values
-            - data["Taxes paid on Production"].values,
+            real_amount_bought_as_intermediate_inputs=np.full((data.shape[0], n_industries), np.nan),
+            real_amount_bought_as_capital_goods=np.full((data.shape[0], n_industries), np.nan),
+            total_sales=data["Price"].values * data["Production"].values - data["Taxes paid on Production"].values,
             #
             target_short_term_credit=np.zeros(data.shape[0]),
             total_target_short_term_credit=[0.0],
@@ -330,27 +297,16 @@ class FirmTimeSeries(TimeSeries):
             gross_operating_surplus_mixed_income=gross_operating_surplus_mixed_income,
             #
             total_hill_tail_estimate_production=[
-                (
-                    0.0
-                    if not calculate_hill_exponent
-                    else calculate_tail_exponent(data["Production"].values.copy())
-                )
+                (0.0 if not calculate_hill_exponent else calculate_tail_exponent(data["Production"].values.copy()))
             ],
             total_hill_tail_estimate_number_of_employees=[
-                (
-                    0.0
-                    if not calculate_hill_exponent
-                    else data["Number of Employees"].values.astype(int).copy()
-                )
+                (0.0 if not calculate_hill_exponent else data["Number of Employees"].values.astype(int).copy())
             ],
             total_hill_tail_estimate_output_by_employee=[
                 (
                     0.0
                     if not calculate_hill_exponent
-                    else calculate_tail_exponent(
-                        data["Production"].values
-                        / data["Number of Employees"].values.copy()
-                    )
+                    else calculate_tail_exponent(data["Production"].values / data["Number of Employees"].values.copy())
                 )
             ],
             inputs_emissions=inputs_emissions,
@@ -396,17 +352,11 @@ class FirmTimeSeries(TimeSeries):
         self.dicts["inventory_nominal"] = [self.current("price") * inventory]
 
         self.dicts["intermediate_inputs_stock"] = [intermediate_inputs_stock]
-        self.dicts["intermediate_inputs_stock_value"] = [
-            np.matmul(intermediate_inputs_stock, initial_good_prices)
-        ]
-        self.dicts["intermediate_inputs_stock_industry"] = [
-            intermediate_inputs_stock.sum(axis=0)
-        ]
+        self.dicts["intermediate_inputs_stock_value"] = [np.matmul(intermediate_inputs_stock, initial_good_prices)]
+        self.dicts["intermediate_inputs_stock_industry"] = [intermediate_inputs_stock.sum(axis=0)]
 
         self.dicts["capital_inputs_stock"] = [capital_inputs_stock]
-        self.dicts["capital_inputs_stock_value"] = [
-            np.matmul(capital_inputs_stock, initial_good_prices)
-        ]
+        self.dicts["capital_inputs_stock_value"] = [np.matmul(capital_inputs_stock, initial_good_prices)]
         self.dicts["capital_inputs_stock_industry"] = [capital_inputs_stock.sum(axis=0)]
 
         equity = (
@@ -457,9 +407,7 @@ def create_firms_timeseries(
         wage_tightness_markup=np.full(data.shape[0], np.nan),
         n_firms_by_industry=get_n_firms_by_industry(data, n_industries),
         number_of_employees=data["Number of Employees"].values.astype(int),
-        number_of_employees_histogram=get_histogram(
-            data["Number of Employees"].values.astype(int), None
-        ),
+        number_of_employees_histogram=get_histogram(data["Number of Employees"].values.astype(int), None),
         #
         production=data["Production"].values,
         production_histogram=get_histogram(data["Production"].values, None),
@@ -477,8 +425,7 @@ def create_firms_timeseries(
         profits=data["Profits"].values,
         expected_profits=data["Profits"].values,
         total_wage=data["Total Wages Paid"].values,
-        real_wage_per_capita=data["Total Wages Paid"].values
-        / data["Number of Employees"].values,
+        real_wage_per_capita=data["Total Wages Paid"].values / data["Number of Employees"].values,
         unit_costs=data["Unit Costs"].values,
         taxes_paid_on_production=data["Taxes paid on Production"].values,
         corporate_taxes_paid=data["Corporate Taxes Paid"].values,
@@ -487,13 +434,9 @@ def create_firms_timeseries(
         estimated_demand=data["Demand"].values,
         demand=data["Demand"].values.copy(),
         #
-        unconstrained_target_intermediate_inputs=np.full(
-            (data.shape[0], n_industries), np.nan
-        ),
+        unconstrained_target_intermediate_inputs=np.full((data.shape[0], n_industries), np.nan),
         unconstrained_target_intermediate_inputs_costs=np.full(data.shape[0], np.nan),
-        unconstrained_target_capital_inputs=np.full(
-            (data.shape[0], n_industries), np.nan
-        ),
+        unconstrained_target_capital_inputs=np.full((data.shape[0], n_industries), np.nan),
         unconstrained_target_capital_inputs_costs=np.full(data.shape[0], np.nan),
         target_intermediate_inputs=used_intermediate_inputs,
         target_capital_inputs=used_capital_inputs,
@@ -510,41 +453,24 @@ def create_firms_timeseries(
         total_inventory_change=np.zeros(data.shape[0]),
         #
         intermediate_inputs_stock=intermediate_inputs_stock,
-        intermediate_inputs_stock_value=np.matmul(
-            intermediate_inputs_stock, initial_good_prices
-        ),
+        intermediate_inputs_stock_value=np.matmul(intermediate_inputs_stock, initial_good_prices),
         intermediate_inputs_stock_industry=intermediate_inputs_stock.sum(axis=0),
         used_intermediate_inputs=used_intermediate_inputs,
-        used_intermediate_inputs_costs=np.matmul(
-            used_intermediate_inputs, initial_good_prices
-        ),
-        total_intermediate_inputs_bought_costs=np.matmul(
-            used_intermediate_inputs, initial_good_prices
-        ),
+        used_intermediate_inputs_costs=np.matmul(used_intermediate_inputs, initial_good_prices),
+        total_intermediate_inputs_bought_costs=np.matmul(used_intermediate_inputs, initial_good_prices),
         #
         capital_inputs_stock=capital_inputs_stock,
         capital_inputs_stock_value=np.matmul(capital_inputs_stock, initial_good_prices),
         capital_inputs_stock_industry=capital_inputs_stock.sum(axis=0),
-        expected_capital_inputs_stock_value=np.matmul(
-            capital_inputs_stock, initial_good_prices
-        ),
+        expected_capital_inputs_stock_value=np.matmul(capital_inputs_stock, initial_good_prices),
         used_capital_inputs=used_capital_inputs,
         used_capital_inputs_costs=np.matmul(used_capital_inputs, initial_good_prices),
-        total_capital_inputs_bought_costs=np.matmul(
-            used_capital_inputs, initial_good_prices
-        ),
-        gross_fixed_capital_formation=(used_capital_inputs * initial_good_prices).sum(
-            axis=0
-        ),
+        total_capital_inputs_bought_costs=np.matmul(used_capital_inputs, initial_good_prices),
+        gross_fixed_capital_formation=(used_capital_inputs * initial_good_prices).sum(axis=0),
         #
-        real_amount_bought_as_intermediate_inputs=np.full(
-            (data.shape[0], n_industries), np.nan
-        ),
-        real_amount_bought_as_capital_goods=np.full(
-            (data.shape[0], n_industries), np.nan
-        ),
-        total_sales=data["Price"].values * data["Production"].values
-        - data["Taxes paid on Production"].values,
+        real_amount_bought_as_intermediate_inputs=np.full((data.shape[0], n_industries), np.nan),
+        real_amount_bought_as_capital_goods=np.full((data.shape[0], n_industries), np.nan),
+        total_sales=data["Price"].values * data["Production"].values - data["Taxes paid on Production"].values,
         #
         target_short_term_credit=np.zeros(data.shape[0]),
         total_target_short_term_credit=[0.0],
@@ -580,27 +506,16 @@ def create_firms_timeseries(
         gross_operating_surplus_mixed_income=gross_operating_surplus_mixed_income,
         #
         total_hill_tail_estimate_production=[
-            (
-                0.0
-                if not calculate_hill_exponent
-                else calculate_tail_exponent(data["Production"].values.copy())
-            )
+            (0.0 if not calculate_hill_exponent else calculate_tail_exponent(data["Production"].values.copy()))
         ],
         total_hill_tail_estimate_number_of_employees=[
-            (
-                0.0
-                if not calculate_hill_exponent
-                else data["Number of Employees"].values.astype(int).copy()
-            )
+            (0.0 if not calculate_hill_exponent else data["Number of Employees"].values.astype(int).copy())
         ],
         total_hill_tail_estimate_output_by_employee=[
             (
                 0.0
                 if not calculate_hill_exponent
-                else calculate_tail_exponent(
-                    data["Production"].values
-                    / data["Number of Employees"].values.copy()
-                )
+                else calculate_tail_exponent(data["Production"].values / data["Number of Employees"].values.copy())
             )
         ],
     )

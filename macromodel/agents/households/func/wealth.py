@@ -208,10 +208,8 @@ class SimpleWealthSetter(WealthSetter):
             np.ndarray: Updated real asset values
         """
         return (
-            (1 - self.other_real_assets_depreciation_rate)
-            * current_wealth_in_other_real_assets
-            + current_investment_in_other_real_assets
-        )
+            1 - self.other_real_assets_depreciation_rate
+        ) * current_wealth_in_other_real_assets + current_investment_in_other_real_assets
 
     def compute_wealth_in_other_financial_assets(
         self,
@@ -333,9 +331,7 @@ class DefaultWealthSetter(WealthSetter):
         Returns:
             Tuple[np.ndarray, np.ndarray]: Used deposits and other assets
         """
-        used_up_wealth_in_other_financial_assets = np.minimum(
-            current_wealth_in_other_financial_assets, used_up_wealth
-        )
+        used_up_wealth_in_other_financial_assets = np.minimum(current_wealth_in_other_financial_assets, used_up_wealth)
         used_up_wealth_in_deposits = np.minimum(
             current_wealth_in_deposits,
             used_up_wealth - used_up_wealth_in_other_financial_assets,
@@ -360,10 +356,8 @@ class DefaultWealthSetter(WealthSetter):
             np.ndarray: Updated real asset values
         """
         return (
-            (1 - self.other_real_assets_depreciation_rate)
-            * current_wealth_in_other_real_assets
-            + current_investment_in_other_real_assets
-        )
+            1 - self.other_real_assets_depreciation_rate
+        ) * current_wealth_in_other_real_assets + current_investment_in_other_real_assets
 
     def compute_wealth_in_other_financial_assets(
         self,

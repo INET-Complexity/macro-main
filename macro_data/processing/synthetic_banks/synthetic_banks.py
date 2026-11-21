@@ -167,19 +167,13 @@ class SyntheticBanks(ABC):
             firm_debt (np.ndarray): Array of firm debt amounts
         """
         # Set initial household deposits
-        household_deposits = synthetic_population.household_data[
-            "Wealth in Deposits"
-        ].values
+        household_deposits = synthetic_population.household_data["Wealth in Deposits"].values
         self.set_deposits_from_households(household_deposits=household_deposits)
 
         # Set initial household loans
         household_mortgage_debt = (
-            synthetic_population.household_data[
-                "Outstanding Balance of HMR Mortgages"
-            ].values
-            + synthetic_population.household_data[
-                "Outstanding Balance of Mortgages on other Properties"
-            ].values
+            synthetic_population.household_data["Outstanding Balance of HMR Mortgages"].values
+            + synthetic_population.household_data["Outstanding Balance of Mortgages on other Properties"].values
         )
         household_other_debt = synthetic_population.household_data[
             "Outstanding Balance of other Non-Mortgage Loans"
@@ -320,12 +314,8 @@ class SyntheticBanks(ABC):
 
         self.set_interest_received_from_loans()
         # TODO Override, to align with Sam
-        central_bank_policy_rate = self.bank_data[
-            "Interest Rates on Household Deposits"
-        ].values[0]
-        self.set_interest_received_from_deposits(
-            central_bank_policy_rate=central_bank_policy_rate
-        )
+        central_bank_policy_rate = self.bank_data["Interest Rates on Household Deposits"].values[0]
+        self.set_interest_received_from_deposits(central_bank_policy_rate=central_bank_policy_rate)
         self.set_profits()
         self.set_corporate_taxes_paid(tau_bank=tau_bank)
 
@@ -371,14 +361,10 @@ class SyntheticBanks(ABC):
         self.bank_data["Long-Term Interest Rates on Firm Loans"] = self.firm_rate
 
         # Interest rates for household payday loans
-        self.bank_data["Interest Rates on Household Payday Loans"] = (
-            self.hh_consumption_rate
-        )
+        self.bank_data["Interest Rates on Household Payday Loans"] = self.hh_consumption_rate
 
         # Interest rates for household consumption loans
-        self.bank_data["Interest Rates on Household Consumption Loans"] = (
-            self.hh_consumption_rate
-        )
+        self.bank_data["Interest Rates on Household Consumption Loans"] = self.hh_consumption_rate
 
         # Interest rates for mortgages
         self.bank_data["Interest Rates on Mortgages"] = self.hh_mortgage_rate
@@ -393,9 +379,7 @@ class SyntheticBanks(ABC):
         # self.bank_data["Interest Rates on Household Deposits"] = central_bank_policy_rate
 
         # Overdraft rate on household deposits
-        self.bank_data["Overdraft Rate on Household Deposits"] = (
-            self.hh_consumption_rate
-        )
+        self.bank_data["Overdraft Rate on Household Deposits"] = self.hh_consumption_rate
 
     def set_interest_received_from_loans(self) -> None:
         """Calculate and set the interest income received from all loans.
@@ -408,17 +392,13 @@ class SyntheticBanks(ABC):
         The calculated interest income is stored in the bank_data DataFrame.
         """
         self.bank_data["Interest received from Loans"] = (
-            self.bank_data["Long-Term Interest Rates on Firm Loans"]
-            * self.bank_data["Loans to Firms"]
+            self.bank_data["Long-Term Interest Rates on Firm Loans"] * self.bank_data["Loans to Firms"]
             + self.bank_data["Interest Rates on Household Consumption Loans"]
             * self.bank_data["Consumption Loans to Households"]
-            + self.bank_data["Interest Rates on Mortgages"]
-            * self.bank_data["Mortgages to Households"]
+            + self.bank_data["Interest Rates on Mortgages"] * self.bank_data["Mortgages to Households"]
         )
 
-    def set_interest_received_from_deposits(
-        self, central_bank_policy_rate: float
-    ) -> None:
+    def set_interest_received_from_deposits(self, central_bank_policy_rate: float) -> None:
         """Calculate and set the interest income received from deposits.
 
         This method computes interest income from:
@@ -432,13 +412,11 @@ class SyntheticBanks(ABC):
         """
         self.bank_data["Interest received from Deposits"] = (
             central_bank_policy_rate * self.bank_data["Deposits"]
-            + self.bank_data["Overdraft Rate on Firm Deposits"]
-            * np.maximum(0, -self.bank_data["Deposits from Firms"])
+            + self.bank_data["Overdraft Rate on Firm Deposits"] * np.maximum(0, -self.bank_data["Deposits from Firms"])
             + self.bank_data["Overdraft Rate on Household Deposits"]
             * np.maximum(0, -self.bank_data["Deposits from Households"])
         ) - (
-            +self.bank_data["Interest Rates on Firm Deposits"]
-            * np.maximum(0, self.bank_data["Deposits from Firms"])
+            +self.bank_data["Interest Rates on Firm Deposits"] * np.maximum(0, self.bank_data["Deposits from Firms"])
             + self.bank_data["Interest Rates on Household Deposits"]
             * np.maximum(0, self.bank_data["Deposits from Households"])
         )
@@ -453,8 +431,7 @@ class SyntheticBanks(ABC):
         4. Adjusting for any extraordinary items
         """
         self.bank_data["Profits"] = (
-            self.bank_data["Interest received from Loans"]
-            + self.bank_data["Interest received from Deposits"]
+            self.bank_data["Interest received from Loans"] + self.bank_data["Interest received from Deposits"]
         )
 
     def set_corporate_taxes_paid(self, tau_bank: float) -> None:
@@ -463,9 +440,7 @@ class SyntheticBanks(ABC):
         Args:
             tau_bank (float): Corporate tax rate applicable to banks
         """
-        self.bank_data["Corporate Taxes Paid"] = tau_bank * np.maximum(
-            0.0, self.bank_data["Profits"]
-        )
+        self.bank_data["Corporate Taxes Paid"] = tau_bank * np.maximum(0.0, self.bank_data["Profits"])
 
     def set_market_share(self) -> None:
         """Calculate and set market share for each bank.
@@ -491,9 +466,7 @@ class SyntheticBanks(ABC):
                 + np.absolute(self.bank_data["Deposits from Households"])
             ) / total_amount_of_loans_and_deposits
         else:
-            self.bank_data["Market Share"] = np.full(
-                len(self.bank_data), 1.0 / len(self.bank_data)
-            )
+            self.bank_data["Market Share"] = np.full(len(self.bank_data), 1.0 / len(self.bank_data))
 
     def set_liability(self) -> None:
         """Calculate and set total liabilities for each bank.

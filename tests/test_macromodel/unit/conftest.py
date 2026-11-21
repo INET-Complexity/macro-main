@@ -114,9 +114,7 @@ def test_households(datawrapper):
     industries = datawrapper.industries
     country = datawrapper.synthetic_countries["FRA"]
     population = country.population
-    initial_consumption_by_industry = country.industry_data["industry_vectors"][
-        "Household Consumption in LCU"
-    ]
+    initial_consumption_by_industry = country.industry_data["industry_vectors"]["Household Consumption in LCU"]
     scale = data_config.country_configs["FRA"].scale
 
     households = Households.from_pickled_agent(
@@ -146,9 +144,7 @@ def test_firms(datawrapper):
         country_name="FRA",
         all_country_names=["FRA", "ROW"],
         goods_criticality_matrix=country.goods_criticality_matrix,
-        average_initial_price=country.industry_data["industry_vectors"][
-            "Average Initial Price"
-        ].values,
+        average_initial_price=country.industry_data["industry_vectors"]["Average Initial Price"].values,
         industries=datawrapper.industries,
     )
 
@@ -162,15 +158,11 @@ def test_central_government(datawrapper, test_individuals):
 
     central_government_config = CentralGovernmentConfiguration()
 
-    taxes_less_subsidies = country.industry_data["industry_vectors"][
-        "Taxes Less Subsidies Rates"
-    ].values
+    taxes_less_subsidies = country.industry_data["industry_vectors"]["Taxes Less Subsidies Rates"].values
 
     n_industries = datawrapper.n_industries
 
-    n_unemployed = np.sum(
-        test_individuals.states["Activity Status"] == ActivityStatus.UNEMPLOYED
-    )
+    n_unemployed = np.sum(test_individuals.states["Activity Status"] == ActivityStatus.UNEMPLOYED)
 
     central_government = CentralGovernment.from_pickled_agent(
         synthetic_central_government=synthetic_central_government,
@@ -267,9 +259,7 @@ def test_labour_market(test_config):
     return LabourMarket.from_data(
         country_name="FRA",
         n_industries=len(test_config["model"]["industries"]["value"]),
-        initial_individual_activity=np.array(
-            [ActivityStatus.EMPLOYED, ActivityStatus.UNEMPLOYED]
-        ),
+        initial_individual_activity=np.array([ActivityStatus.EMPLOYED, ActivityStatus.UNEMPLOYED]),
         initial_individual_employment_industry=np.array([0, 1]),
         config=test_config["FRA"]["labour_market"],
     )
@@ -430,26 +420,14 @@ def test_country(
 @pytest.fixture(scope="module", name="datawrapper")
 def instantiate_datawrapper() -> DataWrapper:
     data_config = default_data_configuration(countries=["FRA"], seed=0)
-    raw_data_path = (
-        Path(__file__).parent.parent.parent
-        / "test_macro_data"
-        / "unit"
-        / "sample_raw_data"
-    )
+    raw_data_path = Path(__file__).parent.parent.parent / "test_macro_data" / "unit" / "sample_raw_data"
     return DataWrapper.from_config(data_config, raw_data_path, single_hfcs_survey=True)
 
 
 @pytest.fixture(scope="module", name="allind_datawrapper")
 def instantiate_allind_datawrapper() -> DataWrapper:
-    data_config = default_data_configuration(
-        countries=["FRA"], aggregate_industries=False, seed=0
-    )
-    raw_data_path = (
-        Path(__file__).parent.parent.parent
-        / "test_macro_data"
-        / "unit"
-        / "sample_raw_data"
-    )
+    data_config = default_data_configuration(countries=["FRA"], aggregate_industries=False, seed=0)
+    raw_data_path = Path(__file__).parent.parent.parent / "test_macro_data" / "unit" / "sample_raw_data"
     return DataWrapper.from_config(data_config, raw_data_path, single_hfcs_survey=True)
 
 
@@ -462,23 +440,14 @@ def instantiate_can_disagg_datawrapper() -> DataWrapper:
         use_disagg_can_2014_reader=True,
         seed=0,
     )
-    raw_data_path = (
-        Path(__file__).parent.parent.parent
-        / "test_macro_data"
-        / "unit"
-        / "sample_raw_data"
-    )
+    raw_data_path = Path(__file__).parent.parent.parent / "test_macro_data" / "unit" / "sample_raw_data"
     return DataWrapper.from_config(data_config, raw_data_path, single_hfcs_survey=True)
 
 
 @pytest.fixture(scope="module", name="can_provincial_datawrapper")
 def instantiate_can_provincial_datawrapper() -> DataWrapper:
     pkl_path = (
-        Path(__file__).parent.parent.parent
-        / "test_macro_data"
-        / "unit"
-        / "sample_raw_data"
-        / "canada_provincial.pkl"
+        Path(__file__).parent.parent.parent / "test_macro_data" / "unit" / "sample_raw_data" / "canada_provincial.pkl"
     )
 
     if os.path.exists(pkl_path):
@@ -529,15 +498,8 @@ def instantiate_can_provincial_datawrapper() -> DataWrapper:
 
         data_config.aggregation_structure = {CountryCode("CAN"): provinces}
 
-        raw_data_path = (
-            Path(__file__).parent.parent.parent
-            / "test_macro_data"
-            / "unit"
-            / "sample_raw_data"
-        )
-        data_wrapper = DataWrapper.from_config(
-            data_config, raw_data_path, single_hfcs_survey=True
-        )
+        raw_data_path = Path(__file__).parent.parent.parent / "test_macro_data" / "unit" / "sample_raw_data"
+        data_wrapper = DataWrapper.from_config(data_config, raw_data_path, single_hfcs_survey=True)
 
         with open(pkl_path, "wb") as f:
             pkl.dump(data_wrapper, f)

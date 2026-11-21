@@ -93,35 +93,23 @@ class Agent:
         if self.n_transactors_buy > 0 and self.n_transactors_sell > 0:
             self.ts["real_amount_sold"] = np.full(self.n_transactors_sell, np.nan)
             for country_name in self.all_country_names:
-                self.ts["real_amount_sold_to_" + country_name] = np.full(
-                    self.n_transactors_sell, np.nan
-                )
-            self.ts["nominal_amount_sold_in_lcu"] = np.full(
-                self.n_transactors_sell, np.nan
-            )
+                self.ts["real_amount_sold_to_" + country_name] = np.full(self.n_transactors_sell, np.nan)
+            self.ts["nominal_amount_sold_in_lcu"] = np.full(self.n_transactors_sell, np.nan)
             for country_name in self.all_country_names:
-                self.ts["nominal_amount_sold_in_lcu_to_" + country_name] = np.full(
-                    self.n_transactors_sell, np.nan
-                )
+                self.ts["nominal_amount_sold_in_lcu_to_" + country_name] = np.full(self.n_transactors_sell, np.nan)
             self.ts["real_excess_demand"] = np.full(self.n_transactors_sell, np.nan)
 
-            self.ts["nominal_amount_spent_in_usd"] = np.full(
-                (self.n_transactors_buy, self.n_industries), np.nan
-            )
+            self.ts["nominal_amount_spent_in_usd"] = np.full((self.n_transactors_buy, self.n_industries), np.nan)
             for country_name in self.all_country_names:
                 self.ts["nominal_amount_spent_in_usd_to_" + country_name] = np.full(
                     (self.n_transactors_buy, self.n_industries), np.nan
                 )
-            self.ts["nominal_amount_spent_in_lcu"] = np.full(
-                (self.n_transactors_buy, self.n_industries), np.nan
-            )
+            self.ts["nominal_amount_spent_in_lcu"] = np.full((self.n_transactors_buy, self.n_industries), np.nan)
             for country_name in self.all_country_names:
                 self.ts["nominal_amount_spent_in_lcu_to_" + country_name] = np.full(
                     (self.n_transactors_buy, self.n_industries), np.nan
                 )
-            self.ts["real_amount_bought"] = np.full(
-                (self.n_transactors_buy, self.n_industries), np.nan
-            )
+            self.ts["real_amount_bought"] = np.full((self.n_transactors_buy, self.n_industries), np.nan)
             for country_name in self.all_country_names:
                 self.ts["real_amount_bought_from_" + country_name] = np.full(
                     (self.n_transactors_buy, self.n_industries), np.nan
@@ -207,34 +195,22 @@ class Agent:
         detailed international trade analysis.
         """
         # Value type and priority
-        self.transactor_buyer_states["Value Type"] = self.transactor_settings[
-            "Buyer Value Type"
-        ]
-        self.transactor_buyer_states["Priority"] = self.transactor_settings[
-            "Buyer Priority"
-        ]
-        self.transactor_seller_states["Value Type"] = self.transactor_settings[
-            "Seller Value Type"
-        ]
-        self.transactor_seller_states["Priority"] = self.transactor_settings[
-            "Seller Priority"
-        ]
+        self.transactor_buyer_states["Value Type"] = self.transactor_settings["Buyer Value Type"]
+        self.transactor_buyer_states["Priority"] = self.transactor_settings["Buyer Priority"]
+        self.transactor_seller_states["Value Type"] = self.transactor_settings["Seller Value Type"]
+        self.transactor_seller_states["Priority"] = self.transactor_settings["Seller Priority"]
 
         # Remaining goods to buy or to sell
-        self.transactor_buyer_states["Remaining Goods"] = self.transactor_buyer_states[
-            "Initial Goods"
-        ].copy()
-        self.transactor_seller_states["Remaining Goods"] = (
-            self.transactor_seller_states["Initial Goods"].copy()
-        )
+        self.transactor_buyer_states["Remaining Goods"] = self.transactor_buyer_states["Initial Goods"].copy()
+        self.transactor_seller_states["Remaining Goods"] = self.transactor_seller_states["Initial Goods"].copy()
 
         # Amount sold
         self.transactor_seller_states["Real Amount sold"] = np.zeros(
             self.transactor_seller_states["Initial Goods"].shape
         )
         for country_name in self.all_country_names:
-            self.transactor_seller_states["Real Amount sold to " + country_name] = (
-                np.zeros(self.transactor_seller_states["Initial Goods"].shape)
+            self.transactor_seller_states["Real Amount sold to " + country_name] = np.zeros(
+                self.transactor_seller_states["Initial Goods"].shape
             )
 
         # Amount spent
@@ -242,17 +218,17 @@ class Agent:
             self.transactor_buyer_states["Initial Goods"].shape
         )
         for country_name in self.all_country_names:
-            self.transactor_buyer_states[
-                "Nominal Amount spent on Goods from " + country_name
-            ] = np.zeros(self.transactor_buyer_states["Initial Goods"].shape)
+            self.transactor_buyer_states["Nominal Amount spent on Goods from " + country_name] = np.zeros(
+                self.transactor_buyer_states["Initial Goods"].shape
+            )
 
         # Amount bought
         self.transactor_buyer_states["Real Amount bought"] = np.zeros(
             self.transactor_buyer_states["Initial Goods"].shape
         )
         for country_name in self.all_country_names:
-            self.transactor_buyer_states["Real Amount bought from " + country_name] = (
-                np.zeros(self.transactor_buyer_states["Initial Goods"].shape)
+            self.transactor_buyer_states["Real Amount bought from " + country_name] = np.zeros(
+                self.transactor_buyer_states["Initial Goods"].shape
             )
 
         # Excess demand
@@ -293,13 +269,9 @@ class Agent:
             self.transactor_seller_states["Real Amount sold"], rounding
         )
         for country_name in self.all_country_names:
-            self.transactor_seller_states["Real Amount sold to " + country_name] = (
-                round_pos(
-                    self.transactor_seller_states[
-                        "Real Amount sold to " + country_name
-                    ],
-                    rounding,
-                )
+            self.transactor_seller_states["Real Amount sold to " + country_name] = round_pos(
+                self.transactor_seller_states["Real Amount sold to " + country_name],
+                rounding,
             )
         self.transactor_seller_states["Real Excess Demand"] = round_pos(
             self.transactor_seller_states["Real Excess Demand"], rounding
@@ -308,32 +280,22 @@ class Agent:
             self.transactor_buyer_states["Nominal Amount spent"], rounding
         )
         for country_name in self.all_country_names:
-            self.transactor_buyer_states[
-                "Nominal Amount spent on Goods from " + country_name
-            ] = round_pos2(
-                self.transactor_buyer_states[
-                    "Nominal Amount spent on Goods from " + country_name
-                ],
+            self.transactor_buyer_states["Nominal Amount spent on Goods from " + country_name] = round_pos2(
+                self.transactor_buyer_states["Nominal Amount spent on Goods from " + country_name],
                 rounding,
             )
         self.transactor_buyer_states["Real Amount bought"] = round_pos2(
             self.transactor_buyer_states["Real Amount bought"], rounding
         )
         for country_name in self.all_country_names:
-            self.transactor_buyer_states["Real Amount bought from " + country_name] = (
-                round_pos2(
-                    self.transactor_buyer_states[
-                        "Real Amount bought from " + country_name
-                    ],
-                    rounding,
-                )
+            self.transactor_buyer_states["Real Amount bought from " + country_name] = round_pos2(
+                self.transactor_buyer_states["Real Amount bought from " + country_name],
+                rounding,
             )
 
         # Update time series for sellers
         if "Prices" in self.transactor_seller_states.keys():
-            self.ts.real_amount_sold.append(
-                self.transactor_seller_states["Real Amount sold"]
-            )
+            self.ts.real_amount_sold.append(self.transactor_seller_states["Real Amount sold"])
             for country_name in self.all_country_names:
                 self.ts.dicts["real_amount_sold_to_" + country_name].append(
                     self.transactor_seller_states["Real Amount sold to " + country_name]
@@ -347,9 +309,7 @@ class Agent:
                 self.ts.dicts["nominal_amount_sold_in_lcu_to_" + country_name].append(
                     self.exchange_rate_usd_to_lcu
                     * self.transactor_seller_states["Prices"]
-                    * self.transactor_seller_states[
-                        "Real Amount sold to " + country_name
-                    ]
+                    * self.transactor_seller_states["Real Amount sold to " + country_name]
                 )
             excess_demand = np.where(
                 np.isnan(self.transactor_seller_states["Real Excess Demand"]),
@@ -360,12 +320,8 @@ class Agent:
         else:
             self.ts.real_amount_sold.append(np.full(self.n_transactors_sell, np.nan))
             for country_name in self.all_country_names:
-                self.ts.dicts["real_amount_sold_to_" + country_name].append(
-                    np.full(self.n_transactors_sell, np.nan)
-                )
-            self.ts.nominal_amount_sold_in_lcu.append(
-                np.full(self.n_transactors_sell, np.nan)
-            )
+                self.ts.dicts["real_amount_sold_to_" + country_name].append(np.full(self.n_transactors_sell, np.nan))
+            self.ts.nominal_amount_sold_in_lcu.append(np.full(self.n_transactors_sell, np.nan))
             for country_name in self.all_country_names:
                 self.ts.dicts["nominal_amount_sold_in_lcu_to_" + country_name].append(
                     np.full(self.n_transactors_sell, np.nan)
@@ -373,29 +329,20 @@ class Agent:
             self.ts.real_excess_demand.append(np.full(self.n_transactors_sell, np.nan))
 
         # Update time series for buyers
-        self.ts.nominal_amount_spent_in_usd.append(
-            self.transactor_buyer_states["Nominal Amount spent"]
-        )
+        self.ts.nominal_amount_spent_in_usd.append(self.transactor_buyer_states["Nominal Amount spent"])
         for country_name in self.all_country_names:
             self.ts.dicts["nominal_amount_spent_in_usd_to_" + country_name].append(
-                self.transactor_buyer_states[
-                    "Nominal Amount spent on Goods from " + country_name
-                ]
+                self.transactor_buyer_states["Nominal Amount spent on Goods from " + country_name]
             )
         self.ts.nominal_amount_spent_in_lcu.append(
-            self.exchange_rate_usd_to_lcu
-            * self.transactor_buyer_states["Nominal Amount spent"]
+            self.exchange_rate_usd_to_lcu * self.transactor_buyer_states["Nominal Amount spent"]
         )
         for country_name in self.all_country_names:
             self.ts.dicts["nominal_amount_spent_in_lcu_to_" + country_name].append(
                 self.exchange_rate_usd_to_lcu
-                * self.transactor_buyer_states[
-                    "Nominal Amount spent on Goods from " + country_name
-                ]
+                * self.transactor_buyer_states["Nominal Amount spent on Goods from " + country_name]
             )
-        self.ts.real_amount_bought.append(
-            self.transactor_buyer_states["Real Amount bought"]
-        )
+        self.ts.real_amount_bought.append(self.transactor_buyer_states["Real Amount bought"])
         for country_name in self.all_country_names:
             self.ts.dicts["real_amount_bought_from_" + country_name].append(
                 self.transactor_buyer_states["Real Amount bought from " + country_name]

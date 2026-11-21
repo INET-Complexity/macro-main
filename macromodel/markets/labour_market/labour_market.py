@@ -115,9 +115,7 @@ class LabourMarket:
         #             )
 
         initial_individual_activity = individuals.states["Activity Status"]
-        initial_individual_employment_industry = individuals.states[
-            "Employment Industry"
-        ]
+        initial_individual_employment_industry = individuals.states["Employment Industry"]
 
         functions = functions_from_model(
             labour_market_configuration.functions,

@@ -56,9 +56,7 @@ class TestLabourMarket:
                 }
             ),
             states={
-                "Activity Status": np.array(
-                    [ActivityStatus.EMPLOYED, ActivityStatus.EMPLOYED], dtype=object
-                ),
+                "Activity Status": np.array([ActivityStatus.EMPLOYED, ActivityStatus.EMPLOYED], dtype=object),
                 "Employment Industry": np.array([0, 0]),
                 "Corresponding Firm ID": np.array([0, -1]),
                 "Corresponding Household ID": np.array([0, 1]),

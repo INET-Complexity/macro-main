@@ -38,9 +38,7 @@ class HFCSValidator:
         self.p_df = pd.read_csv(self.data_dir / "P1.csv")
         self.h_df = pd.read_csv(self.data_dir / "H1.csv", low_memory=False)
         self.d_df = pd.read_csv(self.data_dir / "D1.csv", low_memory=False)
-        print(
-            f"Loaded P1: {len(self.p_df)} rows, H1: {len(self.h_df)} rows, D1: {len(self.d_df)} rows"
-        )
+        print(f"Loaded P1: {len(self.p_df)} rows, H1: {len(self.h_df)} rows, D1: {len(self.d_df)} rows")
 
     def check_id_relationships(self) -> bool:
         """
@@ -107,9 +105,7 @@ class HFCSValidator:
         d_countries = set(self.d_df["SA0100"].unique())
 
         if p_countries != h_countries or h_countries != d_countries:
-            self.errors.append(
-                f"Country codes differ: P={p_countries}, H={h_countries}, D={d_countries}"
-            )
+            self.errors.append(f"Country codes differ: P={p_countries}, H={h_countries}, D={d_countries}")
             passed = False
         else:
             print(f"✓ Consistent country codes: {sorted(p_countries)}")
@@ -138,9 +134,7 @@ class HFCSValidator:
         d_surveys = set(self.d_df["survey"].unique())
 
         if p_surveys != h_surveys or h_surveys != d_surveys:
-            self.warnings.append(
-                f"Survey values differ: P={p_surveys}, H={h_surveys}, D={d_surveys}"
-            )
+            self.warnings.append(f"Survey values differ: P={p_surveys}, H={h_surveys}, D={d_surveys}")
             passed = False
         else:
             print(f"✓ Consistent survey values: {sorted(p_surveys)}")
@@ -167,20 +161,14 @@ class HFCSValidator:
 
         max_size = hh_sizes.max()
         if max_size > 20:  # Reasonable upper bound
-            self.warnings.append(
-                f"Some households have unusually large size: max={max_size}"
-            )
+            self.warnings.append(f"Some households have unusually large size: max={max_size}")
 
-        print(
-            f"✓ Household sizes: min={hh_sizes.min()}, max={max_size}, mean={hh_sizes.mean():.2f}"
-        )
+        print(f"✓ Household sizes: min={hh_sizes.min()}, max={max_size}, mean={hh_sizes.mean():.2f}")
 
         # Check all households in H have individuals in P
         h_with_no_p = set(self.h_df["id"]) - set(self.p_df["hid"])
         if h_with_no_p:
-            self.warnings.append(
-                f"{len(h_with_no_p)} households in H have no individuals in P"
-            )
+            self.warnings.append(f"{len(h_with_no_p)} households in H have no individuals in P")
 
         return passed
 
@@ -207,9 +195,7 @@ class HFCSValidator:
                 self.errors.append("H has non-positive weights")
                 passed = False
             else:
-                print(
-                    f"✓ H weights: min={h_weights.min():.2f}, max={h_weights.max():.2f}, mean={h_weights.mean():.2f}"
-                )
+                print(f"✓ H weights: min={h_weights.min():.2f}, max={h_weights.max():.2f}, mean={h_weights.mean():.2f}")
 
         # Check weights in D
         if "HW0010" not in self.d_df.columns:
@@ -267,9 +253,7 @@ class HFCSValidator:
 
             if not (merged[f"{col}_h"] == merged[f"{col}_d"]).all():
                 mismatches = (~(merged[f"{col}_h"] == merged[f"{col}_d"])).sum()
-                self.errors.append(
-                    f"Column {col} has {mismatches} mismatches between H and D"
-                )
+                self.errors.append(f"Column {col} has {mismatches} mismatches between H and D")
                 passed = False
             else:
                 print(f"✓ Column {col} consistent between H and D")
@@ -328,9 +312,7 @@ class HFCSValidator:
             if (ages_valid > 120).any():
                 self.warnings.append(f"P has ages > 120: max={ages_valid.max()}")
 
-            print(
-                f"✓ Age range: min={ages_valid.min()}, max={ages_valid.max()}, mean={ages_valid.mean():.2f}"
-            )
+            print(f"✓ Age range: min={ages_valid.min()}, max={ages_valid.max()}, mean={ages_valid.mean():.2f}")
 
         if "RA0200" in self.p_df.columns:
             genders = self.p_df["RA0200"].dropna().unique()

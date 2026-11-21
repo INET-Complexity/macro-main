@@ -75,9 +75,7 @@ def create_labour_market_timeseries(
             )
         )
     return TimeSeries(
-        num_employed_individuals_before_clearing=[
-            np.sum(initial_individual_activity == ActivityStatus.EMPLOYED)
-        ],
+        num_employed_individuals_before_clearing=[np.sum(initial_individual_activity == ActivityStatus.EMPLOYED)],
         num_individuals_newly_joining=[np.nan],
         num_individuals_newly_randomly_fired=[np.nan],
         num_individuals_newly_randomly_quit=[np.nan],

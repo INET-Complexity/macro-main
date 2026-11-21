@@ -131,48 +131,49 @@ from pathlib import Path
 import pandas as pd
 from macro_data.configuration.countries import Country
 
+
 @dataclass
 class MethaneReader:
     """
     Reader for methane emissions data.
-    
+
     Args:
         emissions_df: DataFrame containing methane emissions by country/year
-        
+
     Attributes:
         emissions_df: Methane emissions data indexed by country and year
     """
-    
+
     emissions_df: pd.DataFrame
-    
+
     @classmethod
     def from_data(cls, data_path: Path) -> "MethaneReader":
         """
         Create reader from methane emissions data files.
-        
+
         Args:
             data_path: Path to directory containing methane data files
-            
+
         Returns:
             MethaneReader: New instance with loaded emissions data
         """
         # Load methane emissions data
         emissions_df = pd.read_csv(data_path / "methane_emissions.csv")
-        
+
         # Process and clean data
         emissions_df["year"] = pd.to_datetime(emissions_df["year"], format="%Y")
         emissions_df = emissions_df.set_index(["country", "year"])
-        
+
         return cls(emissions_df=emissions_df)
-    
+
     def get_methane_emissions(self, country: Country, year: int) -> float:
         """
         Get methane emissions for a specific country and year.
-        
+
         Args:
             country: Country to get emissions for
             year: Year to get emissions for
-            
+
         Returns:
             float: Methane emissions in metric tons CO2 equivalent
         """
@@ -180,7 +181,7 @@ class MethaneReader:
             return self.emissions_df.loc[(str(country), f"{year}")]["methane_emissions"]
         except KeyError:
             return 0.0  # Default value if no data available
-    
+
     def get_sectoral_methane_emissions(self, country: Country, year: int, sector: str) -> float:
         """Get methane emissions for a specific sector."""
         try:
@@ -228,8 +229,8 @@ Processing modules access readers through the `from_readers` pattern:
 ```python
 # In macro_data/processing/synthetic_firms/default_synthetic_firms.py
 
+
 class DefaultSyntheticFirms:
-    
     @classmethod
     def from_readers(
         cls,
@@ -239,21 +240,21 @@ class DefaultSyntheticFirms:
         # ... other parameters
     ) -> "DefaultSyntheticFirms":
         """Create synthetic firms from reader data."""
-        
+
         # Extract data from different readers
         gdp_data = readers.world_bank.get_historic_gdp(country_name, year)
         firm_deposits = readers.eurostat.get_total_nonfin_firm_deposits(country_name, year)
-        
+
         # NEW: Use methane data if available
         methane_emissions = 0.0
         if readers.methane is not None:
             methane_emissions = readers.methane.get_methane_emissions(country_name, year)
-        
+
         # Harmonize data from different sources
         firm_data = cls._harmonize_firm_data(gdp_data, firm_deposits, methane_emissions)
-        
+
         return cls(firm_data=firm_data)
-    
+
     @staticmethod
     def _harmonize_firm_data(gdp: float, deposits: float, methane: float) -> pd.DataFrame:
         """Harmonize data from different sources."""
@@ -268,9 +269,9 @@ The `SyntheticCountry` class uses processing modules through `from_readers`:
 ```python
 # In macro_data/processing/synthetic_country.py
 
+
 @dataclass
 class SyntheticCountry:
-    
     @classmethod
     def eu_synthetic_country(
         cls,
@@ -280,7 +281,7 @@ class SyntheticCountry:
         # ... other parameters
     ) -> "SyntheticCountry":
         """Create synthetic country from readers."""
-        
+
         # Processing modules get readers and extract what they need
         synthetic_firms = DefaultSyntheticFirms.from_readers(
             readers=readers,
@@ -288,7 +289,7 @@ class SyntheticCountry:
             year=year,
             # ... other parameters
         )
-        
+
         return cls(
             synthetic_firms=synthetic_firms,
             # ... other components
@@ -338,11 +339,7 @@ When combining data from different sources, create static methods:
 
 ```python
 @staticmethod
-def _harmonize_emissions_data(
-    co2_emissions: float,
-    methane_emissions: float,
-    conversion_factor: float = 25.0
-) -> float:
+def _harmonize_emissions_data(co2_emissions: float, methane_emissions: float, conversion_factor: float = 25.0) -> float:
     """Harmonize different types of emissions data."""
     methane_co2_equiv = methane_emissions * conversion_factor
     return co2_emissions + methane_co2_equiv
@@ -362,28 +359,19 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from macro_data.configuration.countries import Country
 
+
 class DataConfiguration(BaseModel):
     """Configuration for data processing parameters."""
-    
+
     countries: List[Country] = Field(
-        default=[Country.USA, Country.GBR, Country.FRA],
-        description="List of countries to process"
+        default=[Country.USA, Country.GBR, Country.FRA], description="List of countries to process"
     )
-    
-    base_year: int = Field(
-        default=2020,
-        description="Base year for data processing"
-    )
-    
-    include_methane_data: bool = Field(
-        default=False,
-        description="Whether to include methane emissions data"
-    )
-    
-    scaling_factor: Optional[float] = Field(
-        default=None,
-        description="Optional scaling factor for economic data"
-    )
+
+    base_year: int = Field(default=2020, description="Base year for data processing")
+
+    include_methane_data: bool = Field(default=False, description="Whether to include methane emissions data")
+
+    scaling_factor: Optional[float] = Field(default=None, description="Optional scaling factor for economic data")
 ```
 
 ### Benefits of Pydantic BaseModel
@@ -403,18 +391,10 @@ class DataConfiguration(BaseModel):
 config = DataConfiguration()
 
 # Overriding specific parameters
-config = DataConfiguration(
-    countries=[Country.USA, Country.DEU],
-    base_year=2019,
-    include_methane_data=True
-)
+config = DataConfiguration(countries=[Country.USA, Country.DEU], base_year=2019, include_methane_data=True)
 
 # From dictionary
-config_dict = {
-    "countries": ["USA", "DEU"],
-    "base_year": 2019,
-    "include_methane_data": True
-}
+config_dict = {"countries": ["USA", "DEU"], "base_year": 2019, "include_methane_data": True}
 config = DataConfiguration(**config_dict)
 ```
 
@@ -436,11 +416,11 @@ config = DataConfiguration(**config_dict)
 ```python
 def process_data(config: DataConfiguration) -> None:
     """Process data according to configuration."""
-    
+
     # Your editor knows the types and provides autocompletion
     for country in config.countries:  # Type: List[Country]
-        year = config.base_year      # Type: int
-        
+        year = config.base_year  # Type: int
+
         if config.include_methane_data:  # Type: bool
             # Process methane data
             pass
@@ -453,17 +433,11 @@ When adding new functionality, extend the appropriate configuration class:
 ```python
 class DataConfiguration(BaseModel):
     # ... existing fields
-    
+
     # Add new parameter
-    new_data_source: bool = Field(
-        default=False,
-        description="Whether to include new data source"
-    )
-    
-    new_parameter: Optional[str] = Field(
-        default=None,
-        description="Optional new parameter"
-    )
+    new_data_source: bool = Field(default=False, description="Whether to include new data source")
+
+    new_parameter: Optional[str] = Field(default=None, description="Optional new parameter")
 ```
 
 ## Testing Your Reader
@@ -495,11 +469,11 @@ class DataConfiguration(BaseModel):
 
 ```python
 # Example: tests/test_macro_data/unit/sample_raw_data/methane/methane_emissions.csv
-country,year,sector,methane_emissions
-FRA,2014,agriculture,1500.5
-FRA,2014,energy,800.2
-CAN,2014,agriculture,2100.8
-CAN,2014,energy,1200.3
+country, year, sector, methane_emissions
+FRA, 2014, agriculture, 1500.5
+FRA, 2014, energy, 800.2
+CAN, 2014, agriculture, 2100.8
+CAN, 2014, energy, 1200.3
 ```
 
 #### Test Integration
@@ -511,17 +485,18 @@ Your reader tests must work with the sample data:
 import pytest
 from macro_data.readers.emissions.methane_reader import MethaneReader
 
+
 def test_methane_reader_with_sample_data(readers):
     """Test methane reader using sample data."""
-    
+
     # Test specific values from sample data
     fra_agriculture = readers.methane.get_methane_emissions("FRA", 2014, "agriculture")
     assert fra_agriculture == pytest.approx(1500.5, abs=0.1)
-    
+
     # Test data availability
     assert readers.methane.has_data_for_country("FRA")
     assert readers.methane.has_data_for_country("CAN")
-    
+
     # Test total emissions
     total_fra = readers.methane.get_total_methane_emissions("FRA", 2014)
     assert total_fra == pytest.approx(2300.7, abs=0.1)  # sum of sectors
@@ -539,15 +514,15 @@ def test_methane_reader_with_sample_data(readers):
 ```python
 def test_sample_data_coverage(readers):
     """Ensure sample data covers required test cases."""
-    
+
     # Required countries
     required_countries = ["FRA"]  # Minimum requirement
     for country in required_countries:
         assert readers.my_reader.has_data_for_country(country)
-    
-    # Required years  
+
+    # Required years
     assert readers.my_reader.has_data_for_year(2014)
-    
+
     # Data consistency
     data = readers.my_reader.get_data_for_country("FRA", 2014)
     assert len(data) > 0

@@ -106,9 +106,7 @@ class TechnicalCoefficientsGrowth(ABC):
         pass
 
     @staticmethod
-    def update_multipliers(
-        current_multipliers: np.ndarray, growth_rates: np.ndarray
-    ) -> np.ndarray:
+    def update_multipliers(current_multipliers: np.ndarray, growth_rates: np.ndarray) -> np.ndarray:
         """Update multiplier matrix based on growth rates.
 
         Args:
@@ -260,9 +258,7 @@ class SimpleTechnicalGrowth(TechnicalCoefficientsGrowth):
         effective_coefficients = np.zeros((n_firms, n_industries))
         for i in range(n_firms):
             industry = firm_industries[i]
-            effective_coefficients[i, :] = (
-                base_coefficients[industry, :] * current_multipliers[i, :]
-            )
+            effective_coefficients[i, :] = base_coefficients[industry, :] * current_multipliers[i, :]
 
         # Calculate quantities used: quantity_ij = production_i * effective_coefficient_ij
         # For intermediate inputs, quantity = production * coefficient (inputs needed per unit output)
@@ -278,20 +274,14 @@ class SimpleTechnicalGrowth(TechnicalCoefficientsGrowth):
         if np.any(valid_mask):
             # Investment intensity
             investment_intensity = np.zeros((n_firms, n_industries))
-            investment_intensity[valid_mask] = (
-                technical_investment[valid_mask] / reference_costs[valid_mask]
-            )
+            investment_intensity[valid_mask] = technical_investment[valid_mask] / reference_costs[valid_mask]
 
             # Apply diminishing returns based on cumulative improvements
-            diminishing_factor = np.exp(
-                -self.diminishing_returns_factor * cumulative_improvements
-            )
+            diminishing_factor = np.exp(-self.diminishing_returns_factor * cumulative_improvements)
 
             # Calculate growth rates
             growth_rates[valid_mask] = (
-                self.investment_effectiveness
-                * investment_intensity[valid_mask]
-                * diminishing_factor[valid_mask]
+                self.investment_effectiveness * investment_intensity[valid_mask] * diminishing_factor[valid_mask]
             )
 
         return growth_rates
@@ -331,9 +321,7 @@ class SimpleTechnicalGrowth(TechnicalCoefficientsGrowth):
         effective_coefficients = np.zeros((n_firms, n_industries))
         for i in range(n_firms):
             industry = firm_industries[i]
-            effective_coefficients[i, :] = (
-                base_coefficients[industry, :] * current_multipliers[i, :]
-            )
+            effective_coefficients[i, :] = base_coefficients[industry, :] * current_multipliers[i, :]
 
         # Calculate quantities used: quantity_ij = production_i * effective_coefficient_ij
         # For capital inputs, quantity = production * coefficient (capital needed per unit output)
@@ -348,18 +336,12 @@ class SimpleTechnicalGrowth(TechnicalCoefficientsGrowth):
 
         if np.any(valid_mask):
             investment_intensity = np.zeros((n_firms, n_industries))
-            investment_intensity[valid_mask] = (
-                technical_investment[valid_mask] / reference_costs[valid_mask]
-            )
+            investment_intensity[valid_mask] = technical_investment[valid_mask] / reference_costs[valid_mask]
 
-            diminishing_factor = np.exp(
-                -self.diminishing_returns_factor * cumulative_improvements
-            )
+            diminishing_factor = np.exp(-self.diminishing_returns_factor * cumulative_improvements)
 
             growth_rates[valid_mask] = (
-                self.investment_effectiveness
-                * investment_intensity[valid_mask]
-                * diminishing_factor[valid_mask]
+                self.investment_effectiveness * investment_intensity[valid_mask] * diminishing_factor[valid_mask]
             )
 
         return growth_rates

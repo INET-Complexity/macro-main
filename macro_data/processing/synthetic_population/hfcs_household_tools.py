@@ -63,9 +63,7 @@ def get_household_type(ages: np.ndarray) -> int:
             return 13  # THREE_OR_MORE_ADULTS_WITH_CHILDREN
 
 
-def set_household_types(
-    household_data: pd.DataFrame, individual_data: pd.DataFrame
-) -> pd.DataFrame:
+def set_household_types(household_data: pd.DataFrame, individual_data: pd.DataFrame) -> pd.DataFrame:
     """
     Sets the household types for the missing values in the 'Type' column of the household_data DataFrame.
 
@@ -80,9 +78,7 @@ def set_household_types(
     i_natypes = np.flatnonzero(household_data["Type"].isna())
     for idx in i_natypes:
         corr_inds = np.array(household_data["Corresponding Individuals ID"][idx])
-        household_data.loc[idx, "Type"] = get_household_type(
-            individual_data.loc[corr_inds, "Age"].values
-        )
+        household_data.loc[idx, "Type"] = get_household_type(individual_data.loc[corr_inds, "Age"].values)
 
     return household_data
 
@@ -115,14 +111,10 @@ def set_household_housing_data(
     # Whether the household owns or rents
     # This maintains codes used in HFCS. 1, 2 and 4 are owning, part owning or free use. 3 is renting.
     households_renting = household_data["Tenure Status of the Main Residence"] == 3
-    households_owning = household_data["Tenure Status of the Main Residence"].isin(
-        [1, 2, 4]
-    )
+    households_owning = household_data["Tenure Status of the Main Residence"].isin([1, 2, 4])
 
     # Rent paid and value of the household main residence
-    social_housing_rent = (
-        rent_as_fraction_of_unemployment_rate * unemployment_benefits_by_capita
-    )
+    social_housing_rent = rent_as_fraction_of_unemployment_rate * unemployment_benefits_by_capita
     household_data = fill_rent(
         household_data,
         households_owning,
@@ -133,22 +125,16 @@ def set_household_housing_data(
 
     # Number of additional properties
     # household_data["Number of Properties other than Household Main Residence"].fillna(0, inplace=True)
-    household_data.fillna(
-        {"Number of Properties other than Household Main Residence": 0}, inplace=True
-    )
-    household_data["Number of Properties other than Household Main Residence"] = (
-        household_data[
-            "Number of Properties other than Household Main Residence"
-        ].astype(int)
-    )
+    household_data.fillna({"Number of Properties other than Household Main Residence": 0}, inplace=True)
+    household_data["Number of Properties other than Household Main Residence"] = household_data[
+        "Number of Properties other than Household Main Residence"
+    ].astype(int)
     # Value of other properties
     household_data.loc[:, "Value of other Properties"] *= scale
     household_without_additional_properties = (
         household_data["Number of Properties other than Household Main Residence"] == 0
     )
-    household_data = fix_property_values(
-        household_data, household_without_additional_properties
-    )
+    household_data = fix_property_values(household_data, household_without_additional_properties)
 
     # Rent received
     household_data = fix_rent(
@@ -184,12 +170,8 @@ def fix_rent(
         household_data["Rental Income from Real Estate"] < social_housing_rent,
         "Rental Income from Real Estate",
     ] = social_housing_rent
-    household_data.loc[
-        household_without_additional_properties, "Rental Income from Real Estate"
-    ] = 0.0
-    mask = ~household_without_additional_properties & (
-        household_data["Rental Income from Real Estate"] == 0.0
-    )
+    household_data.loc[household_without_additional_properties, "Rental Income from Real Estate"] = 0.0
+    mask = ~household_without_additional_properties & (household_data["Rental Income from Real Estate"] == 0.0)
     household_data.loc[mask, "Rental Income from Real Estate"] = np.nan
     household_data = apply_iterative_imputer(
         household_data,
@@ -212,12 +194,8 @@ def fix_property_values(
     Returns:
         pd.DataFrame: The updated household_data DataFrame with fixed property values.
     """
-    household_data.loc[
-        household_without_additional_properties, "Value of other Properties"
-    ] = 0.0
-    mask = ~household_without_additional_properties & (
-        household_data["Value of other Properties"] == 0.0
-    )
+    household_data.loc[household_without_additional_properties, "Value of other Properties"] = 0.0
+    mask = ~household_without_additional_properties & (household_data["Value of other Properties"] == 0.0)
     household_data.loc[mask, "Value of other Properties"] = np.nan
     household_data = apply_iterative_imputer(
         household_data,
@@ -254,9 +232,7 @@ def fill_rent(
     """
     household_data.loc[:, "Rent Paid"] *= scale
     household_data.loc[:, "Value of the Main Residence"] *= scale
-    household_data.loc[
-        households_renting & (household_data["Rent Paid"] == 0.0), "Rent Paid"
-    ] = np.nan
+    household_data.loc[households_renting & (household_data["Rent Paid"] == 0.0), "Rent Paid"] = np.nan
     household_data.loc[
         households_owning & (household_data["Value of the Main Residence"] == 0.0),
         "Value of the Main Residence",
@@ -269,9 +245,7 @@ def fill_rent(
             "Value of the Main Residence",
         ],
     )
-    household_data.loc[
-        household_data["Rent Paid"] < social_housing_rent, "Rent Paid"
-    ] = social_housing_rent
+    household_data.loc[household_data["Rent Paid"] < social_housing_rent, "Rent Paid"] = social_housing_rent
     household_data.loc[
         households_owning,
         "Rent Paid",

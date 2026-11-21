@@ -41,9 +41,7 @@ class ExcessDemandSetter(ABC):
             consider_labour_inputs (float): Weight for labor input
                 constraints (clipped to [0,1])
         """
-        self.consider_intermediate_inputs = max(
-            0.0, min(1.0, consider_intermediate_inputs)
-        )
+        self.consider_intermediate_inputs = max(0.0, min(1.0, consider_intermediate_inputs))
         self.consider_intermediate_inputs = consider_intermediate_inputs
         self.consider_capital_inputs = max(0.0, min(1.0, consider_capital_inputs))
         self.consider_capital_inputs = consider_capital_inputs
@@ -128,8 +126,7 @@ class ConstrainedExcessDemandSetter(ExcessDemandSetter):
         target_production = np.minimum(
             target_production,
             target_production
-            + self.consider_labour_inputs
-            * ((limiting_labour_inputs - current_production) - target_production),
+            + self.consider_labour_inputs * ((limiting_labour_inputs - current_production) - target_production),
         )
         target_production = np.minimum(
             target_production,
@@ -140,8 +137,7 @@ class ConstrainedExcessDemandSetter(ExcessDemandSetter):
         target_production = np.minimum(
             target_production,
             target_production
-            + self.consider_capital_inputs
-            * ((limiting_capital_inputs - current_production) - target_production),
+            + self.consider_capital_inputs * ((limiting_capital_inputs - current_production) - target_production),
         )
 
         return target_production

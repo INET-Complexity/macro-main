@@ -108,9 +108,7 @@ class Loader:
         # Create index
         if len(data) != self.config["t_max"] and agent_name != "exogenous":
             logging.warning("Time series length does not match")
-            logging.warning(
-                "Country %s, agent %s, field %s", country_name, agent_name, field
-            )
+            logging.warning("Country %s, agent %s, field %s", country_name, agent_name, field)
             logging.warning("Time series length: %d", len(data))
             logging.warning("t_max: %d", self.config["t_max"])
             logging.warning(f"Data: {data}")
@@ -136,9 +134,7 @@ class Loader:
             elif aggregate_by_industry == "mean":
                 return data.T.groupby(level=0).mean().T
             else:
-                raise ValueError(
-                    "Unknown function for industry aggregation.", aggregate_by_industry
-                )
+                raise ValueError("Unknown function for industry aggregation.", aggregate_by_industry)
 
         return data
 
@@ -189,9 +185,7 @@ def load_3d_field_as_dataframe(dataset: h5py.Dataset) -> pd.DataFrame:
             and industry IDs, and numeric date index
     """
     ts_data = np.array(dataset)
-    columns = pd.MultiIndex.from_tuples(
-        dataset.attrs["columns"], names=("Agent ID", "Industry")
-    )
+    columns = pd.MultiIndex.from_tuples(dataset.attrs["columns"], names=("Agent ID", "Industry"))
     return pd.DataFrame(
         ts_data.reshape(-1, ts_data.shape[-1]),
         columns=columns,

@@ -133,9 +133,7 @@ class DefaultSyntheticCentralBank(SyntheticCentralBank):
         targeted_inflation_rate = central_bank_configuration.inflation_target
 
         # Merge and prepare data for estimation
-        merged = pd.merge_asof(
-            policy_rates, inflation, left_index=True, right_index=True
-        )
+        merged = pd.merge_asof(policy_rates, inflation, left_index=True, right_index=True)
         merged = pd.merge_asof(merged, growth, left_index=True, right_index=True)
         merged = merged.loc[merged.index < pd.to_datetime(f"{year}-Q{quarter}")]
         merged = merged.dropna()
@@ -162,9 +160,7 @@ class DefaultSyntheticCentralBank(SyntheticCentralBank):
         central_bank_data = {
             "targeted_inflation_rate": [targeted_inflation_rate],
             "rho": [res.params[1]],  # Interest rate smoothing
-            "r_star": [
-                res.params[0] / (1 - res.params[1]) - targeted_inflation_rate
-            ],  # Natural rate
+            "r_star": [res.params[0] / (1 - res.params[1]) - targeted_inflation_rate],  # Natural rate
             "xi_pi": [res.params[2] / (1 - res.params[1])],  # Inflation response
             "xi_gamma": [res.params[3] / (1 - res.params[1])],  # Growth response
         }
@@ -180,8 +176,7 @@ class DefaultSyntheticCentralBank(SyntheticCentralBank):
                 * (
                     central_bank_data["r_star"][0]
                     + targeted_inflation_rate
-                    + central_bank_data["xi_pi"][0]
-                    * (excess_inflation[-1] - targeted_inflation_rate)
+                    + central_bank_data["xi_pi"][0] * (excess_inflation[-1] - targeted_inflation_rate)
                     + central_bank_data["xi_gamma"][0] * growth_values[-1]
                 ),
             )

@@ -8,9 +8,7 @@ from macro_data.readers.emission_fraction.emission_fraction_reader import (
     EmissionsFractionReader,
 )
 
-DATA_PATH = (
-    pathlib.Path(__file__).parent.parent / "sample_raw_data" / "emission_factors"
-)
+DATA_PATH = pathlib.Path(__file__).parent.parent / "sample_raw_data" / "emission_factors"
 
 
 class TestEmissionsFractionReader:

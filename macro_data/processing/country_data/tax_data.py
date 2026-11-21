@@ -61,7 +61,5 @@ class TaxData:
             profit_tax=readers.oecd_econ.read_tau_firm(country, year),
             income_tax=readers.oecd_econ.read_tau_income(country, year),
             risk_premium=readers.eurostat.firm_risk_premium(country, year),
-            capital_formation_tax=readers.eurostat.taxrate_on_capital_formation(
-                country, year
-            ),
+            capital_formation_tax=readers.eurostat.taxrate_on_capital_formation(country, year),
         )

@@ -41,9 +41,7 @@ class SocialHousing(ABC):
             rent_as_fraction_of_unemployment_rate (float): Target rent as
                 proportion of unemployment benefits (between 0 and 1)
         """
-        self.rent_as_fraction_of_unemployment_rate = (
-            rent_as_fraction_of_unemployment_rate
-        )
+        self.rent_as_fraction_of_unemployment_rate = rent_as_fraction_of_unemployment_rate
 
     @abstractmethod
     def compute_social_housing_rent(

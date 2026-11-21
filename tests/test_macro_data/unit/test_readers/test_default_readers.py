@@ -33,9 +33,7 @@ def test__prune_icio_dict():
 def test__get_benefits_inflation(readers):
     france = Country("FRA")
     exogenous_data = create_all_exogenous_data(readers, [france])
-    data = readers.get_benefits_inflation_data(
-        france, 2004, 2014, exogenous_data[france]
-    )
+    data = readers.get_benefits_inflation_data(france, 2004, 2014, exogenous_data[france])
     assert data.shape[0] > 0
 
 
@@ -64,9 +62,7 @@ def test__readers_provincial_can(readers_provincial_can):
 
     non_tot_cols = iot.columns.get_level_values(0) != "TOTAL"
 
-    ind_cols = iot.columns.get_level_values(1).isin(
-        readers_provincial_can.icio[2014].industries
-    )
+    ind_cols = iot.columns.get_level_values(1).isin(readers_provincial_can.icio[2014].industries)
 
     # compute output from sums over columns
     output_column = iot.loc[nontot_rows, ("TOTAL", "Output")]

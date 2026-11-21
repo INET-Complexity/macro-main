@@ -173,14 +173,10 @@ class CompustatBanksReader:
         - Missing values are imputed separately for each country
         - US banks are included if proxy_with_us is True
         """
-        raw_data = pd.read_csv(
-            raw_quarterly_path, encoding="unicode_escape", engine="pyarrow"
-        )
+        raw_data = pd.read_csv(raw_quarterly_path, encoding="unicode_escape", engine="pyarrow")
 
         # Filter for time period
-        data = raw_data[
-            np.logical_and(raw_data["fyearq"] == year, raw_data["fqtr"] == quarter)
-        ]
+        data = raw_data[np.logical_and(raw_data["fyearq"] == year, raw_data["fqtr"] == quarter)]
 
         # Add US banks if needed for proxying
         if proxy_with_us:
@@ -248,9 +244,7 @@ class CompustatBanksReader:
             proxied[self.numerical_columns] *= exchange_rate
             return proxied
 
-    def get_proxied_country_data(
-        self, proxy_country: str | Country, exchange_rate: float
-    ):
+    def get_proxied_country_data(self, proxy_country: str | Country, exchange_rate: float):
         """
         Get bank-level data from a proxy country with currency conversion.
 

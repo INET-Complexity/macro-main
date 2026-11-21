@@ -251,9 +251,7 @@ class DataConfiguration(BaseModel):
         # Check EU proxy countries
         for country, country_config in self.country_configs.items():
             if country_config.eu_proxy_country is None and not country.is_eu_country:
-                raise ValueError(
-                    f"{country} is not in EU: please set an EU proxy country."
-                )
+                raise ValueError(f"{country} is not in EU: please set an EU proxy country.")
 
         # Validate aggregation structure if present
         if self.aggregation_structure:
@@ -264,9 +262,7 @@ class DataConfiguration(BaseModel):
 
             missing_configs = all_components - set(self.country_configs.keys())
             if missing_configs:
-                raise ValueError(
-                    f"Missing configurations for components: {missing_configs}"
-                )
+                raise ValueError(f"Missing configurations for components: {missing_configs}")
 
             # Check for duplicate components
             component_counts = {}
@@ -274,13 +270,9 @@ class DataConfiguration(BaseModel):
                 for component in components:
                     component_counts[component] = component_counts.get(component, 0) + 1
 
-            duplicates = {
-                comp: count for comp, count in component_counts.items() if count > 1
-            }
+            duplicates = {comp: count for comp, count in component_counts.items() if count > 1}
             if duplicates:
-                raise ValueError(
-                    f"Components appear in multiple parent entities: {duplicates}"
-                )
+                raise ValueError(f"Components appear in multiple parent entities: {duplicates}")
 
     @property
     def countries(self) -> list[Country]:

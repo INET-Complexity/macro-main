@@ -11,14 +11,10 @@ from sbi.inference import (
 from torch import nn
 
 # Define the type of posterior
-Posterior: TypeAlias = Union[
-    MCMCPosterior, RejectionPosterior, VIPosterior, DirectPosterior
-]
+Posterior: TypeAlias = Union[MCMCPosterior, RejectionPosterior, VIPosterior, DirectPosterior]
 
 
-def train_model(
-    simulation_data: torch.Tensor, theta: torch.Tensor
-) -> tuple[SNPE, nn.Module]:
+def train_model(simulation_data: torch.Tensor, theta: torch.Tensor) -> tuple[SNPE, nn.Module]:
     """
     Train the model using the SNPE algorithm.
 
@@ -37,17 +33,13 @@ def train_model(
         The trained density estimator.
     """
     inference = SNPE()
-    inference = inference.append_simulations(
-        theta.to(dtype=torch.float32), simulation_data.to(dtype=torch.float32)
-    )
+    inference = inference.append_simulations(theta.to(dtype=torch.float32), simulation_data.to(dtype=torch.float32))
     density_estimator = inference.train()
 
     return inference, density_estimator
 
 
-def build_posterior(
-    inference: SNPE, density_estimator: nn.Module, **kwargs: dict
-) -> Posterior:
+def build_posterior(inference: SNPE, density_estimator: nn.Module, **kwargs: dict) -> Posterior:
     """
     Build the posterior distribution.
 
@@ -69,9 +61,7 @@ def build_posterior(
     return posterior
 
 
-def training_pipeline(
-    simulation_data: torch.Tensor, theta: torch.Tensor, **kwargs: dict
-) -> Posterior:
+def training_pipeline(simulation_data: torch.Tensor, theta: torch.Tensor, **kwargs: dict) -> Posterior:
     """
     Train the model and build the posterior distribution, in a single function.
 

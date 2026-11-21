@@ -65,11 +65,7 @@ from macro_data.processing.country_data import TaxData
 readers = DataReaders.from_raw_data(...)
 
 # Create tax data for France in 2023
-france_tax_data = TaxData.from_readers(
-    readers=readers,
-    country=Country.FRANCE,
-    year=2023
-)
+france_tax_data = TaxData.from_readers(readers=readers, country=Country.FRANCE, year=2023)
 
 # Access tax rates
 vat_rate = france_tax_data.value_added_tax

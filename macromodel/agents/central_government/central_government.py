@@ -115,9 +115,7 @@ class CentralGovernment(Agent):
         Returns:
             CentralGovernment: Initialized government agent
         """
-        functions = functions_from_model(
-            model=configuration.functions, loc="macromodel.agents.central_government"
-        )
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.central_government")
 
         states = {
             "Value-added Tax": tax_data.value_added_tax,
@@ -132,9 +130,7 @@ class CentralGovernment(Agent):
             "other_benefits_model": synthetic_central_government.other_benefits_model,
         }
 
-        data = (
-            synthetic_central_government.central_gov_data.astype(float)
-        ).rename_axis("Central Government ID")
+        data = (synthetic_central_government.central_gov_data.astype(float)).rename_axis("Central Government ID")
 
         ts = create_central_government_timeseries(
             data=data,
@@ -202,9 +198,7 @@ class CentralGovernment(Agent):
         self.ts.unemployment_benefits_by_individual.append(
             [
                 self.functions["social_benefits"].compute_unemployment_benefits(
-                    prev_unemployment_benefits=self.ts.current(
-                        "unemployment_benefits_by_individual"
-                    )[0],
+                    prev_unemployment_benefits=self.ts.current("unemployment_benefits_by_individual")[0],
                     historic_ppi_inflation=all_ppi_inflation,
                     current_estimated_growth=current_estimated_growth,
                     current_unemployment_rate=current_unemployment_rate,
@@ -216,12 +210,8 @@ class CentralGovernment(Agent):
         # Regular social transfers to households
         self.ts.total_other_benefits.append(
             [
-                self.functions[
-                    "social_benefits"
-                ].compute_regular_transfer_to_households(
-                    prev_regular_transfer_to_households=self.ts.current(
-                        "total_other_benefits"
-                    )[0],
+                self.functions["social_benefits"].compute_regular_transfer_to_households(
+                    prev_regular_transfer_to_households=self.ts.current("total_other_benefits")[0],
                     historic_ppi_inflation=all_ppi_inflation,
                     current_estimated_growth=current_estimated_growth,
                     current_unemployment_rate=current_unemployment_rate,
@@ -247,9 +237,9 @@ class CentralGovernment(Agent):
             np.ndarray: Unemployment benefits by individual (zero for employed)
         """
         unemployment_benefits = np.zeros(current_individual_activity_status.shape)
-        unemployment_benefits[
-            current_individual_activity_status == ActivityStatus.UNEMPLOYED
-        ] = self.ts.current("unemployment_benefits_by_individual")[0]
+        unemployment_benefits[current_individual_activity_status == ActivityStatus.UNEMPLOYED] = self.ts.current(
+            "unemployment_benefits_by_individual"
+        )[0]
         return unemployment_benefits.astype(float)
 
     def compute_taxes(
@@ -293,76 +283,46 @@ class CentralGovernment(Agent):
         """
         # Taxes on production
         self.ts.taxes_production.append(
-            [
-                np.sum(
-                    taxes_less_subsidies_rates[current_firm_industries]
-                    * current_firm_production
-                    * current_firm_price
-                )
-            ]
+            [np.sum(taxes_less_subsidies_rates[current_firm_industries] * current_firm_production * current_firm_price)]
         )
 
         # Value-added taxes
-        self.ts.taxes_vat.append(
-            [self.states["Value-added Tax"] * np.sum(current_ind_realised_cons)]
-        )
+        self.ts.taxes_vat.append([self.states["Value-added Tax"] * np.sum(current_ind_realised_cons)])
 
         # Taxes on capital formation
         self.ts.taxes_cf.append(
-            [
-                self.states["Capital Formation Tax"]
-                * np.sum(np.maximum(0.0, current_household_new_real_wealth))
-            ]
+            [self.states["Capital Formation Tax"] * np.sum(np.maximum(0.0, current_household_new_real_wealth))]
         )
 
         # Corporate income taxes
         self.ts.taxes_corporate_income.append(
             [
                 self.states["Profit Tax"]
-                * (
-                    np.sum(np.maximum(current_firm_profits, 0))
-                    + np.sum(np.maximum(current_bank_profits, 0))
-                )
+                * (np.sum(np.maximum(current_firm_profits, 0)) + np.sum(np.maximum(current_bank_profits, 0)))
             ]
         )
 
         # Taxes on exports
-        self.ts.taxes_exports.append(
-            [self.states["Export Tax"] * current_total_exports]
-        )
+        self.ts.taxes_exports.append([self.states["Export Tax"] * current_total_exports])
 
         # Total wages of employed individuals
-        tot_wages_employed_ind = np.sum(
-            [
-                current_ind_employee_income[
-                    current_ind_activity == ActivityStatus.EMPLOYED
-                ]
-            ]
-        )
+        tot_wages_employed_ind = np.sum([current_ind_employee_income[current_ind_activity == ActivityStatus.EMPLOYED]])
 
         # Taxes on income
         self.ts.taxes_income.append(
             [
-                self.states["Income Tax"]
-                * (1 - self.states["Employee Social Insurance Tax"])
-                * tot_wages_employed_ind
+                self.states["Income Tax"] * (1 - self.states["Employee Social Insurance Tax"]) * tot_wages_employed_ind
                 + self.states["Income Tax"] * current_total_rent_paid
                 + self.states["Income Tax"] * current_income_financial_assets.sum(),
             ]
         )
-        self.ts.taxes_rental_income.append(
-            [self.states["Income Tax"] * current_total_rent_paid]
-        )
+        self.ts.taxes_rental_income.append([self.states["Income Tax"] * current_total_rent_paid])
 
         # Taxes on employer social insurance
-        self.ts.taxes_employer_si.append(
-            [self.states["Employer Social Insurance Tax"] * tot_wages_employed_ind]
-        )
+        self.ts.taxes_employer_si.append([self.states["Employer Social Insurance Tax"] * tot_wages_employed_ind])
 
         # Taxes on employee social insurance
-        self.ts.taxes_employee_si.append(
-            [self.states["Employee Social Insurance Tax"] * tot_wages_employed_ind]
-        )
+        self.ts.taxes_employee_si.append([self.states["Employee Social Insurance Tax"] * tot_wages_employed_ind])
 
     def compute_taxes_on_products(self) -> float:
         """Calculate total taxes on products and production.

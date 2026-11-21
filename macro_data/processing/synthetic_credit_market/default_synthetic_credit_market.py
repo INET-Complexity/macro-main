@@ -33,9 +33,7 @@ from macro_data.processing.synthetic_population.synthetic_population import (
 )
 
 
-def create_firm_loan_df(
-    firms: SyntheticFirms, banks: SyntheticBanks, firm_loan_maturity: int = 60
-) -> pd.DataFrame:
+def create_firm_loan_df(firms: SyntheticFirms, banks: SyntheticBanks, firm_loan_maturity: int = 60) -> pd.DataFrame:
     """Preprocess firm loan relationship data.
 
     This function organizes initial firm loan data by:
@@ -123,9 +121,7 @@ def create_household_loan_df(
 
     loan_df = pd.merge(
         left=loan_df,
-        right=synthetic_banks.bank_data[
-            "Interest Rates on Household Consumption Loans"
-        ],
+        right=synthetic_banks.bank_data["Interest Rates on Household Consumption Loans"],
         left_on="loan_bank_id",
         right_index=True,
     )
@@ -188,8 +184,6 @@ def create_mortgage_loan_df(
         right_index=True,
     )
 
-    loan_df.rename(
-        columns={"Interest Rates on Mortgages": "loan_interest_rate"}, inplace=True
-    )
+    loan_df.rename(columns={"Interest Rates on Mortgages": "loan_interest_rate"}, inplace=True)
     loan_df["loan_maturity"] = mortgage_loan_maturity
     return loan_df

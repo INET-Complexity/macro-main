@@ -27,9 +27,7 @@ class TargetCapitalInputsSetter(ABC):
             when facing credit constraints (between 0 and 1)
     """
 
-    def __init__(
-        self, target_capital_inputs_fraction: float, credit_gap_fraction: float
-    ):
+    def __init__(self, target_capital_inputs_fraction: float, credit_gap_fraction: float):
         """Initialize the target capital inputs setter.
 
         Args:
@@ -317,12 +315,8 @@ class BundleWeightedTargetCapitalInputsSetter(FinancialTargetCapitalInputsSetter
 
         # Calculate unnormalized weights
         # exp(-beta / avg_price * price[j] / depreciation_matrix[i,j])
-        unnormalized_weights = np.exp(
-            -self.beta / avg_price * (previous_good_prices + extra_taxes)
-        )
-        unnormalized_weights = np.outer(
-            np.ones_like(unnormalized_weights), unnormalized_weights
-        )
+        unnormalized_weights = np.exp(-self.beta / avg_price * (previous_good_prices + extra_taxes))
+        unnormalized_weights = np.outer(np.ones_like(unnormalized_weights), unnormalized_weights)
 
         # Create bundle matrix C = M*M.transpose() and replace non-zero coefficients with 1
         n_industries = substitution_bundle_matrix.shape[0]
@@ -336,9 +330,7 @@ class BundleWeightedTargetCapitalInputsSetter(FinancialTargetCapitalInputsSetter
 
         # Calculate normalization factors for each firm and input
         # sum_l b[i,l] * unnormalized_weights[i,l]
-        normalization_factors = np.einsum(
-            "jl, il -> ij", bundle_matrix, unnormalized_weights
-        )
+        normalization_factors = np.einsum("jl, il -> ij", bundle_matrix, unnormalized_weights)
 
         # Calculate normalized weights
         normalized_weights = np.divide(

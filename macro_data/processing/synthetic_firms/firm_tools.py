@@ -67,10 +67,7 @@ def draw_industry_firm_sizes(
     employees_by_industry_range = np.arange(1, number_employees + 1)
     if len(employees_by_industry_range) == 0:
         return np.zeros(n_firms_in_industry)
-    probs = 1 / (
-        employees_by_industry_range**firm_size_zeta_shape
-        * special.zetac(firm_size_zeta_shape)
-    )
+    probs = 1 / (employees_by_industry_range**firm_size_zeta_shape * special.zetac(firm_size_zeta_shape))
     sizes_raw = np.random.choice(
         employees_by_industry_range,
         p=probs / sum(probs),
@@ -146,9 +143,7 @@ def add_number_employees_compustat(
                             Firms by industry: {n_firms_per_industry[industry]}"
             )
 
-        compustat_subset = compustat_data.iloc[
-            current_firm_ind : current_firm_ind + n_firms_per_industry[industry]
-        ]
+        compustat_subset = compustat_data.iloc[current_firm_ind : current_firm_ind + n_firms_per_industry[industry]]
         sizes = compustat_subset["Number of Employees"].values
 
         sizes_norm = np.ones_like(sizes) if sizes.sum() == 0 else sizes / sizes.sum()
@@ -324,9 +319,7 @@ def add_production(
         firm_data.loc[industry_mask, "Production"] = (
             firm_data.loc[industry_mask, "Number of Employees"] * output[industry]
         ) / n_employees_per_industry[industry]
-        firm_data.loc[
-            industry_mask & (firm_data["Production"] == np.inf), "Production"
-        ] = 0
+        firm_data.loc[industry_mask & (firm_data["Production"] == np.inf), "Production"] = 0
     return firm_data
 
 
@@ -362,9 +355,7 @@ def initialise_basic_firm_fields_compustat(
         n_industries,
     )
 
-    labour_compensation = industry_data["industry_vectors"][
-        "Labour Compensation in LCU"
-    ].values
+    labour_compensation = industry_data["industry_vectors"]["Labour Compensation in LCU"].values
     firm_data = add_wages(
         firm_data,
         n_employees_per_industry,
@@ -374,9 +365,7 @@ def initialise_basic_firm_fields_compustat(
         tau_sif,
     )
     output = industry_data["industry_vectors"]["Output in USD"].values
-    firm_data = add_production(
-        firm_data, n_employees_per_industry, n_industries, output
-    )
+    firm_data = add_production(firm_data, n_employees_per_industry, n_industries, output)
     firm_data["Price in USD"] = 1.0
     firm_data["Price"] = firm_data["Price in USD"] * exchange_rate
     firm_data["Labour Inputs"] = firm_data["Production"].copy()
@@ -386,9 +375,7 @@ def initialise_basic_firm_fields_compustat(
     else:
         labour_prod_by_industry = output / n_employees_per_industry
         for industry in range(n_industries):
-            firm_data.loc[firm_data["Industry"] == industry, "Labour Productivity"] = (
-                labour_prod_by_industry[industry]
-            )
+            firm_data.loc[firm_data["Industry"] == industry, "Labour Productivity"] = labour_prod_by_industry[industry]
 
     firm_data["Deposits"] = compustat_data["Deposits"].values
 
@@ -448,9 +435,7 @@ def initialise_basic_firm_fields(
         n_firms_per_industry,
         n_industries,
     )
-    labour_compensation = industry_data["industry_vectors"][
-        "Labour Compensation in LCU"
-    ].values
+    labour_compensation = industry_data["industry_vectors"]["Labour Compensation in LCU"].values
     firm_data = add_wages(
         firm_data,
         n_employees_per_industry,
@@ -460,9 +445,7 @@ def initialise_basic_firm_fields(
         tau_sif,
     )
     output = industry_data["industry_vectors"]["Output in USD"].values
-    firm_data = add_production(
-        firm_data, n_employees_per_industry, n_industries, output
-    )
+    firm_data = add_production(firm_data, n_employees_per_industry, n_industries, output)
     firm_data["Price in USD"] = 1.0
     firm_data["Price"] = firm_data["Price in USD"] * exchange_rate
     firm_data["Labour Inputs"] = firm_data["Production"].copy()
@@ -472,9 +455,7 @@ def initialise_basic_firm_fields(
     else:
         labour_prod_by_industry = output / n_employees_per_industry
         for industry in range(n_industries):
-            firm_data.loc[firm_data["Industry"] == industry, "Labour Productivity"] = (
-                labour_prod_by_industry[industry]
-            )
+            firm_data.loc[firm_data["Industry"] == industry, "Labour Productivity"] = labour_prod_by_industry[industry]
 
     return firm_data
 
@@ -524,35 +505,23 @@ def function_parameters_dependent_initialisation(
     # This needs to be moved to the macromodel package
     # note that firm_data, intermediate_inputs_productivity_matrix, capital_inputs_depreciation_matrix,
     # firm deposits, and firm debt will be attributes of the synthetic firm class
-    firm_data["Inventory"] = (
-        initial_inventory_to_input_fraction * firm_data["Production"]
-    )
-    firm_data["Demand"] = (
-        firm_data["Production"] + firm_data["Inventory"]
-    )  # I am not sure about this
+    firm_data["Inventory"] = initial_inventory_to_input_fraction * firm_data["Production"]
+    firm_data["Demand"] = firm_data["Production"] + firm_data["Inventory"]  # I am not sure about this
     intermediate_inputs_stock = (
         1.0
         / intermediate_inputs_utilisation_rate
-        * (
-            firm_data["Production"].values
-            / intermediate_inputs_productivity_matrix[:, firm_data["Industry"].values]
-        ).T
+        * (firm_data["Production"].values / intermediate_inputs_productivity_matrix[:, firm_data["Industry"].values]).T
     )
     used_intermediate_inputs = (
-        firm_data["Production"].values
-        / intermediate_inputs_productivity_matrix[:, firm_data["Industry"].values]
+        firm_data["Production"].values / intermediate_inputs_productivity_matrix[:, firm_data["Industry"].values]
     ).T.astype(float)
     capital_inputs_stock = (
         1.0
         / capital_inputs_utilisation_rate
-        * (
-            firm_data["Production"].values
-            / capital_inputs_productivity_matrix[:, firm_data["Industry"].values]
-        ).T
+        * (firm_data["Production"].values / capital_inputs_productivity_matrix[:, firm_data["Industry"].values]).T
     )
     used_capital_inputs = (
-        firm_data["Production"].values
-        * capital_inputs_depreciation_matrix[:, firm_data["Industry"].values]
+        firm_data["Production"].values * capital_inputs_depreciation_matrix[:, firm_data["Industry"].values]
     ).T.astype(float)
     # TODO : Sam's version with compustat data can have firms with negative deposits, and this doesn't work
 
@@ -569,24 +538,15 @@ def function_parameters_dependent_initialisation(
         else:
             if deposits_in_data:
                 firm_data["Deposits"] = np.clip(firm_data["Deposits"], 0, None)
-                weights = (
-                    firm_data["Deposits"].values / firm_data["Deposits"].values.sum()
-                )
+                weights = firm_data["Deposits"].values / firm_data["Deposits"].values.sum()
             else:
-                weights = (
-                    firm_data["Production"].values
-                    / firm_data["Production"].values.sum()
-                )
+                weights = firm_data["Production"].values / firm_data["Production"].values.sum()
             firm_data["Deposits"] = weights * total_firm_deposits
     firm_data["Deposits"] = np.maximum(0.0, firm_data["Deposits"])
     if assume_zero_initial_debt:
         firm_data["Debt"] = 0.0
     else:
-        firm_data["Debt"] = (
-            capital_inputs_stock.sum(axis=1)
-            / capital_inputs_stock.sum()
-            * total_firm_debt
-        )
+        firm_data["Debt"] = capital_inputs_stock.sum(axis=1) / capital_inputs_stock.sum() * total_firm_debt
     firm_data["Equity"] = (
         firm_data["Deposits"]
         + firm_data["Price"] * firm_data["Inventory"]

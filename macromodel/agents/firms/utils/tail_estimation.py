@@ -25,14 +25,10 @@ def add_uniform_noise(data_sequence, p=1):
         # print("Parameter p should be greater or equal to 1.")
         logging.error("Parameter p should be greater or equal to 1.")
         return None
-    noise = np.random.uniform(
-        -5.0 * 10 ** (-p), 5 * 10 ** (-p), size=len(data_sequence)
-    )
+    noise = np.random.uniform(-5.0 * 10 ** (-p), 5 * 10 ** (-p), size=len(data_sequence))
     randomized_data_sequence = data_sequence + noise
     # ensure there are no negative entries after noise is added
-    randomized_data_sequence = randomized_data_sequence[
-        np.where(randomized_data_sequence > 0)
-    ]
+    randomized_data_sequence = randomized_data_sequence[np.where(randomized_data_sequence > 0)]
     return randomized_data_sequence
 
 
@@ -136,11 +132,7 @@ def get_moments_estimates_2(ordered_data):
     logs_2_cumsum = np.cumsum(logs_2[:-1])
     k_vector = np.arange(1, len(ordered_data))
     M1 = (1.0 / k_vector) * logs_1_cumsum - logs_1[1:]
-    M2 = (
-        (1.0 / k_vector) * logs_2_cumsum
-        - (2.0 * logs_1[1:] / k_vector) * logs_1_cumsum
-        + logs_2[1:]
-    )
+    M2 = (1.0 / k_vector) * logs_2_cumsum - (2.0 * logs_1[1:] / k_vector) * logs_1_cumsum + logs_2[1:]
     return M1, M2
 
 
@@ -172,11 +164,7 @@ def get_moments_estimates_3(ordered_data):
     logs_3_cumsum = np.cumsum(logs_3[:-1])
     k_vector = np.arange(1, len(ordered_data))
     M1 = (1.0 / k_vector) * logs_1_cumsum - logs_1[1:]
-    M2 = (
-        (1.0 / k_vector) * logs_2_cumsum
-        - (2.0 * logs_1[1:] / k_vector) * logs_1_cumsum
-        + logs_2[1:]
-    )
+    M2 = (1.0 / k_vector) * logs_2_cumsum - (2.0 * logs_1[1:] / k_vector) * logs_1_cumsum + logs_2[1:]
     M3 = (
         (1.0 / k_vector) * logs_3_cumsum
         - (3.0 * logs_1[1:] / k_vector) * logs_2_cumsum
@@ -185,10 +173,7 @@ def get_moments_estimates_3(ordered_data):
     )
     # cleaning exceptional cases
     clean_indices = np.where(
-        (M2 <= 0)
-        | (M3 == 0)
-        | (np.abs(1.0 - (M1**2) / M2) < 1e-10)
-        | (np.abs(1.0 - (M1 * M2) / M3) < 1e-10)
+        (M2 <= 0) | (M3 == 0) | (np.abs(1.0 - (M1**2) / M2) < 1e-10) | (np.abs(1.0 - (M1 * M2) / M3) < 1e-10)
     )
     M1[clean_indices] = np.nan
     M2[clean_indices] = np.nan
@@ -269,9 +254,7 @@ def hill_dbs(
         averaged_delta = samples_n1 / good_counts1
 
         max_index1 = (np.abs(np.linspace(1.0 / n1, 1.0, n1) - eps_stop)).argmin()
-        k1 = (
-            np.nanargmin(averaged_delta[min_index1:max_index1]) + 1 + min_index1
-        )  # take care of indexing
+        k1 = np.nanargmin(averaged_delta[min_index1:max_index1]) + 1 + min_index1  # take care of indexing
         if diagn_plots:
             n1_amse = averaged_delta
             x1_arr = np.linspace(1.0 / n1, 1.0, n1)
@@ -291,9 +274,7 @@ def hill_dbs(
         max_index2 = (np.abs(np.linspace(1.0 / n2, 1.0, n2) - eps_stop)).argmin()
         averaged_delta = samples_n2 / good_counts2
 
-        k2 = (
-            np.nanargmin(averaged_delta[min_index2:max_index2]) + 1 + min_index2
-        )  # take care of indexing
+        k2 = np.nanargmin(averaged_delta[min_index2:max_index2]) + 1 + min_index2  # take care of indexing
         if diagn_plots:
             n2_amse = averaged_delta
             x2_arr = np.linspace(1.0 / n2, 1.0, n2)
@@ -313,9 +294,7 @@ def hill_dbs(
     """
 
     # this constant is provided in Qi's paper
-    rho = (1.0 - (2 * (np.log(k1) - np.log(n1)) / (np.log(k1)))) ** (
-        np.log(k1) / np.log(n1) - 1.0
-    )
+    rho = (1.0 - (2 * (np.log(k1) - np.log(n1)) / (np.log(k1)))) ** (np.log(k1) / np.log(n1) - 1.0)
 
     k_star = (k1 * k1 / float(k2)) * rho
     k_star = int(np.round(k_star))
@@ -1021,9 +1000,7 @@ def kernel_type_dbs(
         _, xi3_arr = get_triweight_kernel_estimates(sample, hsteps, alpha)
         samples_n1 += (xi2_arr - xi3_arr) ** 2
         good_counts1[np.where((xi2_arr - xi3_arr) ** 2 != np.nan)] += 1
-    max_index1 = (
-        np.abs(np.logspace(np.log10(1.0 / n1), np.log10(1.0), hsteps) - eps_stop)
-    ).argmin()
+    max_index1 = (np.abs(np.logspace(np.log10(1.0 / n1), np.log10(1.0), hsteps) - eps_stop)).argmin()
     x1_arr = np.logspace(np.log10(1.0 / n1), np.log10(1.0), hsteps)
     averaged_delta = samples_n1 / good_counts1
     h1 = x1_arr[np.nanargmin(averaged_delta[:max_index1])]
@@ -1048,20 +1025,16 @@ def kernel_type_dbs(
         _, xi3_arr = get_triweight_kernel_estimates(sample, hsteps, alpha)
         samples_n2 += (xi2_arr - xi3_arr) ** 2
         good_counts2[np.where((xi2_arr - xi3_arr) ** 2 != np.nan)] += 1
-    max_index2 = (
-        np.abs(np.logspace(np.log10(1.0 / n2), np.log10(1.0), hsteps) - eps_stop)
-    ).argmin()
+    max_index2 = (np.abs(np.logspace(np.log10(1.0 / n2), np.log10(1.0), hsteps) - eps_stop)).argmin()
     x2_arr = np.logspace(np.log10(1.0 / n2), np.log10(1.0), hsteps)
     averaged_delta = samples_n2 / good_counts2
     h2 = x2_arr[np.nanargmin(averaged_delta[:max_index2])]
     if diagn_plots:
         n2_amse = averaged_delta
 
-    A = (
-        143.0
-        * ((np.log(n1) + np.log(h1)) ** 2)
-        / (3 * (np.log(n1) - 13.0 * np.log(h1)) ** 2)
-    ) ** (-np.log(h1) / np.log(n1))
+    A = (143.0 * ((np.log(n1) + np.log(h1)) ** 2) / (3 * (np.log(n1) - 13.0 * np.log(h1)) ** 2)) ** (
+        -np.log(h1) / np.log(n1)
+    )
 
     h_star = (h1 * h1 / float(h2)) * A
 

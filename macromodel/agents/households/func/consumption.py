@@ -217,18 +217,14 @@ class DefaultHouseholdConsumption(HouseholdConsumption):
         Returns:
             np.ndarray: Target consumption by household and industry
         """
-        smoothing_window = min(
-            consumption_smoothing_window, len(historic_consumption_sum)
-        )
+        smoothing_window = min(consumption_smoothing_window, len(historic_consumption_sum))
         target_consumption = (
             1.0
             / (1 + tau_vat)
             * np.outer(
                 consumption_weights,
                 np.maximum(
-                    minimum_consumption_fraction
-                    * (1 - saving_rates)
-                    * household_benefits,
+                    minimum_consumption_fraction * (1 - saving_rates) * household_benefits,
                     (1 - saving_rates) * income,
                     consumption_smoothing_fraction
                     * (1 + tau_vat)
@@ -305,10 +301,7 @@ class CESHouseholdConsumption(HouseholdConsumption):
             np.ndarray: Target consumption by household and industry
         """
         # If no substitution data provided, fall back to default behavior
-        if any(
-            x is None
-            for x in [prices, initial_prices, taxes, initial_taxes, bundle_matrix]
-        ):
+        if any(x is None for x in [prices, initial_prices, taxes, initial_taxes, bundle_matrix]):
             return self._compute_target_consumption_default(
                 historic_consumption_sum,
                 saving_rates,
@@ -409,16 +402,12 @@ class CESHouseholdConsumption(HouseholdConsumption):
                 continue
 
             # Apply CES substitution within bundle
-            bundle_substitution = (
-                substitution_factor[bundle_mask] * bundle_initial_weights
-            )
+            bundle_substitution = substitution_factor[bundle_mask] * bundle_initial_weights
             bundle_substitution_total = np.sum(bundle_substitution)
 
             # Normalize to maintain bundle total
             if bundle_substitution_total > 0:
-                ces_weights[bundle_mask] = bundle_substitution * (
-                    bundle_total / bundle_substitution_total
-                )
+                ces_weights[bundle_mask] = bundle_substitution * (bundle_total / bundle_substitution_total)
             else:
                 ces_weights[bundle_mask] = bundle_initial_weights
 
@@ -436,18 +425,14 @@ class CESHouseholdConsumption(HouseholdConsumption):
         tau_vat: float,
     ) -> np.ndarray:
         """Compute target consumption using CES-adjusted weights."""
-        smoothing_window = min(
-            self.consumption_smoothing_window, len(historic_consumption_sum)
-        )
+        smoothing_window = min(self.consumption_smoothing_window, len(historic_consumption_sum))
         target_consumption = (
             1.0
             / (1 + tau_vat)
             * np.outer(
                 ces_weights,
                 np.maximum(
-                    self.minimum_consumption_fraction
-                    * (1 - saving_rates)
-                    * household_benefits,
+                    self.minimum_consumption_fraction * (1 - saving_rates) * household_benefits,
                     (1 - saving_rates) * income,
                     self.consumption_smoothing_fraction
                     * (1 + tau_vat)

@@ -56,9 +56,7 @@ def create_productivity_subsidy_hook(
     # Track whether subsidy has been applied (to ensure one-time payment)
     applied = [False]
 
-    def productivity_subsidy_hook(
-        simulation: Simulation, year: int, month: int
-    ) -> None:
+    def productivity_subsidy_hook(simulation: Simulation, year: int, month: int) -> None:
         """Pre-hook that applies productivity subsidy at the specified timestep."""
         # Check if we've already applied the subsidy
         if applied[0]:

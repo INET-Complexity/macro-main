@@ -116,13 +116,9 @@ class CentralBank(Agent):
             CentralBank: Initialized central bank agent
         """
         # Get corresponding functions and parameters
-        functions = functions_from_model(
-            model=configuration.functions, loc="macromodel.agents.central_bank"
-        )
+        functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.central_bank")
 
-        data = synthetic_central_bank.central_bank_data.astype(float).rename_axis(
-            "Central Bank ID"
-        )
+        data = synthetic_central_bank.central_bank_data.astype(float).rename_axis("Central Bank ID")
 
         # Create the corresponding time series object
         ts = create_central_bank_timeseries(data)

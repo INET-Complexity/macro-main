@@ -60,9 +60,7 @@ class TestHouseholdProbabilityOfBuying:
             }
         )
 
-    def test_probability_formula_produces_valid_range(
-        self, property_demand_calculator, minimal_housing_data
-    ):
+    def test_probability_formula_produces_valid_range(self, property_demand_calculator, minimal_housing_data):
         """Test that the probability formula produces values in [0, 1].
 
         This test creates a scenario where the old formula would produce
@@ -77,9 +75,7 @@ class TestHouseholdProbabilityOfBuying:
 
         # Market observations
         observed_fraction_value_price = np.array([1.0, 0.0])  # value = price
-        observed_fraction_rent_value = np.array(
-            [0.005, 0.0]
-        )  # rent = 0.5% of value monthly
+        observed_fraction_rent_value = np.array([0.005, 0.0])  # rent = 0.5% of value monthly
 
         max_price, max_rent, hoping_to_move = property_demand_calculator.compute_demand(
             housing_data=minimal_housing_data,
@@ -95,22 +91,18 @@ class TestHouseholdProbabilityOfBuying:
 
         # Check that outputs are valid (no NaN, no inf where not expected)
         # Either max_price or max_rent should be set (household decided to buy or rent)
-        assert not (
-            np.isnan(max_price[0]) and np.isnan(max_rent[0])
-        ), "Household should have decided to either buy or rent"
+        assert not (np.isnan(max_price[0]) and np.isnan(max_rent[0])), (
+            "Household should have decided to either buy or rent"
+        )
 
         # If they decided to buy, max_price should be finite and positive
         if not np.isnan(max_price[0]):
-            assert np.isfinite(
-                max_price[0]
-            ), f"max_price should be finite, got {max_price[0]}"
+            assert np.isfinite(max_price[0]), f"max_price should be finite, got {max_price[0]}"
             assert max_price[0] > 0, f"max_price should be positive, got {max_price[0]}"
 
         # If they decided to rent, max_rent should be finite and positive
         if not np.isnan(max_rent[0]):
-            assert np.isfinite(
-                max_rent[0]
-            ), f"max_rent should be finite, got {max_rent[0]}"
+            assert np.isfinite(max_rent[0]), f"max_rent should be finite, got {max_rent[0]}"
             assert max_rent[0] > 0, f"max_rent should be positive, got {max_rent[0]}"
 
     def test_old_probability_formula_bug_demonstration(self):
@@ -142,17 +134,15 @@ class TestHouseholdProbabilityOfBuying:
             prob_buying_old = 1.0 / diff_exp_old  # 1/0 ≈ inf
 
         # Document the bug: old formula gives probability > 1 (or inf)
-        assert prob_buying_old > 1.0 or np.isinf(
-            prob_buying_old
-        ), f"Expected old formula to produce invalid prob > 1, got {prob_buying_old}"
+        assert prob_buying_old > 1.0 or np.isinf(prob_buying_old), (
+            f"Expected old formula to produce invalid prob > 1, got {prob_buying_old}"
+        )
 
         # NEW formula should use proper logistic: 1 / (1 + exp(-x))
         # This always produces values in (0, 1)
         # Note: The exact fix implementation may vary, but the result must be in [0, 1]
 
-    def test_multiple_households_decisions_are_valid(
-        self, property_demand_calculator, minimal_housing_data
-    ):
+    def test_multiple_households_decisions_are_valid(self, property_demand_calculator, minimal_housing_data):
         """Test that multiple households all get valid buy/rent decisions."""
         np.random.seed(123)
 
@@ -184,12 +174,8 @@ class TestHouseholdProbabilityOfBuying:
         # All outputs should be valid (finite positive or NaN for non-participants)
         for i in range(n_households):
             if not np.isnan(max_price[i]):
-                assert np.isfinite(
-                    max_price[i]
-                ), f"Household {i}: max_price must be finite"
+                assert np.isfinite(max_price[i]), f"Household {i}: max_price must be finite"
                 assert max_price[i] > 0, f"Household {i}: max_price must be positive"
             if not np.isnan(max_rent[i]):
-                assert np.isfinite(
-                    max_rent[i]
-                ), f"Household {i}: max_rent must be finite"
+                assert np.isfinite(max_rent[i]), f"Household {i}: max_rent must be finite"
                 assert max_rent[i] > 0, f"Household {i}: max_rent must be positive"

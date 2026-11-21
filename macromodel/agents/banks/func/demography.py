@@ -157,7 +157,5 @@ class DefaultBankDemography(BankDemography):
             average_equity = float(np.mean(current_bank_equity[~insolvent_banks]))
         else:
             average_equity = float(np.mean(current_bank_equity))
-        equity_injection = np.maximum(
-            0.0, average_equity - current_bank_equity[insolvent_banks]
-        ).sum()
+        equity_injection = np.maximum(0.0, average_equity - current_bank_equity[insolvent_banks]).sum()
         return equity_injection, average_equity

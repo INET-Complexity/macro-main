@@ -55,17 +55,13 @@ class TestFirmsUpdateEmissions:
         readjusted_factors = np.ones(4)
         n_industries = test_firms.n_industries
 
-        test_firms.update_emissions(
-            readjusted_factors, emitting_indices, use_emission_multiplier=False
-        )
+        test_firms.update_emissions(readjusted_factors, emitting_indices, use_emission_multiplier=False)
         baseline_inputs = test_firms.ts.inputs_emissions[-1].copy()
         baseline_capital = test_firms.ts.capital_emissions[-1].copy()
 
         co2_ones = np.ones((4, n_industries))
         test_firms.emission_fractions = EmissionFractions(co2=co2_ones)
-        test_firms.update_emissions(
-            readjusted_factors, emitting_indices, use_emission_multiplier=True
-        )
+        test_firms.update_emissions(readjusted_factors, emitting_indices, use_emission_multiplier=True)
 
         assert np.allclose(baseline_inputs, test_firms.ts.inputs_emissions[-1])
         assert np.allclose(baseline_capital, test_firms.ts.capital_emissions[-1])
@@ -78,9 +74,7 @@ class TestFirmsUpdateEmissions:
 
         co2_zeros = np.zeros((4, n_industries))
         test_firms.emission_fractions = EmissionFractions(co2=co2_zeros)
-        test_firms.update_emissions(
-            np.ones(4), emitting_indices, use_emission_multiplier=True
-        )
+        test_firms.update_emissions(np.ones(4), emitting_indices, use_emission_multiplier=True)
 
         assert np.allclose(test_firms.ts.inputs_emissions[-1], 0.0)
         assert np.allclose(test_firms.ts.capital_emissions[-1], 0.0)
@@ -107,14 +101,10 @@ class TestFirmsUpdateEmissions:
         readjusted_factors = np.ones(4)
 
         test_firms.emission_fractions = None
-        test_firms.update_emissions(
-            readjusted_factors, emitting_indices, use_emission_multiplier=False
-        )
+        test_firms.update_emissions(readjusted_factors, emitting_indices, use_emission_multiplier=False)
         baseline = test_firms.ts.inputs_emissions[-1].copy()
 
-        test_firms.update_emissions(
-            readjusted_factors, emitting_indices, use_emission_multiplier=True
-        )
+        test_firms.update_emissions(readjusted_factors, emitting_indices, use_emission_multiplier=True)
         with_flag_no_fractions = test_firms.ts.inputs_emissions[-1].copy()
 
         assert np.allclose(baseline, with_flag_no_fractions)

@@ -4,9 +4,7 @@ import numpy as np
 import pandas as pd
 
 
-def ensure_minimum_workers_in_industries(
-    individual_data: pd.DataFrame, n_industries: int
-) -> pd.DataFrame:
+def ensure_minimum_workers_in_industries(individual_data: pd.DataFrame, n_industries: int) -> pd.DataFrame:
     """
     Ensures that each industry has at least one employed individual (Activity Status == 1).
     If any industry has zero workers:
@@ -29,9 +27,7 @@ def ensure_minimum_workers_in_industries(
     def count_employees(data: pd.DataFrame) -> np.ndarray:
         counts = np.zeros(n_industries, dtype=int)
         for ind in range(n_industries):
-            counts[ind] = np.sum(
-                (data["Employment Industry"] == ind) & (data["Activity Status"] == 1)
-            )
+            counts[ind] = np.sum((data["Employment Industry"] == ind) & (data["Activity Status"] == 1))
         return counts
 
     employees_per_industry = count_employees(individual_data)
@@ -58,8 +54,7 @@ def ensure_minimum_workers_in_industries(
             donor_ind = surplus_inds[np.argmax(employees_per_industry[surplus_inds])]
             # find one person in that donor industry
             donor_candidates = individual_data[
-                (individual_data["Employment Industry"] == donor_ind)
-                & (individual_data["Activity Status"] == 1)
+                (individual_data["Employment Industry"] == donor_ind) & (individual_data["Activity Status"] == 1)
             ].index.tolist()
 
             if len(donor_candidates) == 0:
@@ -85,9 +80,7 @@ def ensure_minimum_workers_in_industries(
         if total_employed + total_unemployed >= len(zero_employee_industries):
             # We'll convert some unemployed
             # gather unemployed indices
-            unemployed_indices = individual_data[
-                (individual_data["Activity Status"] == 2)
-            ].index.tolist()
+            unemployed_indices = individual_data[(individual_data["Activity Status"] == 2)].index.tolist()
 
             # fill empty industries from unemployed pool
             for industry_idx in zero_employee_industries:
