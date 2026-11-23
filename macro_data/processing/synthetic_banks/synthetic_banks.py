@@ -87,6 +87,10 @@ class SyntheticBanks(ABC):
         hh_mortgage_passthrough (float): Estimated mortgage rate parameter
         hh_mortgage_ect (float): Estimated mortgage ECT parameter
         hh_mortgage_rate (float): Initial mortgage rate
+        firm_short_spread (float): Mean pre-start short-term firm loan spread over policy
+        firm_long_spread (float): Mean pre-start long-term firm loan spread over policy
+        household_consumption_spread (float): Mean pre-start household consumption loan spread
+        mortgage_spread (float): Mean pre-start mortgage spread over policy
     """
 
     @abstractmethod
@@ -106,6 +110,10 @@ class SyntheticBanks(ABC):
         hh_mortgage_passthrough: float,
         hh_mortgage_ect: float,
         hh_mortgage_rate: float,
+        firm_short_spread: float,
+        firm_long_spread: float,
+        household_consumption_spread: float,
+        mortgage_spread: float,
     ) -> None:
         """Initialize a synthetic banking system.
 
@@ -124,6 +132,10 @@ class SyntheticBanks(ABC):
             hh_mortgage_passthrough (float): Rate adjustment for mortgages
             hh_mortgage_ect (float): Error correction for mortgage rates
             hh_mortgage_rate (float): Base mortgage rate
+            firm_short_spread (float): Mean pre-start short-term firm loan spread
+            firm_long_spread (float): Mean pre-start long-term firm loan spread
+            household_consumption_spread (float): Mean pre-start household consumption spread
+            mortgage_spread (float): Mean pre-start mortgage spread
         """
         # Parameters
         self.country_name = country_name
@@ -146,6 +158,11 @@ class SyntheticBanks(ABC):
         self.hh_mortgage_passthrough = hh_mortgage_passthrough
         self.hh_mortgage_ect = hh_mortgage_ect
         self.hh_mortgage_rate = hh_mortgage_rate
+
+        self.firm_short_spread = firm_short_spread
+        self.firm_long_spread = firm_long_spread
+        self.household_consumption_spread = household_consumption_spread
+        self.mortgage_spread = mortgage_spread
 
     def initialise_deposits_and_loans(
         self, synthetic_population: SyntheticPopulation, firm_deposits: np.ndarray, firm_debt: np.ndarray
@@ -293,20 +310,8 @@ class SyntheticBanks(ABC):
             mortgage_markup (float): Markup for mortgages
             household_overdraft_markup (float): Markup for household overdrafts
         """
-        bank_markup_interest_rate_short_term_firm_loans = risk_premium
-        bank_markup_interest_rate_long_term_firm_loans = risk_premium
-        bank_markup_interest_rate_household_payday_loans = risk_premium
-        bank_markup_interest_rate_overdraft_firm = risk_premium
-
         self.set_initial_interest_rates(
             central_bank_policy_rate=policy_rate,
-            bank_markup_interest_rate_short_term_firm_loans=bank_markup_interest_rate_short_term_firm_loans,
-            bank_markup_interest_rate_long_term_firm_loans=bank_markup_interest_rate_long_term_firm_loans,
-            bank_markup_interest_rate_household_payday_loans=bank_markup_interest_rate_household_payday_loans,
-            bank_markup_interest_rate_household_consumption_loans=consumption_loans_markup,
-            bank_markup_interest_rate_mortgages=mortgage_markup,
-            bank_markup_interest_rate_overdraft_firm=bank_markup_interest_rate_overdraft_firm,
-            bank_markup_interest_rate_overdraft_household=household_overdraft_markup,
         )
 
         self.set_interest_received_from_loans()
@@ -325,13 +330,6 @@ class SyntheticBanks(ABC):
     def set_initial_interest_rates(
         self,
         central_bank_policy_rate: float,
-        bank_markup_interest_rate_short_term_firm_loans: float,
-        bank_markup_interest_rate_long_term_firm_loans: float,
-        bank_markup_interest_rate_household_payday_loans: float,
-        bank_markup_interest_rate_household_consumption_loans: float,
-        bank_markup_interest_rate_mortgages: float,
-        bank_markup_interest_rate_overdraft_firm: float,
-        bank_markup_interest_rate_overdraft_household: float,
     ) -> None:
         """Set initial interest rates for all bank products.
 
@@ -343,13 +341,6 @@ class SyntheticBanks(ABC):
 
         Args:
             central_bank_policy_rate (float): Base rate from central bank
-            bank_markup_interest_rate_short_term_firm_loans (float): Markup for short-term firm loans
-            bank_markup_interest_rate_long_term_firm_loans (float): Markup for long-term firm loans
-            bank_markup_interest_rate_household_payday_loans (float): Markup for payday loans
-            bank_markup_interest_rate_household_consumption_loans (float): Markup for consumer loans
-            bank_markup_interest_rate_mortgages (float): Markup for mortgages
-            bank_markup_interest_rate_overdraft_firm (float): Markup for firm overdrafts
-            bank_markup_interest_rate_overdraft_household (float): Markup for household overdrafts
         """
         # Short-term interest rates for firm loans
         self.bank_data["Short-Term Interest Rates on Firm Loans"] = self.firm_rate
