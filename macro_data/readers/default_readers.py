@@ -50,6 +50,7 @@ from macro_data.readers.icio_sea_matching import (
 )
 from macro_data.readers.io_tables.icio_reader import ICIOReader, split_gfcf_column
 from macro_data.readers.io_tables.industries import AGGREGATED_INDUSTRIES
+from macro_data.readers.policy_data.obps_can_reader import OBPSCANReader
 from macro_data.readers.population_data.compustat_banks_reader import (
     CompustatBanksReader,
 )
@@ -59,6 +60,21 @@ from macro_data.readers.population_data.compustat_firms_reader import (
 from macro_data.readers.population_data.hfcs_reader import HFCSReader
 from macro_data.readers.socioeconomic_data.wiod_sea_data import WIODSEAReader
 from macro_data.readers.util.prune_util import DataFilterWarning
+
+
+@dataclass
+class OBPSPaths:
+    """File paths for the Canada Output-Based Pricing System data.
+
+    Attributes:
+        rates_path: CSV of carbon price rates by year and jurisdiction.
+        policy_path: CSV of per-industry reduction factors and tightening rates.
+        policy_elec_path: Optional CSV for electricity-specific tightening rates.
+    """
+
+    rates_path: Path
+    policy_path: Path
+    policy_elec_path: Optional[Path] = None
 
 
 @dataclass
@@ -113,6 +129,7 @@ class DataPaths:
     emissions_fraction_path: Optional[Path] = None
     firm_prices_path: Optional[Path] = None
     ch4_emissions_path: Optional[Path] = None
+    obps_path: Optional[OBPSPaths] = None
 
     @classmethod
     def default_paths(cls, raw_data_path: Path, icio_years: Iterable[int]):
@@ -150,6 +167,11 @@ class DataPaths:
             ch4_emissions_path=raw_data_path
             / "emission_factors"
             / "EN-GHG_EconSectByGas-CA_Emissions_2014_2023_v4.csv",
+            obps_path=OBPSPaths(
+                rates_path=raw_data_path / "policy" / "output_based_price_system_rates.csv",
+                policy_path=raw_data_path / "policy" / "output_based_price_system_policy_values_disagg.csv",
+                policy_elec_path=raw_data_path / "policy" / "output_based_price_system_policy_values_elec.csv",
+            ),
         )
 
     # @classmethod
@@ -206,6 +228,7 @@ class DataReaders:
     emission_fractions: Optional[EmissionsFractionReader] = None
     exo_prices: Optional[SectorExoPricesReader] = None
     ch4_emissions: Optional[CH4EmissionsReaderCAN] = None
+    obps_can: Optional[OBPSCANReader] = None
     regions_dict: Optional[dict[Country, list[Region]]] = None
 
     @classmethod
@@ -481,6 +504,14 @@ class DataReaders:
         if datapaths.ch4_emissions_path is not None and datapaths.ch4_emissions_path.exists():
             ch4_emissions = CH4EmissionsReaderCAN.read_data(datapaths.ch4_emissions_path)
 
+        obps_can = None
+        if datapaths.obps_path is not None:
+            obps_can = OBPSCANReader.read_from_raw_data(
+                rates_path=datapaths.obps_path.rates_path,
+                policy_path=datapaths.obps_path.policy_path,
+                policy_elec_path=datapaths.obps_path.policy_elec_path,
+            )
+
         return cls(
             icio=icio,
             wiod_sea=wiod_sea,
@@ -500,6 +531,7 @@ class DataReaders:
             emission_fractions=emission_fractions,
             exo_prices=exo_prices,
             ch4_emissions=ch4_emissions,
+            obps_can=obps_can,
             regions_dict=regions_dict,
         )
 

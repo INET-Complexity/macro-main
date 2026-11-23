@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -74,6 +75,7 @@ class PriceSetter(ABC):
         prev_unit_costs: np.ndarray,
         ppi_during: np.ndarray,
         current_time: int,
+        extra_marginal_taxes: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Calculate prices for each firm based on market conditions.
 
@@ -139,11 +141,12 @@ class DefaultPriceSetter(PriceSetter):
         current_time: int,
         min_inflation: float = -0.1,
         max_inflation: float = 0.1,
+        extra_marginal_taxes: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Calculate prices using the default multi-factor strategy.
 
         The method:
-        1. Maps sector average prices to firms
+        1. Maps sector average prices to firms (plus any OBPS marginal tax)
         2. Calculates demand-pull inflation based on market position
         3. Calculates cost-push inflation from unit costs
         4. Combines all factors with random noise
@@ -158,11 +161,18 @@ class DefaultPriceSetter(PriceSetter):
                 Defaults to -0.1 (-10%).
             max_inflation (float, optional): Upper bound on inflation rates.
                 Defaults to 0.1 (10%).
+            extra_marginal_taxes (np.ndarray, optional): Per-sector marginal
+                tax (e.g. OBPS) added to sector average prices seen by firms.
+                Shape (n_industries,). Defaults to None.
 
         Returns:
             np.ndarray: Updated prices by firm, guaranteed to be positive
         """
-        average_price_by_firm = prev_average_good_prices[current_firm_sectors]
+        tax_by_sector = (
+            extra_marginal_taxes if extra_marginal_taxes is not None else np.zeros_like(prev_average_good_prices)
+        )
+        average_price_by_firm = (prev_average_good_prices + tax_by_sector)[current_firm_sectors]
+        tax_by_firm = tax_by_sector[current_firm_sectors]
 
         # Demand-pull inflation
         demand_pull_inflation = np.zeros_like(prev_firm_prices)
@@ -187,12 +197,13 @@ class DefaultPriceSetter(PriceSetter):
         )
         demand_pull_inflation = np.maximum(min_inflation, np.minimum(max_inflation, demand_pull_inflation))
 
-        # Cost-push inflation
+        # Cost-push inflation: include the tax in unit costs so positive tax raises prices
+        total_unit_costs = curr_unit_costs + tax_by_firm
         cost_push_inflation = (
             np.divide(
-                curr_unit_costs,
+                total_unit_costs,
                 average_price_by_firm,
-                out=np.ones_like(curr_unit_costs),
+                out=np.ones_like(total_unit_costs),
                 where=average_price_by_firm != 0.0,
             )
             - 1.0
@@ -276,6 +287,7 @@ class SectorExogenousPriceSetter(DefaultPriceSetter):
         current_time: int,
         min_inflation: float = -0.1,
         max_inflation: float = 0.1,
+        extra_marginal_taxes: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute prices, overriding listed sectors with exogenous sector paths.
 
@@ -317,6 +329,7 @@ class SectorExogenousPriceSetter(DefaultPriceSetter):
             current_time=current_time,
             min_inflation=min_inflation,
             max_inflation=max_inflation,
+            extra_marginal_taxes=extra_marginal_taxes,
         )
 
         if self.firm_exo_prices is None or len(self.overriden_industries) == 0:
@@ -328,12 +341,16 @@ class SectorExogenousPriceSetter(DefaultPriceSetter):
             else prev_average_good_prices
         )
 
+        tax_by_firm = (
+            extra_marginal_taxes[current_firm_sectors] if extra_marginal_taxes is not None else np.zeros_like(price)
+        )
+
         for industry_name in self.firm_exo_prices.prices.columns:
             if industry_name not in self.overriden_industries:
                 continue
             ratio = self._normalised_price(industry_name, current_quarter=current_time)
             for idx in self._indices_for(industry_name):
-                price[idx] = base_prices[idx] * ratio
+                price[idx] = base_prices[idx] * ratio + tax_by_firm[idx]
 
         return price
 
@@ -371,6 +388,7 @@ class ExogenousPriceSetter(PriceSetter):
         current_time: int,
         min_inflation: float = -0.1,
         max_inflation: float = 0.1,
+        extra_marginal_taxes: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Set prices according to exogenous PPI path.
 
@@ -383,6 +401,8 @@ class ExogenousPriceSetter(PriceSetter):
             current_time (int): Current period index
             min_inflation (float, optional): Unused. Defaults to -0.1.
             max_inflation (float, optional): Unused. Defaults to 0.1.
+            extra_marginal_taxes (np.ndarray, optional): Unused. Accepts for
+                interface consistency. Defaults to None.
 
         Returns:
             np.ndarray: Price level from exogenous PPI path

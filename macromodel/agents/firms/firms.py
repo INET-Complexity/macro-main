@@ -1011,6 +1011,7 @@ class Firms(Agent):
         current_estimated_ppi_inflation: np.ndarray,
         previous_average_good_prices: np.ndarray,
         ppi_during: np.ndarray,
+        extra_marginal_taxes: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Set prices for each firm's output.
 
@@ -1026,6 +1027,8 @@ class Firms(Agent):
             current_estimated_ppi_inflation (np.ndarray): Expected PPI inflation
             previous_average_good_prices (np.ndarray): Previous period prices
             ppi_during (np.ndarray): Producer price indices
+            extra_marginal_taxes (np.ndarray, optional): Per-sector marginal
+                tax added to sector average prices. Defaults to None.
 
         Returns:
             np.ndarray: New prices for each firm
@@ -1051,6 +1054,7 @@ class Firms(Agent):
             ),
             ppi_during=ppi_during,
             current_time=len(self.ts.historic("price")),
+            extra_marginal_taxes=extra_marginal_taxes,
         )
 
     def compute_unconstrained_demand_for_intermediate_inputs(
