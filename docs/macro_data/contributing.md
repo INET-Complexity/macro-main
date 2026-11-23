@@ -50,36 +50,37 @@ from pathlib import Path
 import pandas as pd
 from macro_data.configuration.countries import Country
 
+
 @dataclass
 class MethaneReader:
     """
     Reader for methane emissions data from EPA/UNFCCC sources.
-    
+
     Args:
         emissions_data: DataFrame with methane emissions by country/year/sector
-        
+
     Attributes:
         emissions_data: Processed emissions data
     """
-    
+
     emissions_data: pd.DataFrame
-    
+
     @classmethod
     def from_data(cls, data_path: Path) -> "MethaneReader":
         """
         Create reader from methane emissions data files.
-        
+
         Args:
             data_path: Path to directory containing methane data files
-            
+
         Returns:
             MethaneReader: New instance with loaded and processed data
         """
         emissions_df = pd.read_csv(data_path / "methane_emissions.csv")
         emissions_df = emissions_df.set_index(["country", "year", "sector"])
-        
+
         return cls(emissions_data=emissions_df)
-    
+
     def get_total_emissions(self, country: Country, year: int) -> float:
         """Get total methane emissions for a country and year."""
         try:
@@ -98,24 +99,25 @@ The `DataReaders` class in `default_readers.py` acts as a container for all read
 
 from macro_data.readers.emissions.methane_reader import MethaneReader
 
+
 @dataclass
 class DataReaders:
     """Container for all data readers."""
-    
+
     # ... existing readers
     methane: Optional[MethaneReader] = None
-    
+
     @classmethod
     def from_config(cls, config: DataConfiguration, data_path: Path) -> "DataReaders":
         """Create DataReaders from configuration."""
-        
+
         # ... existing reader initialization
-        
+
         # Add methane reader if configured
         methane_reader = None
         if config.include_methane_data:
             methane_reader = MethaneReader.from_data(data_path / "methane")
-        
+
         return cls(
             # ... existing readers
             methane=methane_reader,
@@ -129,8 +131,8 @@ Processing modules use the `from_readers` pattern to access data:
 ```python
 # File: macro_data/processing/synthetic_firms/default_synthetic_firms.py
 
+
 class DefaultSyntheticFirms:
-    
     @classmethod
     def from_readers(
         cls,
@@ -141,29 +143,29 @@ class DefaultSyntheticFirms:
     ) -> "DefaultSyntheticFirms":
         """
         Create synthetic firms from reader data.
-        
+
         Args:
             readers: Container with all data readers
             country_name: Country to process
             year: Year to process
-            
+
         Returns:
             DefaultSyntheticFirms: Synthetic firms for the country
         """
-        
+
         # Extract data from readers
         gdp_data = readers.world_bank.get_historic_gdp(country_name, year)
-        
+
         # NEW: Use methane data if available
         methane_emissions = 0.0
         if readers.methane is not None:
             methane_emissions = readers.methane.get_total_emissions(country_name, year)
-        
+
         # Process and harmonize data
         firm_data = cls._process_firm_data(gdp_data, methane_emissions)
-        
+
         return cls(firm_data=firm_data)
-    
+
     @staticmethod
     def _process_firm_data(gdp_data: float, methane_emissions: float) -> pd.DataFrame:
         """Process and harmonize firm data."""
@@ -179,9 +181,9 @@ The `SyntheticCountry` class uses processing modules through `from_readers`:
 ```python
 # File: macro_data/processing/synthetic_country.py
 
+
 @dataclass
 class SyntheticCountry:
-    
     @classmethod
     def eu_synthetic_country(
         cls,
@@ -191,7 +193,7 @@ class SyntheticCountry:
         # ... other parameters
     ) -> "SyntheticCountry":
         """Create synthetic country from readers."""
-        
+
         # Processing modules get readers and extract what they need
         synthetic_firms = DefaultSyntheticFirms.from_readers(
             readers=readers,
@@ -199,14 +201,14 @@ class SyntheticCountry:
             year=year,
             # ... other parameters
         )
-        
+
         # Other processing modules also use from_readers pattern
         synthetic_banks = DefaultSyntheticBanks.from_readers(
             readers=readers,
             country_name=country,
             year=year,
         )
-        
+
         return cls(
             synthetic_firms=synthetic_firms,
             synthetic_banks=synthetic_banks,
@@ -221,6 +223,7 @@ class SyntheticCountry:
 # Good: Only store attributes
 def __init__(self, data: pd.DataFrame):
     self.data = data
+
 
 # Bad: Processing in __init__
 def __init__(self, data_path: Path):
@@ -264,19 +267,15 @@ When adding new data sources, you often need to harmonize them with existing dat
 
 ```python
 @staticmethod
-def _harmonize_emissions_data(
-    co2_emissions: float,
-    methane_emissions: float,
-    conversion_factor: float = 25.0
-) -> float:
+def _harmonize_emissions_data(co2_emissions: float, methane_emissions: float, conversion_factor: float = 25.0) -> float:
     """
     Harmonize different types of emissions data.
-    
+
     Args:
         co2_emissions: CO2 emissions in metric tons
         methane_emissions: Methane emissions in metric tons
         conversion_factor: CH4 to CO2 equivalent conversion factor
-        
+
     Returns:
         float: Total CO2 equivalent emissions
     """
@@ -297,36 +296,39 @@ from macro_data.readers.default_readers import DataReaders
 from macro_data.processing.synthetic_firms.default_synthetic_firms import DefaultSyntheticFirms
 from macro_data.configuration.countries import Country
 
+
 def test_methane_integration(tmp_path):
     """Test that methane data integrates properly with firm processing."""
-    
+
     # Create test data
-    methane_data = pd.DataFrame({
-        "country": ["USA", "USA"],
-        "year": [2020, 2020],
-        "sector": ["agriculture", "energy"],
-        "methane_emissions": [100.0, 50.0]
-    })
-    
+    methane_data = pd.DataFrame(
+        {
+            "country": ["USA", "USA"],
+            "year": [2020, 2020],
+            "sector": ["agriculture", "energy"],
+            "methane_emissions": [100.0, 50.0],
+        }
+    )
+
     # Set up test files
     methane_dir = tmp_path / "methane"
     methane_dir.mkdir()
     methane_data.to_csv(methane_dir / "methane_emissions.csv", index=False)
-    
+
     # Create data configuration
     config = DataConfiguration(include_methane_data=True)
-    
+
     # Test reader creation
     readers = DataReaders.from_config(config, tmp_path)
     assert readers.methane is not None
-    
+
     # Test processing module integration
     synthetic_firms = DefaultSyntheticFirms.from_readers(
         readers=readers,
         country_name=Country.USA,
         year=2020,
     )
-    
+
     # Verify methane data was used
     assert synthetic_firms.total_emissions > 0
 ```
@@ -351,21 +353,17 @@ def get_emissions(self, country: Country, year: int) -> float:
 Use Google-style docstrings with clear examples:
 
 ```python
-def harmonize_emissions(
-    self, 
-    co2_data: float, 
-    methane_data: float
-) -> float:
+def harmonize_emissions(self, co2_data: float, methane_data: float) -> float:
     """
     Harmonize CO2 and methane emissions data.
-    
+
     Args:
         co2_data: CO2 emissions in metric tons
         methane_data: Methane emissions in metric tons
-        
+
     Returns:
         float: Total CO2 equivalent emissions
-        
+
     Example:
         >>> reader = MethaneReader.from_data(data_path)
         >>> total = reader.harmonize_emissions(100.0, 50.0)

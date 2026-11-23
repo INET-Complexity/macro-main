@@ -21,6 +21,7 @@ def my_debug_hook(simulation, t, year, month):
     # Extract and log metrics here
     pass
 
+
 # Register the hook
 simulation.posthooks.append(my_debug_hook)
 
@@ -56,10 +57,12 @@ from macromodel.debug import TFPLaborLog, capture_tfp_labor_snapshot
 # Create log object
 labor_log = TFPLaborLog()
 
+
 # Define hook
 def log_labor_dynamics(sim, t, year, month):
     snapshot = capture_tfp_labor_snapshot(sim, t)
     labor_log.add_snapshot(snapshot)
+
 
 # Register hook
 simulation.posthooks.append(log_labor_dynamics)
@@ -69,12 +72,13 @@ simulation.run()
 
 # Analyze results
 import pandas as pd
+
 df = pd.DataFrame(labor_log.to_dict_list())
 df.to_csv("labor_dynamics.csv")
 
 # Check hypothesis
-final_unemployment = df['unemployment_rate'].iloc[-1]
-final_tfp = df['avg_tfp_multiplier'].iloc[-1]
+final_unemployment = df["unemployment_rate"].iloc[-1]
+final_tfp = df["avg_tfp_multiplier"].iloc[-1]
 ```
 
 **Captured Metrics**:
@@ -115,12 +119,8 @@ sim_no_tfp = Simulation.from_datawrapper(data, config_no_tfp)
 log_with = TFPLaborLog()
 log_without = TFPLaborLog()
 
-sim_with_tfp.posthooks.append(
-    lambda sim, t, y, m: log_with.add_snapshot(capture_tfp_labor_snapshot(sim, t))
-)
-sim_no_tfp.posthooks.append(
-    lambda sim, t, y, m: log_without.add_snapshot(capture_tfp_labor_snapshot(sim, t))
-)
+sim_with_tfp.posthooks.append(lambda sim, t, y, m: log_with.add_snapshot(capture_tfp_labor_snapshot(sim, t)))
+sim_no_tfp.posthooks.append(lambda sim, t, y, m: log_without.add_snapshot(capture_tfp_labor_snapshot(sim, t)))
 
 # Run
 sim_with_tfp.run()
@@ -132,19 +132,18 @@ df_no = pd.DataFrame(log_without.to_dict_list())
 
 # Compare unemployment trajectories
 import matplotlib.pyplot as plt
-plt.plot(df_with['t'], df_with['unemployment_rate'], label='With TFP')
-plt.plot(df_no['t'], df_no['unemployment_rate'], label='No TFP')
-plt.xlabel('Timestep')
-plt.ylabel('Unemployment Rate')
+
+plt.plot(df_with["t"], df_with["unemployment_rate"], label="With TFP")
+plt.plot(df_no["t"], df_no["unemployment_rate"], label="No TFP")
+plt.xlabel("Timestep")
+plt.ylabel("Unemployment Rate")
 plt.legend()
 plt.show()
 
 # Statistical test
 from scipy.stats import ttest_ind
-t_stat, p_value = ttest_ind(
-    df_with['unemployment_rate'],
-    df_no['unemployment_rate']
-)
+
+t_stat, p_value = ttest_ind(df_with["unemployment_rate"], df_no["unemployment_rate"])
 print(f"Unemployment difference: t={t_stat:.3f}, p={p_value:.4f}")
 ```
 
@@ -160,17 +159,21 @@ Create `macromodel/debug/hypothesis_name_logger.py`:
 from dataclasses import dataclass
 import numpy as np
 
+
 @dataclass
 class HypothesisSnapshot:
     """Snapshot for hypothesis X."""
+
     t: int
     # Add hypothesis-specific metrics
     metric1: float
     metric2: np.ndarray
 
+
 @dataclass
 class HypothesisLog:
     """Log container."""
+
     snapshots: list[HypothesisSnapshot] = field(default_factory=list)
 
     def add_snapshot(self, snapshot):
@@ -185,6 +188,7 @@ class HypothesisLog:
             }
             for s in self.snapshots
         ]
+
 
 def capture_hypothesis_snapshot(simulation, t: int) -> HypothesisSnapshot:
     """Extract hypothesis-specific metrics from simulation."""
@@ -215,9 +219,7 @@ from macromodel.debug.hypothesis_name_logger import (
 from macromodel.debug import HypothesisLog, capture_hypothesis_snapshot
 
 log = HypothesisLog()
-simulation.posthooks.append(
-    lambda sim, t, y, m: log.add_snapshot(capture_hypothesis_snapshot(sim, t))
-)
+simulation.posthooks.append(lambda sim, t, y, m: log.add_snapshot(capture_hypothesis_snapshot(sim, t)))
 simulation.run()
 ```
 

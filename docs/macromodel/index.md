@@ -93,23 +93,16 @@ from pathlib import Path
 data = DataWrapper.init_from_pickle("./data.pkl")
 
 # Configure country-specific parameters
-country_configurations = {
-    "FRA": CountryConfiguration(),
-    "CAN": CountryConfiguration(),
-    "USA": CountryConfiguration()
-}
+country_configurations = {"FRA": CountryConfiguration(), "CAN": CountryConfiguration(), "USA": CountryConfiguration()}
 
 # Create simulation configuration
 configuration = SimulationConfiguration(
     country_configurations=country_configurations,
-    t_max=20  # Number of time steps
+    t_max=20,  # Number of time steps
 )
 
 # Initialize simulation
-model = Simulation.from_datawrapper(
-    datawrapper=data,
-    simulation_configuration=configuration
-)
+model = Simulation.from_datawrapper(datawrapper=data, simulation_configuration=configuration)
 
 # Run simulation and save results
 model.run()

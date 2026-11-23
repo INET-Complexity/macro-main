@@ -56,14 +56,14 @@ from macro_data import DataWrapper
 # Configure data preprocessing
 data_config = default_data_configuration(
     countries=["FRA", "CAN", "USA"],
-    proxy_country_dict={"CAN": "FRA", "USA": "FRA"}  # Use France as proxy for non-EU countries
+    proxy_country_dict={"CAN": "FRA", "USA": "FRA"},  # Use France as proxy for non-EU countries
 )
 
 # Create DataWrapper instance
 creator = DataWrapper.from_config(
     configuration=data_config,
     raw_data_path="path/to/raw/data",
-    single_hfcs_survey=True  # Use single survey for household finance data
+    single_hfcs_survey=True,  # Use single survey for household finance data
 )
 
 # Save processed data
@@ -86,23 +86,16 @@ from pathlib import Path
 data = DataWrapper.init_from_pickle("./data.pkl")
 
 # Configure country-specific parameters
-country_configurations = {
-    "FRA": CountryConfiguration(),
-    "CAN": CountryConfiguration(),
-    "USA": CountryConfiguration()
-}
+country_configurations = {"FRA": CountryConfiguration(), "CAN": CountryConfiguration(), "USA": CountryConfiguration()}
 
 # Create simulation configuration
 configuration = SimulationConfiguration(
     country_configurations=country_configurations,
-    t_max=20  # Number of time steps
+    t_max=20,  # Number of time steps
 )
 
 # Initialize simulation
-model = Simulation.from_datawrapper(
-    datawrapper=data,
-    simulation_configuration=configuration
-)
+model = Simulation.from_datawrapper(datawrapper=data, simulation_configuration=configuration)
 
 # Run simulation and save results
 model.run()
@@ -115,6 +108,7 @@ model.save(save_dir=Path("./output/"), file_name="multi_country_simulation.h5")
 
 ```python
 import logging
+
 logging.basicConfig(level=logging.WARNING)
 ```
 

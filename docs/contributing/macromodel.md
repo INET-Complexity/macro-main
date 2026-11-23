@@ -93,25 +93,25 @@ The `TimeSeries` class serves as a **high-level wrapper around arrays** that pro
 ```python
 class TimeSeries:
     """High-level wrapper for temporal data management."""
-    
+
     def __init__(self, **kwargs):
         """Initialize with variable names and initial values."""
         self.variables = {}
         for name, initial_value in kwargs.items():
             self.variables[name] = [initial_value]
-    
+
     def current(self, item: str):
         """Get the most recent value."""
         return self.variables[item][-1]
-    
+
     def prev(self, item: str, n: int = 1):
         """Get the value n periods ago."""
-        return self.variables[item][-n-1]
-    
+        return self.variables[item][-n - 1]
+
     def initial(self, item: str):
         """Get the initial value."""
         return self.variables[item][0]
-    
+
     def historic(self, item: str):
         """Get the complete history."""
         return self.variables[item]
@@ -172,16 +172,16 @@ Each behavioral domain has an abstract base class defining the interface:
 # Example: ProductionSetter
 class ProductionSetter(ABC):
     """Abstract base class for determining firms' production processes."""
-    
+
     @abstractmethod
     def compute_limiting_intermediate_inputs_stock(
-        self, 
+        self,
         current_intermediate_inputs_stock: np.ndarray,
         intermediate_inputs_use: np.ndarray,
     ) -> np.ndarray:
         """Calculate production possible with available intermediate inputs."""
         pass
-    
+
     @abstractmethod
     def compute_production(
         self,
@@ -253,9 +253,10 @@ To add a new behavioral function:
 # File: macromodel/agents/firms/func/my_new_function.py
 from abc import ABC, abstractmethod
 
+
 class MyNewFunction(ABC):
     """Abstract base class for new behavioral function."""
-    
+
     @abstractmethod
     def compute_something(self, input_data: np.ndarray) -> np.ndarray:
         """Compute something based on input data."""
@@ -267,17 +268,18 @@ class MyNewFunction(ABC):
 ```python
 class SimpleImplementation(MyNewFunction):
     """Simple implementation of the new function."""
-    
+
     def __init__(self, parameter1: float = 1.0, parameter2: float = 0.5):
         self.parameter1 = parameter1
         self.parameter2 = parameter2
-    
+
     def compute_something(self, input_data: np.ndarray) -> np.ndarray:
         return input_data * self.parameter1 + self.parameter2
 
+
 class ComplexImplementation(MyNewFunction):
     """Complex implementation with different logic."""
-    
+
     def compute_something(self, input_data: np.ndarray) -> np.ndarray:
         # More complex implementation
         pass
@@ -295,18 +297,23 @@ The configuration system uses **Pydantic models** to define and validate configu
 # Example: FirmsConfiguration
 class Production(BaseModel):
     """Configuration for production function."""
+
     name: Literal["PureLeontief", "CriticalAndImportantLeontief", "Linear"] = "PureLeontief"
     path_name: str = "production"
     parameters: dict[str, Any] = {}
 
+
 class Prices(BaseModel):
     """Configuration for pricing function."""
+
     name: Literal["MarkUp", "Marginal", "Adaptive"] = "MarkUp"
     path_name: str = "prices"
     parameters: dict[str, Any] = {}
 
+
 class FirmsFunctions(BaseModel):
     """Container for all firm function configurations."""
+
     production: Production = Production()
     prices: Prices = Prices()
     wage_setter: WageSetter = WageSetter()
@@ -314,8 +321,10 @@ class FirmsFunctions(BaseModel):
     credit_demand: CreditDemand = CreditDemand()
     demography: Demography = Demography()
 
+
 class FirmsConfiguration(BaseModel):
     """Complete configuration for firm agents."""
+
     parameters: FirmsParameters = FirmsParameters()
     functions: FirmsFunctions = FirmsFunctions()
     calculate_hill_exponent: bool = True
@@ -349,7 +358,7 @@ config = FirmsConfiguration(
     functions=FirmsFunctions(
         production=Production(name="PureLeontief"),
         prices=Prices(name="MarkUp", parameters={"markup_rate": 0.15}),
-        wage_setter=WageSetter(name="Adaptive")
+        wage_setter=WageSetter(name="Adaptive"),
     )
 )
 
@@ -370,6 +379,7 @@ To add a new function to the configuration:
 ```python
 class MyNewFunction(BaseModel):
     """Configuration for new function."""
+
     name: Literal["SimpleImplementation", "ComplexImplementation"] = "SimpleImplementation"
     path_name: str = "my_new_function"
     parameters: dict[str, Any] = {}
@@ -461,6 +471,7 @@ macromodel/agents/my_new_agent/func/
 # File: macromodel/configurations/my_new_agent_configuration.py
 class MyNewAgentConfiguration(BaseModel):
     """Configuration for new agent type."""
+
     functions: MyNewAgentFunctions = MyNewAgentFunctions()
     parameters: MyNewAgentParameters = MyNewAgentParameters()
 ```
@@ -507,14 +518,10 @@ def test_production_function():
 # Test configuration system
 def test_configuration_loading():
     """Test that configurations load correct functions."""
-    config = FirmsConfiguration(
-        functions=FirmsFunctions(
-            production=Production(name="PureLeontief")
-        )
-    )
-    
+    config = FirmsConfiguration(functions=FirmsFunctions(production=Production(name="PureLeontief")))
+
     functions = functions_from_model(config.functions, "macromodel.agents.firms")
-    
+
     assert "production" in functions
     assert isinstance(functions["production"], PureLeontief)
 ```
@@ -529,20 +536,18 @@ def agent_step(self):
     # 1. Gather information
     current_state = self.ts.current("state_variable")
     market_info = self.get_market_information()
-    
+
     # 2. Make decisions using functions
     decision = self.functions["decision_function"].compute_decision(
-        current_state=current_state,
-        market_info=market_info,
-        parameters=self.configuration.parameters
+        current_state=current_state, market_info=market_info, parameters=self.configuration.parameters
     )
-    
+
     # 3. Update internal state
     self.ts.decision.append(decision)
-    
+
     # 4. Interact with markets
     self.participate_in_market(decision)
-    
+
     # 5. Record outcomes
     outcome = self.get_market_outcome()
     self.ts.outcome.append(outcome)
@@ -617,13 +622,13 @@ Each timestep follows a **five-phase architecture** with precise ordering:
 for country in self.countries.values():
     # Update exchange rates
     exchange_rate = self.exchange_rates.get_current_exchange_rates_from_usd_to_lcu(...)
-    
+
     # Country processing phases
     country.initialisation_phase(exchange_rate)  # Demographics, exchange rates
-    country.estimation_phase()                   # Expectations, forecasting
-    country.target_setting_phase()               # Production targets, wages
-    country.clear_labour_market()                # Employment matching
-    country.update_planning_metrics()            # Forward-looking indicators
+    country.estimation_phase()  # Expectations, forecasting
+    country.target_setting_phase()  # Production targets, wages
+    country.clear_labour_market()  # Employment matching
+    country.update_planning_metrics()  # Forward-looking indicators
 ```
 
 #### Phase 2: Regional Coordination (If Applicable)
@@ -654,9 +659,9 @@ for country in self.countries.values():
 
 ```python
 # Global goods market - all countries participate simultaneously
-self.goods_market.prepare()    # Collect supply/demand from all countries
-self.goods_market.clear()      # Execute clearing mechanism
-self.goods_market.record()     # Update agent states with results
+self.goods_market.prepare()  # Collect supply/demand from all countries
+self.goods_market.clear()  # Execute clearing mechanism
+self.goods_market.record()  # Update agent states with results
 ```
 
 #### Phase 5: Post-Market Updates
@@ -665,7 +670,7 @@ self.goods_market.record()     # Update agent states with results
 # Record outcomes and update metrics
 self.rest_of_the_world.record_bought_goods()
 for country in self.countries.values():
-    country.update_realised_metrics()      # Comprehensive updates
+    country.update_realised_metrics()  # Comprehensive updates
     country.update_population_structure()  # Demographics
 
 # Advance time
@@ -680,9 +685,9 @@ The simulation supports **multiple clearing algorithms** that can be configured:
 
 ```python
 # Different clearing strategies
-lib_default.py      # Random matching with priorities
-lib_pro_rata.py     # Pro-rata allocation mechanism  
-lib_water_bucket.py # Water bucket allocation strategy
+lib_default.py  # Random matching with priorities
+lib_pro_rata.py  # Pro-rata allocation mechanism
+lib_water_bucket.py  # Water bucket allocation strategy
 ```
 
 #### Market Types and Timing
@@ -766,9 +771,9 @@ class Timestep:
 ```python
 class SimulationConfiguration(BaseModel):
     """Main simulation configuration."""
-    
-    t_max: int = 120                                    # Simulation length (months)
-    seed: Optional[int] = None                          # Random seed
+
+    t_max: int = 120  # Simulation length (months)
+    seed: Optional[int] = None  # Random seed
     country_configurations: dict[str, CountryConfiguration] = {}
     row_configuration: ROWConfiguration = ROWConfiguration()
     goods_market_configuration: GoodsMarketConfiguration = GoodsMarketConfiguration()
@@ -862,6 +867,7 @@ def clear(self):
     """Execute configured clearing mechanism."""
     if self.configuration.clearing_mechanism == "lib_my_algorithm":
         from macromodel.markets.clearing.lib_my_algorithm import clear_market
+
         transactions = clear_market(self.buyers, self.sellers, self.configuration)
 ```
 
@@ -906,25 +912,18 @@ The macromodel package uses a comprehensive configuration system built on **Pyda
 from pydantic import BaseModel, Field
 from typing import Literal, Any
 
+
 class MyAgentConfiguration(BaseModel):
     """Configuration for agent behavior and parameters."""
-    
+
     # Parameters with validation
-    adjustment_speed: float = Field(
-        default=0.1,
-        ge=0.0,
-        le=1.0,
-        description="Speed of adjustment (0-1)"
-    )
-    
+    adjustment_speed: float = Field(default=0.1, ge=0.0, le=1.0, description="Speed of adjustment (0-1)")
+
     # Function selection with restricted options
     pricing_function: Literal["MarkUp", "Marginal", "Adaptive"] = "MarkUp"
-    
+
     # Complex nested parameters
-    policy_parameters: dict[str, Any] = {
-        "intervention_threshold": 0.05,
-        "policy_strength": 1.0
-    }
+    policy_parameters: dict[str, Any] = {"intervention_threshold": 0.05, "policy_strength": 1.0}
 ```
 
 ### Configuration Hierarchy
@@ -936,11 +935,11 @@ The configuration system follows a hierarchical structure:
 ```python
 class SimulationConfiguration(BaseModel):
     """Main configuration for the entire simulation."""
-    
+
     # Simulation parameters
-    t_max: int = 120                          # Simulation length (months)
-    seed: Optional[int] = None                # Random seed
-    
+    t_max: int = 120  # Simulation length (months)
+    seed: Optional[int] = None  # Random seed
+
     # Hierarchical configurations
     country_configurations: dict[str, CountryConfiguration] = {}
     row_configuration: RestOfTheWorldConfiguration = RestOfTheWorldConfiguration()
@@ -1107,10 +1106,7 @@ def functions_from_model(model: BaseModel, loc: str) -> dict[str, Any]:
 
 ```python
 # In agent initialization
-functions = functions_from_model(
-    configuration.functions,
-    "macromodel.agents.firms"
-)
+functions = functions_from_model(configuration.functions, "macromodel.agents.firms")
 
 # Agent uses configured functions
 production_level = functions["production"].compute_production(...)
@@ -1127,17 +1123,11 @@ config = FirmsConfiguration()
 
 # Customizing parameters
 config = FirmsConfiguration(
-    parameters=FirmsParameters(
-        capital_inputs_utilisation_rate=0.9,
-        expected_capacity_utilisation=0.85
-    ),
+    parameters=FirmsParameters(capital_inputs_utilisation_rate=0.9, expected_capacity_utilisation=0.85),
     functions=FirmsFunctions(
         production=Production(name="PureLeontief"),
-        prices=Prices(
-            name="DefaultPriceSetter",
-            parameters={"price_setting_noise_std": 0.02}
-        )
-    )
+        prices=Prices(name="DefaultPriceSetter", parameters={"price_setting_noise_std": 0.02}),
+    ),
 )
 ```
 
@@ -1152,17 +1142,13 @@ simulation_config = SimulationConfiguration(
         "FRA": CountryConfiguration(
             firms=FirmsConfiguration(
                 parameters=FirmsParameters(capital_inputs_utilisation_rate=0.95),
-                functions=FirmsFunctions(
-                    production=Production(name="CriticalAndImportantLeontief")
-                )
+                functions=FirmsFunctions(production=Production(name="CriticalAndImportantLeontief")),
             )
         ),
         "DEU": CountryConfiguration(
-            firms=FirmsConfiguration(
-                parameters=FirmsParameters(capital_inputs_utilisation_rate=0.92)
-            )
-        )
-    }
+            firms=FirmsConfiguration(parameters=FirmsParameters(capital_inputs_utilisation_rate=0.92))
+        ),
+    },
 )
 ```
 
@@ -1218,13 +1204,10 @@ country_configurations:
 ```python
 class FirmsParameters(BaseModel):
     # ... existing parameters
-    
+
     # New parameter with validation
     new_behavioral_parameter: float = Field(
-        default=1.0,
-        ge=0.0,
-        le=2.0,
-        description="New behavioral parameter description"
+        default=1.0, ge=0.0, le=2.0, description="New behavioral parameter description"
     )
 ```
 
@@ -1233,13 +1216,10 @@ class FirmsParameters(BaseModel):
 ```python
 class MyNewFunction(BaseModel):
     """Configuration for new behavioral function."""
-    
+
     name: Literal["SimpleImpl", "ComplexImpl", "AdaptiveImpl"] = "SimpleImpl"
     path_name: str = "my_new_function"
-    parameters: dict[str, Any] = {
-        "sensitivity": 0.5,
-        "threshold": 0.1
-    }
+    parameters: dict[str, Any] = {"sensitivity": 0.5, "threshold": 0.1}
 ```
 
 #### 3. Add to Agent Function Collection
@@ -1257,18 +1237,13 @@ class FirmsFunctions(BaseModel):
 ```python
 class MyParameters(BaseModel):
     """Well-validated parameter configuration."""
-    
+
     # Use Field for validation
-    ratio_parameter: float = Field(
-        default=0.5,
-        ge=0.0,
-        le=1.0,
-        description="Must be between 0 and 1"
-    )
-    
+    ratio_parameter: float = Field(default=0.5, ge=0.0, le=1.0, description="Must be between 0 and 1")
+
     # Use Literal for restricted choices
     strategy: Literal["conservative", "aggressive", "adaptive"] = "conservative"
-    
+
     # Use positive constraints
     positive_value: float = Field(gt=0.0, description="Must be positive")
 ```
@@ -1279,22 +1254,15 @@ class MyParameters(BaseModel):
 class WellDocumentedConfig(BaseModel):
     """
     Configuration for economic agent behavior.
-    
+
     This configuration controls how agents make decisions and interact
     with markets. All parameters have economic interpretations.
     """
-    
-    elasticity: float = Field(
-        default=-0.5,
-        le=0.0,
-        description="Price elasticity of demand (negative value expected)"
-    )
-    
+
+    elasticity: float = Field(default=-0.5, le=0.0, description="Price elasticity of demand (negative value expected)")
+
     adjustment_speed: float = Field(
-        default=0.1,
-        ge=0.0,
-        le=1.0,
-        description="Speed of adjustment to equilibrium (0=no adjustment, 1=instant)"
+        default=0.1, ge=0.0, le=1.0, description="Speed of adjustment to equilibrium (0=no adjustment, 1=instant)"
     )
 ```
 
@@ -1303,13 +1271,11 @@ class WellDocumentedConfig(BaseModel):
 ```python
 def test_configuration_validation():
     """Test configuration validation."""
-    
+
     # Valid configuration
-    config = FirmsConfiguration(
-        parameters=FirmsParameters(capital_inputs_utilisation_rate=0.9)
-    )
+    config = FirmsConfiguration(parameters=FirmsParameters(capital_inputs_utilisation_rate=0.9))
     assert config.parameters.capital_inputs_utilisation_rate == 0.9
-    
+
     # Invalid configuration should raise error
     with pytest.raises(ValidationError):
         FirmsConfiguration(
