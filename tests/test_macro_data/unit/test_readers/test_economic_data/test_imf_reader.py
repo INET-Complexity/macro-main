@@ -21,3 +21,9 @@ class TestIMFReader:
     def test__prune(self, readers):
         readers.imf_reader.prune("2012-01-01")
         assert readers.imf_reader.total_commercial_loans(2013, "AFG") == pytest.approx(46962.25e6, abs=1e7)
+
+    def test__na_growth_rates_do_not_fallback_to_gdp_for_missing_components(self, readers):
+        na_growth = readers.imf_reader.get_na_growth_rates("FRA")
+
+        assert "GDP" in na_growth.columns
+        assert "HH Cons" not in na_growth.columns
