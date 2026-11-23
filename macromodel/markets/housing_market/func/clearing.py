@@ -151,6 +151,9 @@ class DefaultHousingMarketClearer(HousingMarketClearer):
             max_willing_to_pay=max_price_willing_to_pay,
             is_rental_market=False,
         )
+        sold_property_ids = matching_sales["property_id"].astype(int).values
+        # Sales clear first; sold homes leave the rental pool before rental matching.
+        housing_data.loc[sold_property_ids, "Up for Rent"] = False
 
         # Rental market
         matching_rental = self.perform_matching(
@@ -301,6 +304,9 @@ class AutomaticHousingMarketClearer(HousingMarketClearer):
             max_willing_to_pay=max_price_willing_to_pay,
             is_rental_market=False,
         )
+        sold_property_ids = matching_sales["property_id"].astype(int).values
+        # Sales clear first; sold homes leave the rental pool before rental matching.
+        housing_data.loc[sold_property_ids, "Up for Rent"] = False
 
         # Rental market
         matching_rental = self.perform_matching(
@@ -372,6 +378,18 @@ class AutomaticHousingMarketClearer(HousingMarketClearer):
         # Collect properties
         property_open_ind = np.where(housing_data[status_field])[0]
         property_prices = housing_data.loc[property_open_ind, price_field].values
+        # Empty sides of the market have no feasible cost matrix to optimize.
+        if len(households_with_demand) == 0 or len(property_open_ind) == 0:
+            return pd.DataFrame(
+                data={
+                    "sales_types": [],
+                    "property_id": [],
+                    "property_value": [],
+                    "price_or_rent": [],
+                    "seller_id": [],
+                    "buyer_id": [],
+                }
+            )
 
         # Create a cost matrix
         cost = sp.spatial.distance_matrix(
