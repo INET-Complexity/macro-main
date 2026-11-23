@@ -106,19 +106,28 @@ class EmissionsReader:
 
         coal = pd.read_csv(data_path / "PCOALAUUSDM.csv")
         coal["observation_date"] = pd.to_datetime(coal["observation_date"])
-        coal.rename(columns={"PCOALAUUSDM": "coal_price", "observation_date": "DATE"}, inplace=True)
+        coal.rename(
+            columns={"PCOALAUUSDM": "coal_price", "observation_date": "DATE"},
+            inplace=True,
+        )
         coal.set_index("DATE", inplace=True)
         coal = coal.resample("YS").first()
 
         oil = pd.read_csv(data_path / "POILBREUSDM.csv")
         oil["observation_date"] = pd.to_datetime(oil["observation_date"])
-        oil.rename(columns={"POILBREUSDM": "oil_price", "observation_date": "DATE"}, inplace=True)
+        oil.rename(
+            columns={"POILBREUSDM": "oil_price", "observation_date": "DATE"},
+            inplace=True,
+        )
         oil.set_index("DATE", inplace=True)
         oil = oil.resample("YS").first()
 
         gas = pd.read_csv(data_path / "PNGASEUUSDM.csv")
         gas["observation_date"] = pd.to_datetime(gas["observation_date"])
-        gas.rename(columns={"PNGASEUUSDM": "gas_price", "observation_date": "DATE"}, inplace=True)
+        gas.rename(
+            columns={"PNGASEUUSDM": "gas_price", "observation_date": "DATE"},
+            inplace=True,
+        )
         gas.set_index("DATE", inplace=True)
         gas = gas.resample("YS").first()
 
@@ -225,7 +234,14 @@ class EmissionsData:
             Order of factors in array is fixed and matches the order
             expected by other parts of the system
         """
-        return np.array([self.coal_factor_lcu, self.gas_factor_lcu, self.oil_factor_lcu, self.refining_factor_lcu])
+        return np.array(
+            [
+                self.coal_factor_lcu,
+                self.gas_factor_lcu,
+                self.oil_factor_lcu,
+                self.refining_factor_lcu,
+            ]
+        )
 
 
 @dataclass

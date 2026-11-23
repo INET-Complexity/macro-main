@@ -191,7 +191,7 @@ france_population = SyntheticHFCSPopulation.from_readers(
     industry_data=industry_data,
     industries=["C10T12", "C13T15"],
     total_unemployment_benefits=1e9,
-    exogenous_data=exogenous_data
+    exogenous_data=exogenous_data,
 )
 
 # Compute household wealth and income

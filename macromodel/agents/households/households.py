@@ -25,7 +25,9 @@ import numpy as np
 import pandas as pd
 
 from macro_data import SyntheticCountry, SyntheticPopulation
-from macro_data.readers.emission_fraction.emission_fraction_reader import EmissionFractions
+from macro_data.readers.emission_fraction.emission_fraction_reader import (
+    EmissionFractions,
+)
 from macromodel.agents.agent import Agent
 from macromodel.agents.banks.banks import Banks
 from macromodel.agents.households.household_properties import HouseholdType
@@ -365,7 +367,11 @@ class Households(Agent):
             configuration (HouseholdsConfiguration): New household config
         """
         self.gen_reset()
-        update_functions(functions=self.functions, model=configuration.functions, loc="macromodel.agents.households")
+        update_functions(
+            functions=self.functions,
+            model=configuration.functions,
+            loc="macromodel.agents.households",
+        )
 
     def compute_employee_income(
         self,

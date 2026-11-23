@@ -21,7 +21,13 @@ def test__prune_icio_dict():
     prune_date = date(year=2016, month=1, day=1)
 
     pruned_dict = prune_icio_dict(dummy_dict, prune_date)
-    assert pruned_dict == {2016: "dummy", 2017: "dummy", 2018: "dummy", 2019: "dummy", 2020: "dummy"}
+    assert pruned_dict == {
+        2016: "dummy",
+        2017: "dummy",
+        2018: "dummy",
+        2019: "dummy",
+        2020: "dummy",
+    }
 
 
 def test__get_benefits_inflation(readers):

@@ -49,7 +49,10 @@ def add_investment_matrix_to_icio(
 
 
 def _add_country_investment(
-    country_name: Country | Region, icio_reader: ICIOReader, sea_reader: WIODSEAReader, yearly_factor: float = 4.0
+    country_name: Country | Region,
+    icio_reader: ICIOReader,
+    sea_reader: WIODSEAReader,
+    yearly_factor: float = 4.0,
 ):
     gfcf = icio_reader.column_allc(country_name, "Firm Fixed Capital Formation") / icio_reader.yearly_factor
     cap_factors = sea_reader.get_values_in_usd(country_name, "Capital Compensation") / gfcf
@@ -121,7 +124,10 @@ def get_sea(
 
 
 def _match_country_iot_with_sea(
-    country_name: Country | Region, icio_reader: ICIOReader, sea_reader: WIODSEAReader, yearly_factor: float = 4.0
+    country_name: Country | Region,
+    icio_reader: ICIOReader,
+    sea_reader: WIODSEAReader,
+    yearly_factor: float = 4.0,
 ):
     # sea_reader.df.loc[
     #     sea_reader.df.index.get_level_values(0) == country_name,
@@ -178,7 +184,10 @@ def reconcile_value_added(
 
 
 def _reconcile_value_added(
-    country_name: Country | Region, icio_reader: ICIOReader, sea_reader: WIODSEAReader, yearly_factor: float = 4.0
+    country_name: Country | Region,
+    icio_reader: ICIOReader,
+    sea_reader: WIODSEAReader,
+    yearly_factor: float = 4.0,
 ):
     new_va = yearly_factor * icio_reader.get_value_added_series(country_name)
     old_va = sea_reader.df.loc[country_name, "Value Added"]
@@ -200,7 +209,10 @@ def _reconcile_value_added(
 
 
 def _match_country_iot_with_sea2(
-    country_name: Country | Region, icio_reader: ICIOReader, sea_reader: WIODSEAReader, yearly_factor: float = 4.0
+    country_name: Country | Region,
+    icio_reader: ICIOReader,
+    sea_reader: WIODSEAReader,
+    yearly_factor: float = 4.0,
 ):
     sea_reader.df.loc[
         sea_reader.df.index.get_level_values(0) == country_name,
@@ -216,8 +228,14 @@ def _match_country_iot_with_sea2(
     # labour compensation + capital compensation = value added, but we need to offset by a factor
 
     sea_value_added = (
-        sea_reader.df.loc[sea_reader.df.index.get_level_values(0) == country_name, "Labour Compensation"]
-        + sea_reader.df.loc[sea_reader.df.index.get_level_values(0) == country_name, "Capital Compensation"]
+        sea_reader.df.loc[
+            sea_reader.df.index.get_level_values(0) == country_name,
+            "Labour Compensation",
+        ]
+        + sea_reader.df.loc[
+            sea_reader.df.index.get_level_values(0) == country_name,
+            "Capital Compensation",
+        ]
     )
 
     ratio = new_va / sea_value_added

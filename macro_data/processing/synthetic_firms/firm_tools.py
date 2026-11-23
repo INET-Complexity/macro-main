@@ -348,11 +348,22 @@ def initialise_basic_firm_fields_compustat(
     compustat_data = compustat_data.iloc[firms_inds]
 
     firm_data = add_number_employees_compustat(
-        firm_data, compustat_data, n_employees_per_industry, n_firms_per_industry, n_industries
+        firm_data,
+        compustat_data,
+        n_employees_per_industry,
+        n_firms_per_industry,
+        n_industries,
     )
 
     labour_compensation = industry_data["industry_vectors"]["Labour Compensation in LCU"].values
-    firm_data = add_wages(firm_data, n_employees_per_industry, n_firms, n_industries, labour_compensation, tau_sif)
+    firm_data = add_wages(
+        firm_data,
+        n_employees_per_industry,
+        n_firms,
+        n_industries,
+        labour_compensation,
+        tau_sif,
+    )
     output = industry_data["industry_vectors"]["Output in USD"].values
     firm_data = add_production(firm_data, n_employees_per_industry, n_industries, output)
     firm_data["Price in USD"] = 1.0
@@ -418,10 +429,21 @@ def initialise_basic_firm_fields(
     )
 
     firm_data = add_number_employees_random(
-        firm_data, firm_size_zetas, n_employees_per_industry, n_firms_per_industry, n_industries
+        firm_data,
+        firm_size_zetas,
+        n_employees_per_industry,
+        n_firms_per_industry,
+        n_industries,
     )
     labour_compensation = industry_data["industry_vectors"]["Labour Compensation in LCU"].values
-    firm_data = add_wages(firm_data, n_employees_per_industry, n_firms, n_industries, labour_compensation, tau_sif)
+    firm_data = add_wages(
+        firm_data,
+        n_employees_per_industry,
+        n_firms,
+        n_industries,
+        labour_compensation,
+        tau_sif,
+    )
     output = industry_data["industry_vectors"]["Output in USD"].values
     firm_data = add_production(firm_data, n_employees_per_industry, n_industries, output)
     firm_data["Price in USD"] = 1.0
@@ -532,4 +554,9 @@ def function_parameters_dependent_initialisation(
         + firm_data["Price"] * capital_inputs_stock.sum(axis=1)
         - firm_data["Debt"]
     )
-    return capital_inputs_stock, intermediate_inputs_stock, used_capital_inputs, used_intermediate_inputs
+    return (
+        capital_inputs_stock,
+        intermediate_inputs_stock,
+        used_capital_inputs,
+        used_intermediate_inputs,
+    )

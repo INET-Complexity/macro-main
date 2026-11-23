@@ -80,7 +80,11 @@ class SyntheticGoodsMarket:
             rates to inflation and growth patterns.
     """
 
-    def __init__(self, country_name: str | Country, exchange_rates_model: Optional[LinearRegression]):
+    def __init__(
+        self,
+        country_name: str | Country,
+        exchange_rates_model: Optional[LinearRegression],
+    ):
         """
         Represents a synthetic goods market.
 

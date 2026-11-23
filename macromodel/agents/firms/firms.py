@@ -6,7 +6,9 @@ import numpy as np
 import pandas as pd
 
 from macro_data import SyntheticFirms
-from macro_data.readers.emission_fraction.emission_fraction_reader import EmissionFractions
+from macro_data.readers.emission_fraction.emission_fraction_reader import (
+    EmissionFractions,
+)
 from macro_data.readers.exo_prices import SectorExoPrices
 from macromodel.agents.agent import Agent
 from macromodel.agents.firms.firm_ts import FirmTimeSeries
@@ -236,13 +238,15 @@ class Firms(Agent):
             input_dict: dict = {
                 f"{key}_inputs_emissions": synthetic_firms.firm_data[f"{emitting_industry} Input Emissions"]
                 for key, emitting_industry in zip(
-                    ["coal", "oil", "gas", "refined_products"], ["Coal", "Oil", "Gas", "Refined Products"]
+                    ["coal", "oil", "gas", "refined_products"],
+                    ["Coal", "Oil", "Gas", "Refined Products"],
                 )
             }
             capital_dict = {
                 f"{key}_capital_emissions": synthetic_firms.firm_data[f"{emitting_industry} Capital Emissions"]
                 for key, emitting_industry in zip(
-                    ["coal", "oil", "gas", "refined_products"], ["Coal", "Oil", "Gas", "Refined Products"]
+                    ["coal", "oil", "gas", "refined_products"],
+                    ["Coal", "Oil", "Gas", "Refined Products"],
                 )
             }
 
@@ -361,7 +365,11 @@ class Firms(Agent):
             configuration (FirmsConfiguration): New model configuration
         """
         self.gen_reset()
-        update_functions(model=configuration.functions, loc="macromodel.agents.firms", functions=self.functions)
+        update_functions(
+            model=configuration.functions,
+            loc="macromodel.agents.firms",
+            functions=self.functions,
+        )
 
         current_inv = (
             self.ts.current("production")
@@ -2198,7 +2206,8 @@ class Firms(Agent):
         intermediate_growth = growth_func.compute_intermediate_multiplier_growth(
             current_multipliers=self.states["intermediate_tech_multipliers"],
             cumulative_improvements=self.states.get(
-                "cumulative_intermediate_improvements", np.zeros_like(self.states["intermediate_tech_multipliers"])
+                "cumulative_intermediate_improvements",
+                np.zeros_like(self.states["intermediate_tech_multipliers"]),
             ),
             base_coefficients=base_intermediate_coefficients,
             firm_industries=self.states["Industry"],
@@ -2211,7 +2220,8 @@ class Firms(Agent):
         capital_growth = growth_func.compute_capital_multiplier_growth(
             current_multipliers=self.states["capital_tech_multipliers"],
             cumulative_improvements=self.states.get(
-                "cumulative_capital_improvements", np.zeros_like(self.states["capital_tech_multipliers"])
+                "cumulative_capital_improvements",
+                np.zeros_like(self.states["capital_tech_multipliers"]),
             ),
             base_coefficients=base_capital_coefficients,
             firm_industries=self.states["Industry"],

@@ -87,9 +87,11 @@ class ConsumptionFunction(BaseModel):
     """
 
     path_name: str = "consumption"
-    name: Literal["DefaultHouseholdConsumption", "ExogenousHouseholdConsumption", "CESHouseholdConsumption"] = (
-        "DefaultHouseholdConsumption"
-    )
+    name: Literal[
+        "DefaultHouseholdConsumption",
+        "ExogenousHouseholdConsumption",
+        "CESHouseholdConsumption",
+    ] = "DefaultHouseholdConsumption"
     parameters: dict[str, Any] = {
         "consumption_smoothing_fraction": 0.0,
         "consumption_smoothing_window": 12,
@@ -155,9 +157,11 @@ class SavingRatesFunction(BaseModel):
     """
 
     path_name: str = "saving_rates"
-    name: Literal["AverageSavingRatesSetter", "ConstantSavingRatesSetter", "DefaultSavingRatesSetter"] = (
-        "AverageSavingRatesSetter"
-    )
+    name: Literal[
+        "AverageSavingRatesSetter",
+        "ConstantSavingRatesSetter",
+        "DefaultSavingRatesSetter",
+    ] = "AverageSavingRatesSetter"
     parameters: dict[str, Any] = {
         "independents": ["Income", "Debt"],
     }
@@ -217,9 +221,11 @@ class SocialTransfersFunction(BaseModel):
     """
 
     path_name: str = "social_transfers"
-    name: Literal["EqualSocialTransfersSetter", "ConstantSocialTransfersSetter", "DefaultSocialTransfersSetter"] = (
-        "EqualSocialTransfersSetter"
-    )
+    name: Literal[
+        "EqualSocialTransfersSetter",
+        "ConstantSocialTransfersSetter",
+        "DefaultSocialTransfersSetter",
+    ] = "EqualSocialTransfersSetter"
     parameters: dict[str, Any] = {
         "independents": ["Income", "Debt"],
     }

@@ -225,7 +225,10 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
             output_shares = None
 
         household_data, individual_data = sample_households(
-            hfcs_households_data, hfcs_individuals_data, n_households, output_shares=output_shares
+            hfcs_households_data,
+            hfcs_individuals_data,
+            n_households,
+            output_shares=output_shares,
         )
 
         unemployment_rate = exogenous_data.labour_stats.loc[f"{year}-Q{quarter}", "Unemployment Rate (Value)"].iloc[0]
@@ -473,7 +476,10 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         )
 
     def set_debt_installments(
-        self, consumption_installments: np.ndarray, ce_installments: np.ndarray, mortgage_installments: np.ndarray
+        self,
+        consumption_installments: np.ndarray,
+        ce_installments: np.ndarray,
+        mortgage_installments: np.ndarray,
     ) -> None:
         """
         Sets the debt installments for each household based on the credit market data.
@@ -714,14 +720,20 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
         self.household_data["Saving Rate"] = saving_rates
 
     def normalise_household_investment(
-        self, tau_cf: float, iot_hh_investment: np.ndarray | pd.Series, positive_investment_rates: bool = True
+        self,
+        tau_cf: float,
+        iot_hh_investment: np.ndarray | pd.Series,
+        positive_investment_rates: bool = True,
     ):
         inv_weights = iot_hh_investment / iot_hh_investment.sum()
         income = self.household_data["Income"].values
         investment_rate = self.household_data["Investment Rate"].values
 
         current_hh_investment = default_target_investment(
-            income_=income, investment_rate=investment_rate, tau_cf_=tau_cf, investment_weights_=inv_weights
+            income_=income,
+            investment_rate=investment_rate,
+            tau_cf_=tau_cf,
+            investment_weights_=inv_weights,
         )
 
         factor = iot_hh_investment.sum() / current_hh_investment.sum()
@@ -842,7 +854,10 @@ class SyntheticHFCSPopulation(SyntheticPopulation):
 
         def consumption_difference(alpha):
             return (
-                np.dot(homogeneous_weights * alpha + weights_by_income * (1 - alpha), disposable_income_by_quantile)
+                np.dot(
+                    homogeneous_weights * alpha + weights_by_income * (1 - alpha),
+                    disposable_income_by_quantile,
+                )
                 / (1 + vat)
                 - iot_hh_consumption
             )

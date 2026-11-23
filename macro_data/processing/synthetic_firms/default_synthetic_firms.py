@@ -169,6 +169,7 @@ class DefaultSyntheticFirms(SyntheticFirms):
                     country_name,
                     year,
                 )
+
                 if firm_size_zetas is None:
                     firm_size_zetas = readers.ons.get_firm_size_zetas()
 

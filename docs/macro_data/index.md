@@ -65,16 +65,11 @@ from macro_data.configuration_utils import default_data_configuration
 
 # Create configuration for multiple countries
 data_config = default_data_configuration(
-    countries=["FRA", "CAN", "USA"],
-    proxy_country_dict={"CAN": "FRA", "USA": "FRA"}
+    countries=["FRA", "CAN", "USA"], proxy_country_dict={"CAN": "FRA", "USA": "FRA"}
 )
 
 # Initialize DataWrapper with configuration
-creator = DataWrapper.from_config(
-    configuration=data_config,
-    raw_data_path="path/to/raw/data",
-    single_hfcs_survey=True
-)
+creator = DataWrapper.from_config(configuration=data_config, raw_data_path="path/to/raw/data", single_hfcs_survey=True)
 
 # Save processed data
 creator.save("path/to/save/data.pkl")

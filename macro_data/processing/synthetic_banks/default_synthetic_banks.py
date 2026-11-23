@@ -288,7 +288,8 @@ class DefaultSyntheticBanks(SyntheticBanks):
             DefaultSyntheticBanks: Container with preprocessed banking system data
         """
         compustat_data = readers.compustat_banks.get_country_data(
-            country=country_name, exchange_rate=readers.exchange_rates.from_usd_to_lcu(country_name, year)
+            country=country_name,
+            exchange_rate=readers.exchange_rates.from_usd_to_lcu(country_name, year),
         )
 
         # select only positive debt
@@ -412,12 +413,16 @@ class DefaultSyntheticBanks(SyntheticBanks):
             ]
         ):
             firm_passthrough, firm_ect, firm_rate = default_rate_values(policy_rates)
-            hh_consumption_passthrough, household_consumption_ect, household_consumption_rate = default_rate_values(
-                policy_rates
-            )
-            hh_mortgage_passthrough, household_mortgages_ect, household_mortgages_rate = default_rate_values(
-                policy_rates
-            )
+            (
+                hh_consumption_passthrough,
+                household_consumption_ect,
+                household_consumption_rate,
+            ) = default_rate_values(policy_rates)
+            (
+                hh_mortgage_passthrough,
+                household_mortgages_ect,
+                household_mortgages_rate,
+            ) = default_rate_values(policy_rates)
         else:
             df = rates_dataframe(
                 firm_rate,
@@ -431,12 +436,16 @@ class DefaultSyntheticBanks(SyntheticBanks):
             )
 
             firm_passthrough, firm_ect, firm_rate = fit_firm_models(df, n_lags=1)
-            hh_consumption_passthrough, household_consumption_ect, household_consumption_rate = fit_household_models(
-                df, n_lags=1
-            )
-            hh_mortgage_passthrough, household_mortgages_ect, household_mortgages_rate = fit_mortgage_models(
-                df, n_lags=1
-            )
+            (
+                hh_consumption_passthrough,
+                household_consumption_ect,
+                household_consumption_rate,
+            ) = fit_household_models(df, n_lags=1)
+            (
+                hh_mortgage_passthrough,
+                household_mortgages_ect,
+                household_mortgages_rate,
+            ) = fit_mortgage_models(df, n_lags=1)
         return (
             firm_ect,
             firm_passthrough,

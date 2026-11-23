@@ -297,10 +297,10 @@ class FirmTimeSeries(TimeSeries):
             gross_operating_surplus_mixed_income=gross_operating_surplus_mixed_income,
             #
             total_hill_tail_estimate_production=[
-                0.0 if not calculate_hill_exponent else calculate_tail_exponent(data["Production"].values.copy())
+                (0.0 if not calculate_hill_exponent else calculate_tail_exponent(data["Production"].values.copy()))
             ],
             total_hill_tail_estimate_number_of_employees=[
-                0.0 if not calculate_hill_exponent else data["Number of Employees"].values.astype(int).copy()
+                (0.0 if not calculate_hill_exponent else data["Number of Employees"].values.astype(int).copy())
             ],
             total_hill_tail_estimate_output_by_employee=[
                 (
@@ -506,10 +506,10 @@ def create_firms_timeseries(
         gross_operating_surplus_mixed_income=gross_operating_surplus_mixed_income,
         #
         total_hill_tail_estimate_production=[
-            0.0 if not calculate_hill_exponent else calculate_tail_exponent(data["Production"].values.copy())
+            (0.0 if not calculate_hill_exponent else calculate_tail_exponent(data["Production"].values.copy()))
         ],
         total_hill_tail_estimate_number_of_employees=[
-            0.0 if not calculate_hill_exponent else data["Number of Employees"].values.astype(int).copy()
+            (0.0 if not calculate_hill_exponent else data["Number of Employees"].values.astype(int).copy())
         ],
         total_hill_tail_estimate_output_by_employee=[
             (

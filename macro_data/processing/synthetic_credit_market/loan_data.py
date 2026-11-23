@@ -85,7 +85,10 @@ class LongtermLoans(LoanData):
 
     @classmethod
     def from_agent_data(
-        cls, bank_data: pd.DataFrame, firm_data: pd.DataFrame, firm_loan_maturity: int = 60
+        cls,
+        bank_data: pd.DataFrame,
+        firm_data: pd.DataFrame,
+        firm_loan_maturity: int = 60,
     ) -> "LongtermLoans":
         """Create a preprocessed long-term loan data container.
 
@@ -136,7 +139,10 @@ class ShorttermLoans(LoanData):
 
     @classmethod
     def from_agent_data(
-        cls, bank_data: pd.DataFrame, firm_data: pd.DataFrame, firm_loan_maturity: int = 60
+        cls,
+        bank_data: pd.DataFrame,
+        firm_data: pd.DataFrame,
+        firm_loan_maturity: int = 60,
     ) -> "ShorttermLoans":
         """Create a preprocessed short-term loan data container.
 
@@ -178,7 +184,10 @@ class ConsumptionExpansionLoans(LoanData):
 
     @classmethod
     def from_agent_data(
-        cls, bank_data: pd.DataFrame, household_data: pd.DataFrame, consumption_loan_maturity: int = 1
+        cls,
+        bank_data: pd.DataFrame,
+        household_data: pd.DataFrame,
+        consumption_loan_maturity: int = 1,
     ) -> "ConsumptionExpansionLoans":
         """Create a preprocessed consumer loan data container.
 
@@ -233,7 +242,10 @@ class PaydayLoans(LoanData):
 
     @classmethod
     def from_agent_data(
-        cls, bank_data: pd.DataFrame, household_data: pd.DataFrame, payday_loan_maturity: int = 1
+        cls,
+        bank_data: pd.DataFrame,
+        household_data: pd.DataFrame,
+        payday_loan_maturity: int = 1,
     ) -> "PaydayLoans":
         """Create a preprocessed payday loan data container.
 
@@ -272,7 +284,12 @@ class MortgageLoans(LoanData):
     """
 
     @classmethod
-    def from_agent_data(cls, bank_data: pd.DataFrame, household_data: pd.DataFrame, mortgage_maturity: int = 120):
+    def from_agent_data(
+        cls,
+        bank_data: pd.DataFrame,
+        household_data: pd.DataFrame,
+        mortgage_maturity: int = 120,
+    ):
         """Create a preprocessed mortgage loan data container.
 
         This method:

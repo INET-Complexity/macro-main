@@ -183,7 +183,11 @@ class CreditMarket:
         """
         self.states = deepcopy(self.initial_states)
         self.ts.reset()
-        update_functions(model=configuration.functions, loc="macromodel.agents.credit_market", functions=self.functions)
+        update_functions(
+            model=configuration.functions,
+            loc="macromodel.agents.credit_market",
+            functions=self.functions,
+        )
 
     @classmethod
     def from_data(

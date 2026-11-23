@@ -161,7 +161,12 @@ def match_households_with_banks_optimal(
     ]
 
 
-def rescale(population: SyntheticPopulation, households_field: str, banks: SyntheticBanks, banks_field: str):
+def rescale(
+    population: SyntheticPopulation,
+    households_field: str,
+    banks: SyntheticBanks,
+    banks_field: str,
+):
     """Reconcile household financial data with bank totals.
 
     This function ensures consistency between sources by:

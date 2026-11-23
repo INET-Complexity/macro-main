@@ -143,7 +143,8 @@ class HousingMarket:
         """
         # Get corresponding functions
         functions = functions_from_model(
-            housing_market_configuration.functions, loc="macromodel.markets.housing_market"
+            housing_market_configuration.functions,
+            loc="macromodel.markets.housing_market",
         )
 
         #     #     store[country_name + "_synthetic_housing_market"] = (
@@ -207,7 +208,9 @@ class HousingMarket:
         """
         self.ts.reset()
         update_functions(
-            model=configuration.functions, loc="macromodel.agents.housing_market", functions=self.functions
+            model=configuration.functions,
+            loc="macromodel.agents.housing_market",
+            functions=self.functions,
         )
         self.states = deepcopy(self.initial_states)
 

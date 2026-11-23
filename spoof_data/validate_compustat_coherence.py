@@ -163,7 +163,18 @@ def validate_banks_data(banks: pd.DataFrame) -> tuple[bool, list[str]]:
         print("\n1. gvkey column removed (spoofed data) - skipping uniqueness check")
 
     # Check 2: Required columns exist (flexible for spoofed data)
-    required_cols = ["curcdq", "fqtr", "fyearq", "datadate", "atq", "dlttq", "dptcq", "ltq", "teqq", "loc"]
+    required_cols = [
+        "curcdq",
+        "fqtr",
+        "fyearq",
+        "datadate",
+        "atq",
+        "dlttq",
+        "dptcq",
+        "ltq",
+        "teqq",
+        "loc",
+    ]
 
     print("\n2. Required columns:")
     missing = set(required_cols) - set(banks.columns)

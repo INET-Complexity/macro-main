@@ -315,7 +315,12 @@ class CESHouseholdConsumption(HouseholdConsumption):
 
         # Compute CES consumption shares with substitution
         ces_weights = self._compute_ces_weights(
-            consumption_weights, prices, initial_prices, taxes, initial_taxes, bundle_matrix
+            consumption_weights,
+            prices,
+            initial_prices,
+            taxes,
+            initial_taxes,
+            bundle_matrix,
         )
 
         return self._compute_target_consumption_ces(

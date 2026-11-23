@@ -129,7 +129,10 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
         if country_exogenous_data is not None:
             # if exogenous data is available, use it to fit the benefits models
             benefits_inflation_data = readers.get_benefits_inflation_data(
-                country_name, year_min=year - year_range, year_max=year, exogenous_data=country_exogenous_data
+                country_name,
+                year_min=year - year_range,
+                year_max=year,
+                exogenous_data=country_exogenous_data,
             )
             unemployment_benefits_model = build_unemployment_model(
                 benefits_inflation_data, regression_window=regression_window

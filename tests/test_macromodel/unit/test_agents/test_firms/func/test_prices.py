@@ -2,8 +2,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from macro_data.readers.exo_prices.exo_prices_reader import SectorExoPrices, SectorExoPricesReader
-from macromodel.agents.firms.func.prices import DefaultPriceSetter, SectorExogenousPriceSetter
+from macro_data.readers.exo_prices.exo_prices_reader import (
+    SectorExoPrices,
+    SectorExoPricesReader,
+)
+from macromodel.agents.firms.func.prices import (
+    DefaultPriceSetter,
+    SectorExogenousPriceSetter,
+)
 
 N_FIRMS = 4
 # Two firms per industry: indices 0,1 → B05a; indices 2,3 → C19

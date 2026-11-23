@@ -68,13 +68,19 @@ class TestICIOAggReader:
 
         used_ii = use_table.sum(axis=0)
 
-        assert np.allclose(icio_reader.iot.loc[("TOTAL", "Intermediate Inputs"), use_table.columns], used_ii, rtol=1e-2)
+        assert np.allclose(
+            icio_reader.iot.loc[("TOTAL", "Intermediate Inputs"), use_table.columns],
+            used_ii,
+            rtol=1e-2,
+        )
 
         supplied_ii /= icio_reader.yearly_factor
 
         for country in countries:
             assert np.allclose(
-                icio_reader.get_intermediate_inputs_supply(country).sum(axis=1), supplied_ii.loc[country], rtol=1e-2
+                icio_reader.get_intermediate_inputs_supply(country).sum(axis=1),
+                supplied_ii.loc[country],
+                rtol=1e-2,
             )
 
 

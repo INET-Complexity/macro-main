@@ -158,7 +158,11 @@ class DefaultSyntheticGovernmentEntities(SyntheticGovernmentEntities):
 
         if create_model:
             government_consumption_model = LinearRegression().fit(
-                [[0], [1]], [np.nanmean(total_gov_consumption_growth), np.nanmean(total_gov_consumption_growth)]
+                [[0], [1]],
+                [
+                    np.nanmean(total_gov_consumption_growth),
+                    np.nanmean(total_gov_consumption_growth),
+                ],
             )
         else:
             government_consumption_model = None

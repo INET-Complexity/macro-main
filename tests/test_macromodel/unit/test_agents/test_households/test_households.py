@@ -1,6 +1,8 @@
 import numpy as np
 
-from macro_data.readers.emission_fraction.emission_fraction_reader import EmissionFractions
+from macro_data.readers.emission_fraction.emission_fraction_reader import (
+    EmissionFractions,
+)
 
 
 def _setup_emission_ts(households, n_hh, n_industries):

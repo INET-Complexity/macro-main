@@ -204,7 +204,11 @@ class Individuals(Agent):
             configuration (IndividualsConfiguration): New configuration
         """
         self.gen_reset()
-        update_functions(functions=self.functions, model=configuration.functions, loc="macromodel.agents.individuals")
+        update_functions(
+            functions=self.functions,
+            model=configuration.functions,
+            loc="macromodel.agents.individuals",
+        )
 
     def compute_labour_inputs(self) -> np.ndarray:
         """Calculate individual labor market inputs.

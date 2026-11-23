@@ -3,7 +3,10 @@ import pathlib
 import numpy as np
 import pytest
 
-from macro_data.readers.emission_fraction.emission_fraction_reader import EmissionFractions, EmissionsFractionReader
+from macro_data.readers.emission_fraction.emission_fraction_reader import (
+    EmissionFractions,
+    EmissionsFractionReader,
+)
 
 DATA_PATH = pathlib.Path(__file__).parent.parent / "sample_raw_data" / "emission_factors"
 

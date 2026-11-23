@@ -185,7 +185,10 @@ def gen_multic_readers(data_path):
         ],
         force_single_hfcs_survey=True,
         single_icio_survey=True,
-        proxy_country_dict={Country("CAN"): Country("FRA"), Country("USA"): Country("FRA")},
+        proxy_country_dict={
+            Country("CAN"): Country("FRA"),
+            Country("USA"): Country("FRA"),
+        },
     )
     return multic_readers
 
@@ -193,7 +196,10 @@ def gen_multic_readers(data_path):
 @pytest.fixture(scope="module", name="industry_data")
 def industry_data(readers):
     return compile_industry_data(
-        year=2014, readers=readers, country_names=[Country("FRA")], single_firm_per_industry={"FRA": True}
+        year=2014,
+        readers=readers,
+        country_names=[Country("FRA")],
+        single_firm_per_industry={"FRA": True},
     )
 
 

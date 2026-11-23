@@ -148,7 +148,10 @@ class SyntheticBanks(ABC):
         self.hh_mortgage_rate = hh_mortgage_rate
 
     def initialise_deposits_and_loans(
-        self, synthetic_population: SyntheticPopulation, firm_deposits: np.ndarray, firm_debt: np.ndarray
+        self,
+        synthetic_population: SyntheticPopulation,
+        firm_deposits: np.ndarray,
+        firm_debt: np.ndarray,
     ) -> None:
         """Initialize the deposits and loans for all banks in the system.
 

@@ -40,7 +40,12 @@ class TestBundleArbitrageInvestmentAllocation:
         input_usage = np.array(
             [
                 [50.0, 40.0, 10.0, 5.0],  # Firm 0: heavy energy user (90 of 105 total)
-                [30.0, 20.0, 15.0, 10.0],  # Firm 1: moderate energy user (50 of 75 total)
+                [
+                    30.0,
+                    20.0,
+                    15.0,
+                    10.0,
+                ],  # Firm 1: moderate energy user (50 of 75 total)
             ]
         )
 

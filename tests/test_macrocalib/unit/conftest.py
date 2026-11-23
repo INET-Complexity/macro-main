@@ -129,6 +129,10 @@ def fixture_sampler(datawrapper, configuration_updater, observer):
         datawrapper.save(tmp_file)
 
         # then, instantiate the sampler
-        sampler = Sampler.default(configuration_updater=configuration_updater, observer=observer, pickle_path=tmp_file)
+        sampler = Sampler.default(
+            configuration_updater=configuration_updater,
+            observer=observer,
+            pickle_path=tmp_file,
+        )
 
     return sampler

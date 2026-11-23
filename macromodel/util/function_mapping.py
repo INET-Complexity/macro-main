@@ -125,7 +125,10 @@ def functions_from_model(model: BaseModel, loc: str) -> dict[str, Any]:
 
 
 def update_functions(
-    model: BaseModel, loc: str, functions: dict[str, Any], force_reset: Optional[list[str]] = None
+    model: BaseModel,
+    loc: str,
+    functions: dict[str, Any],
+    force_reset: Optional[list[str]] = None,
 ) -> None:
     """Update existing function instances with new configuration.
 
@@ -164,7 +167,10 @@ def update_functions(
         ):
             # Different class or no existing function, or we want to force rest, so we
             # need to reinstantiate
-            module = __import__(f"{loc}.func.{new_func_config.path_name}", fromlist=[new_func_config.name])
+            module = __import__(
+                f"{loc}.func.{new_func_config.path_name}",
+                fromlist=[new_func_config.name],
+            )
             cls = getattr(module, new_func_config.name)
             # setattr(functions, func_name, cls(**new_func_config.parameters))
             functions[func_name] = cls(**new_func_config.parameters)

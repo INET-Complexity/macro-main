@@ -62,10 +62,13 @@ def process_individual_data(
         logging.warning("Total unemployment benefits not found, setting to 0.0")
 
     individual_data = fill_individual_employee_income(
-        individual_data, unemployment_benefits_by_individual=total_unemployment_benefits / n_unemployed, scale=scale
+        individual_data,
+        unemployment_benefits_by_individual=total_unemployment_benefits / n_unemployed,
+        scale=scale,
     )
     individual_data = set_individual_unemployed_income(
-        individual_data, unemployment_benefits_by_individual=total_unemployment_benefits / n_unemployed
+        individual_data,
+        unemployment_benefits_by_individual=total_unemployment_benefits / n_unemployed,
     )
     individual_data["Income"] = (
         individual_data["Employee Income"].fillna(0.0).values
@@ -135,7 +138,11 @@ def fill_individual_age(individual_data: pd.DataFrame) -> pd.DataFrame:
     """
     is_student = individual_data["Labour Status"] == 4
     individual_data = apply_iterative_imputer(
-        individual_data, columns=["Gender", "Age"], selection=is_student, min_value=6, max_value=18
+        individual_data,
+        columns=["Gender", "Age"],
+        selection=is_student,
+        min_value=6,
+        max_value=18,
     )
     individual_data = apply_iterative_imputer(individual_data, columns=["Gender", "Age"], min_value=0)
     return individual_data
@@ -226,7 +233,10 @@ def set_individual_activity_status(
 
 
 def decrease_unemployment_rate(
-    individual_data: pd.DataFrame, n_employed: int, n_unemployed: int, unemployment_rate: float
+    individual_data: pd.DataFrame,
+    n_employed: int,
+    n_unemployed: int,
+    unemployment_rate: float,
 ) -> None:
     """
     Decreases the unemployment rate by transitioning individuals from unemployed to employed.
@@ -261,7 +271,10 @@ def decrease_unemployment_rate(
 
 
 def increase_unemployment_rate(
-    individual_data: pd.DataFrame, n_employed: int, n_unemployed: int, unemployment_rate: float
+    individual_data: pd.DataFrame,
+    n_employed: int,
+    n_unemployed: int,
+    unemployment_rate: float,
 ) -> None:
     """
     Increase the unemployment rate in the individual data by updating the activity status and income information.
@@ -445,7 +458,10 @@ def fill_individual_nace(
     frequencies = frequencies / np.sum(frequencies)
 
     # fill in missing sector of unemployed people
-    mask = np.logical_and(individual_data["Activity Status"] < 3, pd.isnull(individual_data["Employment Industry"]))
+    mask = np.logical_and(
+        individual_data["Activity Status"] < 3,
+        pd.isnull(individual_data["Employment Industry"]),
+    )
     individuals_without_industry = np.flatnonzero(mask)
 
     new_industries = np.random.choice(range(len(industries)), len(individuals_without_industry), replace=True)
@@ -551,7 +567,9 @@ def select_employed_in_industry(individual_data: pd.DataFrame, industry: int) ->
 
 
 def fill_individual_employee_income(
-    individual_data: pd.DataFrame, unemployment_benefits_by_individual: float, scale: int
+    individual_data: pd.DataFrame,
+    unemployment_benefits_by_individual: float,
+    scale: int,
 ) -> pd.DataFrame:
     """
     Fills the 'Employee Income' column in the individual_data DataFrame for employed individuals.
@@ -577,7 +595,10 @@ def fill_individual_employee_income(
     no_income = individual_data["Employee Income"] == 0.0
     individual_data.loc[is_employed & no_income, "Employee Income"] = np.nan
     individual_data = apply_iterative_imputer(
-        individual_data, columns=["Employee Income", "Age", "Education"], selection=is_employed, min_value=0
+        individual_data,
+        columns=["Employee Income", "Age", "Education"],
+        selection=is_employed,
+        min_value=0,
     )
 
     # Only employed individuals receive employee income

@@ -134,7 +134,12 @@ class WIODSEAReader:
         for country in country_names:
             scale = value_added_dict[country] / sea.loc[country, "Value Added"]
             scale = np.copy(scale.values)
-            for field in ["Value Added", "Labour Compensation", "Capital Compensation", "Capital Stock"]:
+            for field in [
+                "Value Added",
+                "Labour Compensation",
+                "Capital Compensation",
+                "Capital Stock",
+            ]:
                 sea.loc[country, field] = (sea.loc[country, field] * scale).values
 
         if regions_dict is not None:

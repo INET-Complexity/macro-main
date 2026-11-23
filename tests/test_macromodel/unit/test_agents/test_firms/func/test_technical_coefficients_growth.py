@@ -97,7 +97,8 @@ class TestSimpleTechnicalGrowth:
         effectiveness = 0.2
         diminishing = 0.05
         growth_func = SimpleTechnicalGrowth(
-            investment_effectiveness=effectiveness, diminishing_returns_factor=diminishing
+            investment_effectiveness=effectiveness,
+            diminishing_returns_factor=diminishing,
         )
         assert growth_func.investment_effectiveness == effectiveness
         assert growth_func.diminishing_returns_factor == diminishing

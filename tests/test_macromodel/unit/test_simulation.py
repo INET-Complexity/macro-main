@@ -473,7 +473,8 @@ def test_large_firing_rate(allind_datawrapper):
 
 
 @pytest.mark.parametrize(
-    "tfp_growth_type", ["NoOpTFPGrowth", "SimpleTFPGrowth", "StochasticTFPGrowth", "SectoralTFPGrowth"]
+    "tfp_growth_type",
+    ["NoOpTFPGrowth", "SimpleTFPGrowth", "StochasticTFPGrowth", "SectoralTFPGrowth"],
 )
 @pytest.mark.parametrize("seed", [0, 100])
 def test_simulation_with_tfp_growth(datawrapper, seed, tfp_growth_type):
