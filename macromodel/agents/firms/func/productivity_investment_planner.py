@@ -100,6 +100,7 @@ class ProductivityInvestmentPlanner(ABC):
         input_usage: np.ndarray,
         current_tech_multipliers: np.ndarray,
         substitution_bundle_matrix: np.ndarray,
+        firm_industries: Optional[np.ndarray] = None,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Plan productivity investment for each firm.
 
@@ -109,14 +110,16 @@ class ProductivityInvestmentPlanner(ABC):
 
         Args:
             current_tfp (np.ndarray): Current TFP multipliers [n_firms]
-            current_production (np.ndarray): Current production levels [n_firms]
-            current_unit_costs (np.ndarray): Current unit costs of production [n_firms]
-            available_cash (np.ndarray): Cash available for investment [n_firms]
-            current_prices (np.ndarray): Current market prices [n_industries]
+            current_production (np.ndarray): Current production levels [n_firms] (physical units)
+            current_unit_costs (np.ndarray): Current unit costs of production [n_firms] ($/unit)
+            available_cash (np.ndarray): Cash available for investment [n_firms] ($)
+            current_prices (np.ndarray): Current market prices [n_industries] ($/unit)
             n_industries (int): Number of industries
             input_usage (np.ndarray): Input usage by firms [n_firms x n_industries]
             current_tech_multipliers (np.ndarray): Current technical multipliers [n_firms x n_industries]
             substitution_bundle_matrix (np.ndarray): Bundle matrix [n_industries x n_bundles]
+            firm_industries (np.ndarray | None): Industry index for each firm [n_firms], used to
+                get firm-specific prices from industry prices
 
         Returns:
             tuple[np.ndarray, np.ndarray, np.ndarray]: Tuple containing:
@@ -183,6 +186,64 @@ class ProductivityInvestmentPlanner(ABC):
         hurdle_discount_factor = (1 + self.hurdle_rate) / self.hurdle_rate
 
         return cost_reduction_per_period * hurdle_discount_factor
+
+    def is_investment_profitable(
+        self,
+        productivity_investment: np.ndarray,
+        nominal_production: np.ndarray,
+        current_unit_costs: np.ndarray,
+    ) -> np.ndarray:
+        """Check if investment is profitable using the correct hurdle rate formula.
+
+        Following investment_decision.md, investment is profitable if:
+            (I/V)^(1-α) ≤ φ * (1+r_h)/r_h
+
+        where V = nominal production (price × physical production).
+
+        This is derived from the condition that the present value of cost savings
+        must exceed the investment cost. The derivation:
+        1. TFP growth: g = φ * (I/V)^α
+        2. Cost savings per period: g * V (where V is in monetary terms)
+        3. PV of savings: g * V * (1+r_h)/r_h
+        4. Profitable if: PV > I
+        5. Which rearranges to: (I/V)^(1-α) ≤ φ * (1+r_h)/r_h
+
+        Note: Using nominal production V (price × quantity) ensures dimensional
+        correctness. Both I and V are in monetary units ($), so I/V is dimensionless.
+
+        Args:
+            productivity_investment (np.ndarray): Investment amounts ($)
+            nominal_production (np.ndarray): Nominal production = price × quantity ($)
+            current_unit_costs (np.ndarray): Unit costs ($/unit), used to check
+                if cost savings are possible
+
+        Returns:
+            np.ndarray: Boolean array indicating profitability for each firm
+        """
+        # Compute investment intensity I/V (dimensionless: $ / $)
+        investment_intensity = np.divide(
+            productivity_investment,
+            nominal_production,
+            out=np.zeros_like(productivity_investment),
+            where=nominal_production > 0,
+        )
+
+        # Left-hand side: (I/V)^(1-α)
+        # Need to handle the case where investment_intensity is 0
+        lhs = np.power(
+            investment_intensity,
+            1 - self.investment_elasticity,
+            out=np.zeros_like(investment_intensity),
+            where=investment_intensity > 0,
+        )
+
+        # Right-hand side: φ * (1+r_h)/r_h (dimensionless)
+        rhs = self.investment_effectiveness * (1 + self.hurdle_rate) / self.hurdle_rate
+
+        # Investment is profitable if LHS ≤ RHS
+        # Also return True for zero investment (trivially profitable)
+        # If unit costs are 0, no investment is profitable (no cost savings possible)
+        return ((lhs <= rhs) & (current_unit_costs > 0)) | (productivity_investment <= 0)
 
     def compute_investment_budget(
         self,
@@ -461,6 +522,7 @@ class NoProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
         input_usage: np.ndarray,
         current_tech_multipliers: np.ndarray,
         substitution_bundle_matrix: Optional[np.ndarray],
+        firm_industries: Optional[np.ndarray] = None,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Return zero productivity investment for all firms.
 
@@ -474,6 +536,7 @@ class NoProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
             input_usage (np.ndarray): Used intermediate inputs [n_firms x n_industries]
             current_tech_multipliers (np.ndarray): Technical coefficient multipliers [n_firms x n_industries]
             substitution_bundle_matrix (np.ndarray | None): Substitution bundle matrix
+            firm_industries (np.ndarray | None): Industry index for each firm
 
         Returns:
             tuple: Zero investments (total, TFP, technical by input)
@@ -546,6 +609,7 @@ class SimpleProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
         input_usage: np.ndarray,
         current_tech_multipliers: np.ndarray,
         substitution_bundle_matrix: Optional[np.ndarray],
+        firm_industries: Optional[np.ndarray] = None,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Plan productivity investment using simple rules.
 
@@ -554,29 +618,39 @@ class SimpleProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
 
         Args:
             current_tfp (np.ndarray): Current TFP multipliers
-            current_production (np.ndarray): Current production levels
-            current_unit_costs (np.ndarray): Current unit costs of production
-            available_cash (np.ndarray): Cash available for investment
-            current_prices (np.ndarray): Current market prices by industry
+            current_production (np.ndarray): Current production levels (physical units)
+            current_unit_costs (np.ndarray): Current unit costs of production ($/unit)
+            available_cash (np.ndarray): Cash available for investment ($)
+            current_prices (np.ndarray): Current market prices by industry ($/unit)
             n_industries (int): Number of industries
             input_usage (np.ndarray): Used intermediate inputs [n_firms x n_industries]
             current_tech_multipliers (np.ndarray): Technical coefficient multipliers [n_firms x n_industries]
             substitution_bundle_matrix (np.ndarray | None): Substitution bundle matrix
+            firm_industries (np.ndarray | None): Industry index for each firm
 
         Returns:
             tuple: (total_investment, tfp_investment, technical_investment_by_input)
         """
-        # Compute available budget
-        budget = self.compute_investment_budget(available_cash, current_production)
+        # Compute firm-specific prices from industry prices
+        if firm_industries is not None:
+            firm_prices = current_prices[firm_industries]
+        else:
+            # Fallback: assume prices are 1 (unit costs will be used for profitability)
+            firm_prices = np.ones_like(current_production)
+
+        # Compute nominal production (price × physical production) for dimensional correctness
+        # The formula I/Y should use monetary values for both I and Y
+        nominal_production = firm_prices * current_production
+
+        # Compute available budget using nominal production
+        budget = self.compute_investment_budget(available_cash, nominal_production)
 
         # Candidate investment (fraction of budget)
         candidate_investment = self.investment_propensity * budget
 
-        # Compute hurdle-adjusted present value of cost savings
-        hurdle_value = self.compute_hurdle_adjusted_value(candidate_investment, current_production, current_unit_costs)
-
-        # Investment is profitable if hurdle-adjusted value exceeds investment cost
-        profitable = hurdle_value > candidate_investment
+        # Check if investment is profitable using the correct formula from investment_decision.md
+        # The condition is: (I/V)^(1-α) ≤ φ * (1+r_h)/r_h, where V = nominal production
+        profitable = self.is_investment_profitable(candidate_investment, nominal_production, current_unit_costs)
 
         # Only invest where profitable
         total_investment = np.where(profitable, candidate_investment, 0)
@@ -661,6 +735,7 @@ class OptimalProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
         input_usage: np.ndarray,
         current_tech_multipliers: np.ndarray,
         substitution_bundle_matrix: Optional[np.ndarray],
+        firm_industries: Optional[np.ndarray] = None,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Plan productivity investment by optimizing expected returns.
 
@@ -669,14 +744,15 @@ class OptimalProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
 
         Args:
             current_tfp (np.ndarray): Current TFP multipliers
-            current_production (np.ndarray): Current production levels
-            current_unit_costs (np.ndarray): Current unit costs of production
-            available_cash (np.ndarray): Cash available for investment
-            current_prices (np.ndarray): Current market prices by industry
+            current_production (np.ndarray): Current production levels (physical units)
+            current_unit_costs (np.ndarray): Current unit costs of production ($/unit)
+            available_cash (np.ndarray): Cash available for investment ($)
+            current_prices (np.ndarray): Current market prices by industry ($/unit)
             n_industries (int): Number of industries
             input_usage (np.ndarray): Used intermediate inputs [n_firms x n_industries]
             current_tech_multipliers (np.ndarray): Technical coefficient multipliers [n_firms x n_industries]
             substitution_bundle_matrix (np.ndarray | None): Substitution bundle matrix
+            firm_industries (np.ndarray | None): Industry index for each firm
 
         Returns:
             tuple: (total_investment, tfp_investment, technical_investment_by_input)
@@ -684,41 +760,37 @@ class OptimalProductivityInvestmentPlanner(ProductivityInvestmentPlanner):
         n_firms = len(current_production)
         total_investment = np.zeros(n_firms)
 
-        # Compute constraints
-        budget = self.compute_investment_budget(available_cash, current_production)
+        # Compute firm-specific prices from industry prices
+        if firm_industries is not None:
+            firm_prices = current_prices[firm_industries]
+        else:
+            firm_prices = np.ones(n_firms)
 
-        # For each firm, find optimal investment level
+        # Compute nominal production for dimensional correctness
+        nominal_production = firm_prices * current_production
+
+        # Compute constraints using nominal production
+        budget = self.compute_investment_budget(available_cash, nominal_production)
+
+        # For each firm, find optimal investment level using the correct formula
+        # From investment_decision.md: investment is profitable if (I/V)^(1-α) ≤ φ * (1+r_h)/r_h
+        # where V = nominal production (price × physical production)
         for i in range(n_firms):
-            if budget[i] <= 0 or current_production[i] <= 0 or current_unit_costs[i] <= 0:
+            if budget[i] <= 0 or nominal_production[i] <= 0:
                 continue
 
-            # Search over possible investment levels
-            # Start with zero investment as baseline (NPV = 0)
-            best_npv = 0
-            best_investment = 0
+            # Compute the maximum profitable investment intensity
+            # From (I/V)^(1-α) ≤ φ * (1+r_h)/r_h, solving for I/V:
+            # I/V ≤ (φ * (1+r_h)/r_h)^(1/(1-α))
+            rhs = self.investment_effectiveness[i] * (1 + self.hurdle_rate[i]) / self.hurdle_rate[i]
+            exponent = 1.0 / (1 - self.investment_elasticity[i])
+            max_profitable_intensity = np.power(rhs, exponent)
 
-            investment_levels = np.linspace(0, budget[i], self.search_steps)
+            # Maximum profitable investment (now dimensionally correct: $ = ratio × $)
+            max_profitable_investment = max_profitable_intensity * nominal_production[i]
 
-            for investment in investment_levels:
-                if investment == 0:
-                    continue
-
-                # Compute hurdle-adjusted value for this investment level
-                inv_array = np.array([investment])
-                prod_array = np.array([current_production[i]])
-                costs_array = np.array([current_unit_costs[i]])
-
-                hurdle_value = self.compute_hurdle_adjusted_value(inv_array, prod_array, costs_array)[0]
-
-                # NPV: hurdle-adjusted value minus investment cost
-                npv = hurdle_value - investment
-
-                # Only invest if NPV is positive and better than current best
-                if npv > best_npv:
-                    best_npv = npv
-                    best_investment = investment
-
-            total_investment[i] = best_investment
+            # Investment is capped by budget and profitability
+            total_investment[i] = min(budget[i], max_profitable_investment)
 
         if substitution_bundle_matrix is not None:
             # Allocate between TFP and technical using bundle-aware logic

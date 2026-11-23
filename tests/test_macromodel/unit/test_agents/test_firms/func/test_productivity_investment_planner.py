@@ -758,3 +758,172 @@ class TestHeterogeneousParameters:
                 n_firms=3,
                 hurdle_rate=[0.10, 0.15],  # Only 2 values for 3 firms
             )
+
+
+class TestHurdleRateSensitivity:
+    """Test that hurdle rate properly affects investment profitability.
+
+    This addresses bug #60: hurdle_rate insensitivity.
+    The fix uses the correct formula from investment_decision.md:
+    (I/V)^(1-α) ≤ φ * (1+r_h)/r_h, where V = nominal production
+    """
+
+    def test_high_hurdle_rate_rejects_investment(self):
+        """Test that a high hurdle rate rejects investment that lower rate accepts."""
+        n_firms = 1
+
+        # Use identical conditions for both planners except hurdle rate
+        common_params = {
+            "n_firms": n_firms,
+            "max_investment_fraction": 0.5,
+            "investment_effectiveness": 0.1,
+            "investment_elasticity": 0.3,
+            "investment_propensity": 1.0,
+        }
+
+        low_hurdle_planner = SimpleProductivityInvestmentPlanner(hurdle_rate=0.05, **common_params)
+        high_hurdle_planner = SimpleProductivityInvestmentPlanner(hurdle_rate=0.5, **common_params)
+
+        # Setup test scenario
+        current_tfp = np.array([1.0])
+        current_production = np.array([1000.0])  # Physical units
+        current_unit_costs = np.array([10.0])  # $/unit
+        available_cash = np.array([5000.0])  # $
+
+        test_params = {
+            "current_prices": np.ones(18),
+            "n_industries": 18,
+            "input_usage": np.ones((n_firms, 18)),
+            "current_tech_multipliers": np.ones((n_firms, 18)),
+            "substitution_bundle_matrix": None,
+            "firm_industries": np.array([0]),
+        }
+
+        low_inv, _, _ = low_hurdle_planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **test_params,
+        )
+
+        high_inv, _, _ = high_hurdle_planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **test_params,
+        )
+
+        # Low hurdle rate should allow investment, high should reject
+        assert low_inv[0] > 0, "Low hurdle rate should allow investment"
+        assert high_inv[0] < low_inv[0], "High hurdle rate should reduce/reject investment"
+
+    def test_hurdle_rate_threshold_formula(self):
+        """Test that the hurdle rate formula correctly computes profitability threshold.
+
+        The formula: (I/V)^(1-α) ≤ φ * (1+r_h)/r_h
+        Solving for I/V: I/V ≤ (φ * (1+r_h)/r_h)^(1/(1-α))
+        """
+        n_firms = 1
+        planner = SimpleProductivityInvestmentPlanner(
+            n_firms=n_firms,
+            hurdle_rate=0.15,
+            investment_effectiveness=0.1,
+            investment_elasticity=0.3,
+        )
+
+        # Expected max profitable intensity
+        # rhs = 0.1 * (1 + 0.15) / 0.15 = 0.1 * 7.667 = 0.7667
+        # max_intensity = 0.7667^(1/(1-0.3)) = 0.7667^1.4286 ≈ 0.68
+        rhs = 0.1 * (1 + 0.15) / 0.15
+        expected_max_intensity = np.power(rhs, 1 / (1 - 0.3))
+
+        # Test investment just below threshold should be profitable
+        nominal_production = np.array([1000.0])  # $
+        unit_costs = np.array([10.0])  # > 0 so savings possible
+        investment_below = np.array([expected_max_intensity * nominal_production[0] * 0.9])
+        investment_above = np.array([expected_max_intensity * nominal_production[0] * 1.1])
+
+        profitable_below = planner.is_investment_profitable(investment_below, nominal_production, unit_costs)
+        profitable_above = planner.is_investment_profitable(investment_above, nominal_production, unit_costs)
+
+        assert profitable_below[0], "Investment below threshold should be profitable"
+        assert not profitable_above[0], "Investment above threshold should not be profitable"
+
+    def test_zero_unit_costs_prevents_investment(self):
+        """Test that zero unit costs prevent investment (no cost savings possible)."""
+        n_firms = 1
+        planner = SimpleProductivityInvestmentPlanner(
+            n_firms=n_firms,
+            hurdle_rate=0.05,  # Very low hurdle rate
+            investment_propensity=1.0,
+        )
+
+        current_tfp = np.array([1.0])
+        current_production = np.array([1000.0])
+        current_unit_costs = np.array([0.0])  # Zero unit costs
+        available_cash = np.array([5000.0])
+
+        test_params = {
+            "current_prices": np.ones(18),
+            "n_industries": 18,
+            "input_usage": np.ones((n_firms, 18)),
+            "current_tech_multipliers": np.ones((n_firms, 18)),
+            "substitution_bundle_matrix": None,
+            "firm_industries": np.array([0]),
+        }
+
+        total_inv, _, _ = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **test_params,
+        )
+
+        # Zero unit costs means no cost savings possible, so no investment
+        assert total_inv[0] == 0, "Zero unit costs should prevent investment"
+
+    def test_dimensional_correctness_with_prices(self):
+        """Test that using firm prices correctly computes nominal production."""
+        n_firms = 2
+        planner = SimpleProductivityInvestmentPlanner(
+            n_firms=n_firms,
+            hurdle_rate=0.15,
+            investment_propensity=1.0,
+        )
+
+        current_tfp = np.array([1.0, 1.0])
+        current_production = np.array([1000.0, 1000.0])  # Same physical production
+        current_unit_costs = np.array([10.0, 10.0])
+        available_cash = np.array([50000.0, 50000.0])
+
+        # Different prices for each firm's industry
+        current_prices = np.full(18, 1.0)
+        current_prices[0] = 1.0  # Firm 0's industry
+        current_prices[1] = 10.0  # Firm 1's industry - higher price
+
+        test_params = {
+            "current_prices": current_prices,
+            "n_industries": 18,
+            "input_usage": np.ones((n_firms, 18)),
+            "current_tech_multipliers": np.ones((n_firms, 18)),
+            "substitution_bundle_matrix": None,
+            "firm_industries": np.array([0, 1]),  # Different industries
+        }
+
+        total_inv, _, _ = planner.plan_productivity_investment(
+            current_tfp=current_tfp,
+            current_production=current_production,
+            current_unit_costs=current_unit_costs,
+            available_cash=available_cash,
+            **test_params,
+        )
+
+        # Both should produce valid investments (no NaN/inf)
+        assert np.all(np.isfinite(total_inv)), "Investment should be finite"
+        assert np.all(total_inv >= 0), "Investment should be non-negative"
+        # Higher-priced firm has higher nominal production, so can invest more
+        # (budget is capped by max_investment_fraction * nominal_production)
+        assert total_inv[1] >= total_inv[0], "Higher-priced firm should have higher/equal investment budget"
