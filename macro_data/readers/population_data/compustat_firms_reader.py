@@ -73,6 +73,21 @@ var_mapping = {
     "loc": "Country",  # Country location
 }
 
+quarterly_stock_source_variables = [
+    "atq",  # Total assets
+    "ceqq",  # Common equity
+    "dlttq",  # Long-term debt
+    "dptbq",  # Bank deposits
+    "invtq",  # Total inventory
+    "ltq",  # Total liabilities
+]
+quarterly_flow_source_variables = [
+    "revtq",  # Total revenue
+    "gpq",  # Gross profits
+]
+quarterly_stock_variables = [var_mapping[column] for column in quarterly_stock_source_variables]
+quarterly_flow_variables = [var_mapping[column] for column in quarterly_flow_source_variables]
+
 # List of variables containing monetary values
 var_numerical = [
     "Assets",  # Total assets
@@ -103,6 +118,32 @@ var_keeping = [
 
 # Suppress convergence warnings from imputer
 simplefilter("ignore", category=ConvergenceWarning)
+
+
+def _active_quarterly_flow_source_columns() -> list[str]:
+    return [
+        source_column
+        for source_column, mapped_column in var_mapping.items()
+        if source_column in quarterly_flow_source_variables and mapped_column in var_keeping
+    ]
+
+
+def _validate_time_unit(time_unit: int) -> None:
+    if time_unit <= 0 or 12 % time_unit != 0:
+        raise ValueError("Compustat flow conversion requires `time_unit` to be a positive divisor of 12.")
+
+
+def _convert_active_quarterly_flows_to_time_unit(
+    data: pd.DataFrame, active_flow_columns: list[str], time_unit: int
+) -> pd.DataFrame:
+    if not active_flow_columns:
+        return data
+
+    _validate_time_unit(time_unit)
+    conversion_factor = time_unit / 3
+    if conversion_factor != 1:
+        data.loc[:, active_flow_columns] = data[active_flow_columns].astype(float) * conversion_factor
+    return data
 
 
 class CompustatFirmsReader:
@@ -147,6 +188,7 @@ class CompustatFirmsReader:
         raw_annual_path: Path | str,
         raw_quarterly_path: Path | str,
         countries: list[str | Country],
+        time_unit: int = 3,
     ):
         """
         Create a CompustatFirmsReader instance from raw Compustat files.
@@ -170,6 +212,9 @@ class CompustatFirmsReader:
             Path to quarterly Compustat data file
         countries : list[str | Country]
             List of countries to include in the data
+        time_unit : int, optional
+            Target simulation period length in months. Active quarterly flow fields
+            are scaled linearly from quarterly totals to this period.
 
         Returns
         -------
@@ -197,7 +242,12 @@ class CompustatFirmsReader:
                 raw_quarterly_data["fyearq"] == year,
                 raw_quarterly_data["fqtr"] == quarter,
             )
-        ]
+        ].copy()
+        raw_quarterly_data = _convert_active_quarterly_flows_to_time_unit(
+            data=raw_quarterly_data,
+            active_flow_columns=_active_quarterly_flow_source_columns(),
+            time_unit=time_unit,
+        )
 
         # Clean and filter data
         annual_data = raw_annual_data.dropna(axis=0, how="all").dropna(axis=1, how="all")

@@ -100,6 +100,7 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
         year_range: int = 10,
         regression_window: int = 48,
         equity_injection: float = 0.0,
+        yearly_factor: float = 4.0,
     ) -> SyntheticCentralGovernment:
         """Create a preprocessed central government data container using standard data sources.
 
@@ -129,7 +130,11 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
         if country_exogenous_data is not None:
             # if exogenous data is available, use it to fit the benefits models
             benefits_inflation_data = readers.get_benefits_inflation_data(
-                country_name, year_min=year - year_range, year_max=year, exogenous_data=country_exogenous_data
+                country_name,
+                year_min=year - year_range,
+                year_max=year,
+                exogenous_data=country_exogenous_data,
+                yearly_factor=yearly_factor,
             )
             unemployment_benefits_model = build_unemployment_model(
                 benefits_inflation_data, regression_window=regression_window
@@ -160,8 +165,15 @@ class DefaultSyntheticCGovernment(SyntheticCentralGovernment):
             # if exogenous data is not available, set the benefits models to None
             unemployment_benefits_model = None
             other_benefits_model = None
-            current_unemployment_benefits = readers.get_total_unemployment_benefits_lcu(country_name, year)
-            current_other_benefits = readers.get_total_benefits_lcu(country_name, year) - current_unemployment_benefits
+            current_unemployment_benefits = readers.get_total_unemployment_benefits_lcu(
+                country_name,
+                year,
+                yearly_factor=yearly_factor,
+            )
+            current_other_benefits = (
+                readers.get_total_benefits_lcu(country_name, year, yearly_factor=yearly_factor)
+                - current_unemployment_benefits
+            )
 
         # TODO: debt in USD or in local currency?
 

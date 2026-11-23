@@ -106,6 +106,7 @@ class Simulation:
         countries_with_row = datawrapper.all_country_names
 
         running_multi_country = len(countries_without_row) > 1
+        time_unit = int(getattr(datawrapper.configuration, "time_unit", datawrapper.time_unit))
 
         model_dict = {
             country_name: country.synthetic_goods_market.exchange_rates_model
@@ -142,6 +143,7 @@ class Simulation:
                 initial_year=datawrapper.configuration.year,
                 t_max=simulation_configuration.t_max,
                 running_multiple_countries=running_multi_country,
+                time_unit=time_unit,
                 emission_factors_usd=emission_factors,
             )
             for country_name in countries_without_row
