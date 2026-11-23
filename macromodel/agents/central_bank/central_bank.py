@@ -119,17 +119,36 @@ class CentralBank(Agent):
         functions = functions_from_model(model=configuration.functions, loc="macromodel.agents.central_bank")
 
         data = synthetic_central_bank.central_bank_data.astype(float).rename_axis("Central Bank ID")
+        policy_rule_name = configuration.functions.policy_rate.name
+
+        uses_smooth_taylor_rule = policy_rule_name == "SmoothTaylorRule" and {
+            "smooth_policy_rate",
+            "smooth_rho",
+            "smooth_r_star",
+        }.issubset(data.columns)
+
+        if uses_smooth_taylor_rule:
+            selected_data = data.copy()
+            selected_data["policy_rate"] = selected_data["smooth_policy_rate"]
+            selected_rho = data["smooth_rho"].values[0]
+            selected_r_star = data["smooth_r_star"].values[0]
+        else:
+            selected_data = data
+            selected_rho = data["rho"].values[0]
+            selected_r_star = data["r_star"].values[0]
 
         # Create the corresponding time series object
-        ts = create_central_bank_timeseries(data)
+        ts = create_central_bank_timeseries(selected_data)
 
         # Initialize monetary policy parameters
         states: dict[str, float | np.ndarray | list[np.ndarray]] = {
             "targeted_inflation_rate": data["targeted_inflation_rate"].values[0],
-            "rho": data["rho"].values[0],
-            "r_star": data["r_star"].values[0],
+            "rho": selected_rho,
+            "r_star": selected_r_star,
             "xi_pi": data["xi_pi"].values[0],
             "xi_gamma": data["xi_gamma"].values[0],
+            "phi_pi": (data["phi_pi"].values[0] if "phi_pi" in data.columns else data["xi_pi"].values[0]),
+            "phi_q": (data["phi_q"].values[0] if "phi_q" in data.columns else data["xi_gamma"].values[0]),
         }
 
         return cls(
@@ -154,7 +173,15 @@ class CentralBank(Agent):
         self.gen_reset()
         update_functions(model=configuration.functions, loc="macromodel.agents.central_bank", functions=self.functions)
 
-    def compute_rate(self, inflation: float, growth: float) -> float:
+    def compute_rate(
+        self,
+        inflation: float,
+        growth: float,
+        cpi_yoy_inflation: float | None = None,
+        output_gap: float | None = None,
+        time_unit: int = 1,
+        shock: float = 0.0,
+    ) -> float:
         """Calculate the policy interest rate.
 
         Determines appropriate policy rate based on:
@@ -166,6 +193,11 @@ class CentralBank(Agent):
         Args:
             inflation (float): Current inflation rate
             growth (float): Current economic growth rate
+            cpi_yoy_inflation (float | None): Optional year-over-year CPI inflation
+                used by Taylor-style rules that target annual CPI inflation.
+            output_gap (float | None): Optional output-gap measure.
+            time_unit (int): Simulation period length in months.
+            shock (float): Additive policy shock.
 
         Returns:
             float: New policy interest rate
@@ -175,6 +207,10 @@ class CentralBank(Agent):
             inflation=inflation,
             growth=growth,
             central_bank_states=self.states,
+            cpi_yoy_inflation=cpi_yoy_inflation,
+            output_gap=output_gap,
+            time_unit=time_unit,
+            shock=shock,
         )
 
     def save_to_h5(self, group: h5py.Group):
