@@ -1275,7 +1275,7 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
         return new_loans
 
     @staticmethod
-    #@njit(cache=True)
+    @njit(cache=True)
     def get_debtor_priorities(n_agents: int) -> np.ndarray:
         """Generate random priorities for debtors.
 
@@ -1291,7 +1291,7 @@ class WaterBucketCreditMarketClearer(CreditMarketClearer):
         return np.random.choice(n_agents, n_agents, replace=False)
 
     @staticmethod
-    #@njit(cache=True)
+    @njit(cache=True)
     def get_creditor_priorities_deterministic(
         interest_rates_selection_temperature: float,
         interest_rates: np.ndarray,
